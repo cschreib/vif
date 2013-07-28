@@ -8,6 +8,7 @@
 #include <cmath>
 #include <algorithm>
 #include <initializer_list>
+#include "color.hpp"
 #include "variadic.hpp"
 #include "print.hpp"
 #include "iterator.hpp"
@@ -897,7 +898,8 @@ struct vec_t<Dim,Type*> {
     using vec##N##u = vec_t<N, std::size_t>; \
     using vec##N##s = vec_t<N, std::string>; \
     using vec##N##c = vec_t<N, char>; \
-    using vec##N##b = vec_t<N, bool>;
+    using vec##N##b = vec_t<N, bool>; \
+    using vec##N##rgb = vec_t<N, rgb>;
 
 MAKE_TYPEDEFS(1)
 MAKE_TYPEDEFS(2)

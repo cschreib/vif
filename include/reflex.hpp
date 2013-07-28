@@ -9,6 +9,8 @@ struct vec_t;
 using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;
 
+struct rgb;
+
 namespace reflex {
     template<typename ... Args>
     struct type_list {
@@ -146,6 +148,9 @@ namespace reflex {
 
     template<>
     struct enabled<std::string> : std::false_type {};
+
+    template<>
+    struct enabled<rgb> : std::false_type {};
 
     struct empty_t {
         using _reflex_types = type_list<>;

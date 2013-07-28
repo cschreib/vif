@@ -225,11 +225,17 @@ struct make_kw_container<std::tuple<Args...>> {
 // Defined keyword list
 // Note: since it is not possible to define twice the same keyword, it is better to put them all in
 // one place, such as this one.
+define_keyword(_btit);
+define_keyword(_ltit);
 define_keyword(_nth);
 define_keyword(_renorm);
+define_keyword(_rtit);
 define_keyword(_self);
 define_keyword(_save);
 define_keyword(_thread);
+define_keyword(_ttit);
 define_keyword(_verbose);
+define_keyword(_xtit);
+define_keyword(_ytit);
 
 #endif
