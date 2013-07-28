@@ -1,2 +1,2 @@
-ophyu photinfo
+ophy++ photinfo
 mv photinfo bin/

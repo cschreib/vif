@@ -1,2 +1,2 @@
-ophyu qxmatch2 quiet
+ophy++ qxmatch2 quiet
 mv qxmatch2 bin/

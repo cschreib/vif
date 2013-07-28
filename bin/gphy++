@@ -6,22 +6,24 @@ if [ -f $1 ]; then
         RECOMPILE=1
     else
         RECOMPILE=0
-        for f in ${PHYU_PATH}*
+        for f in ${PHYU_PATH}/include/*
         do
-            if [ -f $f  ] && [ "$f" -nt $1 ]; then
+            if [ -f $f ] && [ "$f" -nt $1 ]; then
                 echo $f is more recent than program, re-compiling \'$1\'...
                 RECOMPILE=1
                 break
             fi
         done
-        for f in ${PHYU_PATH}pro/lib/*
-        do
-            if [ -f $f  ] && [ "$f" -nt $1 ]; then
-                echo $f is more recent than program, re-compiling \'$1\'...
-                RECOMPILE=1
-                break
-            fi
-        done
+        if [ $RECOMPILE -eq 0 ]; then
+            for f in ${PHYU_PATH}/lib/*
+            do
+                if [ -f $f ] && [ "$f" -nt $1 ]; then
+                    echo $f is more recent than program, re-compiling \'$1\'...
+                    RECOMPILE=1
+                    break
+                fi
+            done
+        fi
     fi
 else
     echo phyu: compiling \'$1\'...
@@ -29,7 +31,7 @@ else
 fi
 
 if [ $RECOMPILE -eq 1 ]; then
-    clang-3.3 $1.cpp -emit-ast -I "$PHYU_PATH" -I "$PHYU_PATH/pro/lib" -DREFLECTION_STAGE \
+    clang-3.3 $1.cpp -emit-ast -I "$PHYU_PATH/include" -I "$PHYU_PATH/lib" -DREFLECTION_STAGE \
         -ferror-limit=5 -std=c++1y -o $1.ast -w
     RETVAL=$?
     if [ $RETVAL -ne 0 ]; then
@@ -40,7 +42,7 @@ if [ $RECOMPILE -eq 1 ]; then
     echo phyu: reflection data generated
     rm $1.ast
     clang-3.3 ._reflex_$1.cpp -g -ftemplate-depth=1024 -ferror-limit=5 \
-        -I "$PHYU_PATH" -I "$PHYU_PATH/pro/lib" \
+        -I "$PHYU_PATH/include" -I "$PHYU_PATH/lib" \
         -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -o $1 \
         -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter \
         -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
