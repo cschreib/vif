@@ -1,6 +1,6 @@
 phy++
 =====
-This is a set of library and tools build to provide user friendly data manipulation as offered in
+This is a set of library and tools built to provide user friendly data manipulation as offered in
 interpreted languages like IDL [1] or its open source clone GDL [2], but with the added benefit of
 C++, i.e. increased robusteness and speed. The library offers the following features:
  - multidimensional arrays with overloaded mathematical operators and mathematical functions,
@@ -29,22 +29,31 @@ reflection (which is not yet part of the C++ standard).
 
 Using the 'phypp' library
 ========================
-1) create a new C++ file (foobar.cpp for example)
-2) include the phy++ header: #include <phypp.hpp>
-3) write some code in the main function: int main(int argc, char* argv[]) { ... return 0; }
-4) invoque the phy++ compiler from the directory where the source code is located: phy++ foobar
-5) the program will compile and run automatically (if no compiler error occured)
+ - create a new C++ file (foobar.cpp for example)
+ - include the phy++ header:
+
+    #include <phypp.hpp>
+
+ - write some code in the main function: 
+
+    int main(int argc, char* argv[]) {
+        // ...
+        return 0;
+    }
+
+ - invoque the phy++ compiler from the directory where the source code is located: phy++ foobar
+ - the program will compile and run automatically (if no compiler error occured)
 
 
 The different phy++ compilers
 =============================
-- phy++: standard compiler. Should compile fast but will not fully optimize the executable.
-- ophy++: optimized compiled. Can take twice more time to compile, but will generate faster code.
-- gphy++: debug compiler. As with 'phy++', but compiles with debug information and fires 'gdb'.
-- gophy++: debug compiler. As with 'ophy++', but compiles with debug information and fires 'gdb'.
-          Note that, since optimizations can remove intermediary steps/variables, debugging can
-          be troublesome (some variables or functions do disappear). Only use this option when
-          needed.
+ - phy++: standard compiler. Should compile fast but will not fully optimize the executable.
+ - ophy++: optimized compiled. Can take twice more time to compile, but will generate faster code.
+ - gphy++: debug compiler. As with 'phy++', but compiles with debug information and fires 'gdb'.
+ - gophy++: debug compiler. As with 'ophy++', but compiles with debug information and fires 'gdb'.
+            Note that, since optimizations can remove intermediary steps/variables, debugging can
+            be troublesome (some variables or functions do disappear). Only use this option when
+            needed.
 
 As a rule of thumb, prefer using 'phy++' for testing purposes (when you compile often). Then, if 
 the execution time gets larger, try with 'ophy++'. In any case, prefer using 'ophy++' when you 

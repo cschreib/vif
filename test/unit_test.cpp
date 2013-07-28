@@ -268,10 +268,10 @@ int main(int argc, char* argv[]) {
         check(file::exists("unit_test_bidouille.cpp"), "0");
         vec1s dlist = file::list_directories("../"); 
         print(dlist);
-        check(where(dlist == "bak").empty(), "0");
+        check(where(dlist == "bin").empty(), "0");
         vec1s flist = file::list_files();
         print(flist);
-        flist = file::list_files("../bak/001/*.hpp");
+        flist = file::list_files("../include/*.hpp");
         print(flist);
     }
 
