@@ -37,7 +37,7 @@ void note(Args&& ... args) {
     print("note: ", std::forward<Args>(args)...);
 }
 
-#define phyu_check(value, ...) \
+#define phypp_check(value, ...) \
     if (!(value)) { \
         error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__); \
         assert(false); \

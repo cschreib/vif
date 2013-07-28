@@ -87,7 +87,7 @@ void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u) {
 
                 template<typename P>
                 void operator () (reflex::member_t& n, P&& p) {
-                    phyu_check(this->m.name != n.name, "incompatible types in merging '",
+                    phypp_check(this->m.name != n.name, "incompatible types in merging '",
                         this->m.full_name(), "' into '", n.full_name(), "'"
                     );
                 }

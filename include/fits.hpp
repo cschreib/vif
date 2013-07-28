@@ -95,12 +95,12 @@ namespace fits {
         }
     };
     
-    void phyu_check_cfitsio(int status, const std::string& msg) {
+    void phypp_check_cfitsio(int status, const std::string& msg) {
         if (status != 0) {
             char txt[FLEN_STATUS];
             fits_get_errstatus(status, txt);
             error("cfitsio: "+std::string(txt));
-            phyu_check(status == 0, msg);
+            phypp_check(status == 0, msg);
         }
     }
     
@@ -115,7 +115,7 @@ namespace fits {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
             
-            phyu_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
             
             vec_t<Dim, Type> v;
@@ -143,7 +143,7 @@ namespace fits {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
             
-            phyu_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
             
             std::size_t n = 1;
@@ -168,7 +168,7 @@ namespace fits {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
             
-            phyu_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
             
             std::size_t n = 1;
@@ -300,8 +300,8 @@ namespace fits {
     void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
         vec_t<1,V>& x, vec_t<1,W>& y) {
 
-        phyu_check(w.w != nullptr, "uninitialized WCS structure");
-        phyu_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
+        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+        phypp_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
             strn(ra.size())+" vs "+strn(dec.size())+")");
         
         std::size_t ngal = ra.size();
@@ -425,7 +425,7 @@ namespace fits {
         if (loose) {
             if (status != 0) return;
         } else {
-            phyu_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
+            phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
         }
             
         int type, naxis;
@@ -433,7 +433,7 @@ namespace fits {
         std::array<long,Dim> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, Dim, &naxis, naxes.data(), &status);
-        phyu_check(naxis == Dim, "wrong dimension for column '"+colname+"'");
+        phypp_check(naxis == Dim, "wrong dimension for column '"+colname+"'");
         status = 0;
         
         for (std::size_t i = 0; i < Dim; ++i) {
@@ -458,7 +458,7 @@ namespace fits {
         if (loose) {
             if (status != 0) return;
         } else {
-            phyu_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
+            phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
         }
             
         int type, naxis;
@@ -466,7 +466,7 @@ namespace fits {
         std::array<long,Dim+1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, Dim+1, &naxis, naxes.data(), &status);
-        phyu_check(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
+        phypp_check(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
         status = 0;
         
         for (std::size_t i = 0; i < Dim; ++i) {
@@ -516,7 +516,7 @@ namespace fits {
 
             template<typename P>
             void operator () (reflex::member_t& m, P& v) {
-                phyu_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
+                phypp_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
                     "' reading '", m.full_name(), "'"
                 );
             }
@@ -537,11 +537,11 @@ namespace fits {
         int status = 0;
         
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         
         int ncol;
         fits_get_num_cols(fptr, &ncol, &status);
-        phyu_check((sizeof...(Args)+1)/2 <= std::size_t(ncol),
+        phypp_check((sizeof...(Args)+1)/2 <= std::size_t(ncol),
             "too few collumns in this FITS file ("+
             strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
         
@@ -572,11 +572,11 @@ namespace fits {
         int status = 0;
         
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         
         int ncol;
         fits_get_num_cols(fptr, &ncol, &status);
-        phyu_check(sizeof...(Args) <= std::size_t(ncol), "too few collumns in this FITS file ("+
+        phypp_check(sizeof...(Args) <= std::size_t(ncol), "too few collumns in this FITS file ("+
             strn(ncol)+" vs "+strn(sizeof...(Args))+")");
         
         read_table_(macroed_t(), fptr, names, std::forward<Args>(args)...);
@@ -590,7 +590,7 @@ namespace fits {
         int status = 0;
         
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         
         struct {
             fitsfile* fptr;
@@ -607,7 +607,7 @@ namespace fits {
 
             template<typename P>
             void operator () (reflex::member_t& m, P& v) {
-                phyu_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
+                phypp_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
                     "' reading '", m.full_name(), "'"
                 );
             }
@@ -624,7 +624,7 @@ namespace fits {
         int status = 0;
         
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         
         struct {
             fitsfile* fptr;
@@ -641,7 +641,7 @@ namespace fits {
 
             template<typename P>
             void operator () (reflex::member_t& m, P& v) {
-                phyu_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
+                phypp_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
                     "' reading '", m.full_name(), "'"
                 );
             }
@@ -749,7 +749,7 @@ namespace fits {
 
             template<typename P>
             void operator () (const reflex::member_t& m, const P& v) {
-                phyu_check(false, "write_table: cannot serialize type '", reflex::type_name_of(v), 
+                phypp_check(false, "write_table: cannot serialize type '", reflex::type_name_of(v), 
                     "' reading '", m.full_name(), "'"
                 );
             }
@@ -772,7 +772,7 @@ namespace fits {
         int status = 0;
         
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
         
@@ -803,7 +803,7 @@ namespace fits {
         int status = 0;
         
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
         
@@ -818,7 +818,7 @@ namespace fits {
         int status = 0;
         
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
-        phyu_check_cfitsio(status, "cannot open file '"+filename+"'");
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
         
         struct {
@@ -837,7 +837,7 @@ namespace fits {
 
             template<typename P>
             void operator () (const reflex::member_t& m, const P& v) {
-                phyu_check(false, "write_table: cannot serialize type '", reflex::type_name_of(v), 
+                phypp_check(false, "write_table: cannot serialize type '", reflex::type_name_of(v), 
                     "' writing '", m.full_name(), "'"
                 );
             }

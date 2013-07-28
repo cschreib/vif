@@ -360,9 +360,9 @@ namespace file {
     
     template<typename T, typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, vec_t<1,T>& v, Args& ... args) {
-        phyu_check(!fs.eof(), "cannot extract value from file, too few columns");
+        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
         if (!read_value_(fs, v[i])) {
-            phyu_check(false, "cannot extract value from file, wrong type for l."+strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
+            phypp_check(false, "cannot extract value from file, wrong type for l."+strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
         }
         read_table_(fs, i, j+1, args...);
     }
@@ -376,16 +376,16 @@ namespace file {
     
     template<typename T, typename ... VArgs>
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, vec_t<2,T>& v, VArgs&... args) {
-        phyu_check(!fs.eof(), "cannot extract value from file, too few columns");
+        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
         if (!read_value_(fs, v(k,i))) {
-            phyu_check(false, "cannot extract value from file, wrong type for l."+strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
+            phypp_check(false, "cannot extract value from file, wrong type for l."+strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
         }
         read_table_cols_(fs, i, j+1, k, args...);
     }
     
     template<typename ... VArgs>
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, placeholder_t, VArgs&... args) {
-        phyu_check(!fs.eof(), "cannot extract value from file, too few columns");
+        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
         std::string s;
         fs >> s;
         read_table_cols_(fs, i, j+1, k, args...);
@@ -408,7 +408,7 @@ namespace file {
     
     template<typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, placeholder_t, Args& ... args) {
-        phyu_check(!fs.eof(), "cannot extract value from file, too few columns");
+        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
         std::string s;
         fs >> s;
         read_table_(fs, i, j+1, args...);
@@ -416,7 +416,7 @@ namespace file {
     
     template<typename ... Args>
     void read_table(const std::string& name, std::size_t skip, Args&& ... args) {
-        phyu_check(file::exists(name), "cannot open file '"+name+"'");
+        phypp_check(file::exists(name), "cannot open file '"+name+"'");
         
         std::string line;
         
@@ -458,17 +458,17 @@ namespace file {
         }
     }
     
-    void write_table_phyu_check_size_(std::size_t n) {}
+    void write_table_phypp_check_size_(std::size_t n) {}
     
     template<typename Type, typename ... Args>
-    void write_table_phyu_check_size_(std::size_t& n, const vec_t<1,Type>& v, const Args& ... args) {
+    void write_table_phypp_check_size_(std::size_t& n, const vec_t<1,Type>& v, const Args& ... args) {
         if (n == 0) {
             n = v.size();
         }
         
         assert(v.size() == n);
         
-        write_table_phyu_check_size_(n, args...);
+        write_table_phypp_check_size_(n, args...);
     }
     
     void write_table_do_(std::ofstream& file, std::size_t cwidth, std::size_t i) {
@@ -489,7 +489,7 @@ namespace file {
     template<typename ... Args>
     void write_table(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0;
-        write_table_phyu_check_size_(n, args...);
+        write_table_phypp_check_size_(n, args...);
     
         std::ofstream file(filename);
         for (std::size_t i = 0; i < n; ++i) {

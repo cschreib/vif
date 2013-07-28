@@ -203,8 +203,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
     declare_keywords(_thread(1), _nth(1), _verbose(false), _self(false))) {
 
-    phyu_check(n_elements(ra1) == n_elements(dec1), "qxmatch: not as many RA as there are Dec");
-    phyu_check(n_elements(ra2) == n_elements(dec2), "qxmatch: not as many RA as there are Dec");
+    phypp_check(n_elements(ra1) == n_elements(dec1), "qxmatch: not as many RA as there are Dec");
+    phypp_check(n_elements(ra2) == n_elements(dec2), "qxmatch: not as many RA as there are Dec");
 
     const double d2r = 3.14159265359/180.0;
     auto dra1  = ra1*d2r;

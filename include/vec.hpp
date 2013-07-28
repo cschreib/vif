@@ -1243,7 +1243,7 @@ auto ix(Args&& ... args) {
 // Create a range from a pair of indices.
 template<typename T, typename U>
 vec1i rx(T i, U j) {
-    phyu_check(i >= 0 && j >= 0, "'rx' needs a positive or null values as arguments (got ", i, " and ", j, ")");
+    phypp_check(i >= 0 && j >= 0, "'rx' needs a positive or null values as arguments (got ", i, " and ", j, ")");
     
     if (i < T(j)) {
         int_t n = j-i+1;

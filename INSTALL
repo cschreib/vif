@@ -6,18 +6,18 @@ Pre-requisites
    'libclang' (ideally the same version as 'clang').
 
 
-To install the 'phyu' library
+To install the 'phy++' library
 =============================
 1) extract all the files in this directory to any suitable location
 2) add the 'bin' subdirectory to your $PATH
-3) define a PHYU_DIR environment variable holding the path to the installation directory
+3) define a PHYPP_DIR environment variable holding the path to the installation directory
 4) run 'make_refgen.sh'
 
 
 Veryfing installation
 =====================
 1) go to the 'test' subfolder
-2) type 'phyu unit_test'
+2) type 'phy++ unit_test'
 3) this should print a series of tests, eventually saying that all tests were passed. If this is 
    not the case, then either the library has not been properly installed, or your compiler is 
    either old or broken.

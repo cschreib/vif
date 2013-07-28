@@ -16,7 +16,7 @@ static const float  fpi = 3.14159265359;
 // Create a range.
 template<typename T>
 vec1i rgen(T n) {
-    phyu_check(n >= 0, "'rgen(n)' needs a positive or null value for 'n' (got ", n, ")");
+    phypp_check(n >= 0, "'rgen(n)' needs a positive or null value for 'n' (got ", n, ")");
     
     vec1i v = intarr(n);
     for (int_t k = 0; k < int_t(n); ++k) {
@@ -47,7 +47,7 @@ vec1i rgen(T i, U j) {
 
 template<typename T, typename U, typename V>
 vec1d rgen(T i, U j, V n) {
-    phyu_check(n >= 0, "'rgen(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
+    phypp_check(n >= 0, "'rgen(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
     
     if (n == 1) {
         vec1d v = dindgen(1);
@@ -67,7 +67,7 @@ vec1d rgen(T i, U j, V n) {
 
 template<typename T, typename U, typename V>
 vec1d rgen_log(T i, U j, V n) {
-    phyu_check(n >= 0, "'rgen_log(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
+    phypp_check(n >= 0, "'rgen_log(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
     
     if (n == 1) {
         vec1d v = dindgen(1);
@@ -835,9 +835,9 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,T
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
-    phyu_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phyu_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
-    phyu_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
+    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
 
     auto idok1 = where(finite(y) && finite(x));
     auto okx = x[idok1];
@@ -878,9 +878,9 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX>;
 
-    phyu_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phyu_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
-    phyu_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
+    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
 
     auto idok1 = where(finite(y) && finite(x));
     auto okx = x[idok1];
@@ -916,8 +916,8 @@ auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
-    phyu_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phyu_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
 
     int_t cnt = n_elements(nx);
     auto r = replicate(y[0]*dnan, cnt);
@@ -958,8 +958,8 @@ auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX>;
 
-    phyu_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phyu_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
 
     int_t low = lower_bound(nx, x);
     int_t up  = upper_bound(nx, x);
