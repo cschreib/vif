@@ -1,0 +1,23 @@
+Pre-requisites
+==============
+1) you must have a recent version of 'clang' installed (>= 3.3) to compile C++ code
+2) to be able to debug your programs, installing 'gdb' is recommended
+3) you must have the following libraries installed: 'cfitsio', 'CCfits', 'wcslib', 'lapack' and
+   'libclang' (ideally the same version as 'clang').
+
+
+To install the 'phyu' library
+=============================
+1) extract all the files in this directory to any suitable location
+2) add the 'bin' subdirectory to your $PATH
+3) define a PHYU_DIR environment variable holding the path to the installation directory
+4) run 'make_refgen.sh'
+
+
+Veryfing installation
+=====================
+1) go to the 'test' subfolder
+2) type 'phyu unit_test'
+3) this should print a series of tests, eventually saying that all tests were passed. If this is 
+   not the case, then either the library has not been properly installed, or your compiler is 
+   either old or broken.

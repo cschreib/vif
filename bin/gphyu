@@ -1,0 +1,61 @@
+#! /bin/bash
+
+if [ -f $1 ]; then
+    if [ $1 -ot $1.cpp ]; then
+        echo phyu: re-compiling \'$1\'...
+        RECOMPILE=1
+    else
+        RECOMPILE=0
+        for f in ${PHYU_PATH}*
+        do
+            if [ -f $f  ] && [ "$f" -nt $1 ]; then
+                echo $f is more recent than program, re-compiling \'$1\'...
+                RECOMPILE=1
+                break
+            fi
+        done
+        for f in ${PHYU_PATH}pro/lib/*
+        do
+            if [ -f $f  ] && [ "$f" -nt $1 ]; then
+                echo $f is more recent than program, re-compiling \'$1\'...
+                RECOMPILE=1
+                break
+            fi
+        done
+    fi
+else
+    echo phyu: compiling \'$1\'...
+    RECOMPILE=1
+fi
+
+if [ $RECOMPILE -eq 1 ]; then
+    clang-3.3 $1.cpp -emit-ast -I "$PHYU_PATH" -I "$PHYU_PATH/pro/lib" -DREFLECTION_STAGE \
+        -ferror-limit=5 -std=c++1y -o $1.ast -w
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+        echo phyu: program \'$1\' FAILED to compile
+        exit
+    fi
+    refgen $1
+    echo phyu: reflection data generated
+    rm $1.ast
+    clang-3.3 ._reflex_$1.cpp -g -ftemplate-depth=1024 -ferror-limit=5 \
+        -I "$PHYU_PATH" -I "$PHYU_PATH/pro/lib" \
+        -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -o $1 \
+        -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter \
+        -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
+        -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors
+
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+        echo phyu: program \'$1\' successfully compiled
+    else
+        echo phyu: program \'$1\' FAILED to compile
+        exit
+    fi
+fi
+
+a=./$1
+echo phyu: starting debugger...
+shift
+(echo "run " $@; cat) | gdb ./$a
