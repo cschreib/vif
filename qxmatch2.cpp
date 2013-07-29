@@ -2,7 +2,7 @@
 
 void print_help() {
     std::cout << "qxmatch2 v2.0\n";
-    std::cout << "  usage: qxmatch2 cats={file1,file2} output=ofile [options=...]\n\n";
+    std::cout << "  usage: qxmatch2 cats=[file1,file2] output=ofile (options=...)\n\n";
     
     std::cout << "  'file1' and 'file2' must be FITS files, expected to contain an extension with\n";
     std::cout << "  at least two vector columns named 'RA' and 'DEC', each containing a single row.\n";
