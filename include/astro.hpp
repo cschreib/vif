@@ -180,15 +180,21 @@ auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) {
 struct qxmatch_res {
     vec2i id;
     vec2d d;
+    vec2i rid;
+    vec2d rd;
+
+    // Reflection data
+    MEMBERS1(id, d, rid, rd);
+    MEMBERS2("qxmatch_res", MAKE_MEMBER(id), MAKE_MEMBER(d), MAKE_MEMBER(rid), MAKE_MEMBER(rd));
 };
 
 void qxmatch_save(const std::string& file, const qxmatch_res& r) {
-    fits::write_table(file, ftable(r.id, r.d));
+    fits::write_table(file, ftable(r.id, r.d, r.rid, r.rd));
 }
 
 qxmatch_res qxmatch_restore(const std::string& file) {
     qxmatch_res r;
-    fits::read_table(file, ftable(r.id, r.d));
+    fits::read_table(file, ftable(r.id, r.d, r.rid, r.rd));
     return r;
 }
 
@@ -219,10 +225,12 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     
     const int_t nth = get_keyword(_nth);
     const bool self = get_keyword(_self);
-    
+
     qxmatch_res res;
     res.id = intarr(nth, n1)-1;
     res.d  = dblarr(nth, n1)+dinf;
+    res.rid = intarr(nth, n2)-1;
+    res.rd  = dblarr(nth, n2)+dinf;
 
     auto work = [&] (int_t i, int_t j) {
         // For each pair of source, compute a distance indicator.
@@ -248,19 +256,29 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 --k;
             }
         }
+        if (sd < res.rd(nth-1,j)) {
+            res.rid(nth-1,j) = i;
+            res.rd(nth-1,j) = sd;
+            int_t k = nth-2;
+            while (k >= 0 && res.rd(k,j) > res.rd(k+1,j)) {
+                std::swap(res.rd(k,j), res.rd(k+1,j));
+                std::swap(res.rid(k,j), res.rid(k+1,j));
+                --k;
+            }
+        }
     };
     
     int_t nthread = get_keyword(_thread);
     if (nthread <= 1) {
         // When using a single thread, all the work is done in the main thread
-        auto start = now();
+        auto p = progress_start(n1);
         for (int_t i = 0; i < n1; ++i) {
             for (int_t j = 0; j < n2; ++j) {
                 if (self && i == j) continue;
                 work(i,j);
             }
             
-            if (get_keyword(_verbose)) print_progress(i, n1, start);
+            if (get_keyword(_verbose)) print_progress(p, i);
         }
     } else {
         // When using more than one thread, the work load is evenly separated between all the
@@ -294,10 +312,10 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         // Wait for the computation to finish
         // Here the main thread does nothing except sleeping, occasionally waking up every second to
         // update the progress bar if any.
-        auto start = now();
+        auto p = progress_start(n1);
         while (iter < n1) {
             thread::sleep_for(0.2);
-            if (get_keyword(_verbose)) print_progress(iter, n1, start);
+            if (get_keyword(_verbose)) print_progress(p, iter);
         }
 
         // By now, all threads should have ended their tasks.
@@ -319,30 +337,19 @@ struct id_pair {
 };
 
 id_pair xmatch_clean_best(const qxmatch_res& r) {
-    const uint_t ngal = dim(r.id)[1];
-    const uint_t nth  = dim(r.id)[0];
+    const int_t ngal = dim(r.id)[1];
     
     id_pair c;
     c.id1.data.reserve(ngal);
     c.id2.data.reserve(ngal);
     c.lost.data.reserve(ngal/6);
 
-    for (uint_t i = 0; i < ngal; ++i) {
-        auto bid = r.id(0,i);
-        auto bd  = r.d(0,i);
-        bool is_lost = false;
-        for (uint_t j = 0; j < ngal; ++j) {
-            if (r.id(0,j) == bid && r.d(0,j) < bd) {
-                is_lost = true;
-                break;
-            }
-        }
-
-        if (is_lost) {
-            c.lost.data.push_back(i);
-        } else {
+    for (int_t i = 0; i < ngal; ++i) {
+        if (r.rid[r.id[i]] == i) {
             c.id1.data.push_back(i);
-            c.id2.data.push_back(bid);
+            c.id2.data.push_back(r.id[i]);
+        } else {
+            c.lost.data.push_back(i);
         }
     }
 

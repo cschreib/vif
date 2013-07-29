@@ -19,11 +19,11 @@ std::string date_str(T t) {
     if (t < 1.0) {
         int mag = floor(log10(t));
         if (mag >= -3) {
-            return strn(round(t*1e3), 3)+"ms";
+            return strn(round(t*1e3))+"ms";
         } else if (mag >= -6) {
-            return strn(round(t*1e6), 3)+"us";
+            return strn(round(t*1e6))+"us";
         } else {
-            return strn(round(t*1e9), 3)+"ns";
+            return strn(round(t*1e9))+"ns";
         }
     } else {
         std::size_t day  = floor(t/(24*60*60));
@@ -46,48 +46,71 @@ std::string date_str(T t) {
 
 // Execute the provided code and return the time it took to execute [seconds]
 template<typename F>
-double profile(F func) {
+double profile(F&& func) {
     auto start = now();
     func();
     return now() - start;
 }
 
-template<typename T>
-void progress_(std::size_t i, std::size_t n, T start) {
-    double total = now() - start;
-    double remaining = total*double(n)/(i+1) - total;
+struct progress_t {
+    double start;
+    std::size_t i = 0;
+    std::size_t n;
+    std::size_t max_length = 0;
+};
 
-    const std::size_t ndash = 50;
-    std::cout << "\r[" << std::string(floor(ndash*(i+1)/double(n)),'-')
-        << std::string(ndash - floor(ndash*(i+1)/double(n)),' ') << "]";
-    std::cout << " " << strn((i+1), floor(log10(double(n))) + 1);
-    std::cout << " " << strn(std::size_t(floor(100.0*(i+1)/double(n))), 3)
-        << "%, " << date_str(total) << " elapsed, " << date_str(remaining) << " left" << std::flush;
+// Begin timing an iterative process of 'n' iterations
+progress_t progress_start(std::size_t n) {
+    progress_t r;
+    r.start = now();
+    r.n = n;
+    return r;
 }
 
-// Display/updates a progress bar, for 'i' iterations among 'n', where the computation
-// started at time 'start' [seconds].
-template<typename I, typename T>
-void progress(I& i, std::size_t n, T start) {
-    progress_(i, n, start);
+void progress_(progress_t& p) {
+    double total = now() - p.start;
+    double remaining = total*double(p.n)/(p.i+1) - total;
 
-    ++i;
+    const std::size_t ndash = 50;
+    std::string msg;
+    // Progress bar
+    msg += "["+std::string(floor(ndash*(p.i+1)/double(p.n)),'-')
+        + std::string(ndash - floor(ndash*(p.i+1)/double(p.n)),' ')+"] ";
+    // Iteration count
+    msg += strn((p.i+1), floor(log10(double(p.n))) + 1, ' ')+" ";
+    // Percentage
+    msg += strn(std::size_t(floor(100.0*(p.i+1)/double(p.n))), 3, ' ')+"%, ";
+    // Timings
+    msg += date_str(total)+" elapsed, "+date_str(remaining)+" left, "
+        + date_str(total+remaining)+" total";
+    // Fill with spaces
+    p.max_length = std::max(p.max_length, msg.size());
+    msg += std::string(p.max_length - msg.size(), ' ');
 
-    if (std::size_t(i) >= n) {
+    std::cout << "\r" << msg << std::flush;
+}
+
+// Updates a progress bar for an iterative process ('p' is created from 'progress_start')
+void progress(progress_t& p) {
+    progress_(p);
+
+    ++p.i;
+
+    if (p.i >= p.n) {
         std::cout << std::endl;
     }
 }
 
-// Display/updates a progress bar, for 'i' iterations among 'n', where the computation
-// started at time 'start' [seconds].
-template<typename I, typename T>
-void print_progress(const I& ti, std::size_t n, T start) {
-    std::size_t i = ti;
-    if (i >= n) i = n-1;
+// Updates a progress bar for an iterative process ('p' is created from 'progress_start')
+// 'i' is the current iteration number.
+template<typename I>
+void print_progress(progress_t& p, const I& ti) {
+    p.i = ti;
+    if (p.i >= p.n) p.i = p.n-1;
 
-    progress_(i, n, start);
+    progress_(p);
 
-    if (i == n-1) {
+    if (p.i == p.n-1) {
         std::cout << std::endl;
     }
 }
