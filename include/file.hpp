@@ -242,8 +242,8 @@ namespace file {
         return (::mkdir(path.c_str(), 0775) == 0) || (errno == EEXIST);
     }
     
-    template<typename U, typename ... Args>
-    auto columns(U n, Args& ... args) -> decltype(std::tuple_cat(std::make_tuple(n), std::tie(args...))) {
+    template<typename ... Args>
+    auto columns(std::size_t n, Args& ... args) -> decltype(std::tuple_cat(std::make_tuple(n), std::tie(args...))) {
         return std::tuple_cat(std::make_tuple(n), std::tie(args...));
     }
     
