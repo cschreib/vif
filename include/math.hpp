@@ -263,7 +263,7 @@ typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, con
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec_t<Dim,Type>& v) {
-    vec_t<1,int_t> ok = where(finite(v));
+    vec1i ok = where(finite(v));
     if (n_elements(ok) == 0) return 0;
     
     typename vec_t<1,Type>::effective_type t = v[ok];
@@ -273,12 +273,32 @@ rtype_t<Type> min(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> max(const vec_t<Dim,Type>& v) {
-    vec_t<1,int_t> ok = where(finite(v));
+    vec1i ok = where(finite(v));
     if (n_elements(ok) == 0) return 0;
     
     typename vec_t<1,Type>::effective_type t = v[ok];
     std::nth_element(t.begin(), t.end()-1, t.end());
     return *(t.end()-1);
+}
+
+template<std::size_t Dim, typename Type1, typename Type2>
+vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
+    phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions");
+    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+    for (uint_t i = 0; i < v1.size(); ++i) {
+        r[i] = std::min(v1[i], v2[i]);
+    }
+    return r;
+}
+
+template<std::size_t Dim, typename Type1, typename Type2>
+vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
+    phypp_check(v1.dims == v2.dims, "max: incompatible vector dimensions");
+    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+    for (uint_t i = 0; i < v1.size(); ++i) {
+        r[i] = std::max(v1[i], v2[i]);
+    }
+    return r;
 }
 
 template<std::size_t Dim, typename T>
