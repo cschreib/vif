@@ -11,6 +11,15 @@ double now() {
     ).count()*1e-6;
 }
 
+// Return the current date [yymmdd]
+std::string today() {
+    std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm tm = *std::localtime(&t);
+    std::ostringstream ss;
+    ss << strn(tm.tm_year+1900,4) << strn(tm.tm_mon+1, 2) << strn(tm.tm_mday,2);
+    return ss.str();
+}
+
 // Converts an ammount of time [seconds] to a formatted string hh:mm:ss
 template<typename T>
 std::string date_str(T t) {
