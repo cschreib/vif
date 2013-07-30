@@ -18,6 +18,8 @@ namespace fits {
     
     template<>
     struct traits<std::string> {
+        using dtype = char;
+
         static const char tform = 'S';
         static const int ttype = TBYTE;
         static const fits::ValueType type = fits::Tstring;
@@ -29,6 +31,8 @@ namespace fits {
     
     template<>
     struct traits<bool> {
+        using dtype = char;
+
         static const char tform = 'S';
         static const int ttype = TSBYTE;
         static const fits::ValueType type = (fits::ValueType)TSBYTE;
@@ -41,6 +45,8 @@ namespace fits {
     
     template<>
     struct traits<char> {
+        using dtype = char;
+
         static const char tform = 'S';
         static const int ttype = TSBYTE;
         static const fits::ValueType type = (fits::ValueType)TSBYTE;
@@ -53,6 +59,8 @@ namespace fits {
     
     template<>
     struct traits<uint_t> {
+        using dtype = uint_t;
+
         static const char tform = 'V';
         static const int ttype = TULONG;
         static const fits::ValueType type = fits::Tulong;
@@ -64,6 +72,8 @@ namespace fits {
     
     template<>
     struct traits<int_t> {
+        using dtype = int_t;
+
         static const char tform = 'J';
         static const int ttype = TLONG;
         static const fits::ValueType type = fits::Tlong;
@@ -75,6 +85,8 @@ namespace fits {
     
     template<>
     struct traits<float> {
+        using dtype = float;
+
         static const char tform = 'E';
         static const int ttype = TFLOAT;
         static const fits::ValueType type = fits::Tfloat;
@@ -86,6 +98,8 @@ namespace fits {
     
     template<>
     struct traits<double> {
+        using dtype = double;
+
         static const char tform = 'D';
         static const int ttype = TDOUBLE;
         static const fits::ValueType type = fits::Tdouble;
@@ -449,6 +463,32 @@ namespace fits {
         );
     }
     
+    template<typename Type>
+    void read_table_impl_(fitsfile* fptr, const std::string& colname, Type& v, bool loose = false) {
+        int id, status = 0;
+        fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
+        if (loose) {
+            if (status != 0) return;
+        } else {
+            phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
+        }
+            
+        int type, naxis;
+        long repeat, width;
+        std::array<long,1> naxes;
+        fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
+        fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
+        phypp_check(naxis == 1, "wrong dimension for column '"+colname+"'");
+        status = 0;
+
+        Type def = traits<Type>::def();
+        int null;
+        fits_read_col(
+            fptr, traits<Type>::ttype, id, 1, 1, repeat, &def,
+            reinterpret_cast<typename traits<Type>::dtype*>(&v), &null, &status
+        );
+    }
+    
     template<std::size_t Dim>
     void read_table_impl_(fitsfile* fptr, const std::string& colname,
         vec_t<Dim,std::string>& v, bool loose = false) {
@@ -494,6 +534,39 @@ namespace fits {
 
         delete buffer;
     }
+    
+    void read_table_impl_(fitsfile* fptr, const std::string& colname,
+        std::string& v, bool loose = false) {
+
+        int id, status = 0;
+        fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
+        if (loose) {
+            if (status != 0) return;
+        } else {
+            phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
+        }
+            
+        int type, naxis;
+        long repeat, width;
+        std::array<long,1> naxes;
+        fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
+        fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
+        phypp_check(naxis == 1, "wrong dimension for column '"+colname+"'");
+        status = 0;
+
+        char* buffer = new char[naxes[0]+1];
+        char def = '\0';
+        int null;
+        fits_read_col(
+            fptr, traits<std::string>::ttype, id, 1, 1, naxes[0], &def,
+            buffer, &null, &status
+        );
+
+        buffer[naxes[0]] = '\0';
+        v = buffer;
+
+        delete buffer;
+    }
 
     template<typename T>
     void read_table_impl_(fitsfile* fptr, const std::string& colname,
@@ -525,8 +598,8 @@ namespace fits {
         reflex::foreach_member(data, do_read);
     }
     
-    template<std::size_t Dim, typename Type, typename ... Args>
-    void read_table_(fitsfile* fptr, const std::string& name, vec_t<Dim,Type>& v, Args&& ... args) {
+    template<typename T, typename ... Args>
+    void read_table_(fitsfile* fptr, const std::string& name, T& v, Args&& ... args) {
         read_table_impl_(fptr, name, v);
         read_table_(fptr, std::forward<Args>(args)...);
     }
@@ -552,10 +625,8 @@ namespace fits {
     
     void read_table_(macroed_t, fitsfile* fptr, const std::string& names) {}
     
-    template<std::size_t Dim, typename Type, typename ... Args>
-    void read_table_(macroed_t, fitsfile* fptr, const std::string& names,
-        vec_t<Dim,Type>& v, Args&& ... args) {
-
+    template<typename T, typename ... Args>
+    void read_table_(macroed_t, fitsfile* fptr, const std::string& names, T& v, Args&& ... args) {
         std::size_t pos = names.find_first_of(',');
         read_table_impl_(fptr, bake_macroed_name(names.substr(0, pos)), v);
 
@@ -679,6 +750,20 @@ namespace fits {
         ++id;
     }
     
+    template<typename Type>
+    void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname, const Type& v) {
+        std::string tform = std::string(1, traits<Type>::tform);
+        int status = 0;
+        fits_insert_col(
+            fptr, id, const_cast<char*>(colname.c_str()), const_cast<char*>(tform.c_str()), &status
+        );
+        
+        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, 1, 
+            const_cast<typename traits<Type>::dtype*>(&v), &status);
+
+        ++id;
+    }
+    
     template<std::size_t Dim>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname, 
         const vec_t<Dim,std::string>& v) {
@@ -719,11 +804,28 @@ namespace fits {
         }
 
         fits_write_col(
-            fptr, traits<std::string>::ttype, id, 1, 1, nmax*n_elements(v),
-            buffer, &status
+            fptr, traits<std::string>::ttype, id, 1, 1, nmax*n_elements(v), buffer, &status
         );
 
         delete buffer;
+
+        ++id;
+    }
+    
+    void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
+        const std::string& v) {
+
+        std::string tform = strn(v.size())+traits<std::string>::tform;
+        int status = 0;
+        fits_insert_col(
+            fptr, id, const_cast<char*>(colname.c_str()), const_cast<char*>(tform.c_str()), &status
+        );
+
+        long dims = v.size();
+        fits_write_tdim(fptr, id, 1, &dims, &status);
+        
+        fits_write_col(fptr, traits<std::string>::ttype, id, 1, 1, dims, 
+            const_cast<char*>(v.c_str()), &status);
 
         ++id;
     }
@@ -737,31 +839,17 @@ namespace fits {
             int id;
             std::string base;
 
-            template<std::size_t Dim, typename Type>
-            void operator () (const reflex::member_t& m, const vec_t<Dim,Type>& v) {
-                write_table_impl_(this->fptr, this->id, this->base+toupper(m.name), v);
-            }
-
-            template<typename P>
-            void operator () (const reflex::member_t& m, const reflex::struct_t<P>& v) {
-                write_table_impl_(this->fptr, this->id, this->base+toupper(m.name), v);
-            }
-
             template<typename P>
             void operator () (const reflex::member_t& m, const P& v) {
-                phypp_check(false, "write_table: cannot serialize type '", reflex::type_name_of(v), 
-                    "' reading '", m.full_name(), "'"
-                );
+                write_table_impl_(this->fptr, this->id, this->base+toupper(m.name), v);
             }
         } do_write{fptr, id, colname+"."};
 
         reflex::foreach_member(data, do_write);
     }
 
-    template<std::size_t Dim, typename Type, typename ... Args>
-    void write_table_(fitsfile* fptr, int id, const std::string& name,
-        const vec_t<Dim,Type>& v, Args&& ... args) {
-
+    template<typename T, typename ... Args>
+    void write_table_(fitsfile* fptr, int id, const std::string& name, const T& v, Args&& ... args) {
         write_table_impl_(fptr, id, name, v);
         write_table_(fptr, id, std::forward<Args>(args)...);
     }
@@ -783,9 +871,9 @@ namespace fits {
     
     void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names) {}
     
-    template<std::size_t Dim, typename Type, typename ... Args>
+    template<typename T, typename ... Args>
     void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names,
-        const vec_t<Dim,Type>& v, Args&& ... args) {
+        const T& v, Args&& ... args) {
 
         std::size_t pos = names.find_first_of(',');
         write_table_impl_(fptr, id, bake_macroed_name(names.substr(0, pos)), v);
@@ -825,21 +913,9 @@ namespace fits {
             fitsfile* fptr;
             int id = 1;
 
-            template<std::size_t Dim, typename Type>
-            void operator () (const reflex::member_t& m, const vec_t<Dim,Type>& v) {
-                write_table_impl_(this->fptr, this->id, toupper(m.name), v);
-            }
-
-            template<typename P>
-            void operator () (const reflex::member_t& m, const reflex::struct_t<P>& v) {
-                write_table_impl_(this->fptr, this->id, toupper(m.name), v);
-            }
-
             template<typename P>
             void operator () (const reflex::member_t& m, const P& v) {
-                phypp_check(false, "write_table: cannot serialize type '", reflex::type_name_of(v), 
-                    "' writing '", m.full_name(), "'"
-                );
+                write_table_impl_(this->fptr, this->id, toupper(m.name), v);
             }
         } do_write{fptr};
 

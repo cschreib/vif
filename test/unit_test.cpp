@@ -224,6 +224,20 @@ int main(int argc, char* argv[]) {
         fits::read_table("out/stable.fits", ftable(str));
         check(where(str != ostr).empty(), "1");
     }
+
+    {
+        // FITS table with non vector elements
+        int_t i = 5;
+        float f = 0.2f;
+        std::string s = "toto";
+        fits::write_table("out/fits_single.fits", ftable(i, f, s));
+
+        i = 0; f = 0; s = "";
+        fits::read_table("out/fits_single.fits", ftable(i, f, s));
+        check(i, "5");
+        check(f, "0.2");
+        check(s, "toto");
+    }
     
     {
         // 'match' function
