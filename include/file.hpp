@@ -297,12 +297,20 @@ namespace file {
     }
     
     template<typename I, typename T>
-    bool read_value_(I& in, T& v) {
-        return in >> v;
+    bool read_value_(I& in, T& v, std::string& fallback) {
+        auto pos = in.tellg();
+        if (!(in >> v)) {
+            in.clear();
+            in.seekg(pos);
+            in >> fallback;
+            return false;
+        }
+
+        return true;
     }
 
     template<typename I>
-    bool read_value_(I& in, double& v) {
+    bool read_value_(I& in, double& v, std::string& fallback) {
         // std::istream will fail to extract a float/double value where the string is 'INF' or 'NAN'
         auto pos = in.tellg();
         if (!(in >> v)) {
@@ -321,6 +329,8 @@ namespace file {
                 v = -dinf;
                 return true;
             }
+
+            fallback = s;
             return false;
         }
 
@@ -328,7 +338,7 @@ namespace file {
     }
 
     template<typename I>
-    bool read_value_(I& in, float& v) {
+    bool read_value_(I& in, float& v, std::string& fallback) {
         // std::istream will fail to excract a float value if the exponent is too large
         // To fix this, we first try with float, and on failure, try again with double.
         // If exctraction is successful, then we just assign the double to the float, making it
@@ -338,7 +348,7 @@ namespace file {
             in.clear();
             in.seekg(pos);
             double d;
-            if (!read_value_(in, d)) {
+            if (!read_value_(in, d, fallback)) {
                 return false;
             } else {
                 v = d;
@@ -349,55 +359,60 @@ namespace file {
         return true;
     }
 
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j) {}
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
     
     template<typename T, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, vec_t<1,T>& v, Args& ... args);
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec_t<1,T>& v, Args& ... args);
     template<typename U, typename ... VArgs, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, std::tuple<U,VArgs&...> v, Args& ... args);
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
     template<typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, placeholder_t, Args& ... args);
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args);
     
     template<typename T, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, vec_t<1,T>& v, Args& ... args) {
-        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
-        if (!read_value_(fs, v[i])) {
-            phypp_check(false, "cannot extract value from file, wrong type for l."+strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec_t<1,T>& v, Args& ... args) {
+        std::string fb;
+        if (!read_value_(fs, v[i], fb)) {
+            phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
+            phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
+                strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
         }
-        read_table_(fs, i, j+1, args...);
+        read_table_(fs, i, ++j, args...);
     }
     
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k) {}
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
     
     template<typename T, typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, vec_t<2,T>& v, VArgs&... args);
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec_t<2,T>& v, VArgs&... args);
     template<typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, placeholder_t, VArgs&... args);
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args);
     
     template<typename T, typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, vec_t<2,T>& v, VArgs&... args) {
-        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
-        if (!read_value_(fs, v(k,i))) {
-            phypp_check(false, "cannot extract value from file, wrong type for l."+strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec_t<2,T>& v, VArgs&... args) {
+        std::string fb;
+        if (!read_value_(fs, v(k,i), fb)) {
+            phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
+            phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
+                strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
         }
-        read_table_cols_(fs, i, j+1, k, args...);
+        read_table_cols_(fs, i, ++j, k, args...);
     }
     
     template<typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, placeholder_t, VArgs&... args) {
-        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
         std::string s;
-        fs >> s;
-        read_table_cols_(fs, i, j+1, k, args...);
+        if (!(fs >> s)) {
+            phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
+        }
+        read_table_cols_(fs, i, ++j, k, args...);
     }
 
     template<typename U, typename ... VArgs, std::size_t ... S>
-    void read_table_cols_i_(std::istringstream& fs, std::size_t i, std::size_t j, std::size_t k, std::tuple<U,VArgs&...>& v, seq_t<S...>) {
+    void read_table_cols_i_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, std::tuple<U,VArgs&...>& v, seq_t<S...>) {
         read_table_cols_(fs, i, j, k, std::get<S>(v)...);
     }
     
     template<typename U, typename ... VArgs, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, std::tuple<U,VArgs&...> v, Args& ... args) {
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args) {
         std::size_t n = std::get<0>(v);
         for (std::size_t k = 0; k < n; ++k) {
             read_table_cols_i_(fs, i, j, k, v, typename gen_seq<1, sizeof...(VArgs)>::type());
@@ -407,11 +422,11 @@ namespace file {
     }
     
     template<typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t j, placeholder_t, Args& ... args) {
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
         phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
         std::string s;
         fs >> s;
-        read_table_(fs, i, j+1, args...);
+        read_table_(fs, i, ++j, args...);
     }
     
     template<typename ... Args>
@@ -454,7 +469,8 @@ namespace file {
             } while (line.find_first_not_of(" \t") == line.npos);
 
             std::istringstream fs(line);
-            read_table_(fs, i, 0, args...);
+            std::size_t j = 0;
+            read_table_(fs, i, j, args...);
         }
     }
     
