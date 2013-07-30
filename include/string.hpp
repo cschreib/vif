@@ -207,5 +207,46 @@ vec1s split(const std::string& ts, const T& pattern) {
     return ret;
 }
 
+vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", bool ellipse = false) {
+    vec1s ret;
+    std::string s = ts;
+    uint_t twidth = width;
+    std::string header = "";
+    while (s.size() > twidth) {
+        int_t i = twidth;
+        while (i >= 0 && s[i] != ' ') --i;
+        if (i < 0) {
+            if (ellipse) {
+                ret.data.push_back(header+s.substr(0, twidth-3)+"...");
+                i = twidth+1;
+                while (i < int_t(s.size()) && s[i] != ' ') ++i;
+                s.erase(0, i);
+                s = trim(s);
+            } else {
+                i = twidth+1;
+                while (i < int_t(s.size()) && s[i] != ' ') ++i;
+                ret.data.push_back(header+s.substr(0, i));
+                s.erase(0, i);
+                s = trim(s);
+            }
+        } else {
+            ret.data.push_back(header+s.substr(0, i));
+            s.erase(0, i);
+            s = trim(s);
+        }
+
+        twidth = width - indent.size();
+        header = indent;
+    }
+
+    if (!s.empty()) {
+        ret.data.push_back(header+s);
+    }
+
+    ret.dims[0] = ret.data.size();
+
+    return ret;
+}
+
 #endif
 
