@@ -6,6 +6,7 @@
 #include <print.hpp>
 #include <image.hpp>
 #include <thread.hpp>
+#include <map>
 
 struct psffit_result {
     double bg;
@@ -441,6 +442,132 @@ struct xmatch_merge_to {
         t[id.id1] = u[id.id2];
     }
 };
+
+struct comment_pool_t {
+    std::map<std::string, std::string> var_pool;
+    std::vector<std::string> com_list;
+};
+
+comment_pool_t create_comment_pool() {
+    return comment_pool_t();
+}
+
+void add_comment(comment_pool_t& pool, const std::string& com) {
+    pool.com_list.push_back(com);
+}
+
+void add_comment(comment_pool_t& pool, const std::string& var, const std::string& com) {
+    pool.var_pool.insert(std::make_pair(var, com));
+}
+
+std::string build_comments(const comment_pool_t& pool, uint_t width = 80) {
+    std::string str;
+
+    auto add_cmt = [&str, width] (const std::string& c, const std::string& tab = "") {
+        vec1s spl = wrap(c, width, tab);
+        for (uint_t i = 0; i < spl.size(); ++i) {
+            str += spl[i] + '\n';
+        }
+    };
+
+    for (auto& s : pool.com_list) {
+        add_cmt(s);
+    }
+
+    vec1s tree;
+    for (auto& p : pool.var_pool) {
+        vec1s ltree = trim(split(p.first, "."));
+        uint_t nmax = std::min(tree.size(), ltree.size());
+        uint_t icom;
+        std::string tab = "";
+        for (icom = 0; icom < nmax; ++icom) {
+            if (tree[icom] != ltree[icom]) break;
+            if (icom % 2 == 0) {
+                tab += "| ";
+            } else {
+                tab += ": ";
+            }
+        }
+
+        uint_t i;
+        for (i = icom; i < ltree.size()-1; ++i) {
+            str += tab+ltree[i]+'\n';
+            if (i % 2 == 0) {
+                tab += "| ";
+            } else {
+                tab += ": ";
+            }
+        }
+
+        std::string header = ltree[i]+": ";
+        add_cmt(tab+header+p.second, tab+std::string(header.size(), ' '));
+
+        tree = ltree;
+    }
+
+    return str;
+}
+
+struct catalog_t {
+    std::string name;
+    vec1s       sources;
+    vec1s       files;
+    std::string comment;
+    std::string ref;
+};
+
+using catalog_pool_t = std::list<catalog_t>;
+
+catalog_pool_t create_catalog_pool() {
+    return catalog_pool_t();
+}
+
+catalog_t& add_catalog(catalog_pool_t& pool, const std::string& name, const vec1s& sources, 
+    const vec1s& files, const std::string& comment = "") {
+
+    std::string ref = "["+strn(pool.size()+1)+"]";
+    pool.push_back({name, sources, files, comment, ref});
+    return pool.back();
+}
+
+std::string build_catalog_list(const catalog_pool_t& pool, uint_t width = 80) {
+    std::string str;
+
+    for (auto& c : pool) {
+        str += c.ref+": "+c.name+"\n";
+        if (!c.sources.empty()) {
+            if (c.sources.size() == 1) {
+                str += "  source: "+c.sources[0]+"\n";
+            } else {
+                std::string header = "  sources: ";
+                str += header+c.sources[0]+"\n";
+                for (uint_t i = 1; i < c.sources.size(); ++i) {
+                    str += std::string(header.size(), ' ')+c.sources[i]+"\n";
+                }
+            }
+        }
+        if (!c.files.empty()) {
+            if (c.files.size() == 1) {
+                str += "  file: "+c.files[0]+"\n";
+            } else {
+                std::string header = "  files: ";
+                str += header+c.files[0]+"\n";
+                for (uint_t i = 1; i < c.files.size(); ++i) {
+                    str += std::string(header.size(), ' ')+c.files[i]+"\n";
+                }
+            }
+        }
+        if (!c.comment.empty()) {
+            vec1s spl = wrap("  comment: "+c.comment, width, std::string(4, ' '));
+            for (uint_t i = 0; i < spl.size(); ++i) {
+                str += spl[i] + '\n';
+            }
+        }
+        str += "\n";
+    }
+
+    return str;
+}
 
 #endif
 
