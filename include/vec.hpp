@@ -416,6 +416,25 @@ struct vec_t {
         data[0] = t;
     }
     
+    template<std::size_t N,
+        typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
+    vec_t(const char t[N]) {
+        for (std::size_t i = 0; i < Dim; ++i) {
+            dims[i] = 1;
+        }
+        resize();
+        data[0] = t;
+    }
+    
+    template<typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
+    vec_t(const char* t) {
+        for (std::size_t i = 0; i < Dim; ++i) {
+            dims[i] = 1;
+        }
+        resize();
+        data[0] = t;
+    }
+    
     vec_t(typename ilist_t<Dim, Type>::type t) {
         ilist_t<Dim, Type>::fill(*this, t);
     }
