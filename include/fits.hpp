@@ -666,21 +666,9 @@ namespace fits {
         struct {
             fitsfile* fptr;
 
-            template<std::size_t Dim, typename Type>
-            void operator () (reflex::member_t& m, vec_t<Dim,Type>& v) {
-                read_table_impl_(this->fptr, toupper(m.name), v);
-            }
-
-            template<typename P>
-            void operator () (reflex::member_t& m, reflex::struct_t<P> v) {
-                read_table_impl_(this->fptr, toupper(m.name), v);
-            }
-
             template<typename P>
             void operator () (reflex::member_t& m, P& v) {
-                phypp_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
-                    "' reading '", m.full_name(), "'"
-                );
+                read_table_impl_(this->fptr, toupper(m.name), v, true);
             }
         } do_read{fptr};
 
@@ -700,21 +688,9 @@ namespace fits {
         struct {
             fitsfile* fptr;
 
-            template<std::size_t Dim, typename Type>
-            void operator () (reflex::member_t& m, vec_t<Dim,Type>& v) {
-                read_table_impl_(this->fptr, toupper(m.name), v, true);
-            }
-
-            template<typename P>
-            void operator () (reflex::member_t& m, reflex::struct_t<P> v) {
-                read_table_impl_(this->fptr, toupper(m.name), v, true);
-            }
-
             template<typename P>
             void operator () (reflex::member_t& m, P& v) {
-                phypp_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
-                    "' reading '", m.full_name(), "'"
-                );
+                read_table_impl_(this->fptr, toupper(m.name), v, true);
             }
         } do_read{fptr};
 
