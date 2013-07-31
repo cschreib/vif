@@ -1169,4 +1169,47 @@ auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>:
     return buffer.back();
 }
 
+// Build the convex hull of a set of points, returning the indices of the points that form the hull
+// in counter-clockwise order.
+// Uses the monotone chain algorithm, taken from:
+// http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#C.2B.2B
+template<typename TX, typename TY>
+vec1i convex_hull(const TX& x, const TY& y) {
+    phypp_check(n_elements(x) == n_elements(y),
+        "convex_hull requires same number of elements in 'x' and 'y'");
+
+    uint_t npt = n_elements(x);
+    vec1i res = intarr(2*npt);
+    vec1i ids = indgen(npt);
+    std::sort(ids.data.begin(), ids.data.end(), [&](int_t i, int_t j) {
+        if (x[i] < x[j]) return true;
+        if (x[i] > x[j]) return false;
+        if (y[i] < y[j]) return true;
+        return false;
+    });
+
+    auto cross = [&](int_t i, int_t j, int_t k) {
+        return (x[j] - x[i])*(y[k] - y[i]) - (y[j] - y[i])*(x[k] - x[i]);
+    };
+
+    uint_t k = 0;
+    for (uint_t i = 0; i < npt; ++i) {
+        while (k >= 2 && cross(res[k-2], res[k-1], ids[i]) <= 0) --k;
+        res[k] = ids[i];
+        ++k;
+    }
+
+    uint_t t = k+1;
+    for (int_t i = npt-2; i >= 0; --i) {
+        while (k >= t && cross(res[k-2], res[k-1], ids[i]) <= 0) --k;
+        res[k] = ids[i];
+        ++k;
+    }
+
+    res.data.resize(k);
+    res.dims[0] = k;
+
+    return res;
+}
+
 #endif
