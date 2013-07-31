@@ -729,7 +729,7 @@ int main(int argc, char* argv[]) {
         cat.hull = convex_hull(cat.ra, cat.dec);
         fits::write_table("out/hull.fits", cat);
 
-        print(field_area(cat.ra, cat.dec));
+        print(field_area(cat));
     }
     
     print("\nall tests passed!\n");

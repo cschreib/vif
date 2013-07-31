@@ -589,7 +589,7 @@ std::string build_catalog_list(const catalog_pool_t& pool, uint_t width = 80) {
     return str;
 }
 
-// Compute the area covered by field given a set of source coordinates [deg^2].
+// Compute the area covered by a field given a set of source coordinates [deg^2].
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
 auto field_area(const TX& ra, const TY& dec) {
@@ -614,29 +614,11 @@ auto field_area(const TX& ra, const TY& dec) {
     return area;
 }
 
-// Compute the area covered by field given a set of source coordinates [deg^2].
+// Compute the area covered by a field given a set of source coordinates [deg^2].
 // Coordinates are assumed to be given in degrees.
 template<typename T>
 auto field_area(const T& t) {
-    vec1i hull = convex_hull(t.ra, t.dec);
-
-    decltype(1.0*t.ra[0]*t.dec[0]) area = 0;
-
-    auto d2r = dpi/180.0;
-    decltype(t.ra)  hx = t.ra[hull]*d2r;
-    decltype(t.dec) hy = t.dec[hull]*d2r;
-    uint_t nh = hull.size();
-    for (uint_t i = 2; i < nh; ++i) {
-        double e1 = angdist(hx[0],   hy[0],   hx[i-1], hy[i-1]);
-        double e2 = angdist(hx[i-1], hy[i-1], hx[i],   hy[i]);
-        double e3 = angdist(hx[i],   hy[i],   hx[0],   hy[0]);
-        double p = 0.5*(e1 + e2 + e3);
-        area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
-    }
-
-    area /= d2r*d2r;
-
-    return area;
+    return field_area(t.ra, t.dec);
 }
 
 #endif
