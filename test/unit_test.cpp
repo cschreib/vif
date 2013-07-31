@@ -317,6 +317,17 @@ int main(int argc, char* argv[]) {
         check(fabs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
         check(percentiles(r, 0.158, 0.842) == pi, "1, 1");
     }
+
+    {
+        // 'shuffle' function
+        uint_t seed = 42;
+        vec1i i = {4,5,-8,5,2,0};
+        vec1i si = shuffle(i, seed);
+        vec1i id1, id2;
+        match(i, si, id1, id2);
+        check(i.size() == id1.size(), "1");
+        check(si.size() == id2.size(), "1");
+    }
     
     {
         // 'mean' and 'median' for 2-d array
