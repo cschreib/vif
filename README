@@ -41,7 +41,7 @@ Using the 'phypp' library
         return 0;
     }
 
- - invoque the phy++ compiler from the directory where the source code is located: phy++ foobar
+ - invoke the phy++ compiler from the directory where the source code is located: phy++ foobar
  - the program will compile and run automatically (if no compiler error occured)
 
 
