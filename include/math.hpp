@@ -106,7 +106,7 @@ vec_t<sizeof...(Args),double> randomn(T& seed, Args&& ... args) {
     
     std::mt19937 generator(seed);
     std::normal_distribution<double> distribution(0.0, 1.0);
-    for (std::size_t i = 0; i < v.size(); ++i) {
+    for (uint_t i = 0; i < v.size(); ++i) {
         v.data[i] = distribution(generator);
     }
     
@@ -121,7 +121,7 @@ vec_t<sizeof...(Args),double> randomu(T& seed, Args&& ... args) {
     
     std::mt19937 generator(seed);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    for (std::size_t i = 0; i < v.size(); ++i) {
+    for (uint_t i = 0; i < v.size(); ++i) {
         v.data[i] = distribution(generator);
     }
     
@@ -236,10 +236,10 @@ rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
 }
 
 template<std::size_t Dim, typename Type>
-void percentiles_(vec_t<1,Type>& r, std::size_t i, vec_t<Dim,Type>& t) {}
+void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t) {}
 
 template<std::size_t Dim, typename Type, typename U, typename ... Args>
-void percentiles_(vec_t<1,Type>& r, std::size_t i, vec_t<Dim,Type>& t, const U& u, const Args& ... args) {
+void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, const Args& ... args) {
     std::ptrdiff_t offset = t.size()*u;
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     r.data[i] = *(t.begin() + offset);
@@ -511,7 +511,7 @@ auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     decltype(v(_,0)) d(get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
-    for (std::size_t i = 0; i < v.dims[0]; ++i) {
+    for (uint_t i = 0; i < v.dims[0]; ++i) {
         d.data[i] = &v(i,i);
     }
     
@@ -524,7 +524,7 @@ auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     decltype(v(_,0)) d(get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
-    for (std::size_t i = 0; i < v.dims[0]; ++i) {
+    for (uint_t i = 0; i < v.dims[0]; ++i) {
         d.data[i] = &v(i,i);
     }
     
@@ -800,9 +800,11 @@ struct affinefit_result {
     double slope_err, offset_err;
 };
 
-template<typename TypeX, typename TypeY, typename TypeE>
-affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
+// Perform a simple linear fit 'y = offset + slope*x'
+template<typename TypeX, typename TypeY, std::size_t Dim, typename TypeE>
+affinefit_result affinefit(const TypeX& x, const TypeY& y, const vec_t<Dim,TypeE>& ye) {
     affinefit_result fr;
+    fr.success = true;
 
     auto s = total(1.0/ye);
     auto sx = total(x/ye);
@@ -819,8 +821,30 @@ affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
     return fr;
 }
 
+// Perform a simple linear fit 'y = offset + slope*x'
+template<typename TypeX, typename TypeY, typename TypeE>
+affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
+    affinefit_result fr;
+    fr.success = true;
+
+    auto s = n_elements(x)/ye;
+    auto sx = total(x/ye);
+    auto sy = total(y/ye);
+    auto sxx = total(x*x/ye);
+    auto sxy = total(x*y/ye);
+    
+    auto delta = s*sxx - sx*sx;
+    fr.offset = (sxx*sy - sx*sxy)/delta;
+    fr.slope = (s*sxy - sx*sy)/delta;
+    fr.offset_err = sqrt(sxx/delta);
+    fr.slope_err = sqrt(s/delta);
+    
+    return fr;
+}
+
 // Returns the position of the first value in the array that is less than or equal to 'x'.
 // Returns -1 if no value satisfy this criterium.
+// Note: assumes that 'v' is sorted.
 template<typename T, typename Type>
 int_t lower_bound(T x, const vec_t<1,Type>& v) {
     auto iter = std::upper_bound(v.data.begin(), v.data.end(), x, typename vec_t<1,Type>::comparator());
@@ -833,6 +857,7 @@ int_t lower_bound(T x, const vec_t<1,Type>& v) {
 
 // Returns the position of the first value in the array that is greater than 'x'.
 // Returns -1 if no value satisfy this criterium.
+// Note: assumes that 'v' is sorted.
 template<typename T, typename Type>
 int_t upper_bound(T x, const vec_t<1,Type>& v) {
     auto iter = std::upper_bound(v.data.begin(), v.data.end(), x, typename vec_t<1,Type>::comparator());
@@ -840,6 +865,7 @@ int_t upper_bound(T x, const vec_t<1,Type>& v) {
     return iter - v.data.begin();
 }
 
+// Check if a given array is sorted or not
 template<typename Type>
 bool is_sorted(const vec_t<1,Type>& v) {
     const int_t n = n_elements(v);
@@ -850,6 +876,7 @@ bool is_sorted(const vec_t<1,Type>& v) {
     return true;
 }
 
+// Linearly interpolate '(x, y)' data at new positions 'nx'
 template<typename TypeY, typename TypeX1, typename TypeX2>
 auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
     using rtypey = rtype_t<TypeY>;
@@ -893,6 +920,7 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,T
     return r;
 }
 
+// Linearly interpolate '(x, y)' data at new positions 'nx'
 template<typename TypeY, typename TypeX, typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     using rtypey = rtype_t<TypeY>;
@@ -1014,13 +1042,13 @@ auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y) -> decltype(0.5
 }
 
 template<typename F, typename T, typename U>
-auto integrate_trap(F f, T x0, U x1, std::size_t n) -> decltype(0.5*f(x0)*x0) {
+auto integrate_trap(F f, T x0, U x1, uint_t n) -> decltype(0.5*f(x0)*x0) {
     using rtype = decltype(0.5*f(x0)*x0);
     rtype r = 0;
     rtype y0 = f(x0);
     T x = x0;
     auto dx = (x1 - x0)/double(n);
-    for (std::size_t i = 0; i < n; ++i) {
+    for (uint_t i = 0; i < n; ++i) {
         x += dx;
         rtype y1 = f(x);
         r += 0.5*(y1+y0)*dx;
@@ -1038,21 +1066,21 @@ auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>:
     buffer.reserve(20);
     buffer.push_back(0.5*(x1 - x0)*(f(x0) + f(x1)));
     
-    std::size_t n = 0;
-    std::size_t oid = 0;
+    uint_t n = 0;
+    uint_t oid = 0;
     
     do {
         ++n;
         
         rtype tr = 0;
-        std::size_t tn = 1 << n;
+        uint_t tn = 1 << n;
         auto d = (x1 - x0)/double(tn);
-        for (std::size_t k = 1; k <= tn/2; ++k) {
+        for (uint_t k = 1; k <= tn/2; ++k) {
             tr += f(x0 + (2*k-1)*d);
         }
         buffer.push_back(0.5*buffer[oid] + d*tr);
         
-        for (std::size_t m = 1; m <= n; ++m) {
+        for (uint_t m = 1; m <= n; ++m) {
             auto t = 1 << (2*m);
             buffer.push_back((t*buffer.back() - buffer[oid+m-1])/(t - 1));
         }
