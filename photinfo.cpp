@@ -9,6 +9,12 @@ int main(int argc, char* argv[]) {
     read_args(argc-1, argv+1, arg_list(data_dir));
 
     struct {
+        vec1d ra, dec;
+
+        struct {
+            vec1d ra, dec;
+        } pos;
+
         vec2f flux, flux_err;
         vec1s bands, notes;
         vec1f lambda;
@@ -30,6 +36,16 @@ int main(int argc, char* argv[]) {
         cat.notes = replicate("", n_elements(cat.bands));
     }
 
+    if (n_elements(cat.ra) == 0 || n_elements(cat.dec) == 0) {
+        cat.ra = cat.pos.ra;
+        cat.dec = cat.pos.dec;
+    }
+
+    if (n_elements(cat.ra) == 0 || n_elements(cat.dec) == 0) {
+        print("error: no RA/Dec positions in this file (expected RA, DEC or POS.RA, POS.DEC)");
+        return 1;
+    }
+
     print("Photometry: [", ngal, " sources]");
     vec1i gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
         && cat.flux/cat.flux_err > 3);
@@ -44,6 +60,7 @@ int main(int argc, char* argv[]) {
     std::string hdet = "detections";
     std::string hd3s = "3-sigma";
     std::string hd5s = "5-sigma";
+    std::string har = "area [deg^2]";
 
     uint_t maxb = std::max(hband.size(), max(length(cat.bands)));
     uint_t maxn = std::max(hnote.size(), max(length(cat.notes)));
@@ -53,6 +70,7 @@ int main(int argc, char* argv[]) {
     uint_t maxdet = std::max(hdet.size(), length(strn(ngal)));
     uint_t maxd3 = std::max(hd3s.size(), length(strn(ngal)));
     uint_t maxd5 = std::max(hd5s.size(), length(strn(ngal)));
+    uint_t maxar = std::max(har.size(), max(length(strna(cat.lambda))));
 
     std::string header = " "+
         align_center(hband, maxb)+" | "+
@@ -62,7 +80,8 @@ int main(int argc, char* argv[]) {
         align_center(hdepAB, maxdAB)+" | "+
         align_center(hdet, maxdet)+" | "+
         align_center(hd3s, maxd3)+" | "+
-        align_center(hd5s, maxd5)+" ";
+        align_center(hd5s, maxd5)+" | "+
+        align_center(har, maxar)+" ";
 
     print(header);
     print(std::string(header.size(), '='));
@@ -71,9 +90,11 @@ int main(int argc, char* argv[]) {
         auto f = cat.flux(i,_);
         auto e = cat.flux_err(i,_);
 
-        uint_t cnt;
+        uint_t cnt, cnt3;
         vec1i idg = where(finite(f) && finite(e) && f > 0 && e > 0, cnt);
-        vec1i idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3, cnt);
+        vec1i idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3, cnt3);
+
+        if (cnt == 0 || cnt3 == 0) continue;
 
         print(" ",
             align_center(cat.bands[i], maxb), " | ",
@@ -83,7 +104,8 @@ int main(int argc, char* argv[]) {
             align_right(strn(uJy2mag(3*median(e[idg3s]))), maxdAB), " | ",
             align_right(strn(cnt), maxdet), " | ",
             align_right(strn(total(f[idg]/e[idg] > 3)), maxd3), " | ",
-            align_right(strn(total(f[idg]/e[idg] > 5)), maxd5)
+            align_right(strn(total(f[idg]/e[idg] > 5)), maxd5), " | ",
+            align_right(strn(field_area(cat.ra[idg3s], cat.dec[idg3s])), maxar)
         );
     }
 
