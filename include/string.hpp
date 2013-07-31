@@ -166,6 +166,10 @@ int_t find(const std::string& ts, const std::string& pattern) {
     }
 }
 
+uint_t length(const std::string& s) {
+    return s.size();
+}
+
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
@@ -189,6 +193,7 @@ VECTORIZE(empty)
 VECTORIZE(distance)
 VECTORIZE(find)
 VECTORIZE(replace)
+VECTORIZE(length)
 
 #undef VECTORIZE
 
