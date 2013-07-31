@@ -33,6 +33,8 @@ int main(int argc, char* argv[]) {
     print("Photometry: [", ngal, " sources]");
     vec1i gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
         && cat.flux/cat.flux_err > 3);
+    uint_t seed = 42;
+    vec1i rndid = shuffle(gidg, seed)[indgen(1000)];
 
     std::string hband = "band";
     std::string hnote = "note";
@@ -46,8 +48,8 @@ int main(int argc, char* argv[]) {
     uint_t maxb = std::max(hband.size(), max(length(cat.bands)));
     uint_t maxn = std::max(hnote.size(), max(length(cat.notes)));
     uint_t maxl = std::max(hlam.size(), max(length(strna(cat.lambda))));
-    uint_t maxdJ = std::max(hdepuJy.size(), max(length(strna_sci(cat.flux_err[gidg]))));
-    uint_t maxdAB = std::max(hdepAB.size(), max(length(strna(cat.flux_err[gidg]))));
+    uint_t maxdJ = std::max(hdepuJy.size(), max(length(strna_sci(cat.flux_err[rndid]))));
+    uint_t maxdAB = std::max(hdepAB.size(), max(length(strna(cat.flux_err[rndid]))));
     uint_t maxdet = std::max(hdet.size(), length(strn(ngal)));
     uint_t maxd3 = std::max(hd3s.size(), length(strn(ngal)));
     uint_t maxd5 = std::max(hd5s.size(), length(strn(ngal)));
@@ -69,17 +71,19 @@ int main(int argc, char* argv[]) {
         auto f = cat.flux(i,_);
         auto e = cat.flux_err(i,_);
 
-        vec1i idg = where(finite(f) && finite(e) && f > 0 && e > 0);
+        uint_t cnt;
+        vec1i idg = where(finite(f) && finite(e) && f > 0 && e > 0, cnt);
+        vec1i idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3, cnt);
 
         print(" ",
             align_center(cat.bands[i], maxb), " | ",
             align_center(cat.notes[i], maxn), " | ",
             align_right(strn(cat.lambda[i]), maxl), " | ",
-            align_right(strn_sci(median(e[idg])), maxdJ), " | ",
-            align_right(strn(uJy2mag(median(e[idg]))), maxdAB), " | ",
-            align_right(strn(total(f > 0)), maxdet), " | ",
-            align_right(strn(total(f/e > 3)), maxd3), " | ",
-            align_right(strn(total(f/e > 5)), maxd5)
+            align_right(strn_sci(3*median(e[idg3s])), maxdJ), " | ",
+            align_right(strn(uJy2mag(3*median(e[idg3s]))), maxdAB), " | ",
+            align_right(strn(cnt), maxdet), " | ",
+            align_right(strn(total(f[idg]/e[idg] > 3)), maxd3), " | ",
+            align_right(strn(total(f[idg]/e[idg] > 5)), maxd5)
         );
     }
 
