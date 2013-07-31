@@ -190,6 +190,14 @@ auto mag2uJy(const T& x, double zp = 23.9) {
     return e10(0.4*(zp - x));
 }
 
+// Compute the angular distance between two RA/Dec positions [radian].
+// Assumes that RA & Dec coordinates are in radian.
+double angdist(double ra1, double dec1, double ra2, double dec2) {
+    double sra = sin(0.5*(ra2 - ra1));
+    double sde = sin(0.5*(dec2 - dec1));
+    return 2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)));
+}
+
 struct qxmatch_res {
     vec2i id;
     vec2d d;
@@ -579,6 +587,56 @@ std::string build_catalog_list(const catalog_pool_t& pool, uint_t width = 80) {
     }
 
     return str;
+}
+
+// Compute the area covered by field given a set of source coordinates [deg^2].
+// Coordinates are assumed to be given in degrees.
+template<typename TX, typename TY>
+auto field_area(const TX& ra, const TY& dec) {
+    vec1i hull = convex_hull(ra, dec);
+
+    decltype(1.0*ra[0]*dec[0]) area = 0;
+
+    auto d2r = dpi/180.0;
+    typename TX::effective_type hx = ra[hull]*d2r;
+    typename TY::effective_type hy = dec[hull]*d2r;
+    uint_t nh = hull.size();
+    for (uint_t i = 2; i < nh; ++i) {
+        double e1 = angdist(hx[0],   hy[0],   hx[i-1], hy[i-1]);
+        double e2 = angdist(hx[i-1], hy[i-1], hx[i],   hy[i]);
+        double e3 = angdist(hx[i],   hy[i],   hx[0],   hy[0]);
+        double p = 0.5*(e1 + e2 + e3);
+        area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
+    }
+
+    area /= d2r*d2r;
+
+    return area;
+}
+
+// Compute the area covered by field given a set of source coordinates [deg^2].
+// Coordinates are assumed to be given in degrees.
+template<typename T>
+auto field_area(const T& t) {
+    vec1i hull = convex_hull(t.ra, t.dec);
+
+    decltype(1.0*t.ra[0]*t.dec[0]) area = 0;
+
+    auto d2r = dpi/180.0;
+    typename TX::effective_type hx = t.ra[hull]*d2r;
+    typename TY::effective_type hy = t.dec[hull]*d2r;
+    uint_t nh = hull.size();
+    for (uint_t i = 2; i < nh; ++i) {
+        double e1 = angdist(hx[0],   hy[0],   hx[i-1], hy[i-1]);
+        double e2 = angdist(hx[i-1], hy[i-1], hx[i],   hy[i]);
+        double e3 = angdist(hx[i],   hy[i],   hx[0],   hy[0]);
+        double p = 0.5*(e1 + e2 + e3);
+        area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
+    }
+
+    area /= d2r*d2r;
+
+    return area;
 }
 
 #endif

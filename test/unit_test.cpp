@@ -681,6 +681,20 @@ int main(int argc, char* argv[]) {
 
         check(tmp1, "{ i=5, j=0, t={ k=0, v=toto, w=0 } }");
     }
+
+    {
+        // Convex hull
+        struct {
+            vec1d ra, dec;
+            vec1i hull;
+        } cat;
+        
+        fits::read_table_loose("data/sources.fits", cat);
+        cat.hull = convex_hull(cat.ra, cat.dec);
+        fits::write_table("out/hull.fits", cat);
+
+        print(field_area(cat.ra, cat.dec));
+    }
     
     print("\nall tests passed!\n");
     
