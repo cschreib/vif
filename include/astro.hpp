@@ -623,8 +623,8 @@ auto field_area(const T& t) {
     decltype(1.0*t.ra[0]*t.dec[0]) area = 0;
 
     auto d2r = dpi/180.0;
-    typename TX::effective_type hx = t.ra[hull]*d2r;
-    typename TY::effective_type hy = t.dec[hull]*d2r;
+    decltype(t.ra)  hx = t.ra[hull]*d2r;
+    decltype(t.dec) hy = t.dec[hull]*d2r;
     uint_t nh = hull.size();
     for (uint_t i = 2; i < nh; ++i) {
         double e1 = angdist(hx[0],   hy[0],   hx[i-1], hy[i-1]);
