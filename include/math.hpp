@@ -130,6 +130,12 @@ vec_t<sizeof...(Args),double> randomu(T& seed, Args&& ... args) {
     return v;
 }
 
+template<std::size_t Dim, typename Type, typename T>
+auto shuffle(const vec_t<Dim,Type>& v, T& seed) {
+    vec1i sid = sort(randomu(seed, v.size()));
+    return v[sid];
+}
+
 template<typename F, F f, std::size_t Dim, typename Type>
 auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename return_type<F>::type> {
     vec_t<Dim-1,typename return_type<F>::type> r;
