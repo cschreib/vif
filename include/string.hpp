@@ -188,6 +188,31 @@ uint_t length(const std::string& s) {
     return s.size();
 }
 
+std::string align_left(const std::string& s, uint_t width, char fill = ' ') {
+    if (s.size() < width) {
+        return s + std::string(width-s.size(), fill);
+    } else {
+        return s;
+    }
+}
+
+std::string align_right(const std::string& s, uint_t width, char fill = ' ') {
+    if (s.size() < width) {
+        return std::string(width-s.size(), fill) + s;
+    } else {
+        return s;
+    }
+}
+
+std::string align_center(const std::string& s, uint_t width, char fill = ' ') {
+    if (s.size() < width) {
+        return std::string((width-s.size())/2, fill) + s + 
+            std::string(width-s.size() - (width-s.size())/2, fill);
+    } else {
+        return s;
+    }
+}
+
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
@@ -212,6 +237,9 @@ VECTORIZE(distance)
 VECTORIZE(find)
 VECTORIZE(replace)
 VECTORIZE(length)
+VECTORIZE(align_left)
+VECTORIZE(align_right)
+VECTORIZE(align_center)
 
 #undef VECTORIZE
 
