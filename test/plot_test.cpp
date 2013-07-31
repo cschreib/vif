@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
         p.font(24);
         p.view_inset(20);
         p.rmove_to(0.5,0.5).move(0,20).show("this^{shit^2} is a_1 |{test}", 0.5);
-        p.rmove_to(0.5,0.5).move(0,-5).show("hello\nyou_{beta_{blop}}", 1);
+        p.rmove_to(0.5,0.5).move(0,-5).show("hel|_lo\nyou_{beta_{blop}}", 1);
     }
 
     {
