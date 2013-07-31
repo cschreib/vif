@@ -178,6 +178,18 @@ auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) {
     return factor*flx*d*d/lam;
 }
 
+// Flux in uJy to AB magnitude
+template<typename T>
+auto uJy2mag(const T& x, double zp = 23.9) {
+    return -2.5*log10(x) + zp;
+}
+
+// AB magnitude to flux in uJy
+template<typename T>
+auto mag2uJy(const T& x, double zp = 23.9) {
+    return e10(0.4*(zp - x));
+}
+
 struct qxmatch_res {
     vec2i id;
     vec2d d;
