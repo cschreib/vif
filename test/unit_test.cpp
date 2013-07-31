@@ -557,6 +557,15 @@ int main(int argc, char* argv[]) {
         v(_,_) = v(sid,_);
         check(v, "1, 2, 2, 3, 4, 1, 5, 0");
     }
+
+    {
+        // 'min_id', 'max_id'
+        vec1i i = {5,2,4,9,6,-5,2,-3};
+        uint_t mi = min_id(i);
+        uint_t ma = max_id(i);
+        check(mi, "5");
+        check(ma, "3");
+    }
     
     {
         // 'replace' & 'split'

@@ -287,6 +287,54 @@ rtype_t<Type> max(const vec_t<Dim,Type>& v) {
     return *(t.end()-1);
 }
 
+template<std::size_t Dim, typename Type>
+uint_t min_id(const vec_t<Dim,Type>& v) {
+    vec1i ok = where(finite(v));
+    if (n_elements(ok) == 0) return 0;
+
+    using ntype = typename vec_t<Dim,Type>::drtype;
+    struct tsort {
+        ntype v;
+        int_t i;
+    };
+    
+    std::vector<tsort> tmp(ok.size());
+    for (uint_t i = 0; i < ok.size(); ++i) {
+        tmp[i].v = dref(v.data[ok.data[i]]);
+        tmp[i].i = ok.data[i];
+    }
+    
+    std::nth_element(tmp.begin(), tmp.begin(), tmp.end(), 
+        [](const tsort& t1, const tsort& t2) { return t1.v < t2.v; }
+    );
+
+    return tmp.begin()->i;
+}
+
+template<std::size_t Dim, typename Type>
+uint_t max_id(const vec_t<Dim,Type>& v) {
+    vec1i ok = where(finite(v));
+    if (n_elements(ok) == 0) return 0;
+
+    using ntype = typename vec_t<Dim,Type>::drtype;
+    struct tsort {
+        ntype v;
+        int_t i;
+    };
+    
+    std::vector<tsort> tmp(ok.size());
+    for (uint_t i = 0; i < ok.size(); ++i) {
+        tmp[i].v = dref(v.data[ok.data[i]]);
+        tmp[i].i = ok.data[i];
+    }
+    
+    std::nth_element(tmp.begin(), tmp.end()-1, tmp.end(), 
+        [](const tsort& t1, const tsort& t2) { return t1.v < t2.v; }
+    );
+
+    return (tmp.end()-1)->i;
+}
+
 template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
     phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions");
@@ -330,12 +378,14 @@ void data_info_(const vec_t<Dim,Type>& v) {
     print("data info: ", #x); \
     data_info_(x);
 
-template<typename T, typename U, typename V, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+template<typename T, typename U, typename V,
+    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 auto clamp(const T& t, const U& mi, const V& ma) {
     return (t < mi ? mi : (t > ma ? ma : t));
 }
 
-template<std::size_t Dim, typename Type, typename U, typename enable = typename std::enable_if<!is_vec<U>::value>::type>
+template<std::size_t Dim, typename Type, typename U, 
+    typename enable = typename std::enable_if<!is_vec<U>::value>::type>
 auto pow(const U& u, const vec_t<Dim,Type>& v) -> vec_t<Dim, decltype(pow(u,v(0)))> {
     vec_t<Dim, decltype(pow(u,v(0)))> r = v;
     for (auto& t : r) {
@@ -590,7 +640,9 @@ struct nlfit_result {
 };
 
 template<typename Func, typename TypeY, typename TypeE>
-nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double e = 0.001, double abs = 0.01, const uint_t max_iter = 1000) {
+nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double e = 0.001,
+    double abs = 0.01, const uint_t max_iter = 1000) {
+
     nlfit_result fr;
     
     int_t np = n_elements(params);
@@ -853,11 +905,14 @@ affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
 // Note: assumes that 'v' is sorted.
 template<typename T, typename Type>
 int_t lower_bound(T x, const vec_t<1,Type>& v) {
-    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x, typename vec_t<1,Type>::comparator());
+    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
+        typename vec_t<1,Type>::comparator());
+
     do {
         if (iter == v.data.begin()) return -1;
         --iter;
     } while (!finite(dref(*iter)));
+
     return iter - v.data.begin();
 }
 
@@ -866,9 +921,14 @@ int_t lower_bound(T x, const vec_t<1,Type>& v) {
 // Note: assumes that 'v' is sorted.
 template<typename T, typename Type>
 int_t upper_bound(T x, const vec_t<1,Type>& v) {
-    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x, typename vec_t<1,Type>::comparator());
-    if (iter == v.data.end()) return -1;
-    return iter - v.data.begin();
+    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
+        typename vec_t<1,Type>::comparator());
+
+    if (iter == v.data.end()) {
+        return -1;
+    } else {
+        return iter - v.data.begin();
+    }
 }
 
 // Check if a given array is sorted or not
@@ -888,8 +948,10 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,T
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
-    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(n_elements(y) == n_elements(x),
+        "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2,
+        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
     phypp_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
 
     auto idok1 = where(finite(y) && finite(x));
@@ -927,13 +989,16 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,T
 }
 
 // Linearly interpolate '(x, y)' data at new positions 'nx'
-template<typename TypeY, typename TypeX, typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+template<typename TypeY, typename TypeX, typename T, 
+    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX>;
 
-    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(n_elements(y) == n_elements(x),
+        "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2,
+        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
     phypp_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
 
     auto idok1 = where(finite(y) && finite(x));
@@ -970,8 +1035,10 @@ auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
-    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(n_elements(y) == n_elements(x),
+        "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2,
+        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
 
     int_t cnt = n_elements(nx);
     auto r = replicate(y[0]*dnan, cnt);
@@ -1007,13 +1074,16 @@ auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_
 // will be quite faster). On the other hand, if one of the arrays contains special values (NaN, inf,
 // ...), all the points that would use these values will be contaminated. If 'x' is not properly
 // sorted, the result will simply be wrong.
-template<typename TypeY, typename TypeX, typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+template<typename TypeY, typename TypeX, typename T,
+    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX>;
 
-    phypp_check(n_elements(y) == n_elements(x), "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2, "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(n_elements(y) == n_elements(x),
+        "interpol: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(n_elements(y) >= 2,
+        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
 
     int_t low = lower_bound(nx, x);
     int_t up  = upper_bound(nx, x);
@@ -1065,7 +1135,9 @@ auto integrate_trap(F f, T x0, U x1, uint_t n) -> decltype(0.5*f(x0)*x0) {
 }
 
 template<typename F, typename T, typename U>
-auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>::epsilon()) -> decltype(0.5*f(x0)*x0) {
+auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>::epsilon()) ->
+    decltype(0.5*f(x0)*x0) {
+
     using rtype = decltype(0.5*f(x0)*x0);
     
     std::vector<rtype> buffer;
