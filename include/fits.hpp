@@ -570,28 +570,16 @@ namespace fits {
 
     template<typename T>
     void read_table_impl_(fitsfile* fptr, const std::string& colname,
-        reflex::struct_t<T>& data, bool loose = false) {
+        reflex::struct_t<T> data, bool loose = false) {
 
         struct {
             fitsfile* fptr;
             std::string base;
             bool loose;
-
-            template<std::size_t Dim, typename Type>
-            void operator () (reflex::member_t& m, vec_t<Dim,Type>& v) {
-                read_table_impl_(this->fptr, this->base+toupper(m.name), v, this->loose);
-            }
-
+            
             template<typename P>
-            void operator () (reflex::member_t& m, reflex::struct_t<P> v) {
-                read_table_impl_(this->fptr, this->base+toupper(m.name), v, this->loose);
-            }
-
-            template<typename P>
-            void operator () (reflex::member_t& m, P& v) {
-                phypp_check(false, "read_table: cannot de-serialize type '", reflex::type_name_of(v),
-                    "' reading '", m.full_name(), "'"
-                );
+            void operator () (reflex::member_t& m, P&& v) {
+                read_table_impl_(this->fptr, this->base+toupper(m.name), std::forward<P>(v), this->loose);
             }
         } do_read{fptr, colname+".", loose};
 
@@ -667,8 +655,8 @@ namespace fits {
             fitsfile* fptr;
 
             template<typename P>
-            void operator () (reflex::member_t& m, P& v) {
-                read_table_impl_(this->fptr, toupper(m.name), v, true);
+            void operator () (reflex::member_t& m, P&& v) {
+                read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
             }
         } do_read{fptr};
 
@@ -689,8 +677,8 @@ namespace fits {
             fitsfile* fptr;
 
             template<typename P>
-            void operator () (reflex::member_t& m, P& v) {
-                read_table_impl_(this->fptr, toupper(m.name), v, true);
+            void operator () (reflex::member_t& m, P&& v) {
+                read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
             }
         } do_read{fptr};
 
@@ -808,7 +796,7 @@ namespace fits {
 
     template<typename T>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
-        const reflex::struct_t<T>& data) {
+        reflex::struct_t<T> data) {
 
         struct {
             fitsfile* fptr;
