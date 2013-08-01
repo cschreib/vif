@@ -488,7 +488,7 @@ struct vec_t {
     std::size_t size() const {
         return data.size();
     }
-    
+
     void resize() {
         std::size_t size = 1;
         for (std::size_t i = 0; i < Dim; ++i) {
@@ -496,6 +496,38 @@ struct vec_t {
         }
         
         data.resize(size);
+    }
+
+    void push_back(const Type& t) {
+        static_assert(Dim == 1, "cannot call push_back(Type) on multidimensional vectors");
+        data.push_back(t);
+        ++dims[0];
+    }
+
+    void push_back(Type&& t) {
+        static_assert(Dim == 1, "cannot call push_back(Type) on multidimensional vectors");
+        data.push_back(std::move(t));
+        ++dims[0];
+    }
+
+
+    template<typename enable = typename std::enable_if<(Dim > 1)>::type>
+    void push_back(const vec_t<Dim-1,Type>& t) {
+        for (uint_t i = 0; i < Dim-1; ++i) {
+            phypp_check(dims[i+1] == t.dims[i], "push_back: incompatible dimensions");
+        }
+
+        data.insert(data.end(), t.data.begin(), t.data.end());
+        ++dims[0];
+    }
+
+    template<typename T, typename enable = typename std::enable_if<(Dim > 1)>::type>
+    void push_back(const vec_t<Dim-1,T*>& t) {
+        push_back(t.concretise());
+    }
+    
+    auto& concretise() const {
+        return *this;
     }
     
     uint_t to_idx(int_t i) const {
@@ -746,6 +778,10 @@ struct vec_t<Dim,Type*> {
         }
         
         data.resize(size);
+    }
+    
+    effective_type concretise() const {
+        return *this;
     }
     
     uint_t to_idx(int_t i) const {
