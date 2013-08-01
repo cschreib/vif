@@ -403,6 +403,18 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        // 'push_back' function
+        vec1i i = {0,1,2,4,-1};
+        i.push_back(3);
+        check(i, "0, 1, 2, 4, -1, 3");
+
+        vec2i j = {{1, 2}, {3, 4}};
+        j.push_back({5, 6});
+        check(j.dims, "3, 2");
+        check(j, "1, 2, 3, 4, 5, 6");
+    }
+
+    {
         // 'merge' function
         vec1i v = {1, 2, 3, 4};
         v = merge(0, v);
