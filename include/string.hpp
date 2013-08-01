@@ -10,14 +10,16 @@
 
 static std::string data_dir = "./";
 
-template<typename O, typename T, std::size_t N>
-O& operator << (O& o, const std::array<T,N>& v) {
-    for (std::size_t i = 0; i < N; ++i) {
-        if (i != 0) o << ", ";
-        o << v[i];
+namespace std {
+    template<typename O, typename T, std::size_t N>
+    O& operator << (O& o, const std::array<T,N>& v) {
+        for (std::size_t i = 0; i < N; ++i) {
+            if (i != 0) o << ", ";
+            o << v[i];
+        }
+        
+        return o;
     }
-    
-    return o;
 }
 
 template<typename T>
