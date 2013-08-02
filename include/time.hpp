@@ -100,8 +100,11 @@ void progress_(progress_t& p) {
 }
 
 // Updates a progress bar for an iterative process ('p' is created from 'progress_start')
-void progress(progress_t& p) {
-    progress_(p);
+template<typename M = uint_t>
+void progress(progress_t& p, const M& mod = 1) {
+    if (p.i % mod == 0 || p.i == p.n-1) {
+        progress_(p);
+    }
 
     ++p.i;
 
@@ -112,15 +115,15 @@ void progress(progress_t& p) {
 
 // Updates a progress bar for an iterative process ('p' is created from 'progress_start')
 // 'i' is the current iteration number.
-template<typename I>
-void print_progress(progress_t& p, const I& ti) {
+template<typename I, typename M = uint_t>
+void print_progress(progress_t& p, const I& ti, const M& mod = 1) {
     p.i = ti;
-    if (p.i >= p.n) p.i = p.n-1;
-
-    progress_(p);
-
-    if (p.i == p.n-1) {
+    if (p.i >= p.n-1) {
+        p.i = p.n-1;
+        progress_(p);
         std::cout << std::endl;
+    } else if (p.i % mod == 0) {
+        progress_(p);
     }
 }
 
