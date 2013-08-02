@@ -1283,7 +1283,7 @@ vec_t<Dim,T> operator - (const U& u, vec_t<Dim,T>&& v) {
     template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!is_vec<U>::value>::type> \
     vec_t<Dim,bool> operator op (const U& u, const vec_t<Dim,T>& v) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
-        for (uint_t i = 0; i < v.data.size(); ++i) { \
+        for (uint_t i = 0; i < v.size(); ++i) { \
             tv.data[i] = (u op dref(v.data[i])); \
         } \
         return tv; \
@@ -1291,9 +1291,9 @@ vec_t<Dim,T> operator - (const U& u, vec_t<Dim,T>&& v) {
     \
     template<std::size_t Dim, typename T, typename U> \
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v, const vec_t<Dim,U>& u) { \
-        assert(v.data.size() == u.data.size()); \
+        assert(v.size() == u.size()); \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
-        for (uint_t i = 0; i < v.data.size(); ++i) { \
+        for (uint_t i = 0; i < v.size(); ++i) { \
             tv.data[i] = (dref(v.data[i]) op dref(u.data[i])); \
         } \
         return tv; \
@@ -1308,36 +1308,70 @@ VECTORIZE(>=)
 
 #undef VECTORIZE
 
-template<std::size_t Dim>
-vec_t<Dim,bool> operator && (const vec_t<Dim,bool>& v1, const vec_t<Dim,bool>& v2) {
-    assert(n_elements(v1) == n_elements(v2));
-    vec_t<Dim,bool> tv = v1;
-    for (uint_t i = 0; i < v1.data.size(); ++i) {
-        tv.data[i] = tv.data[i] && v2.data[i];
-    }
-    
-    return tv;
-}
+template<typename T>
+using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<T>::type>::type, bool>;
 
-template<std::size_t Dim>
-vec_t<Dim,bool> operator || (const vec_t<Dim,bool>& v1, const vec_t<Dim,bool>& v2) {
-    assert(n_elements(v1) == n_elements(v2));
-    vec_t<Dim,bool> tv = v1;
-    for (uint_t i = 0; i < v1.data.size(); ++i) {
-        tv.data[i] = tv.data[i] || v2.data[i];
+#define VECTORIZE(op) \
+    template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
+        is_bool_t<T>::value && is_bool_t<U>::value>::type> \
+    vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v1, const vec_t<Dim,U>& v2) { \
+        assert(v1.size() == v2.size()); \
+        vec_t<Dim,bool> tv = v1; \
+        for (uint_t i = 0; i < v1.size(); ++i) { \
+            tv.data[i] = tv.data[i] op dref(v2.data[i]); \
+        } \
+        return tv; \
+    } \
+    template<std::size_t Dim, typename U, typename enable = typename std::enable_if< \
+        is_bool_t<U>::value>::type> \
+    vec_t<Dim,bool> operator op (vec_t<Dim,bool>&& v1, const vec_t<Dim,U>& v2) { \
+        assert(v1.size() == v2.size()); \
+        for (uint_t i = 0; i < v1.size(); ++i) { \
+            v1.data[i] = v1.data[i] op dref(v2.data[i]); \
+        } \
+        return std::move(v1); \
+    } \
+    template<std::size_t Dim, typename T, typename enable = typename std::enable_if< \
+        is_bool_t<T>::value>::type> \
+    vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v1, vec_t<Dim,bool>&& v2) { \
+        assert(v1.size() == v2.size()); \
+        for (uint_t i = 0; i < v2.size(); ++i) { \
+            v2.data[i] = dref(v1.data[i]) op v2.data[i]; \
+        } \
+        return std::move(v2); \
+    } \
+    template<std::size_t Dim> \
+    vec_t<Dim,bool> operator op (vec_t<Dim,bool>&& v1, vec_t<Dim,bool>&& v2) { \
+        assert(v1.size() == v2.size()); \
+        for (uint_t i = 0; i < v1.size(); ++i) { \
+            v1.data[i] = v1.data[i] op dref(v2.data[i]); \
+        } \
+        return std::move(v1); \
     }
-    
-    return tv;
-}
 
-template<std::size_t Dim>
-vec_t<Dim,bool> operator ! (const vec_t<Dim,bool>& v) {
+VECTORIZE(&&)
+VECTORIZE(||)
+
+#undef VECTORIZE
+
+template<std::size_t Dim, typename T, typename enable = typename std::enable_if<
+    is_bool_t<T>::value>::type>
+vec_t<Dim,bool> operator ! (const vec_t<Dim,T>& v) {
     vec_t<Dim,bool> tv = v;
     for (uint_t i = 0; i < v.data.size(); ++i) {
         tv.data[i] = !tv.data[i];
     }
     
     return tv;
+}
+
+template<std::size_t Dim>
+vec_t<Dim,bool> operator ! (vec_t<Dim,bool>&& v) {
+    for (uint_t i = 0; i < v.data.size(); ++i) {
+        v.data[i] = !v.data[i];
+    }
+    
+    return std::move(v);
 }
 
 // Generate linearly increasing values.
