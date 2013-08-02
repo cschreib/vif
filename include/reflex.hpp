@@ -51,6 +51,7 @@ namespace reflex {
     };
 
     struct data_t {
+        data_t() = default;
         data_t(data_t&&) = default;
         data_t(const data_t&) = delete;
         data_t& operator = (data_t&&) = default;
@@ -154,46 +155,8 @@ namespace reflex {
 
     struct empty_t {
         using _reflex_types = type_list<>;
-        data_t _reflex = {nullptr, "", {}};
+        data_t _reflex;
     };
-
-    template<bool reflexed>
-    struct get_data_t;
-
-    template<>
-    struct get_data_t<true> {
-        #ifdef REFLECTION_STAGE
-        template<typename T>
-        static auto& get(T& t) {
-            static empty_t empty;
-            return empty._reflex;
-        }
-
-        #else
-        template<typename T>
-        static auto& get(T& t) {
-            return t._reflex;
-        }
-        #endif
-    };
-
-    template<>
-    struct get_data_t<false> {
-        template<typename T>
-        static T& get(T& t) {
-            return t;
-        }
-
-        template<typename T>
-        static T* get(T* t) {
-            return t;
-        }
-    };
-
-    template<typename T>
-    auto get_data_(T&& t) -> decltype(auto) {
-        return get_data_t<enabled<typename std::decay<T>::type>::value>::get(std::forward<T>(t));
-    }
 
     template<typename T, typename U>
     using constify = typename std::conditional<std::is_const<T>::value, const U, U>::type;
