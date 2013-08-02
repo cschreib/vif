@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[]) {
     {
-        plot::eps p("out/test1.eps", 200, 200);
+        plot::eps p("out/test_color.eps", 200, 200);
 
         vec1rgb c = {rgb(1,0,0), rgb(0,1,0), rgb(0,0,1), rgb(0,0,0)};
 
@@ -22,14 +22,21 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        plot::eps p("out/test2.eps", 300, 200);
+        plot::eps p("out/test_text.eps", 300, 200);
+        p.font(24);
+        p.view_inset(20);
+        p.rmove_to(0.5,0.5).move(0,20).show("this^{shit^2} is a_1 |{test}", 0.5);
+        p.rmove_to(0.5,0.5).move(0,-5).show("hel|_lo\nyou_{beta_{blop}}", 1);
+    }
+
+    {
+        plot::eps p("out/test_plot.eps", 300, 200);
         p.font(24);
         p.view_inset(20);
         p.color(rgb(0.9,0.9,0.9));
         draw_axis_base(p);
         p.color(rgb(0,0,0));
         draw_axis(p, keywords(_btit("Mstar"), _ltit("SFR"), _ttit("Mstar"), _rtit("Lir")));
-        p.move_to(40,100).show("this^{shit^2} is a_1 |{test}");
     }
 
     return 0;

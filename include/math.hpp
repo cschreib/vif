@@ -511,7 +511,23 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
     vec_t<1,ntype_t> r = arr<ntype_t>(n);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
-        r(i) += a(i,k)*b(k);    
+        r(i) += a(i,k)*b(k);
+    
+    return r;
+}
+
+template<typename TypeA, typename TypeB>
+auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
+    assert(a.dims[0] == b.dims[0]);
+    const uint_t o = a.dims[0];
+    
+    using ntype_t = decltype(a(0,0)*b(0,0));
+    const uint_t n = a.dims[1];
+    
+    vec_t<1,ntype_t> r = arr<ntype_t>(n);
+    for (uint_t i = 0; i < n; ++i)
+    for (uint_t k = 0; k < o; ++k) {
+        r(i) += b(k)*a(k,i);
     } 
     
     return r;
@@ -567,6 +583,56 @@ auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     }
     
     return d;
+}
+
+template<typename Type = double>
+auto identity_matrix(uint_t dim) {
+    auto m = arr<Type>(dim, dim);
+    diag(m) = 1;
+    return m;
+}
+
+template<typename TX, typename TY>
+auto scale_matrix(const TX& sx, const TY& sy) {
+    auto m = arr<decltype(sx*sy)>(3, 3);
+    m(0,0) = sx;
+    m(1,1) = sy;
+    m(2,2) = 1;
+    return m;
+}
+
+template<typename T>
+auto scale_matrix(const T& s) {
+    auto m = arr<T>(3, 3);
+    m(0,0) = s;
+    m(1,1) = s;
+    m(2,2) = 1;
+    return m;
+}
+
+template<typename TX, typename TY>
+auto translation_matrix(const TX& tx, const TY& ty) {
+    auto m = arr<decltype(tx*ty)>(3, 3);
+    diag(m) = 1;
+    m(0,2) = tx;
+    m(1,2) = ty;
+    return m;
+}
+
+template<typename A>
+auto rotation_matrix(const A& a) {
+    auto m = arr<decltype(cos(a))>(3, 3);
+    auto ca = cos(a), sa = sin(a);
+    m(0,0) = m(1,1) = ca;
+    m(0,1) = -sa;
+    m(1,0) = sa;
+    m(2,2) = 1;
+    return m;
+}
+
+template<typename TX, typename TY>
+auto point2d(const TX& x, const TY& y) {
+    return vec_t<1,decltype(x*y)>{x, y, 1};
 }
 
 extern "C" void dgetrf_(int* n, int* m, double* a, int* lda, int* ipiv, int* info);

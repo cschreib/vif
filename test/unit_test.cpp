@@ -460,6 +460,22 @@ int main(int argc, char* argv[]) {
         check(derivate1([](const vec1d& x) { return cos(x(0)); }, 1.0, 0.001, 0), "-0.841471");
         check(derivate2([](const vec1d& x) { return cos(x(0)); }, 1.0, 0.001, 0), "-0.540302");
 
+        vec1d x = {0,1,2};
+        vec1d y = {0,1,0};
+        check(integrate(x,y), "1");
+        
+        x = 0.5*3.14159265359*dindgen(30)/29.0;
+        y = cos(x);
+        check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
+        
+        check(integrate([](float t) -> float {
+                return (2.0/sqrt(3.14159))*exp(-t*t);
+            }, 0.0, 1.0), strn(erf(1.0))
+        );
+    }
+
+    {
+        // Matrix
         vec2d a = {
             {1.000, 2.000, 3.000},
             {4.000, 1.000, 6.000},
@@ -478,18 +494,38 @@ int main(int argc, char* argv[]) {
         diag(sq) *= 5;
         check(sq, "5, 1, 1, 1, 5, 1, 1, 1, 5");
 
-        vec1d x = {0,1,2};
-        vec1d y = {0,1,0};
-        check(integrate(x,y), "1");
-        
-        x = 0.5*3.14159265359*dindgen(30)/29.0;
-        y = cos(x);
-        check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
-        
-        check(integrate([](float t) -> float {
-                return (2.0/sqrt(3.14159))*exp(-t*t);
-            }, 0.0, 1.0), strn(erf(1.0))
-        );
+        tid = id;
+        id = identity_matrix(3);
+        check(stddev(tid - id) < 1e-10, "1");
+
+        check(total(mmul(id, a) != a) == 0, "1");
+    }
+
+    {
+        // Matrix (bis)
+        double x = 5, y = 2;
+        vec1d p = point2d(x, y);
+        check(p, "5, 2, 1");
+
+        vec2d tm = identity_matrix(3);
+        mprint(tm);
+
+        vec2d m = translation_matrix(2,3);
+        vec1d tp = mmul(m, p);
+        tm = mmul(m, tm);
+        check(tp, "7, 5, 1");
+
+        m = scale_matrix(2,3);
+        tp = mmul(m, tp);
+        tm = mmul(m, tm);
+        check(tp, "14, 15, 1");
+
+        m = rotation_matrix(dpi/2);
+        tp = mmul(m, tp);
+        tm = mmul(m, tm);
+        check(tp, "-15, 14, 1");
+
+        check(mmul(tm, p), "-15, 14, 1");
     }
     
     {
@@ -720,7 +756,7 @@ int main(int argc, char* argv[]) {
         cat.hull = convex_hull(cat.ra, cat.dec);
         fits::write_table("out/hull.fits", cat);
 
-        print(field_area(cat.ra, cat.dec));
+        print(field_area(cat));
     }
     
     print("\nall tests passed!\n");
