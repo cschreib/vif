@@ -606,7 +606,7 @@ namespace fits {
             "too few collumns in this FITS file ("+
             strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
         
-        reat_table_(fptr, name, std::forward<Args>(args)...);
+        read_table_(fptr, name, std::forward<Args>(args)...);
         
         fits_close_file(fptr, &status);
     }
