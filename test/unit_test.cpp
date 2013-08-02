@@ -590,6 +590,12 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        // string 'match' regex
+        vec1s s = {"[u]=5", "[v]=2", "plop", "3=[c]", "5]=[b"};
+        check(match(s, "\\[.\\]"), "1, 1, 0, 1, 0");
+    }
+
+    {
         // Cosmology functions
         auto cosmo = cosmo_wmap();
         check(lumdist(0.5, cosmo), "2863.03");
