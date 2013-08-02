@@ -1167,6 +1167,12 @@ vec_t<Dim,T> operator / (const U& u, vec_t<Dim,T>&& v) {
     return std::move(v);
 }
 
+template<std::size_t Dim, typename T, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value>::type>
+vec_t<Dim,T> operator + (vec_t<Dim,T>&& v) {
+    return std::move(v);
+}
+
 template<std::size_t Dim, typename T, typename U>
 vec_t<Dim,res_add_t<T,U>> operator + (const vec_t<Dim,T>& v, const U& u) {
     vec_t<Dim,res_add_t<T,U>> tv = v;
@@ -1229,6 +1235,15 @@ vec_t<Dim,std::string> operator + (const U& u, const vec_t<Dim,std::string*>& v)
     }
     
     return tv;
+}
+
+template<std::size_t Dim, typename T, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value>::type>
+vec_t<Dim,T> operator - (vec_t<Dim,T>&& v) {
+    for (auto& t : v.data) {
+        t = -t;
+    }
+    return std::move(v);
 }
 
 template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
