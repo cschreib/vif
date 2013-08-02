@@ -177,12 +177,12 @@ uint_t distance(const std::string& t, const std::string& u) {
     return d;
 }
 
-int_t find(const std::string& ts, const std::string& pattern) {
+uint_t find(const std::string& ts, const std::string& pattern) {
     auto p = ts.find(pattern);
     if (p != ts.npos) {
         return p;
     } else {
-        return -1;
+        return npos;
     }
 }
 
@@ -343,18 +343,18 @@ vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", 
     uint_t twidth = width;
     std::string header = "";
     while (s.size() > twidth) {
-        int_t i = twidth;
-        while (i >= 0 && s[i] != ' ') --i;
-        if (i < 0) {
+        uint_t i = twidth;
+        while (i != npos && s[i] != ' ') --i;
+        if (i == npos) {
             if (ellipse) {
                 ret.data.push_back(header+s.substr(0, twidth-3)+"...");
                 i = twidth+1;
-                while (i < int_t(s.size()) && s[i] != ' ') ++i;
+                while (i < s.size() && s[i] != ' ') ++i;
                 s.erase(0, i);
                 s = trim(s);
             } else {
                 i = twidth+1;
-                while (i < int_t(s.size()) && s[i] != ' ') ++i;
+                while (i < s.size() && s[i] != ' ') ++i;
                 ret.data.push_back(header+s.substr(0, i));
                 s.erase(0, i);
                 s = trim(s);

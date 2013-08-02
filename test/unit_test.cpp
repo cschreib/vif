@@ -67,6 +67,9 @@ int main(int argc, char* argv[]) {
         check(v(3), "6");
         v[rx(0,6)](0) = 1;
         check(v, "1, 3, 7, 6, 9, 1, 0");
+
+        // Negative indices
+        check(v[-1], "0");
     }
 
     {
@@ -154,6 +157,12 @@ int main(int argc, char* argv[]) {
         check(v, "4, 5, 6, 7, 8, 9, 5, 2, 0, 1, 2, 3, -1, -5, -6, -7, -4, 1, -2, 5");
         v(_,2) = {-4, -4, -4, -4, -4};
         check(v, "4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, -4, 1, -4, 5");
+
+        v(-1,_) = replicate(2,4);
+        check(v, "4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, 2, 2, 2, 2");
+
+        v(_,-1) = replicate(-2,5);
+        check(v, "4, 5, -4, -2, 8, 9, -4, -2, 0, 1, -4, -2, -1, -5, -4, -2, 2, 2, 2, -2");
     }
     
     {
@@ -244,7 +253,7 @@ int main(int argc, char* argv[]) {
         vec1i t1 = {4,5,6,7,8,9};
         vec1i t2 = {9,1,7,10,5};
         
-        vec1i id1, id2;
+        vec1u id1, id2;
         match(t1, t2, id1, id2);
         check(id1, "5, 3, 1");
         check(id2, "0, 2, 4");
@@ -323,7 +332,7 @@ int main(int argc, char* argv[]) {
         uint_t seed = 42;
         vec1i i = {4,5,-8,5,2,0};
         vec1i si = shuffle(i, seed);
-        vec1i id1, id2;
+        vec1u id1, id2;
         match(i, si, id1, id2);
         check(i.size() == id1.size(), "1");
         check(si.size() == id2.size(), "1");

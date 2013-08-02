@@ -36,9 +36,8 @@ psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& terr, cons
     img_type icut = subregion(img, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, 0.0);
     err_type ecut = subregion(err, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, max_error);
     
-    int_t cnt;
-    vec1i idnan = where(!finite(icut) || !finite(ecut), cnt);
-    if (cnt != 0) {
+    vec1u idnan = where(!finite(icut) || !finite(ecut));
+    if (!idnan.empty()) {
         icut[idnan] = 0.0;
         ecut[idnan] = max_error;
     }
@@ -136,7 +135,7 @@ T lookback_time(const T& z, const cosmo_t& cosmo) {
             auto tz = merge(0.0, e10(rgen(log10(mi), log10(ma), npt))); \
             using rtype = rtype_t<Type>; \
             vec_t<1,rtype> td = arr<rtype>(npt+1); \
-            for (int_t i = 0; i < npt+1; ++i) { \
+            for (uint_t i = 0; i < npt+1; ++i) { \
                 td[i] = name(tz[i], args...); \
             } \
             vec_t<1,rtype> r = z; \
@@ -201,9 +200,9 @@ double angdist(double ra1, double dec1, double ra2, double dec2) {
 }
 
 struct qxmatch_res {
-    vec2i id;
+    vec2u id;
     vec2d d;
-    vec2i rid;
+    vec2u rid;
     vec2d rd;
 
     // Reflection data
@@ -230,7 +229,7 @@ qxmatch_res qxmatch(const C1& cat1, const C2& cat2, Args&& ... args) {
 template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
 qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
-    declare_keywords(_thread(1), _nth(1), _verbose(false), _self(false))) {
+    declare_keywords(_thread(1u), _nth(1u), _verbose(false), _self(false))) {
 
     phypp_check(n_elements(ra1) == n_elements(dec1), "qxmatch: not as many RA as there are Dec");
     phypp_check(n_elements(ra2) == n_elements(dec2), "qxmatch: not as many RA as there are Dec");
@@ -243,19 +242,19 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     auto ddec2 = dec2*d2r;
     auto dcdec2 = cos(ddec2);
 
-    const int_t n1 = n_elements(ra1); 
-    const int_t n2 = n_elements(ra2);
+    const uint_t n1 = n_elements(ra1); 
+    const uint_t n2 = n_elements(ra2);
     
-    const int_t nth = get_keyword(_nth);
+    const uint_t nth = clamp(get_keyword(_nth), 1u, npos);
     const bool self = get_keyword(_self);
 
     qxmatch_res res;
-    res.id = intarr(nth, n1)-1;
+    res.id = replicate(npos, nth, n1);
     res.d  = dblarr(nth, n1)+dinf;
-    res.rid = intarr(nth, n2)-1;
+    res.rid = replicate(npos, nth, n2);
     res.rd  = dblarr(nth, n2)+dinf;
 
-    auto work = [&] (int_t i, int_t j) {
+    auto work = [&] (uint_t i, uint_t j) {
         // For each pair of source, compute a distance indicator.
         // Note that this is not the 'true' distance in arseconds, but this is sufficient
         // to find the nearest neighbors (the true distance is obtained by computing 
@@ -272,8 +271,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         if (sd < res.d(nth-1,i)) {
             res.id(nth-1,i) = j;
             res.d(nth-1,i) = sd;
-            int_t k = nth-2;
-            while (k >= 0 && res.d(k,i) > res.d(k+1,i)) {
+            uint_t k = nth-2;
+            while (k != npos && res.d(k,i) > res.d(k+1,i)) {
                 std::swap(res.d(k,i), res.d(k+1,i));
                 std::swap(res.id(k,i), res.id(k+1,i));
                 --k;
@@ -282,8 +281,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         if (sd < res.rd(nth-1,j)) {
             res.rid(nth-1,j) = i;
             res.rd(nth-1,j) = sd;
-            int_t k = nth-2;
-            while (k >= 0 && res.rd(k,j) > res.rd(k+1,j)) {
+            uint_t k = nth-2;
+            while (k != npos && res.rd(k,j) > res.rd(k+1,j)) {
                 std::swap(res.rd(k,j), res.rd(k+1,j));
                 std::swap(res.rid(k,j), res.rid(k+1,j));
                 --k;
@@ -291,12 +290,12 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         }
     };
     
-    int_t nthread = get_keyword(_thread);
+    const uint_t nthread = get_keyword(_thread);
     if (nthread <= 1) {
         // When using a single thread, all the work is done in the main thread
         auto p = progress_start(n1);
-        for (int_t i = 0; i < n1; ++i) {
-            for (int_t j = 0; j < n2; ++j) {
+        for (uint_t i = 0; i < n1; ++i) {
+            for (uint_t j = 0; j < n2; ++j) {
                 if (self && i == j) continue;
                 work(i,j);
             }
@@ -306,20 +305,20 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     } else {
         // When using more than one thread, the work load is evenly separated between all the
         // available threads, such that they should more or less all end at the same time.
-        std::atomic<int_t> iter(0);
+        std::atomic<uint_t> iter(0);
     
         // Create the thread pool and launch the threads
         auto pool = thread::pool(nthread);
-        int_t total = 0;
-        int_t assigned = floor(n1/float(nthread));
-        for (int_t t = 0; t < nthread; ++t) {
+        uint_t total = 0;
+        uint_t assigned = floor(n1/float(nthread));
+        for (uint_t t = 0; t < nthread; ++t) {
             if (t == nthread-1) {
                 assigned = n1 - total;
             }
             
             pool[t].start([&iter, &work, total, self, assigned, n2]() {
-                for (int_t i = total; i < total+assigned; ++i) {
-                    for (int_t j = 0; j < n2; ++j) {
+                for (uint_t i = total; i < total+assigned; ++i) {
+                    for (uint_t j = 0; j < n2; ++j) {
                         if (self && i == j) continue;
                         work(i,j);
                     }
@@ -354,19 +353,19 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
 }
 
 struct id_pair {
-    vec1i id1, id2;
-    vec1i lost;
+    vec1u id1, id2;
+    vec1u lost;
 };
 
 id_pair xmatch_clean_best(const qxmatch_res& r) {
-    const int_t ngal = dim(r.id)[1];
+    const uint_t ngal = dim(r.id)[1];
     
     id_pair c;
     c.id1.data.reserve(ngal);
     c.id2.data.reserve(ngal);
     c.lost.data.reserve(ngal/6);
 
-    for (int_t i = 0; i < ngal; ++i) {
+    for (uint_t i = 0; i < ngal; ++i) {
         if (r.rid[r.id[i]] == i) {
             c.id1.data.push_back(i);
             c.id2.data.push_back(r.id[i]);
@@ -594,7 +593,7 @@ std::string build_catalog_list(const catalog_pool_t& pool, uint_t width = 80) {
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
 auto field_area(const TX& ra, const TY& dec) {
-    vec1i hull = convex_hull(ra, dec);
+    vec1u hull = convex_hull(ra, dec);
 
     decltype(1.0*ra[0]*dec[0]) area = 0;
 
@@ -619,7 +618,7 @@ auto field_area(const TX& ra, const TY& dec) {
 // Coordinates are assumed to be given in degrees.
 template<typename T>
 auto field_area(const T& t) {
-    vec1i hull = convex_hull(t.ra, t.dec);
+    vec1u hull = convex_hull(t.ra, t.dec);
 
     decltype(1.0*t.ra[0]*t.dec[0]) area = 0;
 

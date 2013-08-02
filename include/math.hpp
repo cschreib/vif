@@ -15,11 +15,11 @@ static const float  fpi = 3.14159265359;
 
 // Create a range.
 template<typename T>
-vec1i rgen(T n) {
+vec1u rgen(T n) {
     phypp_check(n >= 0, "'rgen(n)' needs a positive or null value for 'n' (got ", n, ")");
     
-    vec1i v = intarr(n);
-    for (int_t k = 0; k < int_t(n); ++k) {
+    vec1u v = uintarr(n);
+    for (uint_t k = 0; k < uint_t(n); ++k) {
         v[k] = k; 
     }
     
@@ -27,18 +27,18 @@ vec1i rgen(T n) {
 }
 
 template<typename T, typename U>
-vec1i rgen(T i, U j) {
+vec_t<1,T> rgen(T i, U j) {
     if (i < T(j)) {
-        int_t n = j-i+1;
-        vec1i v = intarr(n);
-        for (int_t k = 0; k < n; ++k) {
+        uint_t n = j-i+1;
+        vec_t<1,T> v = arr<T>(n);
+        for (uint_t k = 0; k < n; ++k) {
             v[k] = i+k; 
         }
         return v;
     } else {   
-        int_t n = i-j+1;
-        vec1i v = intarr(n);
-        for (int_t k = 0; k < n; ++k) {
+        uint_t n = i-j+1;
+        vec_t<1,T> v = arr<T>(n);
+        for (uint_t k = 0; k < n; ++k) {
             v[k] = i-k;
         }
         return v;
@@ -57,7 +57,7 @@ vec1d rgen(T i, U j, V n) {
         vec1d v = dindgen(n);
         
         double dx = (j-i)/double(n-1); 
-        for (int_t k = 0; k < int_t(n); ++k) {
+        for (uint_t k = 0; k < uint_t(n); ++k) {
             v[k] = i + k*dx; 
         }
         
@@ -77,7 +77,7 @@ vec1d rgen_log(T i, U j, V n) {
         vec1d v = dindgen(n);
         
         double dx = log10(j/i)/double(n-1); 
-        for (int_t k = 0; k < int_t(n); ++k) {
+        for (uint_t k = 0; k < uint_t(n); ++k) {
             v[k] = i*pow(10.0, k*dx); 
         }
         
@@ -132,8 +132,7 @@ vec_t<sizeof...(Args),double> randomu(T& seed, Args&& ... args) {
 
 template<std::size_t Dim, typename Type, typename T>
 auto shuffle(const vec_t<Dim,Type>& v, T& seed) {
-    vec1i sid = sort(randomu(seed, v.size()));
-    return v[sid];
+    return v[sort(randomu(seed, v.size()))];
 }
 
 template<typename F, F f, std::size_t Dim, typename Type>
@@ -215,8 +214,8 @@ vec_t<Dim-1,double> mean(const vec_t<Dim,Type>& v, uint_t dim) {
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> median(const vec_t<Dim,Type>& v) {
-    vec_t<1,int_t> ok = where(finite(v));
-    if (n_elements(ok) == 0) return 0;
+    vec1u ok = where(finite(v));
+    if (ok.empty()) return 0;
     
     typename vec_t<1,Type>::effective_type t = v[ok];
     std::ptrdiff_t offset = t.size()/2;
@@ -232,8 +231,8 @@ vec_t<Dim-1,rtype_t<Type>> median(const vec_t<Dim,Type>& v, uint_t dim) {
 
 template<std::size_t Dim, typename Type, typename U>
 rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
-    vec_t<1,int_t> ok = where(finite(v));
-    if (n_elements(ok) == 0) return 0;
+    vec1u ok = where(finite(v));
+    if (ok.empty()) return 0;
     
     typename vec_t<1,Type>::effective_type t = v[ok];
     std::ptrdiff_t offset = t.size()*u;
@@ -256,9 +255,9 @@ void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, co
 
 template<std::size_t Dim, typename Type, typename ... Args>
 typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, const Args& ... args) {
-    vec_t<1,int_t> ok = where(finite(v));
+    vec1u ok = where(finite(v));
     typename vec_t<1,Type>::effective_type t;
-    if (n_elements(ok) == 0) return t;
+    if (ok.empty()) return t;
     t = v[ok];
 
     typename vec_t<1,Type>::effective_type r = arr<rtype_t<Type>>(sizeof...(Args));
@@ -269,8 +268,8 @@ typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, con
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec_t<Dim,Type>& v) {
-    vec1i ok = where(finite(v));
-    if (n_elements(ok) == 0) return 0;
+    vec1u ok = where(finite(v));
+    if (ok.empty()) return 0;
     
     typename vec_t<1,Type>::effective_type t = v[ok];
     std::nth_element(t.begin(), t.begin(), t.end());
@@ -279,8 +278,8 @@ rtype_t<Type> min(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> max(const vec_t<Dim,Type>& v) {
-    vec1i ok = where(finite(v));
-    if (n_elements(ok) == 0) return 0;
+    vec1u ok = where(finite(v));
+    if (ok.empty()) return 0;
     
     typename vec_t<1,Type>::effective_type t = v[ok];
     std::nth_element(t.begin(), t.end()-1, t.end());
@@ -289,50 +288,28 @@ rtype_t<Type> max(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 uint_t min_id(const vec_t<Dim,Type>& v) {
-    vec1i ok = where(finite(v));
-    if (n_elements(ok) == 0) return 0;
+    vec1u ok = where(finite(v));
+    if (ok.empty()) return 0;
 
-    using ntype = typename vec_t<Dim,Type>::drtype;
-    struct tsort {
-        ntype v;
-        int_t i;
-    };
-    
-    std::vector<tsort> tmp(ok.size());
-    for (uint_t i = 0; i < ok.size(); ++i) {
-        tmp[i].v = dref(v.data[ok.data[i]]);
-        tmp[i].i = ok.data[i];
-    }
-    
-    std::nth_element(tmp.begin(), tmp.begin(), tmp.end(), 
-        [](const tsort& t1, const tsort& t2) { return t1.v < t2.v; }
-    );
+    vec1u tmp = uindgen(ok.size());
+    std::nth_element(tmp.begin(), tmp.begin(), tmp.end(), [&](uint_t i, uint_t j) {
+        return v[ok[i]] < v[ok[j]];
+    });
 
-    return tmp.begin()->i;
+    return ok[*tmp.begin()];
 }
 
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec_t<Dim,Type>& v) {
-    vec1i ok = where(finite(v));
+    vec1u ok = where(finite(v));
     if (n_elements(ok) == 0) return 0;
 
-    using ntype = typename vec_t<Dim,Type>::drtype;
-    struct tsort {
-        ntype v;
-        int_t i;
-    };
-    
-    std::vector<tsort> tmp(ok.size());
-    for (uint_t i = 0; i < ok.size(); ++i) {
-        tmp[i].v = dref(v.data[ok.data[i]]);
-        tmp[i].i = ok.data[i];
-    }
-    
-    std::nth_element(tmp.begin(), tmp.end()-1, tmp.end(), 
-        [](const tsort& t1, const tsort& t2) { return t1.v < t2.v; }
-    );
+    vec1u tmp = uindgen(ok.size());
+    std::nth_element(tmp.begin(), tmp.end()-1, tmp.end(), [&](uint_t i, uint_t j) {
+        return v[ok[i]] < v[ok[j]];
+    });
 
-    return (tmp.end()-1)->i;
+    return ok[*(tmp.end()-1)];
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
@@ -367,7 +344,7 @@ double stddev(const vec_t<Dim,T>& v) {
 
 template<std::size_t Dim, typename Type>
 void data_info_(const vec_t<Dim,Type>& v) {
-    vec1i idok = where(finite(v));
+    vec1u idok = where(finite(v));
     print(n_elements(idok), "/", n_elements(v), " valid values (dims: ", dim(v), ")");
     if (n_elements(idok) == 0) return;
     print(" min : ", min(v[idok]));
@@ -507,16 +484,16 @@ auto derivate2(F func, const vec1d& x, const double ep, uint_t ip1, uint_t ip2) 
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(a(0,0)*b(0,0))> {
     assert(a.dims[1] == b.dims[0]);
-    const int_t o = a.dims[1];
+    const uint_t o = a.dims[1];
     
     using ntype_t = decltype(a(0,0)*b(0,0));
-    const int_t n = a.dims[0];
-    const int_t m = b.dims[1];
+    const uint_t n = a.dims[0];
+    const uint_t m = b.dims[1];
     
     vec_t<2,ntype_t> r = arr<ntype_t>(n,m);
-    for (int_t i = 0; i < n; ++i)
-    for (int_t j = 0; j < m; ++j) 
-    for (int_t k = 0; k < o; ++k) {
+    for (uint_t i = 0; i < n; ++i)
+    for (uint_t j = 0; j < m; ++j) 
+    for (uint_t k = 0; k < o; ++k) {
         r(i,j) += a(i,k)*b(k,j);    
     } 
     
@@ -526,14 +503,14 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
     assert(a.dims[1] == b.dims[0]);
-    const int_t o = a.dims[1];
+    const uint_t o = a.dims[1];
     
     using ntype_t = decltype(a(0,0)*b(0,0));
-    const int_t n = a.dims[0];
+    const uint_t n = a.dims[0];
     
     vec_t<1,ntype_t> r = arr<ntype_t>(n);
-    for (int_t i = 0; i < n; ++i)
-    for (int_t k = 0; k < o; ++k) {
+    for (uint_t i = 0; i < n; ++i)
+    for (uint_t k = 0; k < o; ++k) {
         r(i) += a(i,k)*b(k);    
     } 
     
@@ -650,8 +627,8 @@ nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double
 
     nlfit_result fr;
     
-    int_t np = n_elements(params);
-    int_t nm = n_elements(y);
+    uint_t np = n_elements(params);
+    uint_t nm = n_elements(y);
     
     vec2d alpha = dblarr(np,np);
     vec1d beta  = dblarr(np);
@@ -676,13 +653,13 @@ nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double
     vec2d deriv = dblarr(np,nm);
     
     auto make_alpha = [&]() {
-        for (int_t i = 0; i < np; ++i) {
+        for (uint_t i = 0; i < np; ++i) {
             deriv(i,_) = flatten(derivate1(f, params, 0.001, i)/ye);
         }
         
         auto tmp = flatten((y - f(params))/ye);
-        for (int_t i = 0; i < np; ++i) {
-            for (int_t j = 0; j < np; ++j) {
+        for (uint_t i = 0; i < np; ++i) {
+            for (uint_t j = 0; j < np; ++j) {
                 if (i == j) {
                     alpha(i,i) = (1.0 + lambda)*total(deriv(i,_)*deriv(i,_));
                 } else if (i < j) {
@@ -809,8 +786,8 @@ template<typename TypeY, typename TypeE, typename ... Args>
 linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
     linfit_result fr;
     
-    int_t np = sizeof...(Args);
-    int_t nm = n_elements(y);
+    uint_t np = sizeof...(Args);
+    uint_t nm = n_elements(y);
     
     vec2d alpha = dblarr(np,np);
     vec1d beta = dblarr(np);
@@ -819,8 +796,8 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
     linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
     
     auto tmp = flatten(y/ye);
-    for (int_t i = 0; i < np; ++i) {
-        for (int_t j = 0; j < np; ++j) {
+    for (uint_t i = 0; i < np; ++i) {
+        for (uint_t j = 0; j < np; ++j) {
             if (i <= j) {
                 alpha(i,j) = total(cache(i,_)*cache(j,_));
             } else {
@@ -845,7 +822,7 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
     fr.errors = sqrt(diag(alpha));
     
     vec1d model = dblarr(nm);
-    for (int_t i = 0; i < nm; ++i) {
+    for (uint_t i = 0; i < nm; ++i) {
         model(i) = total(fr.params*cache(_,i));
     }
     
@@ -909,12 +886,12 @@ affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
 // Returns -1 if no value satisfy this criterium.
 // Note: assumes that 'v' is sorted.
 template<typename T, typename Type>
-int_t lower_bound(T x, const vec_t<1,Type>& v) {
+uint_t lower_bound(T x, const vec_t<1,Type>& v) {
     auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
         typename vec_t<1,Type>::comparator());
 
     do {
-        if (iter == v.data.begin()) return -1;
+        if (iter == v.data.begin()) return npos;
         --iter;
     } while (!finite(dref(*iter)));
 
@@ -925,12 +902,12 @@ int_t lower_bound(T x, const vec_t<1,Type>& v) {
 // Returns -1 if no value satisfy this criterium.
 // Note: assumes that 'v' is sorted.
 template<typename T, typename Type>
-int_t upper_bound(T x, const vec_t<1,Type>& v) {
+uint_t upper_bound(T x, const vec_t<1,Type>& v) {
     auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
         typename vec_t<1,Type>::comparator());
 
     if (iter == v.data.end()) {
-        return -1;
+        return npos;
     } else {
         return iter - v.data.begin();
     }
@@ -939,8 +916,7 @@ int_t upper_bound(T x, const vec_t<1,Type>& v) {
 // Check if a given array is sorted or not
 template<typename Type>
 bool is_sorted(const vec_t<1,Type>& v) {
-    const int_t n = n_elements(v);
-    for (int_t i = 0; i < n-1; ++i) {
+    for (uint_t i = 0; i < v.size()-1; ++i) {
         if (v[i] >= v[i+1]) return false;
     }
 
@@ -963,23 +939,23 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,T
     auto okx = x[idok1];
     auto oky = y[idok1];
 
-    int_t cnt;
-    auto idok2 = where(finite(nx), cnt);
+    auto idok2 = where(finite(nx));
     auto r = replicate(y[0]*dnan, n_elements(nx));
 
-    for (int_t i = 0; i < cnt; ++i) {
-        int_t j = idok2[i];
+    uint_t npt = idok2.size();
+    for (uint_t i = 0; i < npt; ++i) {
+        uint_t j = idok2[i];
         auto tx = nx[j];
 
-        int_t low = lower_bound(tx, okx);
-        int_t up  = upper_bound(tx, okx);
+        uint_t low = lower_bound(tx, okx);
+        uint_t up  = upper_bound(tx, okx);
 
         rtypey ylow, yup;
         rtypex xlow, xup;
-        if (low >= 0 && up >= 0) {
+        if (low != npos && up != npos) {
             ylow = oky[low]; yup = oky[up];
             xlow = okx[low]; xup = okx[up];
-        } else if (low < 0) {
+        } else if (low == npos) {
             ylow = oky[up]; yup = oky[up+1];
             xlow = okx[up]; xup = okx[up+1];
         } else {
@@ -1010,15 +986,15 @@ auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     auto okx = x[idok1];
     auto oky = y[idok1];
 
-    int_t low = lower_bound(nx, okx);
-    int_t up  = upper_bound(nx, okx);
+    uint_t low = lower_bound(nx, okx);
+    uint_t up  = upper_bound(nx, okx);
 
     rtypey ylow, yup;
     rtypex xlow, xup;
-    if (low >= 0 && up >= 0) {
+    if (low != npos && up != npos) {
         ylow = oky[low]; yup = oky[up];
         xlow = okx[low]; xup = okx[up];
-    } else if (low < 0) {
+    } else if (low == npos) {
         ylow = oky[up]; yup = oky[up+1];
         xlow = okx[up]; xup = okx[up+1];
     } else {
@@ -1045,21 +1021,20 @@ auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_
     phypp_check(n_elements(y) >= 2,
         "interpol: 'x' and 'y' arrays must contain at least 2 elements");
 
-    int_t cnt = n_elements(nx);
-    auto r = replicate(y[0]*dnan, cnt);
-
-    for (int_t i = 0; i < cnt; ++i) {
+    uint_t npt = nx.size();
+    auto r = replicate(y[0]*dnan, npt);
+    for (uint_t i = 0; i < npt; ++i) {
         auto tx = nx[i];
 
-        int_t low = lower_bound(tx, x);
-        int_t up  = upper_bound(tx, x);
+        uint_t low = lower_bound(tx, x);
+        uint_t up  = upper_bound(tx, x);
 
         rtypey ylow, yup;
         rtypex xlow, xup;
-        if (low >= 0 && up >= 0) {
+        if (low != npos && up != npos) {
             ylow = y[low]; yup = y[up];
             xlow = x[low]; xup = x[up];
-        } else if (low < 0) {
+        } else if (low == npos) {
             ylow = y[up]; yup = y[up+1];
             xlow = x[up]; xup = x[up+1];
         } else {
@@ -1090,15 +1065,15 @@ auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx
     phypp_check(n_elements(y) >= 2,
         "interpol: 'x' and 'y' arrays must contain at least 2 elements");
 
-    int_t low = lower_bound(nx, x);
-    int_t up  = upper_bound(nx, x);
+    uint_t low = lower_bound(nx, x);
+    uint_t up  = upper_bound(nx, x);
 
     rtypey ylow, yup;
     rtypex xlow, xup;
-    if (low >= 0 && up >= 0) {
+    if (low != npos && up != npos) {
         ylow = y[low]; yup = y[up];
         xlow = x[low]; xup = x[up];
-    } else if (low < 0) {
+    } else if (low == npos) {
         ylow = y[up]; yup = y[up+1];
         xlow = x[up]; xup = x[up+1];
     } else {
@@ -1114,8 +1089,7 @@ auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y) -> decltype(0.5
     assert(n_elements(x) == n_elements(y));
     
     decltype(0.5*y[0]*x[0]) r = 0;
-    const int_t n = n_elements(x);
-    for (int_t i = 0; i < n-1; ++i) {
+    for (uint_t i = 0; i < x.size()-1; ++i) {
         r += 0.5*(y[i+1]+y[i])*(x[i+1]-x[i]);
     }
     
@@ -1179,21 +1153,21 @@ auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>:
 // Uses the monotone chain algorithm, taken from:
 // http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#C.2B.2B
 template<typename TX, typename TY>
-vec1i convex_hull(const TX& x, const TY& y) {
+vec1u convex_hull(const TX& x, const TY& y) {
     phypp_check(n_elements(x) == n_elements(y),
         "convex_hull requires same number of elements in 'x' and 'y'");
 
     uint_t npt = n_elements(x);
-    vec1i res = intarr(2*npt);
-    vec1i ids = indgen(npt);
-    std::sort(ids.data.begin(), ids.data.end(), [&](int_t i, int_t j) {
+    vec1u res = uintarr(2*npt);
+    vec1u ids = uindgen(npt);
+    std::sort(ids.data.begin(), ids.data.end(), [&](uint_t i, uint_t j) {
         if (x[i] < x[j]) return true;
         if (x[i] > x[j]) return false;
         if (y[i] < y[j]) return true;
         return false;
     });
 
-    auto cross = [&](int_t i, int_t j, int_t k) {
+    auto cross = [&](uint_t i, uint_t j, uint_t k) {
         return (x[j] - x[i])*(y[k] - y[i]) - (y[j] - y[i])*(x[k] - x[i]);
     };
 
@@ -1205,7 +1179,7 @@ vec1i convex_hull(const TX& x, const TY& y) {
     }
 
     uint_t t = k+1;
-    for (int_t i = npt-2; i >= 0; --i) {
+    for (uint_t i = npt-2; i != npos; --i) {
         while (k >= t && cross(res[k-2], res[k-1], ids[i]) <= 0) --k;
         res[k] = ids[i];
         ++k;

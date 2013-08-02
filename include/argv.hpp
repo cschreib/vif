@@ -118,7 +118,7 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
         name = trim(name.substr(p+1));
     }
 
-    vec1i idm = where(find(argv, name) >= 0);
+    vec1u idm = where(find(argv, name) != npos);
     for (auto& i : idm) {
         read_args_impl_(argv[i], read[i], valid[i], name, t);
         if (!valid[i]) {
@@ -133,11 +133,11 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
 }
 
 template<typename ... Args>
-void read_args(int argc, char* argv[], const std::string& names, Args&& ... args) {
+void read_args(uint_t argc, char* argv[], const std::string& names, Args&& ... args) {
     if (argc <= 1) return;
 
     vec1s sargv = strarr(argc-1);
-    for (int_t i = 1; i < argc; ++i) {
+    for (uint_t i = 1; i < argc; ++i) {
         sargv[i-1] = trim(argv[i]);
     }
 
@@ -146,7 +146,7 @@ void read_args(int argc, char* argv[], const std::string& names, Args&& ... args
 
     read_args_(sargv, read, valid, names, std::forward<Args>(args)...);
 
-    vec1i idm = where(!read);
+    vec1u idm = where(!read);
     for (auto& i : idm) {
         warning("unrecognized program argument '", sargv[i],"'");
     }

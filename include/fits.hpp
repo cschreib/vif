@@ -134,7 +134,7 @@ namespace fits {
             
             vec_t<Dim, Type> v;
             std::size_t n = 1;
-            for (std::size_t i = 0; i < Dim; ++i) {
+            for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
                 n *= v.dims[i]; 
             }
@@ -161,7 +161,7 @@ namespace fits {
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
             
             std::size_t n = 1;
-            for (std::size_t i = 0; i < Dim; ++i) {
+            for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
                 n *= v.dims[i]; 
             }
@@ -186,7 +186,7 @@ namespace fits {
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
             
             std::size_t n = 1;
-            for (std::size_t i = 0; i < Dim; ++i) {
+            for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
                 n *= v.dims[i]; 
             }
@@ -212,7 +212,7 @@ namespace fits {
     template<typename T>
     bool getkey(const fits::header& hdr, const std::string& key, T& v) {
         std::size_t nentry = hdr.size()/80 + 1;
-        for (std::size_t i = 0; i < nentry; ++i) {
+        for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
@@ -231,7 +231,7 @@ namespace fits {
     
     bool getkey(const fits::header& hdr, const std::string& key, std::string& v) {
         std::size_t nentry = hdr.size()/80 + 1;
-        for (std::size_t i = 0; i < nentry; ++i) {
+        for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
@@ -321,8 +321,8 @@ namespace fits {
         std::size_t ngal = ra.size();
         
         vec1d world = dblarr(2*ngal);
-        vec1i ids1 = 2*indgen(ngal);
-        vec1i ids2 = ids1+1;
+        vec1u ids1 = 2*uindgen(ngal);
+        vec1u ids2 = ids1+1;
         world[ids1] = ra;
         world[ids2] = dec;
         
@@ -343,12 +343,12 @@ namespace fits {
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v) {
         std::array<long,Dim> isize;
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             isize[i] = v.dims[Dim-1-i];
         }
         
         std::valarray<rtype_t<Type>> tv(v.size());
-        for (std::size_t i = 0; i < v.size(); ++i) {
+        for (uint_t i = 0; i < v.size(); ++i) {
             tv[i] = dref(v.data[i]); 
         }
         
@@ -364,7 +364,7 @@ namespace fits {
     
     void header2fits_(fits::HDU& hdu, const std::string& hdr) {
         std::size_t nentry = hdr.size()/80 + 1;
-        for (std::size_t i = 0; i < nentry; ++i) {
+        for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
@@ -394,12 +394,12 @@ namespace fits {
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v, const fits::header& hdr) {
         std::array<long,Dim> isize;
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             isize[i] = v.dims[Dim-1-i];
         }
         
         std::valarray<rtype_t<Type>> tv(v.size());
-        for (std::size_t i = 0; i < v.size(); ++i) {
+        for (uint_t i = 0; i < v.size(); ++i) {
             tv[i] = dref(v.data[i]); 
         }
         
@@ -450,7 +450,7 @@ namespace fits {
         phypp_check(naxis == Dim, "wrong dimension for column '"+colname+"'");
         status = 0;
         
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             v.dims[i] = naxes[Dim-1-i];
         }
         
@@ -509,7 +509,7 @@ namespace fits {
         phypp_check(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
         status = 0;
         
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             v.dims[i] = naxes[Dim-i];
         }
         
@@ -525,7 +525,7 @@ namespace fits {
         
         for (uint_t i = 0; i < n_elements(v); ++i) {
             v[i].reserve(naxes[0]);
-            for (int_t j = 0; j < naxes[0]; ++j) {
+            for (uint_t j = 0; j < uint_t(naxes[0]); ++j) {
                 char c = buffer[i*naxes[0] + j];
                 if (c == '\0') break;
                 v[i].push_back(c);
@@ -702,7 +702,7 @@ namespace fits {
         );
 
         std::array<long,Dim> dims;
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = v.dims[Dim-1-i];
         }
         
@@ -748,7 +748,7 @@ namespace fits {
 
         std::array<long,Dim+1> dims;
         dims[0] = nmax;
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             dims[i+1] = v.dims[Dim-1-i];
         }
         

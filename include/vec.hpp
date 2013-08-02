@@ -15,6 +15,7 @@
 
 using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;
+static const uint_t npos = uint_t(-1);
 
 // Generic vector type
 template<std::size_t Dim, typename Type>
@@ -90,6 +91,21 @@ struct is_vec<vec_t<Dim,Type>&> : public std::true_type {};
 template<std::size_t Dim, typename Type>
 struct is_vec<const vec_t<Dim,Type>&> : public std::true_type {}; 
 
+
+// Return the data type of the provided type 
+template<typename T>
+struct data_type_t_ {
+    using type = T;
+};
+
+template<std::size_t Dim, typename T>
+struct data_type_t_<vec_t<Dim,T>> {
+    using type = T;
+};
+
+template<typename T>
+using data_type_t = typename data_type_t_<T>::type;
+
 // Helper to cound the number of generic vector in an argument list.
 template<typename T, typename ... Args>
 struct count_vec {
@@ -125,7 +141,7 @@ struct make_vrtype_i {
     template<typename T, typename ... Args2>
     static uint_t make_(vtype& v, uint_t idx, const T& ix, const Args2& ... i) {
         uint_t pitch = 1;
-        for (std::size_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
+        for (uint_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
             pitch *= v.dims[j];
         }
         
@@ -185,8 +201,6 @@ struct make_vrtype_v {
     
     template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
     static void resize_(vtype& v, type& t, cte_t<ODim>, const T& ix) {
-        v.template to_idx<Dim-1>(ix);
-        // assert(v.to_idx(ix) < v.dims[Dim-1]);
         t.resize();
     }
     
@@ -197,19 +211,12 @@ struct make_vrtype_v {
     
     template<typename T>
     static void resize_(vtype& v, type& t, cte_t<ODim-1>, const vec_t<1,T>& r) {
-        for (std::size_t j = 0; j < r.data.size(); ++j) {
-            v.template to_idx<Dim-1>(r.data[j]);
-            // assert(v.to_idx(r.data[j]) < v.dims[Dim-1]);
-        }
-        
         t.dims[ODim-1] = r.data.size();
         t.resize();
     }
     
     template<std::size_t M, typename T, typename ... Args2, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
     static void resize_(vtype& v, type& t, cte_t<M>, const T& ix, const Args2&... i) {
-        v.template to_idx<Dim-1-sizeof...(Args2)>(ix);
-        // assert(v.to_idx(ix) < v.dims[Dim-1-sizeof...(Args2)]);
         resize_(v, t, cte_t<M>(), i...);
     }
     
@@ -221,11 +228,6 @@ struct make_vrtype_v {
     
     template<std::size_t M, typename T, typename ... Args2>
     static void resize_(vtype& v, type& t, cte_t<M>, const vec_t<1,T>& r, const Args2&... i) {
-        for (std::size_t j = 0; j < r.data.size(); ++j) {
-            v.template to_idx<Dim-1-sizeof...(Args2)>(r.data[j]);
-            // assert(v.to_idx(r.data[j]) < v.dims[Dim-1-sizeof...(Args2)]);
-        }
-        
         t.dims[M] = r.data.size();
         resize_(v, t, cte_t<M+1>(), i...);
     }
@@ -233,12 +235,12 @@ struct make_vrtype_v {
     
     template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
     static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const T& ix) {
-        t.data[itx] = ref(v.data[ivx+ix]);
+        t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
         ++itx;
     }
     
     static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, placeholder_t) {
-        for (std::size_t j = 0; j < v.dims[Dim-1]; ++j) {
+        for (uint_t j = 0; j < v.dims[Dim-1]; ++j) {
             t.data[itx] = ref(v.data[ivx+j]);
             ++itx;
         }
@@ -246,8 +248,8 @@ struct make_vrtype_v {
     
     template<typename T>
     static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const vec_t<1,T>& r) {
-        for (std::size_t j = 0; j < r.data.size(); ++j) {
-            t.data[itx] = ref(v.data[ivx+r.data[j]]);
+        for (uint_t j = 0; j < r.data.size(); ++j) {
+            t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(dref(r.data[j]))]);
             ++itx;
         }
     }
@@ -262,14 +264,14 @@ struct make_vrtype_v {
     
     template<typename ... Args2>
     static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, placeholder_t, const Args2&... i) {
-        for (std::size_t j = 0; j < v.dims[Dim-1-sizeof...(Args2)]; ++j) {
+        for (uint_t j = 0; j < v.dims[Dim-1-sizeof...(Args2)]; ++j) {
             make_(v, ivx + j*pitch[Dim-1-sizeof...(Args2)], pitch, t, itx, i...);
         }
     }
     
     template<typename T, typename ... Args2>
     static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const vec_t<1,T>& r, const Args2&... i) {
-        for (std::size_t j = 0; j < r.data.size(); ++j) {
+        for (uint_t j = 0; j < r.data.size(); ++j) {
             make_(v, ivx +
                 v.template to_idx<Dim-1-sizeof...(Args2)>(dref(r.data[j]))*
                 pitch[Dim-1-sizeof...(Args2)], pitch, t, itx, i...
@@ -283,9 +285,9 @@ struct make_vrtype_v {
         t.resize();
         
         std::array<uint_t, Dim> pitch;
-        for (std::size_t j = 0; j < Dim; ++j) {
+        for (uint_t j = 0; j < Dim; ++j) {
             pitch[j] = 1;
-            for (std::size_t k = j+1; k < Dim; ++k) {
+            for (uint_t k = j+1; k < Dim; ++k) {
                 pitch[j] *= v.dims[k];
             }
         }
@@ -409,7 +411,7 @@ struct vec_t {
     vec_t(vec_t&&) = default;
     
     vec_t(const dtype& t) {
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = 1;
         }
         resize();
@@ -419,7 +421,7 @@ struct vec_t {
     template<std::size_t N,
         typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
     vec_t(const char t[N]) {
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = 1;
         }
         resize();
@@ -428,7 +430,7 @@ struct vec_t {
     
     template<typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
     vec_t(const char* t) {
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = 1;
         }
         resize();
@@ -442,7 +444,7 @@ struct vec_t {
     template<typename T>
     vec_t(const vec_t<Dim,T>& v) : dims(v.dims) {
         data.resize(v.data.size());
-        for (std::size_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i = 0; i < v.data.size(); ++i) {
             data[i] = dref(v.data[i]);
         }
     }
@@ -456,14 +458,14 @@ struct vec_t {
         
         if (v.is_same(*this)) {
             std::vector<dtype> t; t.resize(v.data.size());
-            for (std::size_t i = 0; i < v.data.size(); ++i) {
+            for (uint_t i = 0; i < v.data.size(); ++i) {
                 t[i] = *v.data[i];
             }
-            for (std::size_t i = 0; i < v.data.size(); ++i) {
+            for (uint_t i = 0; i < v.data.size(); ++i) {
                 data[i] = t[i];
             }
         } else {
-            for (std::size_t i = 0; i < v.data.size(); ++i) {
+            for (uint_t i = 0; i < v.data.size(); ++i) {
                 data[i] = *v.data[i];
             }
         }
@@ -491,7 +493,7 @@ struct vec_t {
 
     void resize() {
         std::size_t size = 1;
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             size *= dims[i];
         }
         
@@ -530,7 +532,14 @@ struct vec_t {
         return *this;
     }
     
-    uint_t to_idx(int_t i) const {
+    template<typename T>
+    T to_idx_(T ui, cte_t<false>) const {
+        assert(ui < data.size());
+        return ui;
+    }
+    
+    template<typename T>
+    uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += data.size();
         assert(i >= 0);
         uint_t ui(i);
@@ -538,24 +547,43 @@ struct vec_t {
         return ui;
     }
     
-    template<std::size_t D>
-    uint_t to_idx(int_t i) const {
+    template<std::size_t D, typename T>
+    T to_idx_(T ui, cte_t<false>) const {
+        assert(ui < dims[D]);
+        return ui;
+    }
+    
+    template<std::size_t D, typename T>
+    uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += dims[D];
         assert(i >= 0);
         uint_t ui(i);
         assert(ui < dims[D]);
         return ui;
     }
-    
-    Type& operator [] (int_t i) {
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        return to_idx_(ix, cte_t<std::is_signed<T>::value>());
+    }
+
+    template<std::size_t D, typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
+    }
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
     }
-    
-    const Type& operator [] (int_t i) const {
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    const Type& operator [] (T i) const {
         return vb_ref<Type>::get(data[to_idx(i)]);
     }
 
-    vec_t<1,Type*> operator [] (const vec_t<1,int_t>& i) {
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
         vec_t<1,Type*> v(*this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
@@ -565,7 +593,8 @@ struct vec_t {
         return v;
     }
     
-    vec_t<1,const Type*> operator [] (const vec_t<1,int_t>& i) const {
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
         vec_t<1,const Type*> v(*this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
@@ -638,14 +667,14 @@ struct vec_t {
             assert(data.size() == u.data.size()); \
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
-                for (std::size_t i = 0; i < data.size(); ++i) { \
+                for (uint_t i = 0; i < data.size(); ++i) { \
                     t[i] = dref(u.data[i]); \
                 } \
-                for (std::size_t i = 0; i < data.size(); ++i) { \
+                for (uint_t i = 0; i < data.size(); ++i) { \
                     data[i] op t[i]; \
                 } \
             } else { \
-                for (std::size_t i = 0; i < data.size(); ++i) { \
+                for (uint_t i = 0; i < data.size(); ++i) { \
                     data[i] op dref(u.data[i]); \
                 } \
             } \
@@ -696,6 +725,9 @@ struct vec_t<Dim,Type*> {
     using drtype = rtype;
     using vtype = std::vector<dtype*>;
     struct comparator {
+        bool operator() (const dtype* t1, const dtype* t2) {
+            return *t1 < *t2;
+        }
         bool operator() (const dtype* t1, const dtype& t2) {
             return *t1 < t2;
         }
@@ -725,7 +757,7 @@ struct vec_t<Dim,Type*> {
     }
     
     vec_t& operator = (const Type& t) {
-        for (std::size_t i = 0; i < data.size(); ++i) {
+        for (uint_t i = 0; i < data.size(); ++i) {
             *data[i] = t;
         }
         return *this;
@@ -740,10 +772,10 @@ struct vec_t<Dim,Type*> {
         assert(data.size() == v.data.size());
         // Make a copy to prevent aliasing
         std::vector<dtype> t; t.resize(v.data.size());
-        for (std::size_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i = 0; i < v.data.size(); ++i) {
             t[i] = *v.data[i];
         }
-        for (std::size_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i = 0; i < v.data.size(); ++i) {
             *data[i] = t[i];
         }
         return *this;
@@ -752,7 +784,7 @@ struct vec_t<Dim,Type*> {
     template<typename T>
     vec_t& operator = (const vec_t<Dim,T>& v) {
         assert(data.size() == v.data.size());
-        for (std::size_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i = 0; i < v.data.size(); ++i) {
             *data[i] = dref(v.data[i]);
         }
         return *this;
@@ -773,7 +805,7 @@ struct vec_t<Dim,Type*> {
     
     void resize() {
         std::size_t size = 1;
-        for (std::size_t i = 0; i < Dim; ++i) {
+        for (uint_t i = 0; i < Dim; ++i) {
             size *= dims[i];
         }
         
@@ -783,8 +815,16 @@ struct vec_t<Dim,Type*> {
     effective_type concretise() const {
         return *this;
     }
+
     
-    uint_t to_idx(int_t i) const {
+    template<typename T>
+    T to_idx_(T ui, cte_t<false>) const {
+        assert(ui < data.size());
+        return ui;
+    }
+    
+    template<typename T>
+    uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += data.size();
         assert(i >= 0);
         uint_t ui(i);
@@ -792,24 +832,43 @@ struct vec_t<Dim,Type*> {
         return ui;
     }
     
-    template<std::size_t D>
-    uint_t to_idx(int_t i) const {
+    template<std::size_t D, typename T>
+    T to_idx_(T ui, cte_t<false>) const {
+        assert(ui < dims[D]);
+        return ui;
+    }
+    
+    template<std::size_t D, typename T>
+    uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += dims[D];
         assert(i >= 0);
         uint_t ui(i);
         assert(ui < dims[D]);
         return ui;
     }
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        return to_idx_(ix, cte_t<std::is_signed<T>::value>());
+    }
+
+    template<std::size_t D, typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
+    }
     
-    Type& operator [] (int_t i) {
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
     }
     
-    const Type& operator [] (int_t i) const {
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    const Type& operator [] (T i) const {
         return *data[to_idx(i)];
     }
 
-    vec_t<1,Type*> operator [] (const vec_t<1,int_t>& i) {
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
         vec_t<1,Type*> v(parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
@@ -819,7 +878,8 @@ struct vec_t<Dim,Type*> {
         return v;
     }
     
-    vec_t<1,const Type*> operator [] (const vec_t<1,int_t>& i) const {
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
         vec_t<1,const Type*> v(parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
@@ -892,14 +952,14 @@ struct vec_t<Dim,Type*> {
             assert(data.size() == u.data.size()); \
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
-                for (std::size_t i = 0; i < data.size(); ++i) { \
+                for (uint_t i = 0; i < data.size(); ++i) { \
                     t[i] = dref(u.data[i]); \
                 } \
-                for (std::size_t i = 0; i < data.size(); ++i) { \
+                for (uint_t i = 0; i < data.size(); ++i) { \
                     *data[i] op t[i]; \
                 } \
             } else { \
-                for (std::size_t i = 0; i < data.size(); ++i) { \
+                for (uint_t i = 0; i < data.size(); ++i) { \
                     *data[i] op dref(u.data[i]); \
                 } \
             } \
@@ -1018,33 +1078,77 @@ auto boolarr(Dims ... ds) -> decltype(arr<bool>(ds...)) {
 }
 
 // Mathematical operators
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<typename std::remove_pointer<T>::type, std::string>::value>::type>
-auto operator * (const vec_t<Dim,T>& v, const U& u) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<typename T>
+using math_bake_type = typename std::decay<typename std::remove_pointer<
+    data_type_t<typename std::remove_pointer<T>::type>>::type>::type;
+
+template<typename T, typename U>
+using res_mul_t = typename std::decay<decltype(std::declval<math_bake_type<T>>() * 
+    std::declval<math_bake_type<U>>())>::type;
+template<typename T, typename U>
+using res_div_t = typename std::decay<decltype(std::declval<math_bake_type<T>>() /
+    std::declval<math_bake_type<U>>())>::type;
+template<typename T, typename U>
+using res_add_t = typename std::decay<decltype(std::declval<math_bake_type<T>>() +
+    std::declval<math_bake_type<U>>())>::type;
+template<typename T, typename U>
+using res_sub_t = typename std::decay<decltype(std::declval<math_bake_type<T>>() -
+    std::declval<math_bake_type<U>>())>::type;
+
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_same<typename std::remove_pointer<T>::type, std::string>::value>::type>
+vec_t<Dim,res_mul_t<T,U>> operator * (const vec_t<Dim,T>& v, const U& u) {
+    vec_t<Dim,res_mul_t<T,U>> tv = v;
     tv *= u;
-    
     return tv;
 }
 
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<typename std::remove_pointer<T>::type, std::string>::value && !is_vec<U>::value>::type>
-auto operator * (const U& u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value &&
+    std::is_same<res_mul_t<T,U>, T>::value>::type>
+vec_t<Dim,T> operator * (vec_t<Dim,T>&& v, const U& u) {
+    v *= u;
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_same<typename std::remove_pointer<T>::type, std::string>::value && 
+    !is_vec<U>::value>::type>
+vec_t<Dim,res_mul_t<U,T>> operator * (const U& u, const vec_t<Dim,T>& v) {
+    vec_t<Dim,res_mul_t<U,T>> tv = v;
     tv *= u;
-    
     return tv;
 }
 
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<typename std::remove_pointer<T>::type, std::string>::value>::type>
-auto operator / (const vec_t<Dim,T>& v, const U& u) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value && !is_vec<U>::value &&
+    std::is_same<res_mul_t<U,T>, T>::value>::type>
+vec_t<Dim,T> operator * (const U& u, vec_t<Dim,T>&& v) {
+    v *= u;
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_same<typename std::remove_pointer<T>::type, std::string>::value>::type>
+vec_t<Dim,res_div_t<T,U>> operator / (const vec_t<Dim,T>& v, const U& u) {
+    vec_t<Dim,res_div_t<T,U>> tv = v;
     tv /= u;
-    
     return tv;
 }
 
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<typename std::remove_pointer<T>::type, std::string>::value && !is_vec<U>::value>::type>
-auto operator / (U u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value &&
+    std::is_same<res_div_t<T,U>, T>::value>::type>
+vec_t<Dim,T> operator / (vec_t<Dim,T>&& v, const U& u) {
+    v /= u;
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_same<typename std::remove_pointer<T>::type, std::string>::value &&
+    !is_vec<U>::value>::type>
+vec_t<Dim,res_div_t<U,T>> operator / (const U& u, const vec_t<Dim,T>& v) {
+    vec_t<Dim,res_div_t<U,T>> tv = v;
     for (auto& t : tv.data) {
         t = u/t;
     }
@@ -1052,23 +1156,51 @@ auto operator / (U u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective
     return tv;
 }
 
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value && !is_vec<U>::value &&
+    std::is_same<res_div_t<U,T>, T>::value>::type>
+vec_t<Dim,T> operator / (const U& u, vec_t<Dim,T>&& v) {
+    for (auto& t : v.data) {
+        t = u/t;
+    }
+    
+    return std::move(v);
+}
+
 template<std::size_t Dim, typename T, typename U>
-auto operator + (const vec_t<Dim,T>& v, const U& u) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+vec_t<Dim,res_add_t<T,U>> operator + (const vec_t<Dim,T>& v, const U& u) {
+    vec_t<Dim,res_add_t<T,U>> tv = v;
     tv += u;
-    
     return tv;
 }
 
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<typename std::remove_pointer<T>::type, std::string>::value && !is_vec<U>::value>::type>
-auto operator + (const U& u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value &&
+    std::is_same<res_add_t<T,U>, T>::value>::type>
+vec_t<Dim,T> operator + (vec_t<Dim,T>&& v, const U& u) {
+    v += u;
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_same<typename std::remove_pointer<T>::type, std::string>::value &&
+    !is_vec<U>::value>::type>
+vec_t<Dim,res_add_t<U,T>> operator + (const U& u, const vec_t<Dim,T>& v) {
+    vec_t<Dim,res_add_t<U,T>> tv = v;
     tv += u;
-    
     return tv;
 }
 
-template<std::size_t Dim, typename U, typename enable = typename std::enable_if<!is_vec<U>::value>::type>
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value && !is_vec<U>::value &&
+    std::is_same<res_add_t<U,T>, T>::value>::type>
+vec_t<Dim,T> operator + (const U& u, vec_t<Dim,T>&& v) {
+    v += u;
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename U, typename enable = typename std::enable_if<
+    !is_vec<U>::value>::type>
 vec_t<Dim,std::string> operator + (const U& u, const vec_t<Dim,std::string>& v) {
     vec_t<Dim,std::string> tv = v;
     for (auto& t : tv.data) {
@@ -1078,7 +1210,18 @@ vec_t<Dim,std::string> operator + (const U& u, const vec_t<Dim,std::string>& v) 
     return tv;
 }
 
-template<std::size_t Dim, typename U, typename enable = typename std::enable_if<!is_vec<U>::value>::type>
+template<std::size_t Dim, typename U, typename enable = typename std::enable_if<
+    !is_vec<U>::value>::type>
+vec_t<Dim,std::string> operator + (const U& u, vec_t<Dim,std::string>&& v) {
+    for (auto& t : v.data) {
+        t = u+t;
+    }
+
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename U, typename enable = typename std::enable_if<
+    !is_vec<U>::value>::type>
 vec_t<Dim,std::string> operator + (const U& u, const vec_t<Dim,std::string*>& v) {
     vec_t<Dim,std::string> tv = v;
     for (auto& t : tv.data) {
@@ -1088,17 +1231,26 @@ vec_t<Dim,std::string> operator + (const U& u, const vec_t<Dim,std::string*>& v)
     return tv;
 }
 
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<T, std::string>::value>::type>
-auto operator - (const vec_t<Dim,T>& v, const U& u) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_same<T, std::string>::value>::type>
+vec_t<Dim,res_sub_t<T,U>> operator - (const vec_t<Dim,T>& v, const U& u) {
+    vec_t<Dim,res_sub_t<T,U>> tv = v;
     tv -= u;
-    
     return tv;
 }
 
-template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!std::is_same<T, std::string>::value && !is_vec<U>::value>::type>
-auto operator - (U u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective_type {
-    typename vec_t<Dim,T>::effective_type tv = v;
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value &&
+    std::is_same<res_sub_t<T,U>, T>::value>::type>
+vec_t<Dim,T> operator - (vec_t<Dim,T>&& v, const U& u) {
+    v -= u;
+    return std::move(v);
+}
+
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+!std::is_same<T, std::string>::value && !is_vec<U>::value>::type>
+vec_t<Dim,res_sub_t<U,T>> operator - (U u, const vec_t<Dim,T>& v) {
+    vec_t<Dim,res_sub_t<U,T>> tv = v;
     for (auto& t : tv.data) {
         t = u-t;
     }
@@ -1106,12 +1258,23 @@ auto operator - (U u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective
     return tv;
 }
 
+template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<
+    !std::is_pointer<T>::value && !std::is_same<T, std::string>::value && !is_vec<U>::value &&
+    std::is_same<res_add_t<U,T>, T>::value>::type>
+vec_t<Dim,T> operator - (const U& u, vec_t<Dim,T>&& v) {
+    for (auto& t : v.data) {
+        t = u-t;
+    }
+
+    return std::move(v);
+}
+
 // Logical operators
 #define VECTORIZE(op) \
     template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!is_vec<U>::value>::type> \
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v, const U& u) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
-        for (std::size_t i = 0; i < v.data.size(); ++i) { \
+        for (uint_t i = 0; i < v.data.size(); ++i) { \
             tv.data[i] = (dref(v.data[i]) op u); \
         } \
         return tv; \
@@ -1120,7 +1283,7 @@ auto operator - (U u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective
     template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if<!is_vec<U>::value>::type> \
     vec_t<Dim,bool> operator op (const U& u, const vec_t<Dim,T>& v) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
-        for (std::size_t i = 0; i < v.data.size(); ++i) { \
+        for (uint_t i = 0; i < v.data.size(); ++i) { \
             tv.data[i] = (u op dref(v.data[i])); \
         } \
         return tv; \
@@ -1130,7 +1293,7 @@ auto operator - (U u, const vec_t<Dim,T>& v) -> typename vec_t<Dim,T>::effective
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v, const vec_t<Dim,U>& u) { \
         assert(v.data.size() == u.data.size()); \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
-        for (std::size_t i = 0; i < v.data.size(); ++i) { \
+        for (uint_t i = 0; i < v.data.size(); ++i) { \
             tv.data[i] = (dref(v.data[i]) op dref(u.data[i])); \
         } \
         return tv; \
@@ -1149,7 +1312,7 @@ template<std::size_t Dim>
 vec_t<Dim,bool> operator && (const vec_t<Dim,bool>& v1, const vec_t<Dim,bool>& v2) {
     assert(n_elements(v1) == n_elements(v2));
     vec_t<Dim,bool> tv = v1;
-    for (std::size_t i = 0; i < v1.data.size(); ++i) {
+    for (uint_t i = 0; i < v1.data.size(); ++i) {
         tv.data[i] = tv.data[i] && v2.data[i];
     }
     
@@ -1160,7 +1323,7 @@ template<std::size_t Dim>
 vec_t<Dim,bool> operator || (const vec_t<Dim,bool>& v1, const vec_t<Dim,bool>& v2) {
     assert(n_elements(v1) == n_elements(v2));
     vec_t<Dim,bool> tv = v1;
-    for (std::size_t i = 0; i < v1.data.size(); ++i) {
+    for (uint_t i = 0; i < v1.data.size(); ++i) {
         tv.data[i] = tv.data[i] || v2.data[i];
     }
     
@@ -1170,7 +1333,7 @@ vec_t<Dim,bool> operator || (const vec_t<Dim,bool>& v1, const vec_t<Dim,bool>& v
 template<std::size_t Dim>
 vec_t<Dim,bool> operator ! (const vec_t<Dim,bool>& v) {
     vec_t<Dim,bool> tv = v;
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
+    for (uint_t i = 0; i < v.data.size(); ++i) {
         tv.data[i] = !tv.data[i];
     }
     
@@ -1180,7 +1343,7 @@ vec_t<Dim,bool> operator ! (const vec_t<Dim,bool>& v) {
 // Generate linearly increasing values.
 template<typename T, typename A>
 void indgen_vec_(std::vector<T,A>& v) {
-    for (std::size_t i = 0; i < v.size(); ++i) {
+    for (uint_t i = 0; i < v.size(); ++i) {
         v[i] = i;
     }
 }
@@ -1221,8 +1384,8 @@ uint_t n_elements(const vec_t<Dim,T>& v) {
 
 // Get the dimensions of a vector
 template<std::size_t Dim, typename T>
-vec1i dim(const vec_t<Dim,T>& v) {
-    vec1i d = intarr(Dim);
+vec1u dim(const vec_t<Dim,T>& v) {
+    vec1u d = uintarr(Dim);
     for (uint_t i = 0; i < Dim; ++i) {
         d[i] = v.dims[i];
     }
@@ -1299,20 +1462,20 @@ auto ix(Args&& ... args) {
 
 // Create a range from a pair of indices.
 template<typename T, typename U>
-vec1i rx(T i, U j) {
+vec1u rx(T i, U j) {
     phypp_check(i >= 0 && j >= 0, "'rx' needs a positive or null values as arguments (got ", i, " and ", j, ")");
     
     if (i < T(j)) {
-        int_t n = j-i+1;
-        vec1i v = intarr(n);
-        for (int_t k = 0; k < n; ++k) {
+        uint_t n = j-i+1;
+        vec1u v = uintarr(n);
+        for (uint_t k = 0; k < n; ++k) {
             v[k] = i+k; 
         }
         return v;
     } else {   
-        int_t n = i-j+1;
-        vec1i v = intarr(n);
-        for (int_t k = 0; k < n; ++k) {
+        uint_t n = i-j+1;
+        vec1u v = uintarr(n);
+        for (uint_t k = 0; k < n; ++k) {
             v[k] = i-k;
         }
         return v;
@@ -1320,11 +1483,11 @@ vec1i rx(T i, U j) {
 }
 
 // Return the indices of the vector where the value is 1.
-template<std::size_t Dim, typename Type, typename T>
-vec1i where(const vec_t<Dim,Type>& v, T& cnt) {
-    vec1i ids;
+template<std::size_t Dim, typename Type>
+vec1u where(const vec_t<Dim,Type>& v) {
+    vec1u ids;
     ids.data.reserve(n_elements(v)/2);
-    int_t i = 0; 
+    uint_t i = 0; 
     for (auto b : v) {
         if (b) {
             ids.data.push_back(i);
@@ -1334,21 +1497,14 @@ vec1i where(const vec_t<Dim,Type>& v, T& cnt) {
     }
     
     ids.dims[0] = ids.data.size();
-    cnt = ids.data.size();
     ids.data.shrink_to_fit();
     return ids;
 }
 
-template<std::size_t Dim, typename Type>
-vec1i where(const vec_t<Dim,Type>& v) {
-    uint_t cnt;
-    return where(v, cnt);
-}
-
 template<std::size_t Dim, typename Type1, typename Type2>
-void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1i& id1, vec1i& id2) {
-    std::size_t n1 = n_elements(v1);
-    std::size_t n2 = n_elements(v2);
+void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1u& id1, vec1u& id2) {
+    uint_t n1 = v1.size();
+    uint_t n2 = v2.size();
     if (n2 < n1) {
         match(v2, v1, id2, id1);
         return;
@@ -1357,10 +1513,10 @@ void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1i& id1, v
     id1.data.reserve(n1);
     id2.data.reserve(n1);
     
-    vec1i r;
-    for (std::size_t i = 0; i < n1; ++i) {
-        r = where(v2 == v1[i]);
+    for (uint_t i = 0; i < n1; ++i) {
+        vec1u r = where(v2 == v1[i]);
         if (r.empty()) continue;
+
         id1.data.push_back(i);
         id2.data.push_back(r[0]);
     }
@@ -1438,12 +1594,12 @@ template<std::size_t Dim, typename Type, typename T>
 vec_t<Dim+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const T& n) {
     vec_t<Dim+1,rtype_t<Type>> r;
     r.dims[0] = n;
-    for (std::size_t i = 0; i < Dim; ++i) {
+    for (uint_t i = 0; i < Dim; ++i) {
         r.dims[i+1] = v.dims[i];
     }
     r.resize();
     
-    for (std::size_t i = 0; i < std::size_t(n); ++i) {
+    for (uint_t i = 0; i < std::size_t(n); ++i) {
         r[replicate_make_tuple_<Dim>::make(i)] = v;
     }
     
@@ -1483,25 +1639,11 @@ vec_t<sizeof...(Args),std::string> replicate(const char v[N], const Args& ... ar
 }
 
 template<std::size_t Dim, typename Type>
-vec1i sort(const vec_t<Dim,Type>& v) {
-    using ntype = typename vec_t<Dim,Type>::drtype;
-    struct tsort {
-        ntype v;
-        int_t i;
-    };
-    
-    std::vector<tsort> tmp(v.data.size());
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
-        tmp[i].v = dref(v.data[i]);
-        tmp[i].i = i;
-    }
-    
-    std::sort(tmp.begin(), tmp.end(), [](const tsort& t1, const tsort& t2) { return t1.v < t2.v; });
-    
-    vec1i r = intarr(v.data.size());
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
-        r[i] = tmp[i].i;
-    }
+vec1u sort(const vec_t<Dim,Type>& v) {
+    vec1u r = uindgen(v.size());
+    std::sort(r.data.begin(), r.data.end(), [&v](uint_t i, uint_t j) {
+        return typename vec_t<Dim,Type>::comparator()(v.data[i], v.data[j]);
+    });
     
     return r;
 }
@@ -1513,8 +1655,8 @@ void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     t1.dims[N] += n2;
     t1.resize();
 
-    t1[ix(rep<N>(_),indgen(n1),rep<Dim-N-1>(_))] = tmp;
-    t1[ix(rep<N>(_),n1+indgen(n2),rep<Dim-N-1>(_))] = t2;
+    t1[ix(rep<N>(_),uindgen(n1),rep<Dim-N-1>(_))] = tmp;
+    t1[ix(rep<N>(_),n1+uindgen(n2),rep<Dim-N-1>(_))] = t2;
 }
 
 template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
@@ -1524,8 +1666,8 @@ void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     t1.dims[N] += n2;
     t1.resize();
 
-    t1[ix(rep<N>(_),indgen(n2),rep<Dim-N-1>(_))] = t2;
-    t1[ix(rep<N>(_),n2+indgen(n1),rep<Dim-N-1>(_))] = tmp;
+    t1[ix(rep<N>(_),uindgen(n2),rep<Dim-N-1>(_))] = t2;
+    t1[ix(rep<N>(_),n2+uindgen(n1),rep<Dim-N-1>(_))] = tmp;
 }
 
 template<typename Type1, typename Type2>
@@ -1585,7 +1727,7 @@ vec_t<1,Type> merge(vec_t<1,Type>&& v, T&& t) {
 template<typename O, std::size_t Dim, typename Type, typename enable = typename std::enable_if<!std::is_same<Type, bool>::value>::type>
 O& operator << (O& o, const vec_t<Dim,Type>& v) {
     o << '[';
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
+    for (uint_t i = 0; i < v.data.size(); ++i) {
         if (i != 0) o << ", ";
         o << v[i];
     }
@@ -1597,7 +1739,7 @@ O& operator << (O& o, const vec_t<Dim,Type>& v) {
 template<typename O, std::size_t Dim>
 O& operator << (O& o, const vec_t<Dim,bool>& v) {
     o << '[';
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
+    for (uint_t i = 0; i < v.data.size(); ++i) {
         if (i != 0) o << ", ";
         o << bool(v[i]);
     }
