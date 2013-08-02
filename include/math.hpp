@@ -357,7 +357,12 @@ vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>
 
 template<std::size_t Dim, typename T>
 double stddev(const vec_t<Dim,T>& v) {
-    return sqrt(mean(v*v));
+    decltype(v[0]*0.0) sum = 0;
+    for (auto& t : v) {
+        sum += t*t;
+    }
+    
+    return sqrt(sum/v.size());
 }
 
 template<std::size_t Dim, typename Type>
