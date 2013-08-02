@@ -311,9 +311,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         // Create the thread pool and launch the threads
         auto pool = thread::pool(nthread);
         int_t total = 0;
-        int_t total2 = 0;
+        int_t assigned = floor(n1/float(nthread));
         for (int_t t = 0; t < nthread; ++t) {
-            int_t assigned = floor(n1/float(nthread));
             if (t == nthread-1) {
                 assigned = n1 - total;
             }
@@ -639,6 +638,187 @@ auto field_area(const T& t) {
     area /= d2r*d2r;
 
     return area;
+}
+
+struct filter_t {
+    double rlam = dnan; // central wavelenght (micron, integrated)
+    vec1d lam;          // array of wavelength positions (micron)
+    vec1d res;          // array of response for each wavelength (normalized to unit area)
+};
+
+// Note: filters are defined so that the measured flux is always obtained by:
+//                  flux = integrate(lam, res*sed)
+// In other words, it must be converted to an "energy counter" filter (also called RSR), and
+// normalized to unit integral (i.e. integrate(lam, res) == 1).
+
+template<typename TypeL, typename TypeS>
+auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
+    return integrate(filter.lam, filter.res*interpol_fast(sed, lam, filter.lam));
+}
+
+template<typename TypeL, typename TypeS>
+auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) {
+    using rtype = decltype(sed[0]*filter.res[0]);
+    const uint_t nsed = sed.dims[0];
+    vec_t<1,rtype> r = arr<rtype>(nsed);
+
+    for (uint_t s = 0; s < nsed; ++s) {
+        r[s] = integrate(filter.lam, filter.res*interpol_fast(sed(s,_), lam(s,_), filter.lam));
+    }
+
+    return r;
+}
+
+struct template_fit_res_t {
+    uint_t bfit; // index of the best fit template in the library
+    vec1d chi2;  // chi^2 of each template
+    vec1d amp;   // renormalization amplitude of each template
+
+    vec1u sed_sim;       // index of each error realization's best fit template
+    vec1d amp_bfit_sim;  // renormalization amplitude of the best fit for each error realization
+    vec1d amp_sim;       // renormalization amplitude for each error realization's best fit
+};
+
+template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed>
+template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, double z, double d,
+    const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters) {
+
+    template_fit_res_t res;
+
+    // Move each SED to the observed frame
+    struct {
+        vec2d lam, sed;
+    } rflib;
+
+    rflib.lam = lib.lam*(1.0 + z);
+    rflib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
+    
+    // Convolve each SED with the response curve of the filters
+    const uint_t nsed = rflib.sed.dims[0];
+    const uint_t nfilter = filters.size();
+    vec2d fobs = dblarr(nsed, nfilter);
+    for (uint_t f = 0; f < nfilter; ++f) {
+        fobs(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
+    }
+
+    // Compute chi2 & renormalization factor
+    auto weight = pow(err, -2);
+    using ttype = decltype(weight[0]*flux[0]*fobs[0]);
+
+    auto tmp1 = arr<ttype>(nsed);
+    auto tmp2 = arr<ttype>(nsed);
+    for (uint_t i = 0; i < nsed; ++i) {
+        auto tmp = fobs(i,_);
+        tmp1[i] = total(weight*flux*tmp);
+        tmp2[i] = total(weight*tmp*tmp);
+    }
+
+    res.amp = tmp1/tmp2;
+    tmp1 *= res.amp;
+    
+    res.chi2 = total(weight*flux*flux) - tmp1;
+    
+    // Find the best chi2 among all the SEDs
+    res.bfit = min_id(res.chi2);
+
+    // Compute the errors on the fit by adding a random offset to the measured photometry according
+    // to the provided error. The fit is performed on each of these random realizations and the
+    // error on the parameters are computed as the standard deviation of the fit results over all
+    // the realizations.
+    const uint_t nsim = 200;
+    res.amp_bfit_sim = fltarr(nsim);
+    res.amp_sim = fltarr(nsim);
+    res.sed_sim = fltarr(nsim);
+        
+    // auto otmp2 = tmp2;
+    const uint_t nflux = flux.size();
+    for (uint_t i = 0; i < nsim; ++i) {
+        auto fsim = flux + randomn(seed, nflux)*err;
+        for (uint_t t = 0; t < nsed; ++t) {
+            tmp1[t] = total(weight*fsim*fobs(t,_));
+        }
+
+        auto amp = tmp1/tmp2;
+        tmp1 *= amp;
+
+        auto chi2 = total(weight*fsim*fsim) - tmp1;
+        auto ised = min_id(chi2);
+        
+        res.amp_bfit_sim[i] = amp[res.bfit];
+        res.amp_sim[i] = amp[ised];
+        res.sed_sim[i] = ised;
+    }
+
+    return res;
+}
+
+template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed>
+template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, double d,
+    const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters) {
+
+    template_fit_res_t res;
+
+    // Move each SED to the observed frame
+    struct {
+        vec2d lam, sed;
+    } rflib;
+
+    rflib.lam = lib.lam*(1.0 + z);
+    rflib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
+    
+    // Convolve each SED with the response curve of the filters
+    const uint_t nsed = rflib.sed.dims[0];
+    const uint_t nfilter = filters.size();
+    vec2d fobs = dblarr(nsed, nfilter);
+    for (uint_t f = 0; f < nfilter; ++f) {
+        fobs(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
+    }
+
+    // Compute chi2 & renormalization factor
+    auto weight = pow(err, -2);
+    using ttype = decltype(weight[0]*flux[0]*fobs[0]);
+
+    auto tmp1 = arr<ttype>(nsed);
+    auto tmp2 = arr<ttype>(nsed);
+    for (uint_t i = 0; i < nsed; ++i) {
+        auto tmp = fobs(i,_);
+        tmp1[i] = total(weight*flux*tmp);
+        tmp2[i] = total(weight*tmp*tmp);
+    }
+
+    res.amp = tmp1/tmp2;
+    
+    res.chi2 = total(weight*flux*flux) - 2.0*tmp1 + tmp2;
+    
+    // Find the best chi2 among all the SEDs
+    res.bfit = min_id(res.chi2);
+
+    // Compute the errors on the fit by adding a random offset to the measured photometry according
+    // to the provided error. The fit is performed on each of these random realizations and the
+    // error on the parameters are computed as the standard deviation of the fit results over all
+    // the realizations.
+    const uint_t nsim = 1000;
+    res.amp_bfit_sim = fltarr(nsim);
+    res.amp_sim = fltarr(nsim);
+    res.sed_sim = fltarr(nsim);
+        
+    const uint_t nflux = flux.size();
+    for (uint_t i = 0; i < nsim; ++i) {
+        auto fsim = flux + randomn(seed, nflux)*err;
+        for (uint_t t = 0; t < nsed; ++t) {
+            tmp1[t] = total(weight*fsim*fobs(t,_));
+        }
+
+        auto amp = tmp1/tmp2;
+        auto chi2 = total(weight*fsim*fsim) - 2.0*tmp1 + tmp2;
+        auto ised = min_id(chi2);
+        
+        res.amp_bfit_sim[i] = amp[res.bfit];
+        res.amp_sim[i] = amp[ised];
+        res.sed_sim[i] = ised;
+    }
+
+    return res;
 }
 
 #endif
