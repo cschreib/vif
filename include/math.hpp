@@ -512,6 +512,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
         r(i) += a(i,k)*b(k);
+    }
     
     return r;
 }

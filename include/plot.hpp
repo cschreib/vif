@@ -31,6 +31,8 @@ namespace plot {
         std::string default_font_ = "Helvetica";
 
         struct view_t {
+            // TODO: switch to a matrix here
+            // vec2d mat;
             float x0, y0, x1, y1;
             uint_t nx = 1, ny = 1, n = 0;
         };
@@ -108,7 +110,9 @@ namespace plot {
                             opos = tp+1;
                             lpos = tp+1;
                         } else {
-                            opos = pos+1;
+                            fs.str += s.substr(lpos, pos - lpos);
+                            lpos = pos+1;
+                            opos = pos+2;
                         }
                         break;
                     }
@@ -177,10 +181,94 @@ namespace plot {
                 }
             } else {
                 for (int_t i = 0; i < -level; ++i) {
-                    f -= pow(0.4*0.5, i+1)/0.5;
+                    f -= pow(0.4*0.5, i+1)/0.7;
                 }
             }
             return f;
+        }
+
+        void show_line_(const std::string& text) {
+            std::vector<fstring> fss;
+            parse_line_(text, fss);
+            int_t last_level = 0;
+            uint_t size = font_size_;
+            float height = char_height();
+            
+            for (auto& fs : fss) {
+                if (fs.str.empty()) continue;
+
+                if (fs.level != last_level) {
+                    float doffset = level_offset_(fs.level) - level_offset_(last_level);
+                    file_ << "0 " << height*doffset << " rmoveto\n";
+                    font(size*level_scale_(fs.level));
+                    last_level = fs.level;
+                }
+
+                file_ << "(" << fs.str << ") show\n";
+            }
+
+            if (last_level != 0) {
+                float doffset = level_offset_(0) - level_offset_(last_level);
+                file_ << "0 " << height*doffset << " rmoveto\n";
+                font(size);
+            }
+        }
+        
+        void show_line_(const std::string& text, float align) {
+            std::vector<fstring> fss;
+            parse_line_(text, fss);
+            int_t last_level = 0;
+            uint_t size = font_size_;
+            uint_t itxt = 0;
+
+            for (auto& fs : fss) {
+                if (fs.str.empty()) continue;
+
+                if (fs.level != last_level) {
+                    font(size*level_scale_(fs.level));
+                    last_level = fs.level;
+                }
+
+                ++itxt;
+                define_("text"+strn(itxt), fs.str);
+                file_ << "text"+strn(itxt)+" stringwidth pop";
+                if (itxt == 1) {
+                    file_ << "\n";
+                } else {
+                    file_ << " add\n";
+                }
+            }
+
+            if (last_level != 0) {
+                font(size);
+            }
+
+            file_ << -clamp(align, 0, 1) << " mul 0 rmoveto\n";
+
+            last_level = 0;
+            size = font_size_;
+            itxt = 0;
+            float height = char_height();
+            
+            for (auto& fs : fss) {
+                if (fs.str.empty()) continue;
+
+                if (fs.level != last_level) {
+                    float doffset = level_offset_(fs.level) - level_offset_(last_level);
+                    file_ << "0 " << height*doffset << " rmoveto\n";
+                    font(size*level_scale_(fs.level));
+                    last_level = fs.level;
+                }
+
+                ++itxt;
+                file_ << "text"+strn(itxt)+" show\n";
+            }
+
+            if (last_level != 0) {
+                float doffset = level_offset_(0) - level_offset_(last_level);
+                file_ << "0 " << height*doffset << " rmoveto\n";
+                font(size);
+            }
         }
 
     public :
@@ -603,33 +691,6 @@ namespace plot {
             return *this;
         }
 
-        void show_line_(const std::string& text) {
-            std::vector<fstring> fss;
-            parse_line_(text, fss);
-            int_t last_level = 0;
-            uint_t size = font_size_;
-            float height = char_height();
-            
-            for (auto& fs : fss) {
-                if (fs.str.empty()) continue;
-
-                if (fs.level != last_level) {
-                    float doffset = level_offset_(fs.level) - level_offset_(last_level);
-                    file_ << "0 " << height*doffset << " rmoveto\n";
-                    font(size*level_scale_(fs.level));
-                    last_level = fs.level;
-                }
-
-                file_ << "(" << fs.str << ") show\n";
-            }
-
-            if (last_level != 0) {
-                float doffset = level_offset_(0) - level_offset_(last_level);
-                file_ << "0 " << height*doffset << " rmoveto\n";
-                font(size);
-            }
-        }
-
         // Display some text at the current position (left aligned)
         eps& show(const std::string& text) {
             vec1s lines = split(text, "\n");
@@ -647,14 +708,6 @@ namespace plot {
             }
             
             return *this;
-        }
-
-        void show_line_(const std::string& text, float align) {
-            // TODO: move to formated string
-            define_("text", text);
-            file_ << "text stringwidth pop\n";
-            file_ << -clamp(align, 0, 1) << " mul 0 rmoveto\n";
-            file_ << "text show\n";
         }
 
         // Display some text at the current position (aligned : 0.0 = leftmost, 1.0 = rightmost)
