@@ -409,13 +409,11 @@ struct vec_t {
     vec_t() = default;
     vec_t(const vec_t&) = default;
     vec_t(vec_t&&) = default;
-    
-    vec_t(const dtype& t) {
-        for (uint_t i = 0; i < Dim; ++i) {
-            dims[i] = 1;
-        }
+
+    template<typename ... T>
+    explicit vec_t(T ... d) {
+        set_array(d...);
         resize();
-        data[0] = t;
     }
     
     template<std::size_t N,
@@ -447,6 +445,20 @@ struct vec_t {
         for (uint_t i = 0; i < v.data.size(); ++i) {
             data[i] = dref(v.data[i]);
         }
+    }
+    
+    vec_t& operator = (const Type& t) {
+        for (uint_t i = 0; i < Dim; ++i) {
+            dims[i] = 1;
+        }
+        resize();
+        data[0] = t;
+        return *this;
+    }
+    
+    vec_t& operator = (typename ilist_t<Dim, Type>::type t) {
+        ilist_t<Dim, Type>::fill(*this, t);
+        return *this;
     }
     
     vec_t& operator = (const vec_t&) = default;
@@ -680,7 +692,6 @@ struct vec_t {
             } \
             return *this; \
         } \
-        \
         template<typename U> \
         vec_t& operator op (U u) { \
             for (auto& v : data) { \
