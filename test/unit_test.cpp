@@ -457,8 +457,8 @@ int main(int argc, char* argv[]) {
     
     {
         // Calculus functions
-        check(derivate1([](const vec1d& x) { return cos(x(0)); }, 1.0, 0.001, 0), "-0.841471");
-        check(derivate2([](const vec1d& x) { return cos(x(0)); }, 1.0, 0.001, 0), "-0.540302");
+        check(derivate1([](double x) { return cos(x); }, 1.0, 0.001), "-0.841471");
+        check(derivate2([](double x) { return cos(x); }, 1.0, 0.001), "-0.540302");
 
         vec1d x = {0,1,2};
         vec1d y = {0,1,0};
