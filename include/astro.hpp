@@ -140,7 +140,7 @@ T lookback_time(const T& z, const cosmo_t& cosmo) {
             } \
             vec_t<1,rtype> r = z; \
             for (auto& t : r) { \
-                t = interpol_fast(td, tz, t); \
+                t = interpolate(td, tz, t); \
             } \
             idz = where(z <= 0); \
             r[idz] = name(0.0, args...); \
@@ -634,7 +634,7 @@ struct filter_t {
 
 template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
-    return integrate(filter.lam, filter.res*interpol_fast(sed, lam, filter.lam));
+    return integrate(filter.lam, filter.res*interpolate(sed, lam, filter.lam));
 }
 
 template<typename TypeL, typename TypeS>
@@ -644,7 +644,7 @@ auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,T
     vec_t<1,rtype> r = arr<rtype>(nsed);
 
     for (uint_t s = 0; s < nsed; ++s) {
-        r[s] = integrate(filter.lam, filter.res*interpol_fast(sed(s,_), lam(s,_), filter.lam));
+        r[s] = integrate(filter.lam, filter.res*interpolate(sed(s,_), lam(s,_), filter.lam));
     }
 
     return r;
