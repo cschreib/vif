@@ -365,20 +365,39 @@ template<std::size_t Dim, typename Type, typename U,
 auto pow(const U& u, const vec_t<Dim,Type>& v) -> vec_t<Dim, decltype(pow(u,v(0)))> {
     vec_t<Dim, decltype(pow(u,v(0)))> r = v;
     for (auto& t : r) {
-        t = pow(u,t);
+        t = pow(u, t);
     }
     return r;
+}
+
+template<std::size_t Dim, typename Type, typename U>
+auto pow(const U& u, vec_t<Dim,Type>&& v) -> typename std::enable_if<!is_vec<U>::value &&
+    !std::is_pointer<Type>::value && std::is_same<decltype(pow(u,v(0))), Type>::value,
+    vec_t<Dim,Type>>::type {
+    for (auto& t : v) {
+        t = pow(u, t);
+    }
+    return std::move(v);
 }
 
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args> \
     auto name(const vec_t<Dim,Type>& v, const Args& ... args) { \
         using ntype = decltype(name(v[0], args...)); \
-        vec_t<Dim,ntype> r = arr<ntype>(v.dims); \
-        for (uint_t i = 0; i < v.size(); ++i) { \
-            r.data[i] = name(dref(v.data[i]), args...); \
+        vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
+        for (auto& t : v.data) { \
+            r.data.push_back(name(dref(t), args...)); \
         } \
         return r; \
+    } \
+    template<std::size_t Dim, typename Type, typename ... Args> \
+    auto name(vec_t<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
+        !std::is_pointer<Type>::value && std::is_same<decltype(name(v[0], args...)), Type>::value, \
+        vec_t<Dim,Type>>::type { \
+        for (auto& t : v) { \
+            t = name(t, args...); \
+        } \
+        return std::move(v); \
     }
     
 VECTORIZE(sqrt);
@@ -448,11 +467,11 @@ auto derivate1(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(f
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
     
     vec1d tmp = x;
-    tmp(ip) -= 2*ep;
+    tmp[ip] -= 2*ep;
     
     decltype(func(x)) res = a[0]*func(tmp)/ep;
     for (uint_t i = 1; i < 5; ++i) {
-        tmp(ip) += ep;
+        tmp[ip] += ep;
         res += a[i]*func(tmp)/ep;
     }
             
@@ -464,11 +483,11 @@ auto derivate2(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(f
     static const double a[5] = {-1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0};
     
     vec1d tmp = x;
-    tmp(ip) -= 2*ep;
+    tmp[ip] -= 2*ep;
     
     decltype(func(x)) res = a[0]*func(tmp)/(ep*ep);
     for (uint_t i = 1; i < 5; ++i) {
-        tmp(ip) += ep;
+        tmp[ip] += ep;
         res += a[i]*func(tmp)/(ep*ep);
     }
             
@@ -480,22 +499,22 @@ auto derivate2(F func, const vec1d& x, const double ep, uint_t ip1, uint_t ip2) 
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
     
     vec1d tmp = x;
-    tmp(ip1) -= 2*ep;
-    tmp(ip2) -= 2*ep;
+    tmp[ip1] -= 2*ep;
+    tmp[ip2] -= 2*ep;
     
     decltype(func(x)) res = a[0]*a[0]*func(tmp)/(ep*ep);
     for (uint_t j = 1; j < 5; ++j) {
-        tmp(ip2) += ep;
+        tmp[ip2] += ep;
         res += a[0]*a[j]*func(tmp)/(ep*ep);
     }
     
     for (uint_t i = 1; i < 5; ++i) {
-        tmp(ip1) += ep;
-        tmp(ip2) = x(ip2) - 2*ep;
+        tmp[ip1] += ep;
+        tmp[ip2] = x(ip2) - 2*ep;
         
         res += a[i]*a[0]*func(tmp)/(ep*ep);
         for (uint_t j = 1; j < 5; ++j) {
-            tmp(ip2) += ep;
+            tmp[ip2] += ep;
             res += a[i]*a[j]*func(tmp)/(ep*ep);
         }
     }
@@ -1025,12 +1044,9 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
     phypp_check(y.size() >= 2,
         "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
-    uint_t npt = nx.size();
     uint_t nmax = x.size();
-    auto r = arr<decltype(y[0]*x[0])>(npt);
-    for (uint_t i = 0; i < npt; ++i) {
-        auto tx = dref(nx.data[i]);
-
+    vec_t<1,decltype(y[0]*x[0])> r; r.reserve(nx.size());
+    for (auto& tx : nx) {
         uint_t low = lower_bound(tx, x);
 
         rtypey ylow, yup;
@@ -1048,7 +1064,7 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
             xlow = dref(x.data[0]); xup = dref(x.data[1]);
         }
 
-        r.data[i] = ylow + (yup - ylow)*(tx - xlow)/(xup - xlow);
+        r.push_back(ylow + (yup - ylow)*(tx - xlow)/(xup - xlow));
     }
 
     return r;

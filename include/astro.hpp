@@ -641,10 +641,10 @@ template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) {
     using rtype = decltype(sed[0]*filter.res[0]);
     const uint_t nsed = sed.dims[0];
-    vec_t<1,rtype> r = arr<rtype>(nsed);
+    vec_t<1,rtype> r; r.reserve(nsed);
 
     for (uint_t s = 0; s < nsed; ++s) {
-        r[s] = integrate(filter.lam, filter.res*interpolate(sed(s,_), lam(s,_), filter.lam));
+        r.push_back(integrate(filter.lam, filter.res*interpolate(sed(s,_), lam(s,_), filter.lam)));
     }
 
     return r;
