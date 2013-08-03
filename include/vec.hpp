@@ -1546,9 +1546,9 @@ vec1u rx(T i, U j) {
 template<std::size_t Dim, typename Type>
 vec1u where(const vec_t<Dim,Type>& v) {
     vec1u ids;
-    ids.data.reserve(n_elements(v)/2);
+    ids.data.reserve(n_elements(v));
     uint_t i = 0; 
-    for (auto b : v) {
+    for (bool b : v) {
         if (b) {
             ids.data.push_back(i);
         }
