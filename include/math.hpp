@@ -288,28 +288,22 @@ rtype_t<Type> max(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 uint_t min_id(const vec_t<Dim,Type>& v) {
-    vec1u ok = where(finite(v));
-    if (ok.empty()) return 0;
-
-    vec1u tmp = uindgen(ok.size());
+    vec1u tmp = uindgen(v.size());
     std::nth_element(tmp.begin(), tmp.begin(), tmp.end(), [&](uint_t i, uint_t j) {
-        return v[ok[i]] < v[ok[j]];
+        return dref(v.data[i]) < dref(v.data[j]);
     });
 
-    return ok[*tmp.begin()];
+    return *tmp.begin();
 }
 
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec_t<Dim,Type>& v) {
-    vec1u ok = where(finite(v));
-    if (n_elements(ok) == 0) return 0;
-
-    vec1u tmp = uindgen(ok.size());
+    vec1u tmp = uindgen(v.size());
     std::nth_element(tmp.begin(), tmp.end()-1, tmp.end(), [&](uint_t i, uint_t j) {
-        return v[ok[i]] < v[ok[j]];
+        return dref(v.data[i]) < dref(v.data[j]);
     });
 
-    return ok[*(tmp.end()-1)];
+    return *(tmp.end()-1);
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
@@ -978,24 +972,23 @@ affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
 }
 
 // Returns the position of the first value in the array that is less than or equal to 'x'.
-// Returns -1 if no value satisfy this criterium.
-// Note: assumes that 'v' is sorted.
+// Returns 'npos' if no value satisfy this criterium.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
 template<typename T, typename Type>
 uint_t lower_bound(T x, const vec_t<1,Type>& v) {
     auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
         typename vec_t<1,Type>::comparator());
 
-    do {
-        if (iter == v.data.begin()) return npos;
-        --iter;
-    } while (!finite(dref(*iter)));
-
-    return iter - v.data.begin();
+    if (iter == v.data.begin()) {
+        return npos;
+    } else {
+        return iter - v.data.begin() - 1;
+    }
 }
 
 // Returns the position of the first value in the array that is greater than 'x'.
-// Returns -1 if no value satisfy this criterium.
-// Note: assumes that 'v' is sorted.
+// Returns 'npos' if no value satisfy this criterium.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
 template<typename T, typename Type>
 uint_t upper_bound(T x, const vec_t<1,Type>& v) {
     auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
@@ -1018,162 +1011,80 @@ bool is_sorted(const vec_t<1,Type>& v) {
     return true;
 }
 
-// Linearly interpolate '(x, y)' data at new positions 'nx'
+// Perform linear interpolation of data 'y' of position 'x' at new positions 'nx'.
+// Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
+// the arrays contains special values (NaN, inf, ...), all the points that would use these values
+// will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
 template<typename TypeY, typename TypeX1, typename TypeX2>
-auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
+auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
-    phypp_check(n_elements(y) == n_elements(x),
-        "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2,
-        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
-    phypp_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
-
-    auto idok1 = where(finite(y) && finite(x));
-    auto okx = x[idok1];
-    auto oky = y[idok1];
-
-    auto idok2 = where(finite(nx));
-    auto r = replicate(y[0]*dnan, n_elements(nx));
-
-    uint_t npt = idok2.size();
-    for (uint_t i = 0; i < npt; ++i) {
-        uint_t j = idok2[i];
-        auto tx = nx[j];
-
-        uint_t low = lower_bound(tx, okx);
-        uint_t up  = upper_bound(tx, okx);
-
-        rtypey ylow, yup;
-        rtypex xlow, xup;
-        if (low != npos && up != npos) {
-            ylow = oky[low]; yup = oky[up];
-            xlow = okx[low]; xup = okx[up];
-        } else if (low == npos) {
-            ylow = oky[up]; yup = oky[up+1];
-            xlow = okx[up]; xup = okx[up+1];
-        } else {
-            ylow = oky[low-1]; yup = oky[low];
-            xlow = okx[low-1]; xup = okx[low];
-        }
-
-        r[j] = ylow + (yup - ylow)*(tx - xlow)/(xup - xlow);
-    }
-
-    return r;
-}
-
-// Linearly interpolate '(x, y)' data at new positions 'nx'
-template<typename TypeY, typename TypeX, typename T, 
-    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-auto interpol(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
-    using rtypey = rtype_t<TypeY>;
-    using rtypex = rtype_t<TypeX>;
-
-    phypp_check(n_elements(y) == n_elements(x),
-        "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2,
-        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
-    phypp_check(is_sorted(x), "interpol: 'x' array must be strictly increasing");
-
-    auto idok1 = where(finite(y) && finite(x));
-    auto okx = x[idok1];
-    auto oky = y[idok1];
-
-    uint_t low = lower_bound(nx, okx);
-    uint_t up  = upper_bound(nx, okx);
-
-    rtypey ylow, yup;
-    rtypex xlow, xup;
-    if (low != npos && up != npos) {
-        ylow = oky[low]; yup = oky[up];
-        xlow = okx[low]; xup = okx[up];
-    } else if (low == npos) {
-        ylow = oky[up]; yup = oky[up+1];
-        xlow = okx[up]; xup = okx[up+1];
-    } else {
-        ylow = oky[low-1]; yup = oky[low];
-        xlow = okx[low-1]; xup = okx[low];
-    }
-
-    return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);
-}
-
-// This interpolation function is faster than the basic 'interpol', because it assumes that the
-// interpolated arrays only contain finite elements, and that 'x' is properly sorted. If these
-// two conditions are matched, then the output will be the same as for 'interpol' (except that it
-// will be quite faster). On the other hand, if one of the arrays contains special values (NaN, inf,
-// ...), all the points that would use these values will be contaminated. If 'x' is not properly
-// sorted, the result will simply be wrong.
-template<typename TypeY, typename TypeX1, typename TypeX2>
-auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
-    using rtypey = rtype_t<TypeY>;
-    using rtypex = rtype_t<TypeX1>;
-
-    phypp_check(n_elements(y) == n_elements(x),
-        "interpol: 'x' and 'y' arrays must contain the same number of elements");
-    phypp_check(n_elements(y) >= 2,
-        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+    phypp_check(y.size() == x.size(),
+        "interpolate: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(y.size() >= 2,
+        "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
     uint_t npt = nx.size();
-    auto r = replicate(y[0]*dnan, npt);
+    uint_t nmax = x.size();
+    auto r = arr<decltype(y[0]*x[0])>(npt);
     for (uint_t i = 0; i < npt; ++i) {
-        auto tx = nx[i];
+        auto tx = dref(nx.data[i]);
 
         uint_t low = lower_bound(tx, x);
-        uint_t up  = upper_bound(tx, x);
 
         rtypey ylow, yup;
         rtypex xlow, xup;
-        if (low != npos && up != npos) {
-            ylow = y[low]; yup = y[up];
-            xlow = x[low]; xup = x[up];
-        } else if (low == npos) {
-            ylow = y[up]; yup = y[up+1];
-            xlow = x[up]; xup = x[up+1];
+        if (low != npos) {
+            if (low != nmax-1) {
+                ylow = dref(y.data[low]); yup = dref(y.data[low+1]);
+                xlow = dref(x.data[low]); xup = dref(x.data[low+1]);
+            } else {
+                ylow = dref(y.data[low-1]); yup = dref(y.data[low]);
+                xlow = dref(x.data[low-1]); xup = dref(x.data[low]);
+            }
         } else {
-            ylow = y[low-1]; yup = y[low];
-            xlow = x[low-1]; xup = x[low];
+            ylow = dref(y.data[0]); yup = dref(y.data[1]);
+            xlow = dref(x.data[0]); xup = dref(x.data[1]);
         }
 
-        r[i] = ylow + (yup - ylow)*(tx - xlow)/(xup - xlow);
+        r.data[i] = ylow + (yup - ylow)*(tx - xlow)/(xup - xlow);
     }
 
     return r;
 }
 
-// This interpolation function is faster than the basic 'interpol', because it assumes that the
-// interpolated arrays only contain finite elements, and that 'x' is properly sorted. If these
-// two conditions are matched, then the output will be the same as for 'interpol' (except that it
-// will be quite faster). On the other hand, if one of the arrays contains special values (NaN, inf,
-// ...), all the points that would use these values will be contaminated. If 'x' is not properly
-// sorted, the result will simply be wrong.
+// Perform linear interpolation of data 'y' of position 'x' at new position 'nx'.
+// Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
+// the arrays contains special values (NaN, inf, ...), all the points that would use these values
+// will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
 template<typename TypeY, typename TypeX, typename T,
     typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-auto interpol_fast(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
+auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX>;
 
     phypp_check(n_elements(y) == n_elements(x),
-        "interpol: 'x' and 'y' arrays must contain the same number of elements");
+        "interpolate: 'x' and 'y' arrays must contain the same number of elements");
     phypp_check(n_elements(y) >= 2,
-        "interpol: 'x' and 'y' arrays must contain at least 2 elements");
+        "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
+    uint_t nmax = x.size();
     uint_t low = lower_bound(nx, x);
-    uint_t up  = upper_bound(nx, x);
 
     rtypey ylow, yup;
     rtypex xlow, xup;
-    if (low != npos && up != npos) {
-        ylow = y[low]; yup = y[up];
-        xlow = x[low]; xup = x[up];
-    } else if (low == npos) {
-        ylow = y[up]; yup = y[up+1];
-        xlow = x[up]; xup = x[up+1];
+    if (low != npos) {
+        if (low != nmax-1) {
+            ylow = dref(y.data[low]); yup = dref(y.data[low+1]);
+            xlow = dref(x.data[low]); xup = dref(x.data[low+1]);
+        } else {
+            ylow = dref(y.data[low-1]); yup = dref(y.data[low]);
+            xlow = dref(x.data[low-1]); xup = dref(x.data[low]);
+        }
     } else {
-        ylow = y[low-1]; yup = y[low];
-        xlow = x[low-1]; xup = x[low];
+        ylow = dref(y.data[0]); yup = dref(y.data[1]);
+        xlow = dref(x.data[0]); xup = dref(x.data[1]);
     }
 
     return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);

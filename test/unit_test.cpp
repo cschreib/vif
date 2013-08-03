@@ -653,14 +653,14 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'interpol', 'lower_bound' & 'upper_bound' functions
-        vec1f y = {0, fnan, 2, 3, 4, 5};
+        // 'interpolate', 'lower_bound' & 'upper_bound' functions
+        vec1f y = {0, 1, 2, 3, 4, 5};
         vec1f x = {0, 1, 2, 3, 4, 5};
         vec1f nx = {0.2, 0.5, 1.6, -0.5, 12};
-        vec1f i = interpol(y, x, nx);
+        vec1f i = interpolate(y, x, nx);
         float t = 0.5;
         check(y(lower_bound(t, y)), "0");
-        check(y(upper_bound(t, y)), "2");
+        check(y(upper_bound(t, y)), "1");
         check(total(i != nx), "0");
     }
 
