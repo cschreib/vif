@@ -422,6 +422,34 @@ auto e10(const T& t) {
 }
 
 template<typename F>
+auto derivate1(F func, const double& x, const double ep) -> decltype(func(x)) {
+    static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
+    
+    double tmp = x - 2*ep;
+    decltype(func(x)) res = a[0]*func(tmp)/ep;
+    for (uint_t i = 1; i < 5; ++i) {
+        tmp += ep;
+        res += a[i]*func(tmp)/ep;
+    }
+            
+    return res;
+}
+
+template<typename F>
+auto derivate2(F func, const double& x, const double ep) -> decltype(func(x)) {
+    static const double a[5] = {-1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0};
+    
+    double tmp = x - 2*ep;
+    decltype(func(x)) res = a[0]*func(tmp)/(ep*ep);
+    for (uint_t i = 1; i < 5; ++i) {
+        tmp += ep;
+        res += a[i]*func(tmp)/(ep*ep);
+    }
+            
+    return res;
+}
+
+template<typename F>
 auto derivate1(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
     
