@@ -22,7 +22,7 @@ std::string today() {
 
 // Converts an ammount of time [seconds] to a formatted string hh:mm:ss
 template<typename T>
-std::string date_str(T t) {
+std::string time_str(T t) {
     std::string date;
     
     if (t < 1.0) {
@@ -53,11 +53,43 @@ std::string date_str(T t) {
     return date;
 }
 
+// Converts an ammount of time [seconds] to a formatted string ss:ms:us:ns
+template<typename T>
+std::string seconds_str(T t) {
+    std::string date;
+
+    std::size_t sec = floor(t);
+    std::size_t ms  = floor((t - sec)*1000);
+    std::size_t us  = floor(((t - sec)*1000 - ms)*1000);
+    std::size_t ns  = floor((((t - sec)*1000 - ms)*1000 - us)*1000);
+        
+    if (sec != 0)                  date += strn(sec)+"s";
+    if (ms  != 0 || !date.empty()) date += strn(ms,3)+"ms";
+    if (us  != 0 || !date.empty()) date += strn(us,3)+"us";
+    date += strn(us,3)+"ns";
+    
+    while (date[0] == '0' && date.size() != 3) {
+        date.erase(0,1);
+    }
+    
+    return date;
+}
+
 // Execute the provided code and return the time it took to execute [seconds]
 template<typename F>
 double profile(F&& func) {
     auto start = now();
     func();
+    return now() - start;
+}
+
+// Execute 'n' times the provided code and return the time it took to execute [seconds]
+template<typename F>
+double profile(F&& func, uint_t n) {
+    auto start = now();
+    for (uint_t i = 0; i < n; ++i) {
+        func();
+    }
     return now() - start;
 }
 
@@ -90,8 +122,8 @@ void progress_(progress_t& p) {
     // Percentage
     msg += strn(std::size_t(floor(100.0*(p.i+1)/double(p.n))), 3, ' ')+"%, ";
     // Timings
-    msg += date_str(total)+" elapsed, "+date_str(remaining)+" left, "
-        + date_str(total+remaining)+" total";
+    msg += time_str(total)+" elapsed, "+time_str(remaining)+" left, "
+        + time_str(total+remaining)+" total";
     // Fill with spaces
     p.max_length = std::max(p.max_length, msg.size());
     msg += std::string(p.max_length - msg.size(), ' ');
