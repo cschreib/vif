@@ -47,10 +47,10 @@ int main(int argc, char* argv[]) {
     }
 
     print("Photometry: [", ngal, " sources]");
-    vec1i gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
+    vec1u gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
         && cat.flux/cat.flux_err > 3);
     uint_t seed = 42;
-    vec1i rndid = shuffle(gidg, seed)[indgen(1000)];
+    vec1u rndid = shuffle(gidg, seed)[indgen(1000)];
 
     std::string hband = "band";
     std::string hnote = "note";
@@ -90,11 +90,10 @@ int main(int argc, char* argv[]) {
         auto f = cat.flux(i,_);
         auto e = cat.flux_err(i,_);
 
-        uint_t cnt, cnt3;
-        vec1i idg = where(finite(f) && finite(e) && f > 0 && e > 0, cnt);
-        vec1i idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3, cnt3);
+        vec1u idg = where(finite(f) && finite(e) && f > 0 && e > 0);
+        vec1u idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3);
 
-        if (cnt == 0 || cnt3 == 0) continue;
+        if (idg.empty() || idg3s.empty()) continue;
 
         print(" ",
             align_center(cat.bands[i], maxb), " | ",
@@ -102,7 +101,7 @@ int main(int argc, char* argv[]) {
             align_right(strn(cat.lambda[i]), maxl), " | ",
             align_right(strn_sci(3*median(e[idg3s])), maxdJ), " | ",
             align_right(strn(uJy2mag(3*median(e[idg3s]))), maxdAB), " | ",
-            align_right(strn(cnt), maxdet), " | ",
+            align_right(strn(idg.size()), maxdet), " | ",
             align_right(strn(total(f[idg]/e[idg] > 3)), maxd3), " | ",
             align_right(strn(total(f[idg]/e[idg] > 5)), maxd5), " | ",
             align_right(strn(field_area(cat.ra[idg3s], cat.dec[idg3s])), maxar)
