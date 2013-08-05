@@ -412,7 +412,7 @@ struct vec_t {
 
     template<typename ... T>
     explicit vec_t(T ... d) {
-        set_array(d...);
+        set_array(dims, d...);
         resize();
     }
     
