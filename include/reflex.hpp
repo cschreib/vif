@@ -50,6 +50,8 @@ namespace reflex {
         std::string full_name() const;
     };
 
+    #define REFLEX_MEM_HEADER {'_', 'r', 'e', 'f', 'l', 'e', 'x', '_'}
+
     struct data_t {
         data_t() = default;
         data_t(data_t&&) = default;
@@ -57,6 +59,7 @@ namespace reflex {
         data_t& operator = (data_t&&) = default;
         data_t& operator = (const data_t&) = delete;
 
+        char header[8] = REFLEX_MEM_HEADER;
         data_t* parent = nullptr;
         std::string name;
         std::vector<member_t> members;
@@ -84,6 +87,40 @@ namespace reflex {
         }
 
         return str;
+    }
+
+    template<typename T>
+    std::string seek_name(const T& t, uint_t max_dist = 100000) {
+        const char* c = reinterpret_cast<const char*>(&t);
+        const char* oc = c;
+        const char motif[] = REFLEX_MEM_HEADER;
+
+        while (uint_t(c - oc) < max_dist) {
+            while (*c != motif[0]) ++c;
+            const char* hstart = c;
+
+            bool found = true;
+            for (uint_t i = 1; i < sizeof(motif); ++i) {
+                if (*(++c) != motif[i]) {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (!found) continue;
+
+            const uint_t offset = &(((reflex::data_t*)nullptr)->header[0]) - (char*)nullptr;
+            const char* rstart = hstart - offset;
+            const reflex::data_t& data = reinterpret_cast<const reflex::data_t&>(*rstart);
+
+            for (auto& m : data.members) {
+                if (m.value == (const void*)&t) {
+                    return data.full_name() + "." + m.name;
+                }
+            }
+        }
+
+        return "<?>";
     }
 
     template<typename T>
@@ -230,10 +267,11 @@ namespace reflex {
 #define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
 
 #define MEMBERS2(name, ...) \
-    reflex::data_t _reflex = reflex::do_init(_reflex_types(), this, {nullptr, name, {__VA_ARGS__}})
+    reflex::data_t _reflex = reflex::do_init(_reflex_types(), this, { \
+        REFLEX_MEM_HEADER, nullptr, name, {__VA_ARGS__}})
 
 #define NO_MEMBER(name) \
     using _reflex_types = decltype(reflex::make_types_()); \
-    reflex::data_t _reflex = {nullptr, name, {}}
+    reflex::data_t _reflex = {REFLEX_MEM_HEADER, nullptr, name, {}}
 
 #endif
