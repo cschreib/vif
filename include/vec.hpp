@@ -1647,24 +1647,32 @@ vec1u sort(const vec_t<Dim,Type>& v) {
 
 template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
 void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
-    std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
-    auto tmp = t1;
-    t1.dims[N] += n2;
-    t1.resize();
+    if (t1.empty()) {
+        t1 = t2;
+    } else {
+        std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
+        auto tmp = t1;
+        t1.dims[N] += n2;
+        t1.resize();
 
-    t1[ix(rep<N>(_),uindgen(n1),rep<Dim-N-1>(_))] = tmp;
-    t1[ix(rep<N>(_),n1+uindgen(n2),rep<Dim-N-1>(_))] = t2;
+        t1[ix(rep<N>(_),uindgen(n1),rep<Dim-N-1>(_))] = tmp;
+        t1[ix(rep<N>(_),n1+uindgen(n2),rep<Dim-N-1>(_))] = t2;
+    }
 }
 
 template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
 void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
-    std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
-    auto tmp = t1;
-    t1.dims[N] += n2;
-    t1.resize();
+    if (t1.empty()) {
+        t1 = t2;
+    } else {
+        std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
+        auto tmp = t1;
+        t1.dims[N] += n2;
+        t1.resize();
 
-    t1[ix(rep<N>(_),uindgen(n2),rep<Dim-N-1>(_))] = t2;
-    t1[ix(rep<N>(_),n2+uindgen(n1),rep<Dim-N-1>(_))] = tmp;
+        t1[ix(rep<N>(_),uindgen(n2),rep<Dim-N-1>(_))] = t2;
+        t1[ix(rep<N>(_),n2+uindgen(n1),rep<Dim-N-1>(_))] = tmp;
+    }
 }
 
 template<typename Type1, typename Type2>
