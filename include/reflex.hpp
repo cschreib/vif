@@ -44,6 +44,7 @@ namespace reflex {
 
     struct member_t {
         std::string name;
+        const std::type_info& type;
         data_t* parent = nullptr;
         void* value;
 
@@ -114,7 +115,7 @@ namespace reflex {
             const reflex::data_t& data = reinterpret_cast<const reflex::data_t&>(*rstart);
 
             for (auto& m : data.members) {
-                if (m.value == (const void*)&t) {
+                if (m.type == typeid(t) && m.value == (const void*)&t) {
                     return data.full_name() + "." + m.name;
                 }
             }
@@ -262,7 +263,7 @@ namespace reflex {
     }
 }
 
-#define MAKE_MEMBER(name) reflex::member_t{#name, nullptr, (void*)&name}
+#define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, (void*)&name}
 
 #define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
 
