@@ -254,7 +254,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     res.rid = replicate(npos, nth, n2);
     res.rd  = dblarr(nth, n2)+dinf;
 
-    auto work = [&] (uint_t i, uint_t j) {
+    auto work = [&, nth] (uint_t i, uint_t j, qxmatch_res& tres) {
         // For each pair of source, compute a distance indicator.
         // Note that this is not the 'true' distance in arseconds, but this is sufficient
         // to find the nearest neighbors (the true distance is obtained by computing 
@@ -268,23 +268,23 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         // neighbor list. If it is lower than that, we insert it in the list, removing the
         // old one, and sort the whole thing so that the largest distance goes as the end of
         // the list.
-        if (sd < res.d(nth-1,i)) {
-            res.id(nth-1,i) = j;
-            res.d(nth-1,i) = sd;
+        if (sd < tres.d(nth-1,i)) {
+            tres.id(nth-1,i) = j;
+            tres.d(nth-1,i) = sd;
             uint_t k = nth-2;
-            while (k != npos && res.d(k,i) > res.d(k+1,i)) {
-                std::swap(res.d(k,i), res.d(k+1,i));
-                std::swap(res.id(k,i), res.id(k+1,i));
+            while (k != npos && tres.d(k,i) > tres.d(k+1,i)) {
+                std::swap(tres.d(k,i), tres.d(k+1,i));
+                std::swap(tres.id(k,i), tres.id(k+1,i));
                 --k;
             }
         }
-        if (sd < res.rd(nth-1,j)) {
-            res.rid(nth-1,j) = i;
-            res.rd(nth-1,j) = sd;
+        if (sd < tres.rd(nth-1,j)) {
+            tres.rid(nth-1,j) = i;
+            tres.rd(nth-1,j) = sd;
             uint_t k = nth-2;
-            while (k != npos && res.rd(k,j) > res.rd(k+1,j)) {
-                std::swap(res.rd(k,j), res.rd(k+1,j));
-                std::swap(res.rid(k,j), res.rid(k+1,j));
+            while (k != npos && tres.rd(k,j) > tres.rd(k+1,j)) {
+                std::swap(tres.rd(k,j), tres.rd(k+1,j));
+                std::swap(tres.rid(k,j), tres.rid(k+1,j));
                 --k;
             }
         }
@@ -297,7 +297,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         for (uint_t i = 0; i < n1; ++i) {
             for (uint_t j = 0; j < n2; ++j) {
                 if (self && i == j) continue;
-                work(i,j);
+                work(i,j,res);
             }
             
             if (get_keyword(_verbose)) print_progress(p, i);
@@ -308,6 +308,15 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         std::atomic<uint_t> iter(0);
     
         // Create the thread pool and launch the threads
+        std::vector<qxmatch_res> vres(nthread);
+        for (auto& r : vres) {
+            r.id = replicate(npos, nth, n1);
+            r.d  = dblarr(nth, n1)+dinf;
+            r.rid = replicate(npos, nth, n2);
+            r.rd  = dblarr(nth, n2)+dinf;
+        }
+        vec1u tbeg(nthread);
+        vec1u tend(nthread);
         auto pool = thread::pool(nthread);
         uint_t total = 0;
         uint_t assigned = floor(n1/float(nthread));
@@ -315,12 +324,15 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             if (t == nthread-1) {
                 assigned = n1 - total;
             }
+
+            tbeg[t] = total;
+            tend[t] = total+assigned;
             
-            pool[t].start([&iter, &work, total, self, assigned, n2]() {
+            pool[t].start([&iter, &work, &vres, t, total, self, assigned, n2]() {
                 for (uint_t i = total; i < total+assigned; ++i) {
                     for (uint_t j = 0; j < n2; ++j) {
                         if (self && i == j) continue;
-                        work(i,j);
+                        work(i,j,vres[t]);
                     }
 
                     ++iter;
@@ -344,10 +356,38 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         for (auto& t : pool) {
             t.join();
         }
+
+        // Merge back the results of each thread
+        for (uint_t t = 0; t < nthread; ++t) {
+            auto ids = rgen(tend[t] - tbeg[t]) + tbeg[t];
+            res.id(_,ids) = vres[t].id(_,ids);
+            res.d(_,ids) = vres[t].d(_,ids);
+
+            if (t == 0) {
+                res.rid = vres[t].rid;
+                res.rd = vres[t].rd;
+            } else {
+                for (uint_t j = 0; j < n2; ++j) {
+                    for (uint_t n = 0; n < nth; ++n) {
+                        if (res.rd(nth-1,j) < vres[t].rd(n,j)) break;
+
+                        res.rid(nth-1,j) = vres[t].rid(n,j);
+                        res.rd(nth-1,j) = vres[t].rd(n,j);
+                        uint_t k = nth-2;
+                        while (k != npos && res.rd(k,j) > res.rd(k+1,j)) {
+                            std::swap(res.rd(k,j), res.rd(k+1,j));
+                            std::swap(res.rid(k,j), res.rid(k+1,j));
+                            --k;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Convert the distance estimator to a real distance
     res.d = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.d));
+    res.rd = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.rd));
 
     return res;
 }
@@ -528,65 +568,249 @@ std::string build_comments(const comment_pool_t& pool, uint_t width = 80) {
     return str;
 }
 
+struct catalog_pool;
+
 struct catalog_t {
+    catalog_pool& pool;
+
+    vec1u       idm;
+    vec2d       d;
+
     std::string name;
     vec1s       sources;
     vec1s       files;
     std::string comment;
     std::string ref;
+
+    template<std::size_t Dim, typename T, typename U, typename V,
+        typename enable = typename std::enable_if<Dim != 1>::type>
+    void merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def);
+
+    template<typename T, typename U, typename V>
+    void merge(vec_t<1,T>& in, const U& out, const V& def);
+
+    template<std::size_t Dim, typename T, typename U, typename V,
+        typename enable = typename std::enable_if<Dim != 1>::type>
+    void merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def, const std::string& com);
+
+    template<typename T, typename U, typename V>
+    void merge(vec_t<1,T>& in, const U& out, const V& def, const std::string& com);
+
+    template<typename T, typename U, typename V>
+    void merge(T& in, const U& out, const V& def);
+
+    template<typename T, typename U, typename V>
+    void merge(T& in, const U& out, const V& def, const std::string& com);
+
+    void merge_flux(const vec2f& flux, const vec2f& err, const vec1s& bands, const vec1s& notes);
 };
 
-using catalog_pool_t = std::list<catalog_t>;
+struct catalog_pool {
+    comment_pool_t coms;
+    uint_t ngal;
+    std::list<catalog_t> pool;
 
-catalog_pool_t create_catalog_pool() {
-    return catalog_pool_t();
-}
+    vec1u origin;
+    vec1d ra, dec;
+    vec2f flux, flux_err;
+    vec1s bands, notes;
 
-catalog_t& add_catalog(catalog_pool_t& pool, const std::string& name, const vec1s& sources, 
-    const vec1s& files, const std::string& comment = "") {
+    catalog_t& add_catalog(const std::string& name, const vec1s& sources, const vec1s& files,
+        const std::string& comment = "") {
 
-    std::string ref = "["+strn(pool.size()+1)+"]";
-    pool.push_back({name, sources, files, comment, ref});
-    return pool.back();
-}
-
-std::string build_catalog_list(const catalog_pool_t& pool, uint_t width = 80) {
-    std::string str;
-
-    for (auto& c : pool) {
-        str += c.ref+": "+c.name+"\n";
-        if (!c.sources.empty()) {
-            if (c.sources.size() == 1) {
-                str += "  source: "+c.sources[0]+"\n";
-            } else {
-                std::string header = "  sources: ";
-                str += header+c.sources[0]+"\n";
-                for (uint_t i = 1; i < c.sources.size(); ++i) {
-                    str += std::string(header.size(), ' ')+c.sources[i]+"\n";
-                }
-            }
-        }
-        if (!c.files.empty()) {
-            if (c.files.size() == 1) {
-                str += "  file: "+c.files[0]+"\n";
-            } else {
-                std::string header = "  files: ";
-                str += header+c.files[0]+"\n";
-                for (uint_t i = 1; i < c.files.size(); ++i) {
-                    str += std::string(header.size(), ' ')+c.files[i]+"\n";
-                }
-            }
-        }
-        if (!c.comment.empty()) {
-            vec1s spl = wrap("  comment: "+c.comment, width, std::string(4, ' '));
-            for (uint_t i = 0; i < spl.size(); ++i) {
-                str += spl[i] + '\n';
-            }
-        }
-        str += "\n";
+        std::string ref = "["+strn(pool.size()+1)+"]";
+        pool.push_back({*this, uindgen(ngal), {}, name, sources, files, comment, ref});
+        return pool.back();   
     }
 
-    return str;
+    catalog_t& add_catalog(const vec1d& cra, const vec1d& cdec, const std::string& name,
+        const vec1s& sources, const vec1s& files, const std::string& comment = "") {
+
+        phypp_check(cra.size() == cdec.size(), "add_catalog: need ra.size() == dec.size()");
+
+        if (pool.empty()) {
+            ngal = cra.size();
+            origin = replicate(1, ngal);
+            ra = cra;
+            dec = cdec;
+            vec1u idm = uindgen(ngal);
+            std::string ref = "[1]";
+            pool.push_back({*this, idm, {}, name, sources, files, comment, ref});
+            return pool.back();   
+        } else {
+            print("cross-matching "+name+"...");
+
+            qxmatch_res xm = qxmatch(cra, cdec, ra, dec,
+                keywords(_nth(2), _thread(4), _verbose(true))
+            );
+
+            const uint_t n = cra.size();
+            vec1u idm(n);
+
+            uint_t new_cnt = 0;
+            for (uint_t i = 0; i < n; ++i) {
+                if (xm.rid[xm.id[i]] == i) {
+                    idm[i] = xm.id[i];
+                } else {
+                    idm[i] = ra.size();
+                    ra.push_back(cra[i]);
+                    dec.push_back(cdec[i]);
+                    origin.push_back(pool.size()+1);
+                    ++new_cnt;
+                }
+            }
+
+            print("> ", n - new_cnt, " matched sources, ", new_cnt, " new sources");
+            ngal += new_cnt;
+
+            std::string ref = "["+strn(pool.size()+1)+"]";
+            pool.push_back({*this, idm, std::move(xm.d), name, sources, files, comment, ref});
+            return pool.back();   
+        }
+    }
+
+    std::string build_catalog_list(uint_t width = 80) {
+        std::string str;
+
+        for (auto& c : pool) {
+            str += c.ref+": "+c.name+"\n";
+            if (!c.sources.empty()) {
+                if (c.sources.size() == 1) {
+                    str += "  source: "+c.sources[0]+"\n";
+                } else {
+                    std::string header = "  sources: ";
+                    str += header+c.sources[0]+"\n";
+                    for (uint_t i = 1; i < c.sources.size(); ++i) {
+                        str += std::string(header.size(), ' ')+c.sources[i]+"\n";
+                    }
+                }
+            }
+            if (!c.files.empty()) {
+                if (c.files.size() == 1) {
+                    str += "  file: "+c.files[0]+"\n";
+                } else {
+                    std::string header = "  files: ";
+                    str += header+c.files[0]+"\n";
+                    for (uint_t i = 1; i < c.files.size(); ++i) {
+                        str += std::string(header.size(), ' ')+c.files[i]+"\n";
+                    }
+                }
+            }
+            if (!c.comment.empty()) {
+                vec1s spl = wrap("  comment: "+c.comment, width, std::string(4, ' '));
+                for (uint_t i = 0; i < spl.size(); ++i) {
+                    str += spl[i] + '\n';
+                }
+            }
+            str += "\n";
+        }
+
+        return str;
+    }
+};
+
+template<std::size_t Dim, typename T, typename U, typename V, typename enable>
+void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def) {
+    phypp_check(in.empty(), "merging twice into the same variable");
+    in.dims = out.dims;
+    in.dims[Dim-1] = pool.ngal;
+    in.resize();
+    in[_] = def;
+    in[ix(rep<Dim-1>(_),idm)] = out;
+}
+
+template<typename T, typename U, typename V>
+void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def) {
+    phypp_check(in.empty(), "merging twice into the same variable");
+    in = replicate(def, pool.ngal);
+    in[idm] = out;
+}
+
+template<std::size_t Dim, typename T, typename U, typename V, typename enable>
+void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def,
+    const std::string& com) {
+    merge(in, out, def);
+    add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
+}
+
+template<typename T, typename U, typename V>
+void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def, const std::string& com) {
+    merge(in, out, def);
+    add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
+}
+
+template<typename T, typename U, typename V>
+void catalog_t::merge(T& in, const U& out, const V& def) {
+    struct {
+        reflex::struct_t<T> t;
+        const V& def;
+        catalog_t& cat;
+
+        template<typename M>
+        void operator () (const reflex::member_t& m, const M& v) {
+            struct {
+                const reflex::member_t& m;
+                const M& v;
+                const V& def;
+                catalog_t& cat;
+
+                void operator () (reflex::member_t& n, M& p) {
+                    if (this->m.name == n.name) {
+                        this->cat.merge(p, this->v, this->def);
+                    }
+                }
+
+                template<typename P, typename enable2 =
+                    typename std::enable_if<reflex::is_struct<M>::value>::type>
+                void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
+                    this->cat.merge(p, this->v, this->def);
+                }
+
+                template<typename P>
+                void operator () (reflex::member_t& n, P&& p) {
+                    phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                        this->m.full_name(), "' into '", n.full_name(), "'"
+                    );
+                }
+            } do_run{m, v, this->def, this->cat};
+
+            reflex::foreach_member(this->t, do_run);
+        }
+    } do_merge{reflex::wrap(in), def, *this};
+
+    reflex::foreach_member(reflex::wrap(out), do_merge);
+}
+
+
+template<typename T, typename U, typename V>
+void catalog_t::merge(T& in, const U& out, const V& def, const std::string& com) {
+    merge(in, out, def);
+    add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");   
+}
+
+void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& bands,
+    const vec1s& notes) {
+
+    phypp_check(flux.dims[0] == err.dims[0], "flux and error do not match");
+    phypp_check(flux.dims[0] == bands.size(), "flux and band do not match");
+
+    vec1s tnotes = notes;
+    if (tnotes.empty()) {
+        tnotes = strarr(bands.size());
+    }
+
+    vec1u idne = where(!empty(tnotes));
+    tnotes[idne] = tnotes[idne]+" ";
+    tnotes += ref;
+
+    vec2f tflux, terr;
+    merge(tflux, flux, fnan);
+    merge(terr, err, fnan);
+
+    append(pool.bands, bands);
+    append(pool.notes, tnotes);
+    append<0>(pool.flux, tflux);
+    append<0>(pool.flux_err, terr);
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2].
