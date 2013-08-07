@@ -238,7 +238,14 @@ namespace file {
         return dir;
     }
 
+    std::string get_directory(const std::string& file) {
+        vec1s tree = split(file, "/");
+        if (tree.size() == 1) return "./";
+        return file.substr(0, file.size()-tree[tree.size()-1].size());
+    }
+
     bool mkdir(const std::string& path) {
+        if (path.empty()) return true;
         return (::mkdir(path.c_str(), 0775) == 0) || (errno == EEXIST);
     }
     
