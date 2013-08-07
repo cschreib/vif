@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
         // Basic math
         check(2*v, "0, 2, 4, 6, 8, 10, 12");
         check(pow(2,v), "1, 2, 4, 8, 16, 32, 64");
-        
+
         // Range generation 'rx'
         vec1i i = rx(5,2);
         check(i, "5, 4, 3, 2");
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
         b2 = true;
         check(v, "0, 1, 1, 0");
     }
-    
+
     {
         // Initialization list
         vec1f tv = {44, 55, 66, 77};
@@ -89,13 +89,13 @@ int main(int argc, char* argv[]) {
         check(n_elements(tv), "4");
         check(tv, "44, 55, 66, 77");
     }
-    
+
     {
         // String array
         vec1s w = {"gn", "gs", "uds", "cosmos"};
         check(w, "gn, gs, uds, cosmos");
     }
-    
+
     {
         // Boolean logic
         vec1i i = indgen(5);
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
         vec1i i = indgen(5);
         check(reverse(i), "4, 3, 2, 1, 0");
     }
-    
+
     {
         // 2 dimensional array & multiple indices '(i,j)'
         vec2d u = dindgen(3,2);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
         check(u[ix(0,1)], "1");
         check(u[ix(1,1)], "3");
         check(u(2,1), "5");
-        
+
         u[ix(1,0)] = 9;
         u[ix(2,1)] = 10;
         check(u, "0, 1, 9, 3, 4, 10");
@@ -141,18 +141,18 @@ int main(int argc, char* argv[]) {
         check(v[ix(rx(1,2),rx(1,3))].dims, "2, 3");
         check(v[ix(rx(1,2),0)].dims, "2");
         check(v[ix(0,rx(1,3))].dims, "3");
-        
+
         check(v(_,_).dims, "5, 4");
         check(v(_,0).dims, "5");
         check(v(0,_).dims, "4");
         check(v(rx(1,2),rx(1,3)).dims, "2, 3");
         check(v(rx(1,2),0).dims, "2");
         check(v(0,rx(1,3)).dims, "3");
-        
+
         check(v(1,_), "8, 9, 5, 2");
         check(v(2,rx(1,2)), "8, 2");
         check(v(_,1), "5, 9, 8, -5, 1");
-        
+
         v(2,_) = indgen(4);
         check(v, "4, 5, 6, 7, 8, 9, 5, 2, 0, 1, 2, 3, -1, -5, -6, -7, -4, 1, -2, 5");
         v(_,2) = {-4, -4, -4, -4, -4};
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
         v(_,-1) = replicate(-2,5);
         check(v, "4, 5, -4, -2, 8, 9, -4, -2, 0, 1, -4, -2, -1, -5, -4, -2, 2, 2, 2, -2");
     }
-    
+
     {
         // FITS image loading
         vec2d v; fits::header hdr;
@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
         fits::read("out/image_saved.fits", nv);
         check(total(nv != v) == 0, "1");
     }
-    
+
     {
         // FITS table loading
         vec1i id1, id2, id3;
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
         check(n_elements(id2), "79003");
         check(n_elements(id3), "79003");
         check(id1(indgen(10)), "43881, 43881, 43881, 43881, 43548, 43881, 43881, 43881, 43820, 43881");
-        
+
         // FITS table writing
         fits::write_table("out/table_saved.fits", ftable(id1, id2, id3));
         vec1i i1b = id1, i2b = id2, i3b = id3;
@@ -209,25 +209,25 @@ int main(int argc, char* argv[]) {
         // 2-d column
         vec2i test = dindgen(5,2);
         fits::write_table("out/2dtable.fits", ftable(test));
-        
+
         vec2i otest = test;
         fits::read_table("out/2dtable.fits", ftable(test));
-        
+
         check(where(test != otest).empty(), "1");
 
         // Unsigned type
         vec1u id = uindgen(6);
         fits::write_table("out/utable.fits", ftable(id));
-        
+
         vec1u oid = id;
         fits::read_table("out/utable.fits", ftable(id));
-        
+
         check(where(id != oid).empty(), "1");
 
         // String type
         vec1s str = {"glouglou", "toto", "tat", "_gqmslk", "1", "ahahahaha"};
         fits::write_table("out/stable.fits", ftable(str));
-        
+
         vec1s ostr = str;
         str = {};
         fits::read_table("out/stable.fits", ftable(str));
@@ -247,49 +247,49 @@ int main(int argc, char* argv[]) {
         check(f, "0.2");
         check(s, "toto");
     }
-    
+
     {
         // 'match' function
         vec1i t1 = {4,5,6,7,8,9};
         vec1i t2 = {9,1,7,10,5};
-        
+
         vec1u id1, id2;
         match(t1, t2, id1, id2);
         check(id1, "5, 3, 1");
         check(id2, "0, 2, 4");
     }
-    
+
     {
         // ASCII table loading
         vec1i i1, i2;
         file::read_table("data/table.txt", 2, i1, i2);
         check(i1, "0, 1, 2, 3, 4");
         check(i2, "0, 1, 3, 5, 9");
-        
+
         vec1i i2b;
         file::read_table("data/table.txt", 2, _, i2b);
         check(where(i2 != i2b).empty(), "1");
-        
+
         vec2i ids;
         file::read_table("data/table.txt", 2, file::columns(2, ids));
         check(where(i1 != ids(0,_)).empty(), "1");
         check(where(i2 != ids(1,_)).empty(), "1");
-        
+
         vec2i i1c, i2c;
         file::read_table("data/table.txt", 2, file::columns(1, i1c, i2c));
         check(where(i1 != i1c(0,_)).empty(), "1");
         check(where(i2 != i2c(0,_)).empty(), "1");
-        
+
         vec2i i2d;
         file::read_table("data/table.txt", 2, file::columns(1, _, i2d));
         check(where(i2 != i2d(0,_)).empty(), "1");
     }
-    
+
     {
         // File system functions
         check(file::exists("unit_test.cpp"), "1");
         check(file::exists("unit_test_bidouille.cpp"), "0");
-        vec1s dlist = file::list_directories("../"); 
+        vec1s dlist = file::list_directories("../");
         print(dlist);
         check(where(dlist == "bin").empty(), "0");
         vec1s flist = file::list_files();
@@ -304,21 +304,21 @@ int main(int argc, char* argv[]) {
         vec1f f = {-1,0,1,2,3,4,5,6,finf,fnan};
         check(clamp(f, 1, 4), "1, 1, 1, 2, 3, 4, 4, 4, 4, nan");
     }
-    
+
     {
         // 'randomn', 'mean', 'median', 'percentile' functions
         uint_t seed = 42;
         uint_t ntry = 20000;
         vec1d r = randomn(seed, ntry);
-        
+
         double me = mean(r);
         print(me);
         check(fabs(me) < 1.0/sqrt(ntry), "1");
-        
+
         double med = median(r);
         print(med);
         check(fabs(med) < 1.0/sqrt(ntry), "1");
-        
+
         double p1 = percentile(r, 0.158);
         double p2 = percentile(r, 0.842);
         vec1d pi = {p1, p2};
@@ -338,7 +338,7 @@ int main(int argc, char* argv[]) {
         check(i.size() == id1.size(), "1");
         check(si.size() == id2.size(), "1");
     }
-    
+
     {
         // 'mean' and 'median' for 2-d array
         vec2d v = {{1,2,3},{4,5,6},{7,8,9}};
@@ -347,14 +347,14 @@ int main(int argc, char* argv[]) {
         check(median(v,0), "4, 5, 6");
         check(median(v,1), "2, 5, 8");
     }
-    
+
     {
         // 'median' for 3-d array
         vec3d v = dblarr(21,21,11);
         v(_,_,rx(0,4)) = 0;
         v(_,_,rx(6,10)) = 1;
         v(_,_,5) = 0.5;
-        
+
         vec2d m = median(v,2);
         fits::write("out/median.fits", m);
     }
@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
         check(v.dims, "5");
         check(v, "3, 3, 3, 3, 3");
     }
-    
+
     {
         // 'transpose' & 'circular_mask' function
         vec1u dim = {51,41};
@@ -373,7 +373,7 @@ int main(int argc, char* argv[]) {
         vec2d py = transpose(replicate(dindgen(dim(0)), dim(1)));
         fits::write("out/px.fits", px);
         fits::write("out/py.fits", py);
-    
+
         vec2d m = circular_mask({51,51}, {25,25}, 8);
         fits::write("out/circular.fits", m);
     }
@@ -384,28 +384,28 @@ int main(int argc, char* argv[]) {
         v = enlarge(v, 5, 1.0);
         fits::write("out/enlarge.fits", v);
     }
-    
+
     {
         // 'subregion' function
         vec2i v = indgen(5,5);
         fits::write("out/sub0.fits", v);
-        
+
         vec2i s = subregion(v, {0,0,4,4});
         vec2i tv = v;
         check(total(s != tv) == 0, "1");
         fits::write("out/sub1.fits", s);
-        
+
         s = subregion(v, {1,0,3,4});
         tv = {{1,2,3},{6,7,8},{11,12,13},{16,17,18},{21,22,23}};
         check(total(s != tv) == 0, "1");
         fits::write("out/sub2.fits", s);
-        
+
         s = subregion(v, {-1,1,5,3});
         tv = {{0,5,6,7,8,9,0},{0,10,11,12,13,14,0},{0,15,16,17,18,19,0}};
         check(total(s != tv) == 0, "1");
         fits::write("out/sub4.fits", s);
     }
-    
+
     {
         // 'rgen' function
         vec1d v = rgen(0, 5, 11);
@@ -455,7 +455,7 @@ int main(int argc, char* argv[]) {
         check(v(1,_), "5, 6, 8");
         check(v(2,_), "5, 5, 5");
     }
-    
+
     {
         // Calculus functions
         check(derivate1([](double x) { return cos(x); }, 1.0, 0.001), "-0.841471");
@@ -464,11 +464,11 @@ int main(int argc, char* argv[]) {
         vec1d x = {0,1,2};
         vec1d y = {0,1,0};
         check(integrate(x,y), "1");
-        
+
         x = 0.5*3.14159265359*dindgen(30)/29.0;
         y = cos(x);
         check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
-        
+
         check(integrate([](float t) -> float {
                 return (2.0/sqrt(3.14159))*exp(-t*t);
             }, 0.0, 1.0), strn(erf(1.0))
@@ -482,15 +482,15 @@ int main(int argc, char* argv[]) {
             {4.000, 1.000, 6.000},
             {7.000, 8.000, 1.000}
         };
-        
+
         vec2d id = {{1,0,0},{0,1,0},{0,0,1}};
-        
+
         vec2d i;
         check(invert(a,i), "1");
         vec2d tid = mmul(a,i);
         mprint(tid);
         check(stddev(tid - id) < 1e-10, "1");
-        
+
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
         diag(sq) *= 5;
         check(sq, "5, 1, 1, 1, 5, 1, 1, 1, 5");
@@ -528,7 +528,7 @@ int main(int argc, char* argv[]) {
 
         check(mmul(tm, p), "-15, 14, 1");
     }
-    
+
     {
         // 'linfit' function
         vec1d x = dindgen(5);
@@ -564,11 +564,11 @@ int main(int argc, char* argv[]) {
             print("chi2: ", fr.chi2);
             assert(false);
         }
-        
+
         img -= psf*fr.params(1);
         fits::write("out/residual.fits", img);
     }
-    
+
     {
         // 'affinefit' function
         vec1d x = dindgen(5);
@@ -599,7 +599,7 @@ int main(int argc, char* argv[]) {
             assert(false);
         }
     }
-    
+
     {
         // 'sort' function
         vec1i v = {6,2,4,3,1,5};
@@ -624,7 +624,7 @@ int main(int argc, char* argv[]) {
         check(mi, "5");
         check(ma, "3");
     }
-    
+
     {
         // 'replace' & 'split'
         vec1s s = {"/home/dir/", "/bin/ds9", "ls"};
@@ -747,20 +747,38 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        // Reflection: copy a structure
+        struct tmp {
+            int i = 5;
+            struct {
+                int k = -4;
+            } j;
+        } tmp1;
+
+        tmp tmp2 = tmp1;
+        tmp2.i = 6;
+        tmp2.j.k = 12;
+
+        check(tmp2, "{ i=6, j={ k=12 } }");
+        check(reflex::seek_name(tmp1.j.k), "tmp.j.k");
+        check(reflex::seek_name(tmp2.j.k), "tmp.j.k");
+    }
+
+    {
         // Convex hull
         struct {
             vec1d ra, dec;
             vec1i hull;
         } cat;
-        
+
         fits::read_table_loose("data/sources.fits", cat);
         cat.hull = convex_hull(cat.ra, cat.dec);
         fits::write_table("out/hull.fits", cat);
 
         print(field_area(cat));
     }
-    
+
     print("\nall tests passed!\n");
-    
+
     return 0;
 }
