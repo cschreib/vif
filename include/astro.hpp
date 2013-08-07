@@ -615,6 +615,14 @@ struct catalog_pool {
     vec2f flux, flux_err;
     vec1s bands, notes;
 
+    bool xmatch;
+    std::string xmatch_file;
+
+    catalog_pool(bool xmatch_, const std::string& xmatch_file_) :
+        xmatch(xmatch_), xmatch_file(xmatch_file_) {
+        file::mkdir(file::get_directory(xmatch_file));
+    }
+
     catalog_t& add_catalog(const std::string& name, const vec1s& sources, const vec1s& files,
         const std::string& comment = "") {
 
@@ -638,34 +646,81 @@ struct catalog_pool {
             pool.push_back({*this, idm, {}, name, sources, files, comment, ref});
             return pool.back();   
         } else {
-            print("cross-matching "+name+"...");
+            std::string file = xmatch_file+"_"+strn(std::hash<std::string>()(
+                name+strn(sources)+strn(files)+comment
+            ))+".fits";
 
-            qxmatch_res xm = qxmatch(cra, cdec, ra, dec,
-                keywords(_nth(2), _thread(4), _verbose(true))
-            );
+            bool rematch = false;
+            if (!xmatch && file::exists(file)) {
+                struct {
+                    vec1u idm;
+                    uint_t ngal;
+                } tmp;
 
-            const uint_t n = cra.size();
-            vec1u idm(n);
-
-            uint_t new_cnt = 0;
-            for (uint_t i = 0; i < n; ++i) {
-                if (xm.rid[xm.id[i]] == i) {
-                    idm[i] = xm.id[i];
-                } else {
-                    idm[i] = ra.size();
-                    ra.push_back(cra[i]);
-                    dec.push_back(cdec[i]);
-                    origin.push_back(pool.size()+1);
-                    ++new_cnt;
+                fits::read_table(file, ftable(tmp.idm, tmp.ngal));
+                if (tmp.idm.size() != cra.size() || tmp.ngal != ngal) {
+                    warning("incompatible cross-match data, re-matching");
+                    rematch = true;
                 }
+            } else {
+                rematch = true;
             }
 
-            print("> ", n - new_cnt, " matched sources, ", new_cnt, " new sources");
-            ngal += new_cnt;
+            if (rematch) {
+                print("cross-matching "+name+"...");
 
-            std::string ref = "["+strn(pool.size()+1)+"]";
-            pool.push_back({*this, idm, std::move(xm.d), name, sources, files, comment, ref});
-            return pool.back();   
+                qxmatch_res xm = qxmatch(cra, cdec, ra, dec,
+                    keywords(_nth(2), _thread(4), _verbose(true))
+                );
+
+                const uint_t n = cra.size();
+                vec1u idm(n);
+                vec1u idn;
+
+                for (uint_t i = 0; i < n; ++i) {
+                    if (xm.rid[xm.id[i]] == i) {
+                        idm[i] = xm.id[i];
+                    } else {
+                        idn.push_back(i);
+                        idm[i] = ra.size();
+                        ra.push_back(cra[i]);
+                        dec.push_back(cdec[i]);
+                        origin.push_back(pool.size()+1);
+                    }
+                }
+
+                fits::write_table(file, ftable(xm.d, idm, idn, ngal));
+
+                print("> ", n - idn.size(), " matched sources, ", idn.size(), " new sources");
+                ngal += idn.size();
+
+                std::string ref = "["+strn(pool.size()+1)+"]";
+                pool.push_back({*this, idm, std::move(xm.d), name, sources, files, comment, ref});
+                return pool.back();
+            } else {
+                print("cross-matching "+name+"...");
+                print("reading data from "+file);
+
+                vec1u idm, idn;
+                vec2d d;
+
+                fits::read_table(file, ftable(d, idm, idn));
+
+                for (uint_t i = 0; i < idn.size(); ++i) {
+                    ra.push_back(cra[idn[i]]);
+                    dec.push_back(cdec[idn[i]]);
+                    origin.push_back(pool.size()+1);
+                }
+
+                print("> ", cra.size() - idn.size(), " matched sources, ", idn.size(),
+                    " new sources");
+
+                ngal += idn.size();
+
+                std::string ref = "["+strn(pool.size()+1)+"]";
+                pool.push_back({*this, idm, std::move(d), name, sources, files, comment, ref});
+                return pool.back();
+            } 
         }
     }
 
