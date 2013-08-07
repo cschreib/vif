@@ -49,7 +49,7 @@ void print_help() {
     bullet("median", "[flag] perform median stacking");
     bullet("verbose", "[flag] print some information about the stacking process");
     print("");
-    
+
     paragraph("Copyright (c) 2013 C. Schreiber (corentin.schreiber@cea.fr)");
 
     paragraph("This software is provided 'as-is', without any express or implied warranty. In no "
@@ -59,7 +59,7 @@ void print_help() {
     paragraph("Permission is granted to anyone to use this software for any purpose, including "
         "commercial applications, and to alter it and redistribute it freely, subject to the "
         "following restrictions:");
-    
+
     bullet("1", "The origin of this software must not be misrepresented; you must not claim that "
         "you wrote the original software. If you use this software in a product, an acknowledgment "
         "in the product documentation would be appreciated but is not required.");
@@ -142,13 +142,15 @@ int main(int argc, char* argv[]) {
 
     fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
 
-    vec3f cube(0, (2*hsize+1), (2*hsize+1));
-    vec1u fids;
-    qstack(fcat.ra, fcat.dec, img, hsize, cube, fids);
-
     vec2f stack;
+
     if ((wht.empty() && err.empty()) || median) {
-        if (verbose) print("stacking ", cube.dims[0], "/", fcat.ra.size(), " sources");
+        vec3f cube;
+        vec1u ids;
+        qstack(fcat.ra, fcat.dec, img, hsize, cube, ids);
+
+        if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
+
         if (mean) {
             stack = qstack_mean(cube);
         } else {
@@ -156,31 +158,19 @@ int main(int argc, char* argv[]) {
         }
     } else {
         if (median) {
-            warning("cannot use weights when doing median stacking");
+            error("cannot use weights when doing median stacking");
+            return 1;
         }
 
+        vec3f cube, wcube;
+        vec1u ids;
+        qstack(fcat.ra, fcat.dec, img, wht.empty() ? err : wht, hsize, cube, wcube, ids);
+        if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
+
         if (!wht.empty()) {
-            vec3f wcube;
-            vec1u wids;
-            qstack(fcat.ra, fcat.dec, wht, hsize, wcube, wids);
-
-            vec1u ids1, ids2;
-            match(fids, wids, ids1, ids2);
-
-            if (verbose) print("stacking ", ids1.size(), "/", fcat.ra.size(), " sources");
-
-            stack = qstack_mean(cube(ids1,_,_), wcube(ids2,_,_));
+            stack = qstack_mean(cube, wcube);
         } else {
-            vec3f ecube;
-            vec1u eids;
-            qstack(fcat.ra, fcat.dec, err, hsize, ecube, eids);
-
-            vec1u ids1, ids2;
-            match(fids, eids, ids1, ids2);
-
-            if (verbose) print("stacking ", ids1.size(), "/", fcat.ra.size(), " sources");
-
-            stack = qstack_mean(cube(ids1,_,_), pow(ecube(ids2,_,_), -2));
+            stack = qstack_mean(cube, pow(wcube, -2));
         }
     }
 
