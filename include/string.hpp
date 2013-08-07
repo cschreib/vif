@@ -347,7 +347,7 @@ vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", 
         while (i != npos && s[i] != ' ') --i;
         if (i == npos) {
             if (ellipse) {
-                ret.data.push_back(header+s.substr(0, twidth-3)+"...");
+                ret.push_back(header+s.substr(0, twidth-3)+"...");
                 i = twidth+1;
                 while (i < s.size() && s[i] != ' ') ++i;
                 s.erase(0, i);
@@ -355,12 +355,12 @@ vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", 
             } else {
                 i = twidth+1;
                 while (i < s.size() && s[i] != ' ') ++i;
-                ret.data.push_back(header+s.substr(0, i));
+                ret.push_back(header+s.substr(0, i));
                 s.erase(0, i);
                 s = trim(s);
             }
         } else {
-            ret.data.push_back(header+s.substr(0, i));
+            ret.push_back(header+s.substr(0, i));
             s.erase(0, i);
             s = trim(s);
         }
@@ -370,10 +370,8 @@ vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", 
     }
 
     if (!s.empty()) {
-        ret.data.push_back(header+s);
+        ret.push_back(header+s);
     }
-
-    ret.dims[0] = ret.data.size();
 
     return ret;
 }
