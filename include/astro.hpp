@@ -794,6 +794,82 @@ void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& ban
     append<0>(pool.flux_err, terr);
 }
 
+void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint_t hsize,
+    vec3f& cube, vec1u& ids) {
+
+    phypp_check(file::exists(filename), "cannot stack on inexistant file '"+filename+"'");
+    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+
+    // Open the FITS file
+    fitsfile* fptr;
+    int status = 0;
+    
+    fits_open_image(&fptr, filename.c_str(), READONLY, &status);
+    fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+
+    // Read the header as a string and read the WCS data
+    char* hstr = nullptr;
+    int nkeys  = 0;
+    fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+    fits::wcs astro(hstr);
+    free(hstr);
+
+    // Get the dimensions of the image
+    int naxis = 0;
+    fits_get_img_dim(fptr, &naxis, &status);
+    phypp_check(naxis == 2, "cannot stack on image cubes (image dimensions: "+strn(naxis)+")");
+    long naxes[2];
+    fits_get_img_size(fptr, naxis, naxes, &status);
+    uint_t width = naxes[0], height = naxes[1];
+
+    // Convert ra/dec to x/y
+    vec1d x, y;
+    fits::ad2xy(astro, ra, dec, x, y);
+
+    // Allocate memory to hold all the cutouts
+    cube.reserve(cube.size() + (2*hsize+1)*(2*hsize+1)*ra.size());
+    ids.reserve(ids.size() + ra.size());
+
+    // Loop over all sources
+    for (uint_t i = 0; i < ra.size(); ++i) {
+        // Discard any source that falls out of the boundaries of the image
+        if (x[i]-hsize < 0 || x[i]+hsize > width || y[i] - hsize < 0 || y[i] + hsize > height) {
+            continue;
+        }
+
+        vec2f cut(2*hsize+1, 2*hsize+1);
+
+        float null = fnan;
+        int anynul = 0;
+        long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
+        long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
+        long inc[2] = {1, 1};
+        fits_read_subset(fptr, TFLOAT, p0, p1, inc, &null, cut.data.data(), &anynul, &status);
+
+        // Discard any source that contains a bad pixel (either infinite or NaN)
+        if (total(!finite(cut)) != 0) {
+            continue;
+        }
+
+        ids.push_back(i);
+        cube.push_back(cut);
+    }
+        
+    fits_close_file(fptr, &status);
+}
+
+vec2f qstack_mean(const vec3f& fcube) {
+    return mean(fcube, 0);
+}
+
+vec2f qstack_mean(const vec3f& fcube, const vec3f& wcube) {
+    return total(fcube*wcube, 0)/total(wcube, 0);
+}
+
+vec2f qstack_median(const vec3f& fcube) {
+    return median(fcube, 0);
+}
+
 // Compute the area covered by a field given a set of source coordinates [deg^2].
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
