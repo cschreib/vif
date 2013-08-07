@@ -296,6 +296,7 @@ int main(int argc, char* argv[]) {
         print(flist);
         flist = file::list_files("../include/*.hpp");
         print(flist);
+        check(file::get_directory("../somedir/someother/afile.cpp"), "../somedir/someother/");
     }
 
     {
