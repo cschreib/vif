@@ -646,6 +646,8 @@ struct catalog_pool {
             pool.push_back({*this, idm, {}, name, sources, files, comment, ref});
             return pool.back();   
         } else {
+            print("cross-matching "+name+"...");
+
             std::string file = xmatch_file+"_"+strn(std::hash<std::string>()(
                 name+strn(sources)+strn(files)+comment
             ))+".fits";
@@ -667,8 +669,6 @@ struct catalog_pool {
             }
 
             if (rematch) {
-                print("cross-matching "+name+"...");
-
                 qxmatch_res xm = qxmatch(cra, cdec, ra, dec,
                     keywords(_nth(2), _thread(4), _verbose(true))
                 );
@@ -698,7 +698,6 @@ struct catalog_pool {
                 pool.push_back({*this, idm, std::move(xm.d), name, sources, files, comment, ref});
                 return pool.back();
             } else {
-                print("cross-matching "+name+"...");
                 print("reading data from "+file);
 
                 vec1u idm, idn;
