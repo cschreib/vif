@@ -47,20 +47,55 @@ namespace reflex {
         const std::type_info& type;
         data_t* parent = nullptr;
         void* value;
+        data_t* reflex = nullptr;
 
         std::string full_name() const;
     };
 
     #define REFLEX_MEM_HEADER {'_', 'r', 'e', 'f', 'l', 'e', 'x', '_'}
 
+    struct data_impl_t {
+        data_impl_t() = default;
+        data_impl_t(data_impl_t&&) = default;
+        data_impl_t(const data_impl_t& d) = delete;
+        data_impl_t& operator = (data_impl_t&&) = default;
+        data_impl_t& operator = (const data_impl_t&) = delete;
+
+        const std::type_info& type;
+        std::string name;
+        std::vector<member_t> members;
+    };
+
     struct data_t {
+        template<typename T>
+        void copy_members_(T&& d) {
+            members.reserve(d.members.size());
+            int_t diff = (char*)this - (const char*)&d;
+            for (auto& m : d.members) {
+                members.push_back({m.name, m.type, this, (void*)((char*)m.value + diff)});
+                if (m.reflex) {
+                    members.back().reflex = (data_t*)(void*)((char*)m.reflex + diff);
+                    members.back().reflex->parent = this;
+                }
+            }
+        }
+
         data_t() = default;
-        data_t(data_t&&) = default;
-        data_t(const data_t&) = delete;
-        data_t& operator = (data_t&&) = default;
-        data_t& operator = (const data_t&) = delete;
+        data_t(data_impl_t&& d) : name(d.name), members(std::move(d.members)) {}
+
+        data_t(data_t&& d) : name(std::move(d.name)) {
+            copy_members_(std::move(d));
+        }
+
+        data_t(const data_t& d) : name(d.name) {
+            copy_members_(d);
+        }
+
+        data_t& operator = (data_t&& d) { return *this; }
+        data_t& operator = (const data_t& d) { return *this; }
 
         char header[8] = REFLEX_MEM_HEADER;
+        const std::type_info& type = typeid(*this);
         data_t* parent = nullptr;
         std::string name;
         std::vector<member_t> members;
@@ -96,6 +131,7 @@ namespace reflex {
         const char* oc = c;
         const char motif[] = REFLEX_MEM_HEADER;
 
+        // Probe the memory that follows the address of the object and look for a reflection header
         while (uint_t(c - oc) < max_dist) {
             while (*c != motif[0]) ++c;
             const char* hstart = c;
@@ -110,15 +146,21 @@ namespace reflex {
 
             if (!found) continue;
 
+            // If one is found, go back to the corresponding data_t
             const uint_t offset = &(((reflex::data_t*)nullptr)->header[0]) - (char*)nullptr;
             const char* rstart = hstart - offset;
             const reflex::data_t& data = reinterpret_cast<const reflex::data_t&>(*rstart);
 
+            // Look for the members of this data_t, and see if one matches both address and type
+            // (type is necessary because some objects, although different, share the same address,
+            // for example a structure and its first member)
             for (auto& m : data.members) {
                 if (m.type == typeid(t) && m.value == (const void*)&t) {
                     return data.full_name() + "." + m.name;
                 }
             }
+
+            // If no member matches, then this was not the right data_t, continue searching.
         }
 
         return "<?>";
@@ -135,6 +177,7 @@ namespace reflex {
     void do_init_set_name_(member_t& m, T& d, data_t* parent, cte_t<true>) {
         d._reflex.name = m.name;
         d._reflex.parent = parent;
+        m.reflex = &d._reflex;
     }
 
     template<typename T>
@@ -153,10 +196,10 @@ namespace reflex {
     }
 
     template<typename ... Args, typename T>
-    void do_init_(type_list<Args...> tl, cte_t<0>, T* t, data_t& data) {}
+    void do_init_(type_list<Args...> tl, cte_t<0>, T* t, data_impl_t& data) {}
 
     template<typename ... Args, std::size_t N, typename T>
-    void do_init_(type_list<Args...> tl, cte_t<N>, T* t, data_t& data) {
+    void do_init_(type_list<Args...> tl, cte_t<N>, T* t, data_impl_t& data) {
         member_t& m = data.members[N-1];
         m.parent = &t->_reflex;
         auto& v = get_value<N-1>(tl, m);
@@ -167,8 +210,8 @@ namespace reflex {
     }
 
     template<typename ... Args, typename T>
-    data_t do_init(type_list<Args...> tl, T* t, data_t&& data) {
-        data_t d = std::move(data);
+    data_impl_t do_init(type_list<Args...> tl, T* t, data_impl_t&& data) {
+        data_impl_t d = std::move(data);
         do_init_(tl, cte_t<sizeof...(Args)>(), t, d);
         return d;
     }
@@ -269,10 +312,10 @@ namespace reflex {
 
 #define MEMBERS2(name, ...) \
     reflex::data_t _reflex = reflex::do_init(_reflex_types(), this, { \
-        REFLEX_MEM_HEADER, nullptr, name, {__VA_ARGS__}})
+        typeid(*this), name, {__VA_ARGS__}})
 
 #define NO_MEMBER(name) \
     using _reflex_types = decltype(reflex::make_types_()); \
-    reflex::data_t _reflex = {REFLEX_MEM_HEADER, nullptr, name, {}}
+    reflex::data_t _reflex = {REFLEX_MEM_HEADER, typeid(*this), name, {}}
 
 #endif
