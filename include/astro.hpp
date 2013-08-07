@@ -25,30 +25,30 @@ psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& terr, cons
     static const auto max_error = std::numeric_limits<rtype_t<TypeE>>::max();
 
     int_t hx = psf.dims[1]/2, hy = psf.dims[0]/2;
-    
+
     err_type err = terr;
     if (err.dims[0] == 1 && err.dims[1] == 1) {
         err = arr<rtype_t<TypeE>>(img.dims)*0+terr[0];
     } else {
         assert(err.dims[0] == img.dims[0] && err.dims[1] == img.dims[1]);
     }
-    
+
     img_type icut = subregion(img, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, 0.0);
     err_type ecut = subregion(err, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, max_error);
-    
+
     vec1u idnan = where(!finite(icut) || !finite(ecut));
     if (!idnan.empty()) {
         icut[idnan] = 0.0;
         ecut[idnan] = max_error;
     }
-    
+
     auto fr = linfit(icut, ecut, 1.0, psf);
     if (fr.success) {
         return {fr.params[0], fr.errors[0], fr.params[1], fr.errors[1], fr.chi2};
     } else {
         return {dnan, dnan, dnan, dnan, fr.chi2};
     }
-} 
+}
 
 template<typename TypeM, typename TypeE = TypeM, typename TypeP = TypeM>
 psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& err, const vec_t<2,TypeP>& psf) {
@@ -64,7 +64,7 @@ psffit_result psffit(const vec_t<2,TypeM>& img, const TypeE& err, const vec_t<2,
 template<typename TypeM, typename TypeP = TypeM>
 void srcsub(vec_t<2,TypeM>& img, const vec_t<2,TypeP>& psf, double flux, const vec1i& pos) {
     int_t hx = psf.dims[1]/2, hy = psf.dims[0]/2;
-    
+
     vec1i rr, rs;
     subregion(img, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, rr, rs);
     img[rr] -= flux*psf[rs];
@@ -162,7 +162,7 @@ auto lsun2uJy(const T& z, const U& d, const V& lam, const W& lum) {
     const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
     const double c = 2.9979e14;   // [um.s-1]
     const double factor = uJy*Lsol/(c*4.0*dpi*Mpc*Mpc);
-    
+
     return factor*(1.0 + z)*lam*lum/(d*d);
 }
 
@@ -175,7 +175,7 @@ auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) {
     const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
     const double c = 2.9979e14;   // [um.s-1]
     const double factor = c*4.0*dpi*Mpc*Mpc/(uJy*Lsol);
-    
+
     return factor*flx*d*d/lam;
 }
 
@@ -242,9 +242,9 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     auto ddec2 = dec2*d2r;
     auto dcdec2 = cos(ddec2);
 
-    const uint_t n1 = n_elements(ra1); 
+    const uint_t n1 = n_elements(ra1);
     const uint_t n2 = n_elements(ra2);
-    
+
     const uint_t nth = clamp(get_keyword(_nth), 1u, npos);
     const bool self = get_keyword(_self);
 
@@ -257,13 +257,13 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     auto work = [&, nth] (uint_t i, uint_t j, qxmatch_res& tres) {
         // For each pair of source, compute a distance indicator.
         // Note that this is not the 'true' distance in arseconds, but this is sufficient
-        // to find the nearest neighbors (the true distance is obtained by computing 
+        // to find the nearest neighbors (the true distance is obtained by computing
         // 2*asin(sqrt(sd))), but all these functions are monotonous, hence not applying
         // them does not change the relative distances).
         double sra = sin(0.5*(dra2[j] - dra1[i]));
         double sde = sin(0.5*(ddec2[j] - ddec1[i]));
         double sd = sde*sde + sra*sra*dcdec2[j]*dcdec1[i];
-        
+
         // We then compare this new distance to the largest one that is in the Nth nearest
         // neighbor list. If it is lower than that, we insert it in the list, removing the
         // old one, and sort the whole thing so that the largest distance goes as the end of
@@ -289,7 +289,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             }
         }
     };
-    
+
     const uint_t nthread = get_keyword(_thread);
     if (nthread <= 1) {
         // When using a single thread, all the work is done in the main thread
@@ -299,14 +299,14 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 if (self && i == j) continue;
                 work(i,j,res);
             }
-            
+
             if (get_keyword(_verbose)) print_progress(p, i);
         }
     } else {
         // When using more than one thread, the work load is evenly separated between all the
         // available threads, such that they should more or less all end at the same time.
         std::atomic<uint_t> iter(0);
-    
+
         // Create the thread pool and launch the threads
         std::vector<qxmatch_res> vres(nthread);
         for (auto& r : vres) {
@@ -327,7 +327,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
 
             tbeg[t] = total;
             tend[t] = total+assigned;
-            
+
             pool[t].start([&iter, &work, &vres, t, total, self, assigned, n2]() {
                 for (uint_t i = total; i < total+assigned; ++i) {
                     for (uint_t j = 0; j < n2; ++j) {
@@ -399,7 +399,7 @@ struct id_pair {
 
 id_pair xmatch_clean_best(const qxmatch_res& r) {
     const uint_t ngal = dim(r.id)[1];
-    
+
     id_pair c;
     c.id1.data.reserve(ngal);
     c.id2.data.reserve(ngal);
@@ -555,7 +555,7 @@ struct catalog_pool {
 
         std::string ref = "["+strn(pool.size()+1)+"]";
         pool.push_back({*this, uindgen(ngal), {}, name, sources, files, comment, ref});
-        return pool.back();   
+        return pool.back();
     }
 
     catalog_t& add_catalog(const vec1d& cra, const vec1d& cdec, const std::string& name,
@@ -571,7 +571,7 @@ struct catalog_pool {
             vec1u idm = uindgen(ngal);
             std::string ref = "[1]";
             pool.push_back({*this, idm, {}, name, sources, files, comment, ref});
-            return pool.back();   
+            return pool.back();
         } else {
             print("cross-matching "+name+"...");
 
@@ -646,7 +646,7 @@ struct catalog_pool {
                 std::string ref = "["+strn(pool.size()+1)+"]";
                 pool.push_back({*this, idm, std::move(d), name, sources, files, comment, ref});
                 return pool.back();
-            } 
+            }
         }
     }
 
@@ -766,7 +766,7 @@ void catalog_t::merge(T& in, const U& out, const V& def) {
 template<typename T, typename U, typename V>
 void catalog_t::merge(T& in, const U& out, const V& def, const std::string& com) {
     merge(in, out, def);
-    add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");   
+    add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
 }
 
 void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& bands,
@@ -803,7 +803,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
     // Open the FITS file
     fitsfile* fptr;
     int status = 0;
-    
+
     fits_open_image(&fptr, filename.c_str(), READONLY, &status);
     fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
@@ -827,6 +827,10 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
     fits::ad2xy(astro, ra, dec, x, y);
 
     // Allocate memory to hold all the cutouts
+    if (cube.empty()) {
+    	cube.dims[1] = cube.dims[2] = 2*hsize+1;
+    }
+
     cube.reserve(cube.size() + (2*hsize+1)*(2*hsize+1)*ra.size());
     ids.reserve(ids.size() + ra.size());
 
@@ -854,8 +858,91 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
         ids.push_back(i);
         cube.push_back(cut);
     }
-        
+
     fits_close_file(fptr, &status);
+}
+
+void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const std::string& wfile,
+	uint_t hsize, vec3f& cube, vec3f& wcube, vec1u& ids) {
+
+    phypp_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
+    phypp_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
+    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+
+    // Open the FITS file
+    fitsfile* fptr;
+    fitsfile* wfptr;
+    int status = 0;
+
+    fits_open_image(&fptr, ffile.c_str(), READONLY, &status);
+    fits::phypp_check_cfitsio(status, "cannot open file '"+ffile+"'");
+    fits_open_image(&wfptr, wfile.c_str(), READONLY, &status);
+    fits::phypp_check_cfitsio(status, "cannot open file '"+wfile+"'");
+
+    // Read the header as a string and read the WCS data
+    char* hstr = nullptr;
+    int nkeys  = 0;
+    fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+    fits::wcs astro(hstr);
+    free(hstr);
+
+    // Get the dimensions of the image
+    int naxis = 0;
+    fits_get_img_dim(fptr, &naxis, &status);
+    phypp_check(naxis == 2, "cannot stack on image cubes (image dimensions: "+strn(naxis)+")");
+    long naxes[2];
+    fits_get_img_size(fptr, naxis, naxes, &status);
+    uint_t width = naxes[0], height = naxes[1];
+    long wnaxes[2];
+    fits_get_img_size(wfptr, 2, wnaxes, &status);
+    phypp_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
+
+    // Convert ra/dec to x/y
+    vec1d x, y;
+    fits::ad2xy(astro, ra, dec, x, y);
+
+    // Allocate memory to hold all the cutouts
+    if (cube.empty()) {
+    	cube.dims[1] = cube.dims[2] = 2*hsize+1;
+    }
+    if (wcube.empty()) {
+    	wcube.dims[1] = wcube.dims[2] = 2*hsize+1;
+    }
+
+    cube.reserve(cube.size() + (2*hsize+1)*(2*hsize+1)*ra.size());
+    wcube.reserve(wcube.size() + (2*hsize+1)*(2*hsize+1)*ra.size());
+    ids.reserve(ids.size() + ra.size());
+
+    // Loop over all sources
+    for (uint_t i = 0; i < ra.size(); ++i) {
+        // Discard any source that falls out of the boundaries of the image
+        if (x[i]-hsize < 0 || x[i]+hsize > width || y[i] - hsize < 0 || y[i] + hsize > height) {
+            continue;
+        }
+
+        vec2f cut(2*hsize+1, 2*hsize+1);
+        vec2f wcut(2*hsize+1, 2*hsize+1);
+
+        float null = fnan;
+        int anynul = 0;
+        long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
+        long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
+        long inc[2] = {1, 1};
+        fits_read_subset(fptr,  TFLOAT, p0, p1, inc, &null, cut.data.data(),  &anynul, &status);
+        fits_read_subset(wfptr, TFLOAT, p0, p1, inc, &null, wcut.data.data(), &anynul, &status);
+
+        // Discard any source that contains a bad pixel (either infinite or NaN)
+        if (total(!finite(cut) && !finite(wcut)) != 0) {
+            continue;
+        }
+
+        ids.push_back(i);
+        cube.push_back(cut);
+        wcube.push_back(wcut);
+    }
+
+    fits_close_file(fptr, &status);
+    fits_close_file(wfptr, &status);
 }
 
 vec2f qstack_mean(const vec3f& fcube) {
@@ -954,7 +1041,7 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
 
     rflib.lam = lib.lam*(1.0 + z);
     rflib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
-    
+
     // Convolve each SED with the response curve of the filters
     const uint_t nsed = rflib.sed.dims[0];
     const uint_t nfilter = filters.size();
@@ -977,9 +1064,9 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
 
     res.amp = tmp1/tmp2;
     tmp1 *= res.amp;
-    
+
     res.chi2 = total(weight*flux*flux) - tmp1;
-    
+
     // Find the best chi2 among all the SEDs
     res.bfit = min_id(res.chi2);
 
@@ -991,7 +1078,7 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
     res.amp_bfit_sim = fltarr(nsim);
     res.amp_sim = fltarr(nsim);
     res.sed_sim = fltarr(nsim);
-        
+
     // auto otmp2 = tmp2;
     const uint_t nflux = flux.size();
     for (uint_t i = 0; i < nsim; ++i) {
@@ -1005,7 +1092,7 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
 
         auto chi2 = total(weight*fsim*fsim) - tmp1;
         auto ised = min_id(chi2);
-        
+
         res.amp_bfit_sim[i] = amp[res.bfit];
         res.amp_sim[i] = amp[ised];
         res.sed_sim[i] = ised;
@@ -1027,7 +1114,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
 
     rflib.lam = lib.lam*(1.0 + z);
     rflib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
-    
+
     // Convolve each SED with the response curve of the filters
     const uint_t nsed = rflib.sed.dims[0];
     const uint_t nfilter = filters.size();
@@ -1049,9 +1136,9 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
     }
 
     res.amp = tmp1/tmp2;
-    
+
     res.chi2 = total(weight*flux*flux) - 2.0*tmp1 + tmp2;
-    
+
     // Find the best chi2 among all the SEDs
     res.bfit = min_id(res.chi2);
 
@@ -1063,7 +1150,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
     res.amp_bfit_sim = fltarr(nsim);
     res.amp_sim = fltarr(nsim);
     res.sed_sim = fltarr(nsim);
-        
+
     const uint_t nflux = flux.size();
     for (uint_t i = 0; i < nsim; ++i) {
         auto fsim = flux + randomn(seed, nflux)*err;
@@ -1074,7 +1161,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
         auto amp = tmp1/tmp2;
         auto chi2 = total(weight*fsim*fsim) - 2.0*tmp1 + tmp2;
         auto ised = min_id(chi2);
-        
+
         res.amp_bfit_sim[i] = amp[res.bfit];
         res.amp_sim[i] = amp[ised];
         res.sed_sim[i] = ised;
