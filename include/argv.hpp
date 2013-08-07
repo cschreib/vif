@@ -71,7 +71,7 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
         if (arg != name) {
             return;
         }
-        
+
         read = true;
         valid = read_args_n2T_(t, 1);
     } else {
@@ -86,7 +86,7 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
             value.erase(0,1); value.pop_back();
             vec1s vals = split(value, ",");
             t.data.reserve(n_elements(vals));
-            T tmp;
+            rtype_t<T> tmp;
             for (auto& s : vals) {
                 bool v = read_args_n2T_(tmp, trim(trim(s), "'\""));
                 if (!v) {
@@ -102,7 +102,11 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
             t.data.shrink_to_fit();
             valid = true;
         } else {
-            valid = read_args_n2T_(t, trim(trim(value), "'\""));
+            rtype_t<T> v;
+            valid = read_args_n2T_(v, trim(trim(value), "'\""));
+            if (valid) {
+                t.push_back(v);
+            }
         }
     }
 }
