@@ -335,8 +335,8 @@ namespace fits {
         wcss2p(w.w, ngal, 2, world.data.data(), phi.data(), theta.data(),
             itmp.data(), pos.data.data(), stat.data());
             
-        x = pos[ids1]-0.5;
-        y = pos[ids2]-0.5;
+        x = pos[ids1];
+        y = pos[ids2];
     }
     
     // Write an image in a FITS file
