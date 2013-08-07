@@ -196,6 +196,14 @@ double total(const vec_t<Dim,Type>& v) {
     return total;
 }
 
+
+template<std::size_t Dim, typename Type>
+vec_t<Dim-1,double> total(const vec_t<Dim,Type>& v, uint_t dim) {
+    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
+    return run_index_<fptr, &total<1,rtype_t<Type>>>(v, dim);
+}
+
+
 template<std::size_t Dim, typename Type>
 double mean(const vec_t<Dim,Type>& v) {
     double total = 0.0;
