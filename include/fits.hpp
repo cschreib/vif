@@ -12,10 +12,10 @@
 
 namespace fits {
     using namespace CCfits;
-    
+
     template<typename T>
     struct traits;
-    
+
     template<>
     struct traits<std::string> {
         using dtype = char;
@@ -23,12 +23,12 @@ namespace fits {
         static const char tform = 'S';
         static const int ttype = TBYTE;
         static const fits::ValueType type = fits::Tstring;
-        
+
         static std::string def() {
             return "";
         }
     };
-    
+
     template<>
     struct traits<bool> {
         using dtype = char;
@@ -37,12 +37,12 @@ namespace fits {
         static const int ttype = TSBYTE;
         static const fits::ValueType type = (fits::ValueType)TSBYTE;
         static const int image_type = SBYTE_IMG;
-        
+
         static bool def() {
             return false;
         }
     };
-    
+
     template<>
     struct traits<char> {
         using dtype = char;
@@ -51,12 +51,12 @@ namespace fits {
         static const int ttype = TSBYTE;
         static const fits::ValueType type = (fits::ValueType)TSBYTE;
         static const int image_type = SBYTE_IMG;
-        
+
         static bool def() {
             return '\0';
         }
     };
-    
+
     template<>
     struct traits<uint_t> {
         using dtype = uint_t;
@@ -69,7 +69,7 @@ namespace fits {
             return 0;
         }
     };
-    
+
     template<>
     struct traits<int_t> {
         using dtype = int_t;
@@ -82,7 +82,7 @@ namespace fits {
             return 0;
         }
     };
-    
+
     template<>
     struct traits<float> {
         using dtype = float;
@@ -95,7 +95,7 @@ namespace fits {
             return dnan;
         }
     };
-    
+
     template<>
     struct traits<double> {
         using dtype = double;
@@ -108,7 +108,7 @@ namespace fits {
             return dnan;
         }
     };
-    
+
     void phypp_check_cfitsio(int status, const std::string& msg) {
         if (status != 0) {
             char txt[FLEN_STATUS];
@@ -117,7 +117,7 @@ namespace fits {
             phypp_check(status == 0, msg);
         }
     }
-    
+
     using header = std::string;
 
     // Load the content of a FITS file into an array.
@@ -128,74 +128,74 @@ namespace fits {
         try {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
-            
+
             phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
-            
+
             vec_t<Dim, Type> v;
             std::size_t n = 1;
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
-                n *= v.dims[i]; 
+                n *= v.dims[i];
             }
-            
+
             std::valarray<Type> tv(n);
             phdu.read(tv, 1, n);
-            
+
             v.data.assign(std::begin(tv), std::end(tv));
-            
+
             return v;
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
         }
-    } 
+    }
 
     template<std::size_t Dim, typename Type>
     void read(const std::string& name, vec_t<Dim, Type>& v) {
         try {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
-            
+
             phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
-            
+
             std::size_t n = 1;
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
-                n *= v.dims[i]; 
+                n *= v.dims[i];
             }
-            
+
             std::valarray<Type> tv(n);
             phdu.read(tv, 1, n);
-            
-            v.data.assign(std::begin(tv), std::end(tv));   
+
+            v.data.assign(std::begin(tv), std::end(tv));
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
         }
     }
-    
+
     template<std::size_t Dim, typename Type>
     void read(const std::string& name, vec_t<Dim, Type>& v, fits::header& hdr) {
         try {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
-            
+
             phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
-            
+
             std::size_t n = 1;
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
-                n *= v.dims[i]; 
+                n *= v.dims[i];
             }
-            
+
             std::valarray<Type> tv(n);
             phdu.read(tv, 1, n);
-            
+
             v.data.assign(std::begin(tv), std::end(tv));
-            
+
             // Read the header as a string
             char* hstr = nullptr;
             int nkeys  = 0;
@@ -208,7 +208,7 @@ namespace fits {
             throw;
         }
     }
-    
+
     template<typename T>
     bool getkey(const fits::header& hdr, const std::string& key, T& v) {
         std::size_t nentry = hdr.size()/80 + 1;
@@ -217,18 +217,37 @@ namespace fits {
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
             std::size_t cpos = entry.find_first_of("/", eqpos);
-            
+
             std::string nam = trim(entry.substr(0, eqpos));
-            
+
             if (nam == key) {
                 std::string value = trim(entry.substr(eqpos+1, cpos-eqpos-1));
                 return from_string(value, v);
             }
         }
-        
+
         return false;
     }
-    
+
+    fits::header read_header(const std::string& filename) {
+        fitsfile* fptr;
+        int status = 0;
+
+        fits_open_image(&fptr, filename.c_str(), READONLY, &status);
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+
+        // Read the header as a string
+        char* hstr = nullptr;
+        int nkeys  = 0;
+        fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+        fits::header hdr = hstr;
+        free(hstr);
+
+        fits_close_file(fptr, &status);
+
+        return hdr;
+    }
+
     bool getkey(const fits::header& hdr, const std::string& key, std::string& v) {
         std::size_t nentry = hdr.size()/80 + 1;
         for (uint_t i = 0; i < nentry; ++i) {
@@ -236,9 +255,9 @@ namespace fits {
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
             std::size_t cpos = entry.find_first_of("/", eqpos);
-            
+
             std::string nam = trim(entry.substr(0, eqpos));
-            
+
             if (nam == key) {
                 std::string value = trim(entry.substr(eqpos+1, cpos-eqpos-1));
                 if (value.find_first_of("'") == 0) {
@@ -248,10 +267,10 @@ namespace fits {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     template<typename T>
     bool setkey(fits::header& hdr, const std::string& key, const T& v,
         const std::string& comment = "") {
@@ -265,17 +284,17 @@ namespace fits {
         if (value.size() > 80) return false;
         entry += value;
         entry += std::string(80-entry.size(), ' ');
-        
+
         std::size_t pos = hdr.find_last_of('E');
         hdr.insert(pos, entry);
         return true;
     }
-    
+
     // Extract astrometry from a FITS image header
     struct wcs {
         wcsprm* w = nullptr;
         int nwcs  = 0;
-        
+
         wcs() = default;
 
         explicit wcs(const fits::header& hdr) {
@@ -286,7 +305,7 @@ namespace fits {
                 WCSHDR_all, 0, &nreject, &nwcs, &w
             );
         }
-        
+
         wcs(const wcs&) = delete;
         wcs& operator = (const wcs&) = delete;
         wcs(wcs&& tw) {
@@ -298,18 +317,18 @@ namespace fits {
             nwcs = tw.nwcs; nwcs = 0;
             return *this;
         }
-        
+
         ~wcs() {
             if (w) {
                 wcsvfree(&nwcs, &w);
             }
         }
     };
-    
+
     fits::wcs extast(const fits::header& hdr) {
         return fits::wcs(hdr);
     }
-    
+
     template<typename T, typename U, typename V, typename W>
     void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
         vec_t<1,V>& x, vec_t<1,W>& y) {
@@ -317,28 +336,28 @@ namespace fits {
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
         phypp_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
             strn(ra.size())+" vs "+strn(dec.size())+")");
-        
+
         std::size_t ngal = ra.size();
-        
+
         vec1d world = dblarr(2*ngal);
         vec1u ids1 = 2*uindgen(ngal);
         vec1u ids2 = ids1+1;
         world[ids1] = ra;
         world[ids2] = dec;
-        
+
         vec1d pos = dblarr(2*ngal);
-        
+
         std::vector<double> phi(ngal), theta(ngal);
         std::vector<double> itmp(2*ngal);
         std::vector<int>    stat(ngal);
-        
+
         wcss2p(w.w, ngal, 2, world.data.data(), phi.data(), theta.data(),
             itmp.data(), pos.data.data(), stat.data());
-            
+
         x = pos[ids1];
         y = pos[ids2];
     }
-    
+
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v) {
@@ -346,12 +365,12 @@ namespace fits {
         for (uint_t i = 0; i < Dim; ++i) {
             isize[i] = v.dims[Dim-1-i];
         }
-        
+
         std::valarray<rtype_t<Type>> tv(v.size());
         for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = dref(v.data[i]); 
+            tv[i] = dref(v.data[i]);
         }
-        
+
         try {
             fits::FITS f("!"+name, traits<rtype_t<Type>>::image_type, Dim, isize.data());
             f.pHDU().write(1, tv.size(), tv);
@@ -361,7 +380,7 @@ namespace fits {
             throw;
         }
     }
-    
+
     void header2fits_(fits::HDU& hdu, const std::string& hdr) {
         std::size_t nentry = hdr.size()/80 + 1;
         for (uint_t i = 0; i < nentry; ++i) {
@@ -369,18 +388,18 @@ namespace fits {
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
             std::size_t cpos = entry.find_first_of("/", eqpos);
-            
+
             std::string nam = trim(entry.substr(0, eqpos));
             if (nam == "SIMPLE" || nam == "BITPIX" || nam.find("NAXIS") == 0 || nam == "EXTEND") {
                 continue;
             }
-            
+
             std::string value = trim(entry.substr(eqpos+1, cpos-eqpos-1));
             std::string comment = trim(entry.substr(cpos+1));
-            
+
             if (value.find_first_of("'") == 0) {
                 value = trim(value, "'");
-                hdu.addKey(nam, value, comment);                
+                hdu.addKey(nam, value, comment);
             } else if (value.find(".") != value.npos) {
                 double dvalue; from_string(value, dvalue);
                 hdu.addKey(nam, dvalue, comment);
@@ -390,19 +409,19 @@ namespace fits {
             }
         }
     }
-    
+
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v, const fits::header& hdr) {
         std::array<long,Dim> isize;
         for (uint_t i = 0; i < Dim; ++i) {
             isize[i] = v.dims[Dim-1-i];
         }
-        
+
         std::valarray<rtype_t<Type>> tv(v.size());
         for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = dref(v.data[i]); 
+            tv[i] = dref(v.data[i]);
         }
-        
+
         try {
             fits::FITS f("!"+name, traits<rtype_t<Type>>::image_type, Dim, isize.data());
             f.pHDU().write(1, tv.size(), tv);
@@ -413,10 +432,10 @@ namespace fits {
             throw;
         }
     }
-    
+
     struct macroed_t {};
     #define ftable(...) fits::macroed_t(), #__VA_ARGS__, __VA_ARGS__
-    
+
     std::string bake_macroed_name(const std::string& s) {
         std::string t = toupper(trim(s));
         auto p = t.find_first_of('.');
@@ -425,23 +444,24 @@ namespace fits {
         }
         return t;
     }
-    
+
     // Load the content of a FITS file into a set of arrays.
     void read_table_(fitsfile* fptr) {}
-    
+
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
-    void read_table_impl_(fitsfile* fptr, const std::string& colname,
+    void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
         vec_t<Dim,Type>& v, bool loose = false) {
 
         int id, status = 0;
+        std::string colname = toupper(tcolname);
         fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
             phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
         }
-            
+
         int type, naxis;
         long repeat, width;
         std::array<long,Dim> naxes;
@@ -449,30 +469,31 @@ namespace fits {
         fits_read_tdim(fptr, id, Dim, &naxis, naxes.data(), &status);
         phypp_check(naxis == Dim, "wrong dimension for column '"+colname+"'");
         status = 0;
-        
+
         for (uint_t i = 0; i < Dim; ++i) {
             v.dims[i] = naxes[Dim-1-i];
         }
-        
+
         v.resize();
-        
+
         Type def = traits<Type>::def();
         int null;
         fits_read_col(
             fptr, traits<Type>::ttype, id, 1, 1, repeat, &def, v.data.data(), &null, &status
         );
     }
-    
+
     template<typename Type>
-    void read_table_impl_(fitsfile* fptr, const std::string& colname, Type& v, bool loose = false) {
+    void read_table_impl_(fitsfile* fptr, const std::string& tcolname, Type& v, bool loose = false) {
         int id, status = 0;
+        std::string colname = toupper(tcolname);
         fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
             phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
         }
-            
+
         int type, naxis;
         long repeat, width;
         std::array<long,1> naxes;
@@ -488,19 +509,20 @@ namespace fits {
             reinterpret_cast<typename traits<Type>::dtype*>(&v), &null, &status
         );
     }
-    
+
     template<std::size_t Dim>
-    void read_table_impl_(fitsfile* fptr, const std::string& colname,
+    void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
         vec_t<Dim,std::string>& v, bool loose = false) {
 
         int id, status = 0;
+        std::string colname = toupper(tcolname);
         fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
             phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
         }
-            
+
         int type, naxis;
         long repeat, width;
         std::array<long,Dim+1> naxes;
@@ -508,13 +530,13 @@ namespace fits {
         fits_read_tdim(fptr, id, Dim+1, &naxis, naxes.data(), &status);
         phypp_check(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
         status = 0;
-        
+
         for (uint_t i = 0; i < Dim; ++i) {
             v.dims[i] = naxes[Dim-i];
         }
-        
+
         v.resize();
-        
+
         char* buffer = new char[n_elements(v)*naxes[0]];
         char def = '\0';
         int null;
@@ -522,7 +544,7 @@ namespace fits {
             fptr, traits<std::string>::ttype, id, 1, 1, n_elements(v)*naxes[0], &def,
             buffer, &null, &status
         );
-        
+
         for (uint_t i = 0; i < n_elements(v); ++i) {
             v[i].reserve(naxes[0]);
             for (uint_t j = 0; j < uint_t(naxes[0]); ++j) {
@@ -534,18 +556,19 @@ namespace fits {
 
         delete buffer;
     }
-    
-    void read_table_impl_(fitsfile* fptr, const std::string& colname,
+
+    void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
         std::string& v, bool loose = false) {
 
         int id, status = 0;
+        std::string colname = toupper(tcolname);
         fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
             phypp_check_cfitsio(status, "cannot find collumn '"+colname+"' in FITS file");
         }
-            
+
         int type, naxis;
         long repeat, width;
         std::array<long,1> naxes;
@@ -576,43 +599,43 @@ namespace fits {
             fitsfile* fptr;
             std::string base;
             bool loose;
-            
+
             template<typename P>
             void operator () (reflex::member_t& m, P&& v) {
                 read_table_impl_(this->fptr, this->base+toupper(m.name), std::forward<P>(v), this->loose);
             }
-        } do_read{fptr, colname+".", loose};
+        } do_read{fptr, toupper(colname)+".", loose};
 
         reflex::foreach_member(data, do_read);
     }
-    
+
     template<typename T, typename ... Args>
     void read_table_(fitsfile* fptr, const std::string& name, T& v, Args&& ... args) {
         read_table_impl_(fptr, name, v);
         read_table_(fptr, std::forward<Args>(args)...);
     }
-    
+
     template<typename ... Args>
     void read_table(const std::string& filename, const std::string& name, Args&& ... args) {
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        
+
         int ncol;
         fits_get_num_cols(fptr, &ncol, &status);
         phypp_check((sizeof...(Args)+1)/2 <= std::size_t(ncol),
             "too few collumns in this FITS file ("+
             strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
-        
+
         read_table_(fptr, name, std::forward<Args>(args)...);
-        
+
         fits_close_file(fptr, &status);
     }
-    
+
     void read_table_(macroed_t, fitsfile* fptr, const std::string& names) {}
-    
+
     template<typename T, typename ... Args>
     void read_table_(macroed_t, fitsfile* fptr, const std::string& names, T& v, Args&& ... args) {
         std::size_t pos = names.find_first_of(',');
@@ -622,24 +645,24 @@ namespace fits {
             read_table_(macroed_t(), fptr, names.substr(pos+1), std::forward<Args>(args)...);
         }
     }
-    
+
     template<typename ... Args>
     void read_table(const std::string& filename, macroed_t,
         const std::string& names, Args&& ... args) {
 
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        
+
         int ncol;
         fits_get_num_cols(fptr, &ncol, &status);
         phypp_check(sizeof...(Args) <= std::size_t(ncol), "too few collumns in this FITS file ("+
             strn(ncol)+" vs "+strn(sizeof...(Args))+")");
-        
+
         read_table_(macroed_t(), fptr, names, std::forward<Args>(args)...);
-        
+
         fits_close_file(fptr, &status);
     }
 
@@ -647,10 +670,10 @@ namespace fits {
     void read_table(const std::string& filename, T& t) {
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        
+
         struct {
             fitsfile* fptr;
 
@@ -661,18 +684,18 @@ namespace fits {
         } do_read{fptr};
 
         reflex::foreach_member(reflex::wrap(t), do_read);
-        
+
         fits_close_file(fptr, &status);
     }
-    
+
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void read_table_loose(const std::string& filename, T& t) {
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_open_table(&fptr, filename.c_str(), READONLY, &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        
+
         struct {
             fitsfile* fptr;
 
@@ -683,13 +706,13 @@ namespace fits {
         } do_read{fptr};
 
         reflex::foreach_member(reflex::wrap(t), do_read);
-        
+
         fits_close_file(fptr, &status);
     }
-    
+
     // Write several columns in a FITS file.
     void write_table_(fitsfile* fptr, int id) {}
-    
+
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
@@ -705,15 +728,15 @@ namespace fits {
         for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = v.dims[Dim-1-i];
         }
-        
+
         fits_write_tdim(fptr, id, Dim, dims.data(), &status);
-        
-        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, n_elements(v), 
+
+        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, n_elements(v),
             const_cast<typename vec_t<Dim,Type>::dtype*>(v.data.data()), &status);
 
         ++id;
     }
-    
+
     template<typename Type>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname, const Type& v) {
         std::string tform = std::string(1, traits<Type>::tform);
@@ -721,15 +744,16 @@ namespace fits {
         fits_insert_col(
             fptr, id, const_cast<char*>(colname.c_str()), const_cast<char*>(tform.c_str()), &status
         );
-        
-        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, 1, 
-            const_cast<typename traits<Type>::dtype*>(&v), &status);
+
+        using dtype = typename traits<Type>::dtype;
+        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, 1,
+            const_cast<dtype*>(reinterpret_cast<const dtype*>(&v)), &status);
 
         ++id;
     }
-    
+
     template<std::size_t Dim>
-    void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname, 
+    void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
         const vec_t<Dim,std::string>& v) {
 
         std::size_t nmax = 0;
@@ -738,9 +762,9 @@ namespace fits {
                 nmax = s.size();
             }
         }
-        
+
         std::string tform = strn(nmax*n_elements(v))+traits<std::string>::tform;
-        
+
         int status = 0;
         fits_insert_col(
             fptr, id, const_cast<char*>(colname.c_str()), const_cast<char*>(tform.c_str()), &status
@@ -751,7 +775,7 @@ namespace fits {
         for (uint_t i = 0; i < Dim; ++i) {
             dims[i+1] = v.dims[Dim-1-i];
         }
-        
+
         fits_write_tdim(fptr, id, Dim+1, dims.data(), &status);
 
         char* buffer = new char[nmax*n_elements(v)];
@@ -775,7 +799,7 @@ namespace fits {
 
         ++id;
     }
-    
+
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
         const std::string& v) {
 
@@ -787,8 +811,8 @@ namespace fits {
 
         long dims = v.size();
         fits_write_tdim(fptr, id, 1, &dims, &status);
-        
-        fits_write_col(fptr, traits<std::string>::ttype, id, 1, 1, dims, 
+
+        fits_write_col(fptr, traits<std::string>::ttype, id, 1, 1, dims,
             const_cast<char*>(v.c_str()), &status);
 
         ++id;
@@ -817,24 +841,24 @@ namespace fits {
         write_table_impl_(fptr, id, name, v);
         write_table_(fptr, id, std::forward<Args>(args)...);
     }
-    
+
     template<typename ... Args>
     void write_table(const std::string& filename, const std::string& name, Args&& ... args) {
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        
+
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
-        
+
         write_table_(fptr, 1, name, std::forward<Args>(args)...);
-    
+
         fits_close_file(fptr, &status);
     }
-    
+
     void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names) {}
-    
+
     template<typename T, typename ... Args>
     void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names,
         const T& v, Args&& ... args) {
@@ -846,21 +870,21 @@ namespace fits {
             write_table_(macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
         }
     }
-    
+
     template<typename ... Args>
     void write_table(const std::string& filename, macroed_t,
         const std::string& names, Args&& ... args) {
 
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        
+
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
-        
+
         write_table_(macroed_t(), fptr, 1, names, std::forward<Args>(args)...);
-    
+
         fits_close_file(fptr, &status);
     }
 
@@ -868,11 +892,11 @@ namespace fits {
     void write_table(const std::string& filename, const T& t) {
         fitsfile* fptr;
         int status = 0;
-        
+
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
-        
+
         struct {
             fitsfile* fptr;
             int id = 1;
@@ -887,15 +911,15 @@ namespace fits {
 
         fits_close_file(fptr, &status);
     }
-    
+
     void display(const std::string& name) {
         fork("ds9 "+name);
     }
-    
+
     void display(const std::string& name1, const std::string& name2) {
         fork("ds9 -rgb -red "+name1+" -green "+name2);
     }
-    
+
     void display(const std::string& name1, const std::string& name2, const std::string& name3) {
         fork("ds9 -rgb -red "+name1+" -green "+name2+" -blue "+name3);
     }
