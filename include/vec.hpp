@@ -528,7 +528,7 @@ struct vec_t {
     template<typename enable = typename std::enable_if<(Dim > 1)>::type>
     void push_back(const vec_t<Dim-1,Type>& t) {
         for (uint_t i = 0; i < Dim-1; ++i) {
-            phypp_check(dims[i+1] == t.dims[i], "push_back: incompatible dimensions");
+            phypp_check(dims[i+1] == t.dims[i], "push_back: incompatible dimensions (", dims, " vs ", t.dims, ")");
         }
 
         data.insert(data.end(), t.data.begin(), t.data.end());
