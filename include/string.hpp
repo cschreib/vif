@@ -17,9 +17,20 @@ namespace std {
             if (i != 0) o << ", ";
             o << v[i];
         }
-        
+
         return o;
     }
+}
+
+template<typename T>
+struct named_t {
+    T&          obj;
+    std::string name;
+};
+
+template<typename T>
+named_t<T> name(T& obj, const std::string& str) {
+    return {obj, str};
 }
 
 template<typename T>
@@ -43,7 +54,7 @@ std::string strn(const T& t, std::size_t n, char fill = '0') {
         if (nz > 0 && nz < 6) {
             return std::string(nz, fill) + ss.str();
         } else {
-            return ss.str();    
+            return ss.str();
         }
     }
 }
@@ -54,7 +65,7 @@ vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v) {
     for (std::size_t i = 0; i < v.data.size(); ++i) {
         s.data[i] = strn(dref(v.data[i]));
     }
-    
+
     return s;
 }
 
@@ -64,7 +75,7 @@ vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v, std::size_t n, char fill 
     for (std::size_t i = 0; i < v.data.size(); ++i) {
         s.data[i] = strn(dref(v.data[i]), n, fill);
     }
-    
+
     return s;
 }
 
@@ -82,7 +93,7 @@ vec_t<Dim,std::string> strna_sci(const vec_t<Dim,Type>& v) {
     for (std::size_t i = 0; i < v.data.size(); ++i) {
         s.data[i] = strn_sci(dref(v.data[i]));
     }
-    
+
     return s;
 }
 
@@ -108,13 +119,13 @@ std::string trim(const std::string& ts, const std::string& chars = " \t") {
         if (epos == s.npos) return "";
         s = s.substr(epos);
     }
-    
+
     spos = s.find_last_of(chars);
     if (spos == s.size()-1) {
         std::size_t epos = s.find_last_not_of(chars);
         s = s.erase(epos+1, s.size() - epos+1);
     }
-    
+
     return s;
 }
 
@@ -138,7 +149,7 @@ std::string erase_begin(const std::string& ts, uint_t n) {
     if (n >= ts.size()) {
         return "";
     }
-    
+
     std::string s = ts;
     return s.erase(0, n);
 }
@@ -147,7 +158,7 @@ std::string erase_end(const std::string& ts, uint_t n) {
     if (n >= ts.size()) {
         return "";
     }
-    
+
     std::string s = ts;
     return s.erase(ts.size()-n, n);
 }
@@ -159,7 +170,7 @@ std::string replace(const std::string& ts, const std::string& pattern, const std
         s.replace(p, pattern.size(), rep);
         p = s.find(pattern, p+1);
     }
-    
+
     return s;
 }
 
@@ -217,7 +228,7 @@ bool match_(const std::string& ts, const std::string& regex, regex_t& re) {
 
     if (status == 0) return true;
     if (status == REG_NOMATCH) return false;
-    
+
     error("match: parsing regex '"+regex+"'");
     switch (status) {
     case REG_NOMATCH :  return false;
@@ -285,7 +296,7 @@ std::string align_right(const std::string& s, uint_t width, char fill = ' ') {
 
 std::string align_center(const std::string& s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
-        return std::string((width-s.size())/2, fill) + s + 
+        return std::string((width-s.size())/2, fill) + s +
             std::string(width-s.size() - (width-s.size())/2, fill);
     } else {
         return s;

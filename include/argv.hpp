@@ -115,7 +115,9 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
 void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
 
 template<typename T, typename ... Args>
-void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names, T& t, Args&& ... args) {
+void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names, T& t,
+    Args&& ... args) {
+
     std::size_t pos = names.find_first_of(',');
     std::string name = trim(names.substr(0, pos));
     auto p = name.find_last_of('.');
@@ -128,6 +130,27 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
         read_args_impl_(argv[i], read[i], valid[i], name, t);
         if (!valid[i]) {
             warning("could not convert '", name, "' argument to type ", typeid(T).name());
+            break;
+        }
+    }
+
+    if (pos != names.npos) {
+        read_args_(argv, read, valid, names.substr(pos+1), std::forward<Args>(args)...);
+    }
+}
+
+template<typename T, typename ... Args>
+void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names,
+    named_t<T> t, Args&& ... args) {
+
+    std::size_t pos = names.find_first_of(')');
+    if (pos != names.npos) ++pos;
+
+    vec1u idm = where(find(argv, t.name) != npos);
+    for (auto& i : idm) {
+        read_args_impl_(argv[i], read[i], valid[i], t.name, t.obj);
+        if (!valid[i]) {
+            warning("could not convert '", t.name, "' argument to type ", typeid(T).name());
             break;
         }
     }
