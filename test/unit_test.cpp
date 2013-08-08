@@ -166,6 +166,15 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        // Index conversion
+        vec2i v = uindgen(2,3);
+        for (uint_t i = 0; i < v.size(); ++i) {
+            vec1u ids = v.ids(i);
+            check(v(ids[0], ids[1]), strn(i));
+        }
+    }
+
+    {
         // FITS image loading
         vec2d v; fits::header hdr;
         fits::read("data/image.fits", v, hdr);
