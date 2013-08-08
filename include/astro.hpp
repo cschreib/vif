@@ -837,7 +837,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
     // Loop over all sources
     for (uint_t i = 0; i < ra.size(); ++i) {
         // Discard any source that falls out of the boundaries of the image
-        if (x[i]-hsize < 0 || x[i]+hsize > width || y[i] - hsize < 0 || y[i] + hsize > height) {
+        if (x[i]-hsize < 1 || x[i]+hsize >= width || y[i] - hsize < 1 || y[i] + hsize >= height) {
             continue;
         }
 
@@ -916,7 +916,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
     // Loop over all sources
     for (uint_t i = 0; i < ra.size(); ++i) {
         // Discard any source that falls out of the boundaries of the image
-        if (x[i]-hsize < 0 || x[i]+hsize > width || y[i] - hsize < 0 || y[i] + hsize > height) {
+        if (x[i]-hsize < 1 || x[i]+hsize >= width || y[i] - hsize < 1 || y[i] + hsize >= height) {
             continue;
         }
 
