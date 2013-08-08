@@ -85,6 +85,7 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
         if (!value.empty() && value.front() == '[' && value.back() == ']') {
             value.erase(0,1); value.pop_back();
             vec1s vals = split(value, ",");
+            t.clear();
             t.data.reserve(n_elements(vals));
             rtype_t<T> tmp;
             for (auto& s : vals) {
