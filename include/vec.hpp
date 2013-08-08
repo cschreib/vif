@@ -1694,13 +1694,13 @@ void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
 
 template<typename Type1, typename Type2>
 void append(vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
-    t1.data.insert(t1.data.end(), t2.data.begin(), t2.data.end());
+    t1.data.insert(t1.data.end(), t2.begin(), t2.end());
     t1.dims[0] += t2.dims[0];
 }
 
 template<typename Type1, typename Type2>
 void prepend(vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
-    t1.data.insert(t1.data.begin(), t2.data.begin(), t2.data.end());
+    t1.data.insert(t1.data.begin(), t2.begin(), t2.end());
     t1.dims[0] += t2.dims[0];
 }
 
@@ -1708,7 +1708,7 @@ template<typename Type1, typename Type2>
 vec_t<1,rtype_t<Type1>> merge(const vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
     using rtype = rtype_t<Type1>;
     vec_t<1,rtype> tv = t1;
-    tv.data.insert(tv.data.end(), t2.data.begin(), t2.data.end());
+    tv.data.insert(tv.data.end(), t2.begin(), t2.end());
     tv.dims[0] += t2.dims[0];
     return tv;
 }
