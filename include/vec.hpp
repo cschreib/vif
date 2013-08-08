@@ -555,6 +555,16 @@ struct vec_t {
         return *this;
     }
 
+    vec_t<1, uint_t> ids(uint_t i) const {
+        vec_t<1, uint_t> v(Dim);
+        for (uint_t j = 0; j < Dim; ++j) {
+            v[Dim-1-j] = i % dims[Dim-1-j];
+            i /= dims[Dim-1-j];
+        }
+
+        return v;
+    }
+
     template<typename T>
     T to_idx_(T ui, cte_t<false>) const {
         assert(ui < data.size());
