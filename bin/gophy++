@@ -31,8 +31,10 @@ else
 fi
 
 if [ $RECOMPILE -eq 1 ]; then
-    clang-3.3 $1.cpp -emit-ast -I "$PHYPP_PATH/include/" -I "$PHYPP_PATH/lib" -DREFLECTION_STAGE \
-        -ferror-limit=5 -std=c++1y -o $1.ast -w
+    T="$(date +%s%N)"
+
+    clang-3.3 $1.cpp -emit-ast -I "$PHYPP_PATH/include/" -I "$PHYPP_PATH/lib" \
+        -DREFLECTION_STAGE -ferror-limit=5 -std=c++1y -o $1.ast -w
     RETVAL=$?
     if [ $RETVAL -ne 0 ]; then
         echo phy++: program \'$1\' FAILED to compile
@@ -41,6 +43,7 @@ if [ $RECOMPILE -eq 1 ]; then
     refgen $1
     echo phy++: reflection data generated
     rm $1.ast
+
     clang-3.3 ._reflex_$1.cpp -g -O3 -ferror-limit=5 \
         -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" \
         -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -o $1 \
@@ -48,9 +51,14 @@ if [ $RECOMPILE -eq 1 ]; then
         -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
         -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors
 
+    T="$(($(date +%s%N)-T))"
+    S="$((T/1000000000))"
+    M="$((T/1000000))"
+
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
         echo phy++: program \'$1\' successfully compiled
+        printf "compilation time: %02d:%02d.%03d\n" "$((S/60%60))" "$((S%60))" "${M}"
     else
         echo phy++: program \'$1\' FAILED to compile
         exit
