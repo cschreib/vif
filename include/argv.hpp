@@ -86,26 +86,26 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
             value.erase(0,1); value.pop_back();
             vec1s vals = split(value, ",");
             t.clear();
-            t.data.reserve(n_elements(vals));
+            t.reserve(n_elements(vals));
             rtype_t<T> tmp;
             for (auto& s : vals) {
                 bool v = read_args_n2T_(tmp, trim(trim(s), "'\""));
                 if (!v) {
-                    t.data.clear();
+                    t.clear();
                     valid = false;
                     return;
                 } else {
-                    t.data.push_back(tmp);
+                    t.push_back(tmp);
                 }
             }
 
-            t.dims[0] = t.data.size();
             t.data.shrink_to_fit();
             valid = true;
         } else {
             rtype_t<T> v;
             valid = read_args_n2T_(v, trim(trim(value), "'\""));
             if (valid) {
+                t.clear();
                 t.push_back(v);
             }
         }
