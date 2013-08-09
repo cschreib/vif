@@ -209,6 +209,25 @@ namespace fits {
         }
     }
 
+    fits::header read_header(const std::string& filename) {
+        fitsfile* fptr;
+        int status = 0;
+
+        fits_open_image(&fptr, filename.c_str(), READONLY, &status);
+        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+
+        // Read the header as a string
+        char* hstr = nullptr;
+        int nkeys  = 0;
+        fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+        fits::header hdr = hstr;
+        free(hstr);
+
+        fits_close_file(fptr, &status);
+
+        return hdr;
+    }
+
     template<typename T>
     bool getkey(const fits::header& hdr, const std::string& key, T& v) {
         std::size_t nentry = hdr.size()/80 + 1;
@@ -227,25 +246,6 @@ namespace fits {
         }
 
         return false;
-    }
-
-    fits::header read_header(const std::string& filename) {
-        fitsfile* fptr;
-        int status = 0;
-
-        fits_open_image(&fptr, filename.c_str(), READONLY, &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-
-        // Read the header as a string
-        char* hstr = nullptr;
-        int nkeys  = 0;
-        fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
-        fits::header hdr = hstr;
-        free(hstr);
-
-        fits_close_file(fptr, &status);
-
-        return hdr;
     }
 
     bool getkey(const fits::header& hdr, const std::string& key, std::string& v) {
