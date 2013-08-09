@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (value[0] == '\'') {
-            for (uint_t i = 80; i != npos; --i) {
+            for (uint_t i = 79; i != npos; --i) {
                 if (value[i] == '\'') {
                     value[i] = '\0';
                     break;
