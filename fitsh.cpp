@@ -5,6 +5,7 @@ void print_help() {
     print("  usage: fitsh file [options]\n");
     print("  Available options:");
     print("    edit: start interactive mode, to edit some of the keywords");
+    print("    verbose: print out some information during the process");
 }
 
 int main(int argc, char* argv[]) {
@@ -14,15 +15,27 @@ int main(int argc, char* argv[]) {
     }
 
     bool edit = false;
-    read_args(argc-1, argv+1, arg_list(edit));
+    bool verbose = false;
+    read_args(argc-1, argv+1, arg_list(edit, verbose));
+
+    fitsfile* fptr;
+    int status = 0;
+
+    fits_open_image(&fptr, argv[1], READWRITE, &status);
+    fits::phypp_check_cfitsio(status, "cannot open file '"+std::string(argv[1])+"'");
+
+    int naxis = 0;
+    fits_get_img_dim(fptr, &naxis, &status);
+    if (naxis == 0) {
+        fits_close_file(fptr, &status);
+        fits_open_table(&fptr, argv[1], READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+std::string(argv[1])+"'");
+        if (verbose) print("loaded table file");
+    } else {
+        if (verbose) print("loaded image file");
+    }
 
     if (edit) {
-        fitsfile* fptr;
-        int status = 0;
-
-        fits_open_image(&fptr, argv[1], READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+std::string(argv[1])+"'");
-
         while (true) {
             print("please type the name of the keyword you want to edit (empty to exit):");
             std::string name;
@@ -61,14 +74,20 @@ int main(int argc, char* argv[]) {
                     &status);
             }
         }
-
-        fits_close_file(fptr, &status);
     } else {
-        std::string header = fits::read_header(argv[1]);
+        // Read the header as a string
+        char* hstr = nullptr;
+        int nkeys  = 0;
+        fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+        std::string header = hstr;
+        free(hstr);
+
         for (uint_t i = 0; i < header.size(); i += 80) {
             print(header.substr(i, std::min(header.size()-i, std::size_t(80))));
         }
     }
+
+    fits_close_file(fptr, &status);
 
     return 0;
 }
