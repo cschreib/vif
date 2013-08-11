@@ -20,9 +20,9 @@ namespace fits {
     struct traits<std::string> {
         using dtype = char;
 
-        static const char tform = 'S';
+        static const char tform = 'B';
         static const int ttype = TBYTE;
-        static const fits::ValueType type = fits::Tstring;
+        static const fits::ValueType type = (fits::ValueType)TBYTE;
 
         static std::string def() {
             return "";
@@ -33,10 +33,10 @@ namespace fits {
     struct traits<bool> {
         using dtype = char;
 
-        static const char tform = 'S';
-        static const int ttype = TSBYTE;
-        static const fits::ValueType type = (fits::ValueType)TSBYTE;
-        static const int image_type = SBYTE_IMG;
+        static const char tform = 'B';
+        static const int ttype = TBYTE;
+        static const fits::ValueType type = (fits::ValueType)TBYTE;
+        static const int image_type = BYTE_IMG;
 
         static bool def() {
             return false;
@@ -61,10 +61,10 @@ namespace fits {
     struct traits<uint_t> {
         using dtype = uint_t;
 
-        static const char tform = 'V';
-        static const int ttype = TULONG;
-        static const fits::ValueType type = fits::Tulong;
-        static const int image_type = ULONG_IMG;
+        static const char tform = 'J';
+        static const int ttype = TLONG;
+        static const fits::ValueType type = fits::Tlong;
+        static const int image_type = LONG_IMG;
         static uint_t def() {
             return 0;
         }
@@ -92,7 +92,7 @@ namespace fits {
         static const fits::ValueType type = fits::Tfloat;
         static const int image_type = FLOAT_IMG;
         static float def() {
-            return dnan;
+            return fnan;
         }
     };
 
