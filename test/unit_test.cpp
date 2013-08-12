@@ -376,7 +376,19 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'transpose' & 'circular_mask' function
+        // 'transpose' function
+        vec2f v = findgen(3,2);
+        vec2f tv = transpose(v);
+        uint_t nok = 0;
+        for (uint_t i = 0; i < 3; ++i)
+        for (uint_t j = 0; j < 2; ++j) {
+            nok += v(i,j) != tv(j,i);
+        }
+        check(nok, "0");
+    }
+
+    {
+        // 'circular_mask' function
         vec1u dim = {51,41};
         vec2d px = replicate(dindgen(dim(1)), dim(0));
         vec2d py = transpose(replicate(dindgen(dim(0)), dim(1)));
@@ -404,12 +416,12 @@ int main(int argc, char* argv[]) {
         check(total(s != tv) == 0, "1");
         fits::write("out/sub1.fits", s);
 
-        s = subregion(v, {1,0,3,4});
+        s = subregion(v, {0,1,4,3});
         tv = {{1,2,3},{6,7,8},{11,12,13},{16,17,18},{21,22,23}};
         check(total(s != tv) == 0, "1");
         fits::write("out/sub2.fits", s);
 
-        s = subregion(v, {-1,1,5,3});
+        s = subregion(v, {1,-1,3,5});
         tv = {{0,5,6,7,8,9,0},{0,10,11,12,13,14,0},{0,15,16,17,18,19,0}};
         check(total(s != tv) == 0, "1");
         fits::write("out/sub4.fits", s);

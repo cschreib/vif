@@ -629,15 +629,25 @@ void mprint(const vec_t<2,Type>& m) {
     std::cout << std::flush;
 }
 
-template<typename Type>
-vec_t<2,rtype_t<Type>> transpose(const vec_t<2,Type>& v) {
-    vec_t<2,rtype_t<Type>> r = arr<rtype_t<Type>>(v.dims[1], v.dims[0]);
+template<std::size_t Dim, typename Type, typename ... Args>
+void transpose_(vec_t<Dim,rtype_t<Type>>& r, const vec_t<Dim,Type>& v, cte_t<Dim>, Args ... args) {
+    auto t = std::make_tuple(args...);
+    r[tuple_reverse(t)] = v[t];
+}
 
-    for (uint_t i = 0; i < v.dims[0]; ++i)
-    for (uint_t j = 0; j < v.dims[1]; ++j) {
-        r(j,i) = v(i,j);
+template<std::size_t Dim, typename Type, std::size_t I, typename ... Args>
+void transpose_(vec_t<Dim,rtype_t<Type>>& r, const vec_t<Dim,Type>& v, cte_t<I>, Args ... args) {
+    for (uint_t i = 0; i < v.dims[I]; ++i) {
+        transpose_(r, v, cte_t<I+1>(), args..., i);
     }
+}
 
+template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<(Dim>1)>::type>
+vec_t<Dim,rtype_t<Type>> transpose(const vec_t<Dim,Type>& v) {
+    auto d = v.dims;
+    std::reverse(d.begin(), d.end());
+    vec_t<Dim,rtype_t<Type>> r(d);
+    transpose_(r, v, cte_t<0>());
     return r;
 }
 
