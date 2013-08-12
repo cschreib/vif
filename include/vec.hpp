@@ -416,6 +416,10 @@ struct vec_t {
         resize();
     }
 
+    explicit vec_t(const std::array<std::size_t, Dim> d) : dims(d) {
+        resize();
+    }
+
     template<std::size_t N,
         typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
     vec_t(const char t[N]) {
