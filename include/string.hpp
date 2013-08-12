@@ -387,6 +387,31 @@ vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", 
     return ret;
 }
 
+namespace format {
+    void header(const std::string& msg) {
+        vec1s w = wrap("  "+msg, 80, "  ");
+        for (auto& s : w) {
+            print(s);
+        }
+    }
+
+    void paragraph(const std::string& msg) {
+        vec1s w = wrap("  "+msg, 80, "  ");
+        for (auto& s : w) {
+            print(s);
+        }
+        print("");
+    }
+
+    void bullet(const std::string& name, const std::string& desc) {
+        std::string header = "    "+name+": ";
+        vec1s w = wrap(header+desc, 80, std::string(header.size(), ' '));
+        for (auto& s : w) {
+            print(s);
+        }
+    }
+}
+
 template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
     std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
 std::string collapse(const vec_t<Dim,Type>& v) {
