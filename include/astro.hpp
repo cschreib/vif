@@ -1022,6 +1022,7 @@ struct template_fit_res_t {
     uint_t bfit; // index of the best fit template in the library
     vec1d chi2;  // chi^2 of each template
     vec1d amp;   // renormalization amplitude of each template
+    vec2d flux;  // best-fit flux for each template
 
     vec1u sed_sim;       // index of each error realization's best fit template
     vec1d amp_bfit_sim;  // renormalization amplitude of the best fit for each error realization
@@ -1045,19 +1046,19 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
     // Convolve each SED with the response curve of the filters
     const uint_t nsed = rflib.sed.dims[0];
     const uint_t nfilter = filters.size();
-    vec2d fobs = dblarr(nsed, nfilter);
+    res.flux = dblarr(nsed, nfilter);
     for (uint_t f = 0; f < nfilter; ++f) {
-        fobs(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
+        res.flux(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
     }
 
     // Compute chi2 & renormalization factor
     auto weight = pow(err, -2);
-    using ttype = decltype(weight[0]*flux[0]*fobs[0]);
+    using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
 
     auto tmp1 = arr<ttype>(nsed);
     auto tmp2 = arr<ttype>(nsed);
     for (uint_t i = 0; i < nsed; ++i) {
-        auto tmp = fobs(i,_);
+        auto tmp = res.flux(i,_);
         tmp1[i] = total(weight*flux*tmp);
         tmp2[i] = total(weight*tmp*tmp);
     }
@@ -1084,7 +1085,7 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
     for (uint_t i = 0; i < nsim; ++i) {
         auto fsim = flux + randomn(seed, nflux)*err;
         for (uint_t t = 0; t < nsed; ++t) {
-            tmp1[t] = total(weight*fsim*fobs(t,_));
+            tmp1[t] = total(weight*fsim*res.flux(t,_));
         }
 
         auto amp = tmp1/tmp2;
@@ -1096,6 +1097,10 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
         res.amp_bfit_sim[i] = amp[res.bfit];
         res.amp_sim[i] = amp[ised];
         res.sed_sim[i] = ised;
+    }
+
+    for (uint_t f = 0; f < nfilter; ++f) {
+        res.flux(_,f) *= res.amp;
     }
 
     return res;
@@ -1118,19 +1123,19 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
     // Convolve each SED with the response curve of the filters
     const uint_t nsed = rflib.sed.dims[0];
     const uint_t nfilter = filters.size();
-    vec2d fobs = dblarr(nsed, nfilter);
+    res.flux = dblarr(nsed, nfilter);
     for (uint_t f = 0; f < nfilter; ++f) {
-        fobs(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
+        res.flux(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
     }
 
     // Compute chi2 & renormalization factor
     auto weight = pow(err, -2);
-    using ttype = decltype(weight[0]*flux[0]*fobs[0]);
+    using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
 
     auto tmp1 = arr<ttype>(nsed);
     auto tmp2 = arr<ttype>(nsed);
     for (uint_t i = 0; i < nsed; ++i) {
-        auto tmp = fobs(i,_);
+        auto tmp = res.flux(i,_);
         tmp1[i] = total(weight*flux*tmp);
         tmp2[i] = total(weight*tmp*tmp);
     }
@@ -1155,7 +1160,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
     for (uint_t i = 0; i < nsim; ++i) {
         auto fsim = flux + randomn(seed, nflux)*err;
         for (uint_t t = 0; t < nsed; ++t) {
-            tmp1[t] = total(weight*fsim*fobs(t,_));
+            tmp1[t] = total(weight*fsim*res.flux(t,_));
         }
 
         auto amp = tmp1/tmp2;
@@ -1165,6 +1170,10 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, do
         res.amp_bfit_sim[i] = amp[res.bfit];
         res.amp_sim[i] = amp[ised];
         res.sed_sim[i] = ised;
+    }
+
+    for (uint_t f = 0; f < nfilter; ++f) {
+        res.flux(_,f) *= res.amp;
     }
 
     return res;
