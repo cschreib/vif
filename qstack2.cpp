@@ -1,29 +1,8 @@
 #include <phypp.hpp>
 
-void header(const std::string& msg) {
-    vec1s w = wrap("  "+msg, 80, "  ");
-    for (auto& s : w) {
-        print(s);
-    }
-}
-
-void paragraph(const std::string& msg) {
-    vec1s w = wrap("  "+msg, 80, "  ");
-    for (auto& s : w) {
-        print(s);
-    }
-    print("");
-}
-
-void bullet(const std::string& name, const std::string& desc) {
-    std::string header = "    "+name+": ";
-    vec1s w = wrap(header+desc, 80, std::string(header.size(), ' '));
-    for (auto& s : w) {
-        print(s);
-    }
-}
-
 void print_help() {
+    using namespace format;
+
     print("qstack v2.0");
     paragraph("usage: qstack2 cat=\"...\" img=\"...\" out=\"...\" hsize=... [options=...]");
 
