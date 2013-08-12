@@ -208,5 +208,19 @@ void tuple_for(T& t, F&& tf) {
     tuple_for_(t, f, cte_t<std::tuple_size<T>::value>());
 }
 
+// Reverse the content of a tuple
+// From: http://stackoverflow.com/questions/17178075/how-do-i-reverse-a-tuple
+template<typename T, size_t ... S>
+auto tuple_reverse_(T&& t, seq_t<S...>) {
+    return std::make_tuple(std::get<sizeof...(S) - 1 - S>(std::forward<T>(t))...);
+}
+
+template<typename T>
+auto tuple_reverse(T&& t) {
+    return tuple_reverse_(std::forward<T>(t),
+        gen_seq_t<std::tuple_size<typename std::decay<T>::type>::value>()
+    );
+}
+
 #endif
 
