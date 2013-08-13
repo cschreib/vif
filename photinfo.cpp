@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
     print(std::string(header.size(), '='));
 
     for (uint_t i = 0; i < n_elements(cat.bands); ++i) {
-        auto f = cat.flux(i,_);
-        auto e = cat.flux_err(i,_);
+        auto f = cat.flux(_,i);
+        auto e = cat.flux_err(_,i);
 
         vec1u idg = where(finite(f) && finite(e) && f > 0 && e > 0);
         vec1u idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3);

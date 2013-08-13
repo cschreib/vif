@@ -287,7 +287,7 @@ namespace file {
 
     template<typename Type, typename ... VArgs>
     void read_table_resize_cols_(std::size_t n, std::size_t m, vec_t<2,Type>& v, VArgs&... args) {
-        v = arr<Type>(m, n);
+        v = arr<Type>(n, m);
         read_table_resize_cols_(n, m, args...);
     }
 
@@ -405,7 +405,7 @@ namespace file {
     template<typename T, typename ... VArgs>
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec_t<2,T>& v, VArgs&... args) {
         std::string fb;
-        if (!read_value_(fs, v(k,i), fb)) {
+        if (!read_value_(fs, v(i,k), fb)) {
             phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
             phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
                 strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());

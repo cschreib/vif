@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
     file::mkdir("out");
 
     {
-        // Type checking on array indexation
+        print("Type checking on array indexation");
         static_assert(std::is_same<make_vrtype<3,float,int_t,int_t,int_t>::type, float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<make_vrtype<3,const float,int_t,int_t,int_t>::type, const float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<make_vrtype<3,float,int_t,placeholder_t,int_t>::type, vec_t<1,float*>>::value, "wrong type of indexed array");
@@ -24,31 +24,31 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Default initialization of array
+        print("Default initialization of array");
         vec1u t = uintarr(3);
         check(t, "0, 0, 0");
     }
 
     {
-        // Index generation 'indgen'
+        print("Index generation 'indgen'");
         vec1f v = findgen(7);
         check(v, "0, 1, 2, 3, 4, 5, 6");
 
-        // Direct data access (single index)
+        print("Direct data access (single index)");
         check(v[1], "1");
         check(v[ix(1)], "1");
-        // Placeholder index '_'
+        print("Placeholder index '_'");
         check(v[_], "0, 1, 2, 3, 4, 5, 6");
 
-        // Basic math
+        print("Basic math");
         check(2*v, "0, 2, 4, 6, 8, 10, 12");
         check(pow(2,v), "1, 2, 4, 8, 16, 32, 64");
 
-        // Range generation 'rx'
+        print("Range generation 'rx'");
         vec1i i = rx(5,2);
         check(i, "5, 4, 3, 2");
 
-        // Index array
+        print("Index array");
         check((2*v)[i], "10, 8, 6, 4");
         check(2*v[i], "10, 8, 6, 4");
         v[i] = dindgen(4);
@@ -68,12 +68,12 @@ int main(int argc, char* argv[]) {
         v[rx(0,6)](0) = 1;
         check(v, "1, 3, 7, 6, 9, 1, 0");
 
-        // Negative indices
+        print("Negative indices");
         check(v[-1], "0");
     }
 
     {
-        // Boolean specialization
+        print("Boolean specialization");
         vec1b v = {true, false, true, false};
         bool& b1 = v[0];
         b1 = false;
@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Initialization list
+        print("Initialization list");
         vec1f tv = {44, 55, 66, 77};
         check(tv.dims, "4");
         check(n_elements(tv), "4");
@@ -91,30 +91,30 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // String array
+        print("String array");
         vec1s w = {"gn", "gs", "uds", "cosmos"};
         check(w, "gn, gs, uds, cosmos");
     }
 
     {
-        // Boolean logic
+        print("Boolean logic");
         vec1i i = indgen(5);
         vec1b b = (i == 3 || i == 1);
         check(b, "0, 1, 0, 1, 0");
         check(!b, "1, 0, 1, 0, 1");
 
-        // 'where' function
+        print("'where' function");
         check(where(b), "1, 3");
     }
 
     {
-        // 'reverse' function
+        print("'reverse' function");
         vec1i i = indgen(5);
         check(reverse(i), "4, 3, 2, 1, 0");
     }
 
     {
-        // 2 dimensional array & multiple indices '(i,j)'
+        print("2 dimensional array & multiple indices '(i,j)'");
         vec2d u = dindgen(3,2);
         check(u, "0, 1, 2, 3, 4, 5");
         check(u.dims, "3, 2");
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Index conversion
+        print("Index conversion");
         vec2i v = uindgen(2,3);
         for (uint_t i = 0; i < v.size(); ++i) {
             vec1u ids = v.ids(i);
@@ -175,14 +175,14 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // FITS image loading
+        print("FITS image loading");
         vec2d v; fits::header hdr;
         fits::read("data/image.fits", v, hdr);
         check(v.dims, "161, 161");
         check(v(80,79), "0.0191503");
         check(hdr.size()/80, "9");
 
-        // Header functionalities
+        print("Header functionalities");
         uint_t axis;
         check(fits::getkey(hdr, "NAXIS1", axis), "1");
         check(axis, "161");
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
         check(fits::getkey(hdr, "MYAXIS3", axis), "1");
         check(axis, "12");
 
-        // FITS image writing
+        print("FITS image writing");
         fits::write("out/image_saved.fits", v, hdr);
         vec2d nv;
         fits::read("out/image_saved.fits", nv);
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // FITS table loading
+        print("FITS table loading");
         vec1i id1, id2, id3;
         fits::read_table("data/table.fits", ftable(id1, id2, id3));
         check(n_elements(id1), "79003");
@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
         check(n_elements(id3), "79003");
         check(id1(indgen(10)), "43881, 43881, 43881, 43881, 43548, 43881, 43881, 43881, 43820, 43881");
 
-        // FITS table writing
+        print("FITS table writing");
         fits::write_table("out/table_saved.fits", ftable(id1, id2, id3));
         vec1i i1b = id1, i2b = id2, i3b = id3;
         fits::read_table("out/table_saved.fits", ftable(id1, id2, id3));
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
         check(where(id2 != i2b).empty(), "1");
         check(where(id3 != i3b).empty(), "1");
 
-        // 2-d column
+        print("2-d column");
         vec2i test = dindgen(5,2);
         fits::write_table("out/2dtable.fits", ftable(test));
 
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
 
         check(where(test != otest).empty(), "1");
 
-        // Unsigned type
+        print("Unsigned type");
         vec1u id = uindgen(6);
         fits::write_table("out/utable.fits", ftable(id));
 
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 
         check(where(id != oid).empty(), "1");
 
-        // String type
+        print("String type");
         vec1s str = {"glouglou", "toto", "tat", "_gqmslk", "1", "ahahahaha"};
         fits::write_table("out/stable.fits", ftable(str));
 
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // FITS table with non vector elements
+        print("FITS table with non vector elements");
         int_t i = 5;
         float f = 0.2f;
         std::string s = "toto";
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'match' function
+        print("'match' function");
         vec1i t1 = {4,5,6,7,8,9};
         vec1i t2 = {9,1,7,10,5};
 
@@ -269,7 +269,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // ASCII table loading
+        print("ASCII table loading");
         vec1i i1, i2;
         file::read_table("data/table.txt", 2, i1, i2);
         check(i1, "0, 1, 2, 3, 4");
@@ -281,21 +281,21 @@ int main(int argc, char* argv[]) {
 
         vec2i ids;
         file::read_table("data/table.txt", 2, file::columns(2, ids));
-        check(where(i1 != ids(0,_)).empty(), "1");
-        check(where(i2 != ids(1,_)).empty(), "1");
+        check(where(i1 != ids(_,0)).empty(), "1");
+        check(where(i2 != ids(_,1)).empty(), "1");
 
         vec2i i1c, i2c;
         file::read_table("data/table.txt", 2, file::columns(1, i1c, i2c));
-        check(where(i1 != i1c(0,_)).empty(), "1");
-        check(where(i2 != i2c(0,_)).empty(), "1");
+        check(where(i1 != i1c(_,0)).empty(), "1");
+        check(where(i2 != i2c(_,0)).empty(), "1");
 
         vec2i i2d;
         file::read_table("data/table.txt", 2, file::columns(1, _, i2d));
-        check(where(i2 != i2d(0,_)).empty(), "1");
+        check(where(i2 != i2d(_,0)).empty(), "1");
     }
 
     {
-        // File system functions
+        print("File system functions");
         check(file::exists("unit_test.cpp"), "1");
         check(file::exists("unit_test_bidouille.cpp"), "0");
         vec1s dlist = file::list_directories("../");
@@ -309,13 +309,13 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'clamp' function
+        print("'clamp' function");
         vec1f f = {-1,0,1,2,3,4,5,6,finf,fnan};
         check(clamp(f, 1, 4), "1, 1, 1, 2, 3, 4, 4, 4, 4, nan");
     }
 
     {
-        // 'randomn', 'mean', 'median', 'percentile' functions
+        print("'randomn', 'mean', 'median', 'percentile' functions");
         uint_t seed = 42;
         uint_t ntry = 20000;
         vec1d r = randomn(seed, ntry);
@@ -338,7 +338,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'shuffle' function
+        print("'shuffle' function");
         uint_t seed = 42;
         vec1i i = {4,5,-8,5,2,0};
         vec1i si = shuffle(i, seed);
@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'mean' and 'median' for 2-d array
+        print("'mean' and 'median' for 2-d array");
         vec2d v = {{1,2,3},{4,5,6},{7,8,9}};
         check(mean(v,0), "4, 5, 6");
         check(mean(v,1), "2, 5, 8");
@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'median' for 3-d array
+        print("'median' for 3-d array");
         vec3d v = dblarr(21,21,11);
         v(_,_,rx(0,4)) = 0;
         v(_,_,rx(6,10)) = 1;
@@ -369,14 +369,14 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'replicate' function
+        print("'replicate' function");
         vec1i v = replicate(3, 5);
         check(v.dims, "5");
         check(v, "3, 3, 3, 3, 3");
     }
 
     {
-        // 'transpose' function
+        print("'transpose' function");
         vec2f v = findgen(3,2);
         vec2f tv = transpose(v);
         uint_t nok = 0;
@@ -388,7 +388,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'circular_mask' function
+        print("'circular_mask' function");
         vec1u dim = {51,41};
         vec2d px = replicate(dindgen(dim(1)), dim(0));
         vec2d py = transpose(replicate(dindgen(dim(0)), dim(1)));
@@ -400,14 +400,14 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'enlarge' function
+        print("'enlarge' function");
         vec2d v = dblarr(5,5)*0 + 3.1415;
         v = enlarge(v, 5, 1.0);
         fits::write("out/enlarge.fits", v);
     }
 
     {
-        // 'subregion' function
+        print("'subregion' function");
         vec2i v = indgen(5,5);
         fits::write("out/sub0.fits", v);
 
@@ -428,13 +428,13 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'rgen' function
+        print("'rgen' function");
         vec1d v = rgen(0, 5, 11);
         check(v, "0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5");
     }
 
     {
-        // 'push_back' function
+        print("'push_back' function");
         vec1i i = {0,1,2,4,-1};
         i.push_back(3);
         check(i, "0, 1, 2, 4, -1, 3");
@@ -446,7 +446,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'merge' function
+        print("'merge' function");
         vec1i v = {1, 2, 3, 4};
         v = merge(0, v);
         check(v, "0, 1, 2, 3, 4");
@@ -458,7 +458,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'append' & 'prepend' functions
+        print("'append' & 'prepend' functions");
         vec1i v = {0, 5, 2};
         vec1i w = {4, 1, 3};
         append(v, w);
@@ -468,7 +468,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'append' for 2-d array
+        print("'append' for 2-d array");
         vec2i v = {{0,1,2}, {5,6,8}};
         vec2i w = {{5,5,5}};
         append<0>(v, w);
@@ -478,7 +478,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Calculus functions
+        print("Calculus functions");
         check(derivate1([](double x) { return cos(x); }, 1.0, 0.001), "-0.841471");
         check(derivate2([](double x) { return cos(x); }, 1.0, 0.001), "-0.540302");
 
@@ -497,7 +497,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Matrix
+        print("Matrix");
         vec2d a = {
             {1.000, 2.000, 3.000},
             {4.000, 1.000, 6.000},
@@ -524,7 +524,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Matrix (bis)
+        print("Matrix (bis)");
         double x = 5, y = 2;
         vec1d p = point2d(x, y);
         check(p, "5, 2, 1");
@@ -551,7 +551,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'linfit' function
+        print("'linfit' function");
         vec1d x = dindgen(5);
         vec1d y = 3.1415*x*x - 12.0*x;
 
@@ -570,7 +570,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'linfit' function doing PSF fitting
+        print("'linfit' function doing PSF fitting");
         vec2d img, psf;
         fits::read("data/stack1.fits", img);
         fits::read("data/psf.fits", psf);
@@ -591,7 +591,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'affinefit' function
+        print("'affinefit' function");
         vec1d x = dindgen(5);
         vec1d y = 5*x + 3;
         vec1d ye = y*0 + 1;
@@ -602,7 +602,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'nlfit' function
+        print("'nlfit' function");
         vec1d x = dindgen(5);
         vec1d y = 3.1415*x*x;
 
@@ -622,7 +622,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'sort' function
+        print("'sort' function");
         vec1i v = {6,2,4,3,1,5};
         vec1i sid = sort(v);
         check(sid, "4, 1, 3, 2, 5, 0");
@@ -630,7 +630,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'sort' function again
+        print("'sort' function again");
         vec2i v = {{5,0}, {4,1}, {1,2}, {2,3}};
         vec1i sid = sort(v(_,0));
         v(_,_) = v(sid,_);
@@ -638,7 +638,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'min_id', 'max_id'
+        print("'min_id', 'max_id'");
         vec1i i = {5,2,4,9,6,-5,2,-3};
         uint_t mi = min_id(i);
         uint_t ma = max_id(i);
@@ -647,7 +647,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'replace' & 'split'
+        print("'replace' & 'split'");
         vec1s s = {"/home/dir/", "/bin/ds9", "ls"};
         s = replace(s, "/", ":");
         check(s, ":home:dir:, :bin:ds9, ls");
@@ -657,13 +657,13 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // string 'match' regex
+        print("string 'match' regex");
         vec1s s = {"[u]=5", "[v]=2", "plop", "3=[c]", "5]=[b"};
         check(match(s, "\\[.\\]"), "1, 1, 0, 1, 0");
     }
 
     {
-        // Cosmology functions
+        print("Cosmology functions");
         auto cosmo = cosmo_wmap();
         check(lumdist(0.5, cosmo), "2863.03");
         check(lookback_time(0.5, cosmo), "5.09887");
@@ -675,7 +675,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'interpolate', 'lower_bound' & 'upper_bound' functions
+        print("'interpolate', 'lower_bound' & 'upper_bound' functions");
         vec1f y = {0, 1, 2, 3, 4, 5};
         vec1f x = {0, 1, 2, 3, 4, 5};
         vec1f nx = {0.2, 0.5, 1.6, -0.5, 12};
@@ -687,7 +687,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // 'uJy2lsun' & 'lsun2uJy' functions
+        print("'uJy2lsun' & 'lsun2uJy' functions");
         vec1d jy = {1000.0};
         double z = 1.0;
         double d = lumdist(z, cosmo_wmap());
@@ -698,7 +698,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Reflection: print a structure
+        print("Reflection: print a structure");
         struct {
             int_t i = 5;
             vec1f j = indgen(3);
@@ -712,7 +712,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Reflection: save & write a structure
+        print("Reflection: save & write a structure");
         struct tmp_t {
             vec1d f = indgen(3);
             vec1i s = {5,4,2,3,1};
@@ -736,7 +736,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Reflection: merge two structures
+        print("Reflection: merge two structures");
         struct {
             int_t i = 0;
             float j = 0;
@@ -768,7 +768,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Reflection: copy a structure
+        print("Reflection: copy a structure");
         struct tmp {
             int i = 5;
             struct {
@@ -786,7 +786,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        // Convex hull
+        print("Convex hull");
         struct {
             vec1d ra, dec;
             vec1i hull;

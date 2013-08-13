@@ -692,17 +692,17 @@ struct catalog_pool {
 
 template<std::size_t Dim, typename T, typename U, typename V, typename enable>
 void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def) {
-    phypp_check(in.empty(), "merging twice into the same variable");
+    phypp_check(in.empty(), name+": merging twice into the same variable");
     in.dims = out.dims;
-    in.dims[Dim-1] = pool.ngal;
+    in.dims[0] = pool.ngal;
     in.resize();
     in[_] = def;
-    in[ix(rep<Dim-1>(_),idm)] = out;
+    in[ix(idm,rep<Dim-1>(_))] = out;
 }
 
 template<typename T, typename U, typename V>
 void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def) {
-    phypp_check(in.empty(), "merging twice into the same variable");
+    phypp_check(in.empty(), name+": merging twice into the same variable");
     in = replicate(def, pool.ngal);
     in[idm] = out;
 }
@@ -772,8 +772,8 @@ void catalog_t::merge(T& in, const U& out, const V& def, const std::string& com)
 void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& bands,
     const vec1s& notes) {
 
-    phypp_check(flux.dims[0] == err.dims[0], "flux and error do not match");
-    phypp_check(flux.dims[0] == bands.size(), "flux and band do not match");
+    phypp_check(flux.dims[1] == err.dims[1], name+": flux and error do not match");
+    phypp_check(flux.dims[1] == bands.size(), name+": flux and band do not match");
 
     vec1s tnotes = notes;
     if (tnotes.empty()) {
@@ -790,8 +790,8 @@ void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& ban
 
     append(pool.bands, bands);
     append(pool.notes, tnotes);
-    append<0>(pool.flux, tflux);
-    append<0>(pool.flux_err, terr);
+    append<1>(pool.flux, tflux);
+    append<1>(pool.flux_err, terr);
 }
 
 void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint_t hsize,
