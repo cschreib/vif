@@ -850,7 +850,7 @@ namespace fits {
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
+        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
         write_table_(fptr, 1, name, std::forward<Args>(args)...);
 
@@ -881,7 +881,7 @@ namespace fits {
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
+        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
         write_table_(macroed_t(), fptr, 1, names, std::forward<Args>(args)...);
 
@@ -895,7 +895,7 @@ namespace fits {
 
         fits_create_file(&fptr, ("!"+filename).c_str(), &status);
         phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, "RESULT_BINARY", &status);
+        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
         struct {
             fitsfile* fptr;
