@@ -2,8 +2,8 @@
 
 #define check(t, s) { \
     std::string st = trim(strn(t), "[]"); \
-    if (st == s) print("checked: "+st); \
-    else         print("failed: "+std::string(#t)+" = "+st+" != "+s); \
+    if (st == s) print("  checked: "+st); \
+    else         print("  failed: "+std::string(#t)+" = "+st+" != "+s); \
     assert(st == s); \
 }
 
@@ -635,6 +635,19 @@ int main(int argc, char* argv[]) {
         vec1i sid = sort(v(_,0));
         v(_,_) = v(sid,_);
         check(v, "1, 2, 2, 3, 4, 1, 5, 0");
+    }
+
+    {
+        print("'uniq' function");
+        vec1i v = {0,1,1,1,2,2,3,5,5,6};
+        vec1i id = uniq(v);
+        check(id, "0, 1, 4, 6, 7, 9");
+
+        uint_t seed = 42;
+        v = shuffle(v, seed);
+        vec1i sid = sort(v);
+        vec1i id2 = uniq(v, sid);
+        check(v[id2], "0, 1, 2, 3, 5, 6");
     }
 
     {
