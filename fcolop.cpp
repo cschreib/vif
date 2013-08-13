@@ -7,7 +7,7 @@ void print_help() {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 4) {
+    if (argc < 3) {
         print_help();
         return 0;
     }
@@ -18,12 +18,6 @@ int main(int argc, char* argv[]) {
     bool force = false;
 
     read_args(argc-2, argv+2, arg_list(cols, force));
-
-    if (cols.empty()) {
-        error("missing column(s) name(s)");
-        print_help();
-        return 0;
-    }
 
     cols = toupper(cols);
 
@@ -51,7 +45,8 @@ int main(int argc, char* argv[]) {
                         fits_close_file(fptr, &status);
                         return 0;
                     }
-                    std::cout << "please answer either 'yes' (y) or 'no' (n): " << std::flush;
+                    line.clear();
+                    std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
                 }
             }
 
@@ -62,9 +57,15 @@ int main(int argc, char* argv[]) {
     }
 
     if (op == "remove") {
+        if (cols.empty()) {
+            error("missing column(s) name(s)");
+            print_help();
+            return 0;
+        }
+
         if (!force) {
             std::cout << "warning: this operation will permanently remove information from this file\n";
-            std::cout << "warning: are you sure ? (y/n) " << std::flush;
+            std::cout << "warning: are you sure? (y/n) " << std::flush;
             std::string line;
             while (line.empty()) {
                 std::getline(std::cin, line);
@@ -74,7 +75,8 @@ int main(int argc, char* argv[]) {
                     fits_close_file(fptr, &status);
                     return 0;
                 }
-                std::cout << "please answer either 'yes' (y) or 'no' (n): " << std::flush;
+                line.clear();
+                std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
             }
         }
 
@@ -91,6 +93,12 @@ int main(int argc, char* argv[]) {
             fits::phypp_check_cfitsio(status, "cannot remove column '"+col+"'");
         }
     } else if (op == "transpose") {
+        if (cols.empty()) {
+            error("missing column(s) name(s)");
+            print_help();
+            return 0;
+        }
+
         for (auto& col : fcols) {
             vec2d v;
 
@@ -143,6 +151,136 @@ int main(int argc, char* argv[]) {
                 const_cast<vec2d::dtype*>(v.data.data()), &status
             );
             fits::phypp_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
+        }
+    } else if (op == "meta") {
+        vec1u dims;
+        int ncols;
+        fits_get_num_cols(fptr, &ncols, &status);
+
+        if (ncols == 0) {
+            print("no columns in this file");
+            fits_close_file(fptr, &status);
+            return 0;
+        }
+
+        for (int i = 1; i <= ncols; ++i) {
+            int naxis;
+            std::array<long,100> naxes;
+            fits_read_tdim(fptr, i, 100, &naxis, naxes.data(), &status);
+            for (int j = 0; j < naxis; ++j) {
+                dims.push_back(naxes[j]);
+            }
+        }
+
+        vec1u udim = dims[uniq(dims, sort(dims))];
+        uint_t dim;
+        if (udim.size() == 1) {
+            dim = udim[0];
+        } else {
+            vec1u count(udim.size());
+            for (uint_t i = 0; i < udim.size(); ++i) {
+                count[i] = total(dims == udim[i]);
+            }
+
+            vec1u weight = uindgen(udim.size()) + sort(count);
+            dim = udim[max_id(weight)];
+
+            if (!force) {
+                std::cout << "identified 'row' dimension: " << dim << "\n";
+                std::cout << "is it correct? (y/n) " << std::flush;
+                std::string line;
+                while (line.empty()) {
+                    std::getline(std::cin, line);
+                    line = tolower(line);
+                    if (line == "y" || line == "yes") break;
+                    if (line == "n" || line == "no") {
+                        print("available dimensions:");
+                        print(udim);
+                        std::cout << "please enter the correct 'row' dimension: ";
+                        line.clear();
+                        while (line.empty()) {
+                            std::getline(std::cin, line);
+                            if (from_string(line, dim) && total(dim == udim) != 0) {
+                                break;
+                            }
+
+                            error("please enter a number that matches one of the following "
+                                "dimensions:");
+                            print(udim);
+                            line.clear();
+                            std::cout << "please enter the correct 'row' dimension: ";
+                        }
+                        break;
+                    }
+                    line.clear();
+                    std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
+                }
+            }
+        }
+
+        vec1u mcols;
+        for (int i = 1; i <= ncols; ++i) {
+            int naxis;
+            std::array<long,100> naxes;
+            fits_read_tdim(fptr, i, 100, &naxis, naxes.data(), &status);
+            bool found = false;
+            for (int j = 0; j < naxis; ++j) {
+                if (uint_t(naxes[j]) == dim) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                mcols.push_back(i);
+            }
+        }
+
+        if (mcols.empty()) {
+            print("no meta data column");
+            fits_close_file(fptr, &status);
+            return 0;
+        }
+
+        if (!force) {
+            vec1s names;
+            for (auto i : mcols) {
+                std::string id = strn(i);
+                char name[80];
+                int num;
+                fits_get_colname(fptr, CASESEN, const_cast<char*>(id.c_str()), name, &num, &status);
+                names.push_back(name);
+            }
+
+            warning("this operation will move the following columns in a new table:");
+            print(names);
+            std::cout << "warning: are you sure? (y/n) " << std::flush;
+            std::string line;
+            while (line.empty()) {
+                std::getline(std::cin, line);
+                line = tolower(line);
+                if (line == "y" || line == "yes") break;
+                if (line == "n" || line == "no") {
+                    fits_close_file(fptr, &status);
+                    return 0;
+                }
+                line.clear();
+                std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
+            }
+        }
+
+        fitsfile* ofptr;
+        fits_open_table(&ofptr, file.c_str(), READWRITE, &status);
+
+        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
+
+        for (auto i : mcols) {
+            fits_copy_col(ofptr, fptr, i, mcols.size(), 1, &status);
+            fits::phypp_check_cfitsio(status, "cannot copy column "+strn(i));
+        }
+
+        for (auto i : reverse(mcols)) {
+            fits_delete_col(ofptr, i, &status);
         }
     } else {
         error("unknown operation '", op, "'");
