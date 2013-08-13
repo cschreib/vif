@@ -555,7 +555,7 @@ struct vec_t {
         data.reserve(n);
     }
 
-    auto& concretise() const {
+    vec_t<Dim,Type>& concretise() const {
         return *this;
     }
 
@@ -851,7 +851,6 @@ struct vec_t<Dim,Type*> {
     effective_type concretise() const {
         return *this;
     }
-
 
     template<typename T>
     T to_idx_(T ui, cte_t<false>) const {
