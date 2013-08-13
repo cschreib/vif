@@ -1519,6 +1519,51 @@ vec1u where(const vec_t<Dim,Type>& v) {
     return ids;
 }
 
+// In a sorted vector, return the first indices of each non unique sequence, effectively returning
+// indices to all values that are different in the vector.
+// By construction, the returned indices point to sorted values in the original vector.
+template<std::size_t Dim, typename Type>
+vec1u uniq(const vec_t<Dim,Type>& v) {
+    vec1u r;
+    if (v.empty()) return r;
+    r.reserve(v.size()/4);
+
+    rtype_t<Type> last = v[0];
+    r.push_back(0);
+    for (uint_t i = 1; i < v.size(); ++i) {
+        if (v[i] != last) {
+            r.push_back(i);
+            last = v[i];
+        }
+    }
+
+    r.data.shrink_to_fit();
+    return r;
+}
+
+// In a vector, return indices to all values that are different. This version takes a second
+// argument with indices that sort the input vector.
+// The returned indices point to sorted values in the original vector.
+template<std::size_t Dim, typename Type>
+vec1u uniq(const vec_t<Dim,Type>& v, const vec1u& sid) {
+    vec1u r;
+    if (sid.empty()) return r;
+    r.reserve(v.size()/4);
+
+    rtype_t<Type> last = v[sid[0]];
+    r.push_back(sid[0]);
+    for (uint_t ti = 1; ti < sid.size(); ++ti) {
+        uint_t i = sid[ti];
+        if (v[i] != last) {
+            r.push_back(i);
+            last = v[i];
+        }
+    }
+
+    r.data.shrink_to_fit();
+    return r;
+}
+
 template<std::size_t Dim, typename Type1, typename Type2>
 void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1u& id1, vec1u& id2) {
     uint_t n1 = v1.size();
