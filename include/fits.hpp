@@ -127,19 +127,48 @@ namespace fits {
 
     using header = std::string;
 
-    // Load the content of a FITS file into an array.
-    // Be careful that C++ is a row-major language, in the sense that to get the (x,y) pixel of a
-    // given image, one has to get the (y,x) element in the array.
     template<std::size_t Dim, typename Type>
-    vec_t<Dim, Type> read(const std::string& name) {
-        try {
-            fits::FITS file(name, fits::Read);
-            fits::PHDU& phdu = file.pHDU();
+    void read_impl_(fits::FITS& file, vec_t<Dim, Type>& v, std::string& hdr, bool gethdr) {
+        fits::PHDU& phdu = file.pHDU();
+        if (phdu.axes() == 0) {
+            fits::ExtHDU* hdu = nullptr;
+            uint_t i = 1;
+            while (!hdu && i <= file.extension().size()) {
+                hdu = &file.extension(i);
+                if (hdu->axes() == 0) hdu = nullptr;
+            }
 
+            phypp_check_fits(hdu, "FITS file does not contain any data");
+
+            fits::ExtHDU& thdu = *hdu;
+
+            phypp_check_fits(thdu.axes() == Dim, "FITS file does not match array dimensions ("+
+                strn(thdu.axes())+" vs "+strn(Dim)+")");
+
+            std::size_t n = 1;
+            for (uint_t j = 0; j < Dim; ++j) {
+                v.dims[j] = thdu.axis(Dim-1-j);
+                n *= v.dims[j];
+            }
+
+            std::valarray<Type> tv(n);
+            thdu.read(tv, 1, n);
+
+            v.data.assign(std::begin(tv), std::end(tv));
+
+            if (gethdr) {
+                // Read the header as a string
+                char* hstr = nullptr;
+                int nkeys  = 0;
+                int status = 0;
+                fits_hdr2str(thdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
+                hdr = hstr;
+                free(hstr);
+            }
+        } else {
             phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
 
-            vec_t<Dim, Type> v;
             std::size_t n = 1;
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = phdu.axis(Dim-1-i);
@@ -151,6 +180,28 @@ namespace fits {
 
             v.data.assign(std::begin(tv), std::end(tv));
 
+            if (gethdr) {
+                // Read the header as a string
+                char* hstr = nullptr;
+                int nkeys  = 0;
+                int status = 0;
+                fits_hdr2str(phdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
+                hdr = hstr;
+                free(hstr);
+            }
+        }
+    }
+
+    // Load the content of a FITS file into an array.
+    // Be careful that C++ is a row-major language, in the sense that to get the (x,y) pixel of a
+    // given image, one has to get the (y,x) element in the array.
+    template<std::size_t Dim, typename Type>
+    vec_t<Dim, Type> read(const std::string& name) {
+        try {
+            fits::FITS file(name, fits::Read);
+            vec_t<Dim, Type> v;
+            std::string hdr;
+            read_impl_(file, v, hdr, false);
             return v;
         } catch (fits::FitsException& e) {
             error("reading: "+name);
@@ -167,21 +218,8 @@ namespace fits {
     void read(const std::string& name, vec_t<Dim, Type>& v) {
         try {
             fits::FITS file(name, fits::Read);
-            fits::PHDU& phdu = file.pHDU();
-
-            phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
-                strn(phdu.axes())+" vs "+strn(Dim)+")");
-
-            std::size_t n = 1;
-            for (uint_t i = 0; i < Dim; ++i) {
-                v.dims[i] = phdu.axis(Dim-1-i);
-                n *= v.dims[i];
-            }
-
-            std::valarray<Type> tv(n);
-            phdu.read(tv, 1, n);
-
-            v.data.assign(std::begin(tv), std::end(tv));
+            std::string hdr;
+            read_impl_(file, v, hdr, false);
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
@@ -196,29 +234,7 @@ namespace fits {
     void read(const std::string& name, vec_t<Dim, Type>& v, fits::header& hdr) {
         try {
             fits::FITS file(name, fits::Read);
-            fits::PHDU& phdu = file.pHDU();
-
-            phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
-                strn(phdu.axes())+" vs "+strn(Dim)+")");
-
-            std::size_t n = 1;
-            for (uint_t i = 0; i < Dim; ++i) {
-                v.dims[i] = phdu.axis(Dim-1-i);
-                n *= v.dims[i];
-            }
-
-            std::valarray<Type> tv(n);
-            phdu.read(tv, 1, n);
-
-            v.data.assign(std::begin(tv), std::end(tv));
-
-            // Read the header as a string
-            char* hstr = nullptr;
-            int nkeys  = 0;
-            int status = 0;
-            fits_hdr2str(phdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
-            hdr = hstr;
-            free(hstr);
+            read_impl_(file, v, hdr, true);
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
