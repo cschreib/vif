@@ -13,6 +13,11 @@
 namespace fits {
     using namespace CCfits;
 
+    struct exception {
+        explicit exception(const std::string& m) : msg(m) {}
+        std::string msg;
+    };
+
     template<typename T>
     struct traits;
 
@@ -109,12 +114,14 @@ namespace fits {
         }
     };
 
+    #define phypp_check_fits(assertion, msg) \
+        do { if (!(assertion)) throw fits::exception(msg); } while(0)
+
     void phypp_check_cfitsio(int status, const std::string& msg) {
         if (status != 0) {
             char txt[FLEN_STATUS];
             fits_get_errstatus(status, txt);
-            error("cfitsio: "+std::string(txt));
-            phypp_check(status == 0, msg);
+            phypp_check_fits(status == 0, "error: cfitsio: "+std::string(txt)+"\n"+msg);
         }
     }
 
@@ -129,7 +136,7 @@ namespace fits {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
 
-            phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
 
             vec_t<Dim, Type> v;
@@ -146,7 +153,12 @@ namespace fits {
 
             return v;
         } catch (fits::FitsException& e) {
-            print("error: FITS: "+e.message());
+            error("reading: "+name);
+            error("FITS: "+e.message());
+            throw;
+        } catch (fits::exception& e) {
+            error("reading: "+name);
+            error(e.msg);
             throw;
         }
     }
@@ -157,7 +169,7 @@ namespace fits {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
 
-            phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
 
             std::size_t n = 1;
@@ -173,6 +185,10 @@ namespace fits {
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
+        } catch (fits::exception& e) {
+            error("reading: "+name);
+            error(e.msg);
+            throw;
         }
     }
 
@@ -182,7 +198,7 @@ namespace fits {
             fits::FITS file(name, fits::Read);
             fits::PHDU& phdu = file.pHDU();
 
-            phypp_check(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
                 strn(phdu.axes())+" vs "+strn(Dim)+")");
 
             std::size_t n = 1;
@@ -206,6 +222,10 @@ namespace fits {
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
+        } catch (fits::exception& e) {
+            error("reading: "+name);
+            error(e.msg);
+            throw;
         }
     }
 
@@ -213,19 +233,25 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_open_image(&fptr, filename.c_str(), READONLY, &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_open_image(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-        // Read the header as a string
-        char* hstr = nullptr;
-        int nkeys  = 0;
-        fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
-        fits::header hdr = hstr;
-        free(hstr);
+            // Read the header as a string
+            char* hstr = nullptr;
+            int nkeys  = 0;
+            fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+            fits::header hdr = hstr;
+            free(hstr);
 
-        fits_close_file(fptr, &status);
-
-        return hdr;
+            fits_close_file(fptr, &status);
+            return hdr;
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     template<typename T>
@@ -467,7 +493,7 @@ namespace fits {
         std::array<long,Dim> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, Dim, &naxis, naxes.data(), &status);
-        phypp_check(naxis == Dim, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == Dim, "wrong dimension for column '"+colname+"'");
         status = 0;
 
         for (uint_t i = 0; i < Dim; ++i) {
@@ -499,7 +525,7 @@ namespace fits {
         std::array<long,1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
-        phypp_check(naxis == 1, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"'");
         status = 0;
 
         Type def = traits<Type>::def();
@@ -528,7 +554,7 @@ namespace fits {
         std::array<long,Dim+1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, Dim+1, &naxis, naxes.data(), &status);
-        phypp_check(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
         status = 0;
 
         for (uint_t i = 0; i < Dim; ++i) {
@@ -574,7 +600,7 @@ namespace fits {
         std::array<long,1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
-        phypp_check(naxis == 1, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"'");
         status = 0;
 
         char* buffer = new char[naxes[0]+1];
@@ -620,18 +646,25 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file");
 
-        int ncol;
-        fits_get_num_cols(fptr, &ncol, &status);
-        phypp_check((sizeof...(Args)+1)/2 <= std::size_t(ncol),
-            "too few collumns in this FITS file ("+
-            strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
+            int ncol;
+            fits_get_num_cols(fptr, &ncol, &status);
+            phypp_check_fits((sizeof...(Args)+1)/2 <= std::size_t(ncol),
+                "too few collumns in this FITS file ("+
+                strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
 
-        read_table_(fptr, name, std::forward<Args>(args)...);
+            read_table_(fptr, name, std::forward<Args>(args)...);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+name);
+            error(e.msg);
+            throw;
+        }
     }
 
     void read_table_(macroed_t, fitsfile* fptr, const std::string& names) {}
@@ -653,17 +686,24 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file");
 
-        int ncol;
-        fits_get_num_cols(fptr, &ncol, &status);
-        phypp_check(sizeof...(Args) <= std::size_t(ncol), "too few collumns in this FITS file ("+
-            strn(ncol)+" vs "+strn(sizeof...(Args))+")");
+            int ncol;
+            fits_get_num_cols(fptr, &ncol, &status);
+            phypp_check_fits(sizeof...(Args) <= std::size_t(ncol), "too few collumns in this FITS "
+                "file  ("+strn(ncol)+" vs "+strn(sizeof...(Args))+")");
 
-        read_table_(macroed_t(), fptr, names, std::forward<Args>(args)...);
+            read_table_(macroed_t(), fptr, names, std::forward<Args>(args)...);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -671,21 +711,28 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-        struct {
-            fitsfile* fptr;
+            struct {
+                fitsfile* fptr;
 
-            template<typename P>
-            void operator () (reflex::member_t& m, P&& v) {
-                read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
-            }
-        } do_read{fptr};
+                template<typename P>
+                void operator () (reflex::member_t& m, P&& v) {
+                    read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
+                }
+            } do_read{fptr};
 
-        reflex::foreach_member(reflex::wrap(t), do_read);
+            reflex::foreach_member(reflex::wrap(t), do_read);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -693,21 +740,28 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_open_table(&fptr, filename.c_str(), READONLY, &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-        struct {
-            fitsfile* fptr;
+            struct {
+                fitsfile* fptr;
 
-            template<typename P>
-            void operator () (reflex::member_t& m, P&& v) {
-                read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
-            }
-        } do_read{fptr};
+                template<typename P>
+                void operator () (reflex::member_t& m, P&& v) {
+                    read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
+                }
+            } do_read{fptr};
 
-        reflex::foreach_member(reflex::wrap(t), do_read);
+            reflex::foreach_member(reflex::wrap(t), do_read);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     // Write several columns in a FITS file.
@@ -847,14 +901,21 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_create_file(&fptr, ("!"+filename).c_str(), &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_create_file(&fptr, ("!"+filename).c_str(), &status);
+            phypp_check_cfitsio(status, "cannot open file");
 
-        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
+            fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
-        write_table_(fptr, 1, name, std::forward<Args>(args)...);
+            write_table_(fptr, 1, name, std::forward<Args>(args)...);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names) {}
@@ -878,14 +939,21 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_create_file(&fptr, ("!"+filename).c_str(), &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+        try {
+            fits_create_file(&fptr, ("!"+filename).c_str(), &status);
+            phypp_check_cfitsio(status, "cannot open file");
 
-        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
+            fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
-        write_table_(macroed_t(), fptr, 1, names, std::forward<Args>(args)...);
+            write_table_(macroed_t(), fptr, 1, names, std::forward<Args>(args)...);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -893,23 +961,30 @@ namespace fits {
         fitsfile* fptr;
         int status = 0;
 
-        fits_create_file(&fptr, ("!"+filename).c_str(), &status);
-        phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
-        fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
+        try {
+            fits_create_file(&fptr, ("!"+filename).c_str(), &status);
+            phypp_check_cfitsio(status, "cannot open file");
+            fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
-        struct {
-            fitsfile* fptr;
-            int id = 1;
+            struct {
+                fitsfile* fptr;
+                int id = 1;
 
-            template<typename P>
-            void operator () (const reflex::member_t& m, const P& v) {
-                write_table_impl_(this->fptr, this->id, toupper(m.name), v);
-            }
-        } do_write{fptr};
+                template<typename P>
+                void operator () (const reflex::member_t& m, const P& v) {
+                    write_table_impl_(this->fptr, this->id, toupper(m.name), v);
+                }
+            } do_write{fptr};
 
-        reflex::foreach_member(reflex::wrap(t), do_write);
+            reflex::foreach_member(reflex::wrap(t), do_write);
 
-        fits_close_file(fptr, &status);
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
+            throw;
+        }
     }
 
     void display(const std::string& name) {
