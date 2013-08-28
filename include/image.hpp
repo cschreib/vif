@@ -57,7 +57,7 @@ void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1i& rr, ve
         vreg(1) = 0;
         sreg(1) += 0 - reg(1);
     }
-    if (reg(3) >= nvx) {
+    if (reg(3) >= nvy) {
         vreg(3) = nvy-1;
         sreg(3) -= reg(3) - (nvy-1);
     }
