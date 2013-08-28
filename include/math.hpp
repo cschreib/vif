@@ -1084,7 +1084,7 @@ bool is_sorted(const vec_t<1,Type>& v) {
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<typename TypeY, typename TypeX1, typename TypeX2>
+template<typename TypeX2, typename TypeY = double, typename TypeX1 = double>
 auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
