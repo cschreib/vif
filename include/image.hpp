@@ -67,7 +67,7 @@ void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1i& rr, ve
     vec1i sx = rgen(sreg(0), sreg(2));
     vec1i sy = rgen(sreg(1), sreg(3));
 
-    rr = flatten(indgen(nvy,nvy)(vx,vy));
+    rr = flatten(indgen(nvx,nvy)(vx,vy));
     rs = flatten(indgen(nx,ny)(sx,sy));
 }
 
