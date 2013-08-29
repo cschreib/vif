@@ -303,6 +303,24 @@ std::string align_center(const std::string& s, uint_t width, char fill = ' ') {
     }
 }
 
+bool start_with(const std::string& s, const std::string& pattern) {
+    if (s.size() < pattern.size()) return false;
+    for (uint_t i = 0; i < pattern.size(); ++i) {
+        if (s[i] != pattern[i]) return false;
+    }
+
+    return true;
+}
+
+bool end_with(const std::string& s, const std::string& pattern) {
+    if (s.size() < pattern.size()) return false;
+    for (uint_t i = 1; i <= pattern.size(); ++i) {
+        if (s[s.size()-i] != pattern[pattern.size()-i]) return false;
+    }
+
+    return true;
+}
+
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
@@ -330,6 +348,8 @@ VECTORIZE(length)
 VECTORIZE(align_left)
 VECTORIZE(align_right)
 VECTORIZE(align_center)
+VECTORIZE(start_with)
+VECTORIZE(end_with)
 
 #undef VECTORIZE
 
