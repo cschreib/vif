@@ -423,8 +423,11 @@ namespace fits {
         }
     }
 
-    void header2fits_(fits::HDU& hdu, const std::string& hdr) {
+    void header2fits_(fitsfile* fptr, const std::string& hdr) {
+        int status = 0;
         std::size_t nentry = hdr.size()/80 + 1;
+        fits_set_hdrsize(fptr, nentry, &status);
+
         for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
@@ -432,22 +435,29 @@ namespace fits {
             std::size_t cpos = entry.find_first_of("/", eqpos);
 
             std::string nam = trim(entry.substr(0, eqpos));
-            if (nam == "SIMPLE" || nam == "BITPIX" || nam.find("NAXIS") == 0 || nam == "EXTEND") {
+            char* tnam = const_cast<char*>(nam.c_str());
+            if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") || nam == "EXTEND") {
                 continue;
             }
 
-            std::string value = trim(entry.substr(eqpos+1, cpos-eqpos-1));
             std::string comment = trim(entry.substr(cpos+1));
+            char* tcomment = const_cast<char*>(comment.c_str());
 
-            if (value.find_first_of("'") == 0) {
-                value = trim(value, "'");
-                hdu.addKey(nam, value, comment);
-            } else if (value.find(".") != value.npos) {
-                double dvalue; from_string(value, dvalue);
-                hdu.addKey(nam, dvalue, comment);
+            std::string value = trim(entry.substr(eqpos+1, cpos-eqpos-1));
+            if (value[0] == '\'') {
+                for (uint_t j = value.size()-1; j != npos; --j) {
+                    if (value[j] == '\'') {
+                        value.resize(j);
+                        break;
+                    }
+                }
+
+                char* tvalue = const_cast<char*>(value.c_str());
+                fits_write_key_str(fptr, tnam, tvalue+1, tcomment, &status);
             } else {
-                std::ptrdiff_t ivalue; from_string(value, ivalue);
-                hdu.addKey(nam, ivalue, comment);
+                double d;
+                from_string(value, d);
+                fits_write_key_lng(fptr, tnam, d, tcomment, &status);
             }
         }
     }
@@ -467,7 +477,7 @@ namespace fits {
         try {
             fits::FITS f("!"+name, traits<rtype_t<Type>>::image_type, Dim, isize.data());
             f.pHDU().write(1, tv.size(), tv);
-            header2fits_(f.pHDU(), hdr);
+            header2fits_(f.pHDU().fitsPointer(), hdr);
             f.flush();
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
