@@ -457,7 +457,7 @@ namespace fits {
             } else {
                 double d;
                 from_string(value, d);
-                fits_write_key_lng(fptr, tnam, d, tcomment, &status);
+                fits_write_key(fptr, TDOUBLE, tnam, &d, tcomment, &status);
             }
         }
     }
