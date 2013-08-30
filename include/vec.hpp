@@ -1709,6 +1709,33 @@ vec_t<sizeof...(Args),std::string> replicate(const char v[N], const Args& ... ar
     return r;
 }
 
+template<typename Type, std::size_t Dim>
+vec_t<Dim,Type> replicate(const Type& v, const std::array<uint_t,Dim>& dims) {
+    auto r = arr<Type>(dims);
+    for (auto& t : r) {
+        t = v;
+    }
+    return r;
+}
+
+template<std::size_t Dim>
+vec_t<Dim,std::string> replicate(const char* v, const std::array<uint_t,Dim>& dims) {
+    auto r = strarr(dims);
+    for (auto& t : r) {
+        t = v;
+    }
+    return r;
+}
+
+template<std::size_t N, std::size_t Dim>
+vec_t<Dim,std::string> replicate(const char v[N], const std::array<uint_t,Dim>& dims) {
+    auto r = strarr(dims);
+    for (auto& t : r) {
+        t = v;
+    }
+    return r;
+}
+
 template<std::size_t Dim, typename Type>
 vec1u sort(const vec_t<Dim,Type>& v) {
     vec1u r = uindgen(v.size());
