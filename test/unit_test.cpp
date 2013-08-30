@@ -428,6 +428,19 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'translate' function");
+        vec2d test(51,51);
+        test(25,25) = 1.0;
+
+        vec3d cube(20,51,51);
+        for (uint_t i = 0; i < 20; ++i) {
+            cube(i,_,_) = translate(test, i*0.14, i*(-0.14));
+        }
+
+        fits::write("out/translated.fits", cube);
+    }
+
+    {
         print("'rgen' function");
         vec1d v = rgen(0, 5, 11);
         check(v, "0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5");
