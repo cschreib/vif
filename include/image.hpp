@@ -5,7 +5,9 @@
 #include "math.hpp"
 
 template<typename Type>
-typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix, const typename vec_t<2,Type>::rtype& def = 0.0) {
+typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix,
+    const typename vec_t<2,Type>::rtype& def = 0.0) {
+
     if (pix >= 0) {
         typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]+2*pix, v.dims[1]+2*pix) + def;
 
@@ -72,7 +74,9 @@ void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1i& rr, ve
 }
 
 template<typename TypeV, typename TypeR = int_t>
-typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, const typename vec_t<2,TypeV>::rtype& def = 0.0) {
+typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
+    const vec_t<1,TypeR>& reg, const typename vec_t<2,TypeV>::rtype& def = 0.0) {
+
     vec1i rr, rs;
     subregion(v, reg, rr, rs);
 
@@ -82,6 +86,46 @@ typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v, const
     sub[rs] = v[rr];
 
     return sub;
+}
+
+template<typename TypeV, typename TypeD = double>
+typename vec_t<2,TypeV>::effective_type translate(const vec_t<2,TypeV>& v, double dx, double dy,
+    const typename vec_t<2,TypeV>::rtype& def = 0.0) {
+
+    vec_t<2,rtype_t<TypeV>> trs = replicate(rtype_t<TypeV>(def), v.dims);
+    for (uint_t x = 0; x < v.dims[0]; ++x)
+    for (uint_t y = 0; y < v.dims[1]; ++y) {
+        double tx = x - dx;
+        double ty = y - dy;
+        int_t rx = round(tx);
+        int_t ry = round(ty);
+
+        if (rx < 0 || rx > int_t(v.dims[0])-1 || ry < 0 || ry > int_t(v.dims[1])-1) continue;
+        int_t nx, ny;
+        if (tx - rx > 0) {
+            nx = rx + 1;
+            if (nx > int_t(v.dims[0]-1)) continue;
+        } else {
+            nx = rx;
+            rx = nx - 1;
+            if (rx < 0) continue;
+        }
+        if (ty - ry > 0) {
+            ny = ry + 1;
+            if (ny > int_t(v.dims[1]-1)) continue;
+        } else {
+            ny = ry;
+            ry = ny - 1;
+            if (ry < 0) continue;
+        }
+
+        trs(x,y) = v(rx,ry)*(nx - tx)*(ny - ty) +
+                   v(nx,ry)*(tx - rx)*(ny - ty) +
+                   v(rx,ny)*(nx - tx)*(ty - ry) +
+                   v(nx,ny)*(tx - rx)*(ty - ry);
+    }
+
+    return trs;
 }
 
 vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
