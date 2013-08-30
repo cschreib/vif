@@ -932,7 +932,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
         fits_read_subset(wfptr, TFLOAT, p0, p1, inc, &null, wcut.data.data(), &anynul, &status);
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
-        if (total(!finite(cut) && !finite(wcut)) != 0) {
+        if (total(!finite(cut) || !finite(wcut)) != 0) {
             continue;
         }
 
