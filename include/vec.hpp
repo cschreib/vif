@@ -469,18 +469,19 @@ struct vec_t {
     vec_t& operator = (vec_t&&) = default;
 
     vec_t& operator = (const vec_t<Dim,Type*>& v) {
-        dims = v.dims;
-        data.resize(v.data.size());
-
         if (v.is_same(*this)) {
             std::vector<dtype> t; t.resize(v.data.size());
             for (uint_t i = 0; i < v.data.size(); ++i) {
                 t[i] = *v.data[i];
             }
+            dims = v.dims;
+            data.resize(v.data.size());
             for (uint_t i = 0; i < v.data.size(); ++i) {
                 data[i] = t[i];
             }
         } else {
+            dims = v.dims;
+            data.resize(v.data.size());
             for (uint_t i = 0; i < v.data.size(); ++i) {
                 data[i] = *v.data[i];
             }
@@ -1569,6 +1570,23 @@ vec1u uniq(const vec_t<Dim,Type>& v, const vec1u& sid) {
     }
 
     r.data.shrink_to_fit();
+    return r;
+}
+
+// For each value of the first vector, return 'true' if it is equal to any of the values of the
+// second vector, and 'false' otherwise.
+template<std::size_t Dim1, typename Type1, std::size_t Dim2 = Dim1, typename Type2 = Type1>
+vec1b equal(const vec_t<Dim1,Type1>& v1, const vec_t<Dim2,Type2>& v2) {
+    vec1b r(v1.dims);
+    for (uint_t i = 0; i < v1.size(); ++i) {
+        r[i] = false;
+        for (uint_t j = 0; j < v2.size(); ++j) {
+            if (v1[i] == v2[j]) {
+                r[i] = true;
+            }
+        }
+    }
+
     return r;
 }
 
