@@ -155,7 +155,7 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
         }
     }
 
-    if (pos != names.npos) {
+    if (pos != names.npos && pos != names.size()) {
         read_args_(argv, read, valid, names.substr(pos+1), std::forward<Args>(args)...);
     }
 }
