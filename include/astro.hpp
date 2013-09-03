@@ -1029,32 +1029,107 @@ struct template_fit_res_t {
     vec1d amp_sim;       // renormalization amplitude for each error realization's best fit
 };
 
-template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed>
-template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, double z, double d,
-    const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters) {
-
-    template_fit_res_t res;
+template<typename TypeLib, typename TypeFi>
+vec2d template_observed(const TypeLib& lib, double z, double d,
+    const vec_t<1,TypeFi>& filters) {
 
     // Move each SED to the observed frame
-    struct {
-        vec2d lam, sed;
-    } rflib;
-
-    rflib.lam = lib.lam*(1.0 + z);
-    rflib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
+    vec2d rflam = lib.lam*(1.0 + z);
+    vec2d rfsed = lsun2uJy(z, d, lib.lam, lib.sed);
 
     // Convolve each SED with the response curve of the filters
-    const uint_t nsed = rflib.sed.dims[0];
+    const uint_t nsed = rfsed.dims[0];
     const uint_t nfilter = filters.size();
-    res.flux = dblarr(nsed, nfilter);
+    vec2d flux = dblarr(nsed, nfilter);
     for (uint_t f = 0; f < nfilter; ++f) {
-        res.flux(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
+        flux(_,f) = sed2flux(filters[f], rflam, rfsed);
     }
+
+    return flux;
+}
+
+template<typename TypeLib, typename TypeFi, typename TypeZ, typename TypeD>
+vec2d template_observed(const TypeLib& lib, const vec_t<1,TypeZ>& z, const vec_t<1,TypeD>& d,
+    const vec_t<1,TypeFi>& filters) {
+
+    phypp_check(z.size() == d.size(),
+        "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
+
+    vec2d rflam = lib.lam*(1.0 + mean(z));
+    vec2d rfsed = dblarr(lib.sed.dims);
+
+    // Combine the SEDs of each source to build an effective "redshift convolved" SED in the
+    // observed frame
+    for (uint_t i = 0; i < z.size(); ++i) {
+        auto tlam = lib.lam*(1.0 + z[i]);
+        auto tsed = lsun2uJy(z[i], d[i], lib.lam, lib.sed);
+        rfsed += interpolate(tsed, tlam, rflam);
+    }
+
+    rfsed /= z.size();
+
+    // Convolve each SED with the response curve of the filters
+    const uint_t nsed = rfsed.dims[0];
+    const uint_t nfilter = filters.size();
+    vec2d flux = dblarr(nsed, nfilter);
+    for (uint_t f = 0; f < nfilter; ++f) {
+        flux(_,f) = sed2flux(filters[f], rflam, rfsed);
+    }
+
+    return flux;
+}
+
+template<typename TypeLib, typename TypeFi, typename TypeZ, typename TypeD>
+vec2d template_observed(const TypeLib& lib, const vec_t<2,TypeZ>& z, const vec_t<1,TypeD>& d,
+    const vec_t<1,TypeFi>& filters) {
+
+    phypp_check(z.dims[1] == d.dims[0],
+        "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
+
+    vec2d rflam = lib.lam*(1.0 + mean(z));
+    vec2d rfsed = dblarr(lib.sed.dims);
+
+    // Combine the SEDs of each source to build an effective "redshift convolved" SED in the
+    // observed frame
+    double weight = 0.0;
+    for (uint_t i = 0; i < z.dims[1]; ++i) {
+        auto tlam = lib.lam*(1.0 + z[i]);
+        auto tsed = z(1,i)*lsun2uJy(z(0,i), d[i], lib.lam, lib.sed);
+        for (uint_t j = 0; j < lib.sed.dims[0]; ++j) {
+            rfsed(j,_) += interpolate(tsed(j,_), tlam(j,_), rflam(j,_));
+        }
+
+        weight += z(1,i);
+    }
+
+    rfsed /= weight;
+
+    // Convolve each SED with the response curve of the filters
+    const uint_t nsed = rfsed.dims[0];
+    const uint_t nfilter = filters.size();
+    vec2d flux = dblarr(nsed, nfilter);
+    for (uint_t f = 0; f < nfilter; ++f) {
+        flux(_,f) = sed2flux(filters[f], rflam, rfsed);
+    }
+
+    return flux;
+}
+
+template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
+    typename TypeZ, typename TypeD>
+template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const TypeZ& z,
+   const TypeD& d, const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err,
+   const vec_t<1,TypeFi>& filters) {
+
+    template_fit_res_t res;
+    res.flux = template_observed(lib, z, d, filters);
 
     // Compute chi2 & renormalization factor
     auto weight = pow(err, -2);
     using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
 
+    const uint_t nsed = res.flux.dims[0];
+    const uint_t nfilter = filters.size();
     auto tmp1 = arr<ttype>(nsed);
     auto tmp2 = arr<ttype>(nsed);
     for (uint_t i = 0; i < nsed; ++i) {
@@ -1106,32 +1181,20 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, doubl
     return res;
 }
 
-template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed>
-template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, double z, double d,
+template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
+    typename TypeZ, typename TypeD>
+template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ& z, const TypeD& d,
     const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters) {
 
     template_fit_res_t res;
-
-    // Move each SED to the observed frame
-    struct {
-        vec2d lam, sed;
-    } rflib;
-
-    rflib.lam = lib.lam*(1.0 + z);
-    rflib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
-
-    // Convolve each SED with the response curve of the filters
-    const uint_t nsed = rflib.sed.dims[0];
-    const uint_t nfilter = filters.size();
-    res.flux = dblarr(nsed, nfilter);
-    for (uint_t f = 0; f < nfilter; ++f) {
-        res.flux(_,f) = sed2flux(filters[f], rflib.lam, rflib.sed);
-    }
+    res.flux = template_observed(lib, z, d, filters);
 
     // Compute chi2 & renormalization factor
     auto weight = pow(err, -2);
     using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
 
+    uint_t nsed = res.flux.dims[0];
+    const uint_t nfilter = filters.size();
     auto tmp1 = arr<ttype>(nsed);
     auto tmp2 = arr<ttype>(nsed);
     for (uint_t i = 0; i < nsed; ++i) {
