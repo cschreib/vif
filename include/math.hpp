@@ -1111,8 +1111,8 @@ bool is_sorted(const vec_t<1,Type>& v) {
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<typename TypeX2, typename TypeY = double, typename TypeX1 = double>
-auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
+template<std::size_t Dim, typename TypeX2, typename TypeY = double, typename TypeX1 = double>
+auto interpolate(const vec_t<Dim,TypeY>& y, const vec_t<Dim,TypeX1>& x, const vec_t<Dim,TypeX2>& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
@@ -1122,7 +1122,9 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
         "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
     uint_t nmax = x.size();
-    vec_t<1,decltype(y[0]*x[0])> r; r.reserve(nx.size());
+    vec_t<Dim,decltype(y[0]*x[0])> r;
+    r.reserve(nx.size());
+    r.dims = nx.dims;
     for (auto& tx : nx) {
         uint_t low = lower_bound(tx, x);
 
@@ -1141,7 +1143,7 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
             xlow = dref(x.data[0]); xup = dref(x.data[1]);
         }
 
-        r.push_back(ylow + (yup - ylow)*(tx - xlow)/(xup - xlow));
+        r.data.push_back(ylow + (yup - ylow)*(tx - xlow)/(xup - xlow));
     }
 
     return r;
