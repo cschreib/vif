@@ -376,6 +376,33 @@ double stddev(const vec_t<Dim,T>& v) {
     return sqrt(sum/v.size());
 }
 
+template<std::size_t Dim, typename Type, typename TypeB>
+vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
+    using rtype = dtype_t<Type>;
+    uint_t nbin = bins.dims[1];
+    vec1u counts(nbin);
+    for (uint_t i = 0; i < nbin; ++i) {
+        counts[i] = total(in_bin(data, bins(_,i)));
+    }
+
+    return counts;
+}
+
+template<std::size_t Dim, typename Type, typename TypeB, typename TypeW>
+vec1d histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
+    const vec_t<2,TypeB>& bins) {
+
+    using rtype = dtype_t<Type>;
+    uint_t nbin = bins.dims[1];
+    vec1d counts(nbin);
+    for (uint_t i = 0; i < nbin; ++i) {
+        vec1u ids = where(in_bin(data, bins(_,i)));
+        counts[i] = total(weight[ids]);
+    }
+
+    return counts;
+}
+
 template<std::size_t Dim, typename Type>
 void data_info_(const vec_t<Dim,Type>& v) {
     vec1u idok = where(finite(v));
