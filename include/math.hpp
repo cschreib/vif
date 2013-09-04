@@ -132,9 +132,18 @@ vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
     return r;
 }
 
+template<typename T>
+double randomn(T& seed) {
+    std::mt19937 generator(seed);
+    std::normal_distribution<double> distribution(0.0, 1.0);
+    double v = distribution(generator);
+    seed = generator();
+    return v;
+}
+
 template<typename T, typename ... Args>
-vec_t<sizeof...(Args),double> randomn(T& seed, Args&& ... args) {
-    vec_t<sizeof...(Args),double> v = dblarr(std::forward<Args>(args)...);
+auto randomn(T& seed, Args&& ... args) {
+    auto v = dblarr(std::forward<Args>(args)...);
 
     std::mt19937 generator(seed);
     std::normal_distribution<double> distribution(0.0, 1.0);
@@ -147,9 +156,18 @@ vec_t<sizeof...(Args),double> randomn(T& seed, Args&& ... args) {
     return v;
 }
 
+template<typename T>
+double randomu(T& seed) {
+    std::mt19937 generator(seed);
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    double v = distribution(generator);
+    seed = generator();
+    return v;
+}
+
 template<typename T, typename ... Args>
-vec_t<sizeof...(Args),double> randomu(T& seed, Args&& ... args) {
-    vec_t<sizeof...(Args),double> v = dblarr(std::forward<Args>(args)...);
+auto randomu(T& seed, Args&& ... args) {
+    auto v = dblarr(std::forward<Args>(args)...);
 
     std::mt19937 generator(seed);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
