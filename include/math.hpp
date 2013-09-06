@@ -180,6 +180,14 @@ auto randomu(T& seed, Args&& ... args) {
     return v;
 }
 
+template<typename T, typename TMi, typename TMa, typename ... Args>
+auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) {
+    auto v = randomu(seed, std::forward<Args>(args)...);
+    using rtype = decltype(mi + ma);
+    return vec_t<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
+}
+
+
 template<std::size_t Dim, typename Type, typename T>
 auto shuffle(const vec_t<Dim,Type>& v, T& seed) {
     return v[sort(randomu(seed, v.size()))];
