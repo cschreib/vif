@@ -151,7 +151,7 @@ struct make_vrtype_i {
     }
 
     static type make(vtype& v, const Args& ... i) {
-        return dref(v.data[make_(v, 0, i...)]);
+        return reinterpret_cast<type>(dref(v.data[make_(v, 0, i...)]));
     }
 
     static type make(vtype& v, const std::tuple<Args...>& i) {
@@ -641,7 +641,29 @@ struct vec_t {
     }
 
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
+        vec_t<1,Type*> v(*this);
+        v.data.resize(i.data.size());
+        v.dims[0] = i.data.size();
+        for (uint_t j = 0; j < i.data.size(); ++j) {
+            v.data[j] = &vb_ref<Type>::get(data[to_idx(i[j])]);
+        }
+        return v;
+    }
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
+        vec_t<1,const Type*> v(*this);
+        v.data.resize(i.data.size());
+        v.dims[0] = i.data.size();
+        for (uint_t j = 0; j < i.data.size(); ++j) {
+            v.data[j] = &vb_ref<Type>::get(data[to_idx(i[j])]);
+        }
+        return v;
+    }
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
         vec_t<1,const Type*> v(*this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
@@ -924,7 +946,29 @@ struct vec_t<Dim,Type*> {
     }
 
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
+        vec_t<1,Type*> v(parent);
+        v.data.resize(i.data.size());
+        v.dims[0] = i.data.size();
+        for (uint_t j = 0; j < i.data.size(); ++j) {
+            v.data[j] = data[to_idx(i[j])];
+        }
+        return v;
+    }
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
+        vec_t<1,const Type*> v(parent);
+        v.data.resize(i.data.size());
+        v.dims[0] = i.data.size();
+        for (uint_t j = 0; j < i.data.size(); ++j) {
+            v.data[j] = data[to_idx(i[j])];
+        }
+        return v;
+    }
+
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
         vec_t<1,const Type*> v(parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
@@ -1069,6 +1113,15 @@ MAKE_TYPEDEFS(5)
 MAKE_TYPEDEFS(6)
 
 #undef MAKE_TYPEDEFS
+
+// A few traits
+template<typename T>
+struct vec_dim;
+
+template<std::size_t Dim, typename Type>
+struct vec_dim<vec_t<Dim,Type>> {
+    static const std::size_t value = Dim;
+};
 
 // Create vectors à la IDL.
 template<typename T, typename ... Dims>
