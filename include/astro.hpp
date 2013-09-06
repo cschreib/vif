@@ -968,11 +968,11 @@ vec_t<2,rtype_t<Type>> qstack_median(const vec_t<3,Type>& fcube) {
 
 template<typename Type, typename TypeS>
 vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
-    TypeS& seed) {
+    uint_t nsel, TypeS& seed) {
 
     vec_t<3,rtype_t<Type>> bs(nbstrap, fcube.dims[1], fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
-        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, fcube.dims[0]/2);
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
         bs(i,_,_) = qstack_mean(fcube(ids,_,_));
     }
 
@@ -981,11 +981,11 @@ vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t 
 
 template<typename Type, typename TypeS>
 vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube,
-    uint_t nbstrap, TypeS& seed) {
+    uint_t nbstrap, uint_t nsel, TypeS& seed) {
 
     vec_t<3,rtype_t<Type>> bs(nbstrap, fcube.dims[1], fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
-        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, fcube.dims[0]/2);
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
         bs(i,_,_) = qstack_mean(fcube(ids,_,_), wcube(ids,_,_));
     }
 
@@ -994,11 +994,11 @@ vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, const v
 
 template<typename Type, typename TypeS>
 vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
-    TypeS& seed) {
+    uint_t nsel, TypeS& seed) {
 
     vec_t<3,rtype_t<Type>> bs(nbstrap, fcube.dims[1], fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
-        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, fcube.dims[0]/2);
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
         bs(i,_,_) = qstack_median(fcube(ids,_,_));
     }
 
