@@ -105,6 +105,9 @@ int main(int argc, char* argv[]) {
 
         print("'where' function");
         check(where(b), "1, 3");
+
+        print("'equal' function");
+        check(where(equal(i, {3, 1})), "1, 3");
     }
 
     {
@@ -266,6 +269,14 @@ int main(int argc, char* argv[]) {
         match(t1, t2, id1, id2);
         check(id1, "5, 3, 1");
         check(id2, "0, 2, 4");
+    }
+
+    {
+        print("'histogram' function");
+        vec1i t = {1,2,3,4,5,5,8,9,6,5,7,4};
+        vec2i bins = {{0,2,5,8,10}, {2,5,8,10,12}};
+        vec1u counts = histogram(t, bins);
+        check(counts, "1, 4, 5, 2, 0");
     }
 
     {
