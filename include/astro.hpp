@@ -794,8 +794,9 @@ void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& ban
     append<1>(pool.flux_err, terr);
 }
 
+template<typename Type>
 void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint_t hsize,
-    vec3f& cube, vec1u& ids) {
+    vec_t<3,Type>& cube, vec1u& ids) {
 
     phypp_check(file::exists(filename), "cannot stack on inexistant file '"+filename+"'");
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
@@ -841,14 +842,15 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
             continue;
         }
 
-        vec2f cut(2*hsize+1, 2*hsize+1);
+        vec_t<2,Type> cut(2*hsize+1, 2*hsize+1);
 
-        float null = fnan;
+        Type null = fnan;
         int anynul = 0;
         long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
         long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
         long inc[2] = {1, 1};
-        fits_read_subset(fptr, TFLOAT, p0, p1, inc, &null, cut.data.data(), &anynul, &status);
+        fits_read_subset(fptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
+            cut.data.data(), &anynul, &status);
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
         if (total(!finite(cut)) != 0) {
@@ -862,8 +864,9 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
     fits_close_file(fptr, &status);
 }
 
+template<typename Type>
 void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const std::string& wfile,
-	uint_t hsize, vec3f& cube, vec3f& wcube, vec1u& ids) {
+	uint_t hsize, vec_t<3,Type>& cube, vec_t<3,Type>& wcube, vec1u& ids) {
 
     phypp_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
     phypp_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
@@ -920,16 +923,19 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
             continue;
         }
 
-        vec2f cut(2*hsize+1, 2*hsize+1);
-        vec2f wcut(2*hsize+1, 2*hsize+1);
+        vec_t<2,Type> cut(2*hsize+1, 2*hsize+1);
+        vec_t<3,Type> wcut(2*hsize+1, 2*hsize+1);
 
-        float null = fnan;
+        Type null = fnan;
         int anynul = 0;
         long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
         long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
         long inc[2] = {1, 1};
-        fits_read_subset(fptr,  TFLOAT, p0, p1, inc, &null, cut.data.data(),  &anynul, &status);
-        fits_read_subset(wfptr, TFLOAT, p0, p1, inc, &null, wcut.data.data(), &anynul, &status);
+
+        fits_read_subset(fptr,  fits::traits<Type>::ttype, p0, p1, inc, &null,
+            cut.data.data(),  &anynul, &status);
+        fits_read_subset(wfptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
+            wcut.data.data(), &anynul, &status);
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
         if (total(!finite(cut) || !finite(wcut)) != 0) {
@@ -945,16 +951,58 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
     fits_close_file(wfptr, &status);
 }
 
-vec2f qstack_mean(const vec3f& fcube) {
+template<typename Type>
+vec_t<2,rtype_t<Type>> qstack_mean(const vec_t<3,Type>& fcube) {
     return mean(fcube, 0);
 }
 
-vec2f qstack_mean(const vec3f& fcube, const vec3f& wcube) {
+template<typename Type>
+vec_t<2,rtype_t<Type>> qstack_mean(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube) {
     return total(fcube*wcube, 0)/total(wcube, 0);
 }
 
-vec2f qstack_median(const vec3f& fcube) {
+template<typename Type>
+vec_t<2,rtype_t<Type>> qstack_median(const vec_t<3,Type>& fcube) {
     return median(fcube, 0);
+}
+
+template<typename Type, typename TypeS>
+vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
+    TypeS& seed) {
+
+    vec_t<3,rtype_t<Type>> bs(nbstrap, fcube.dims[1], fcube.dims[2]);
+    for (uint_t i = 0; i < nbstrap; ++i) {
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, fcube.dims[0]/2);
+        bs(i,_,_) = qstack_mean(fcube(ids,_,_));
+    }
+
+    return bs;
+}
+
+template<typename Type, typename TypeS>
+vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube,
+    uint_t nbstrap, TypeS& seed) {
+
+    vec_t<3,rtype_t<Type>> bs(nbstrap, fcube.dims[1], fcube.dims[2]);
+    for (uint_t i = 0; i < nbstrap; ++i) {
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, fcube.dims[0]/2);
+        bs(i,_,_) = qstack_mean(fcube(ids,_,_), wcube(ids,_,_));
+    }
+
+    return bs;
+}
+
+template<typename Type, typename TypeS>
+vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
+    TypeS& seed) {
+
+    vec_t<3,rtype_t<Type>> bs(nbstrap, fcube.dims[1], fcube.dims[2]);
+    for (uint_t i = 0; i < nbstrap; ++i) {
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, fcube.dims[0]/2);
+        bs(i,_,_) = qstack_median(fcube(ids,_,_));
+    }
+
+    return bs;
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2].
