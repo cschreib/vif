@@ -73,7 +73,7 @@ void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1i& rr, ve
     rs = flatten(indgen(nx,ny)(sx,sy));
 }
 
-template<typename TypeV, typename TypeR = int_t>
+template<typename TypeV, typename TypeR>
 typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
     const vec_t<1,TypeR>& reg, const typename vec_t<2,TypeV>::rtype& def = 0.0) {
 
@@ -86,6 +86,13 @@ typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
     sub[rs] = v[rr];
 
     return sub;
+}
+
+template<typename TypeV, typename TypeR>
+typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
+    std::initializer_list<TypeR>&& reg, const typename vec_t<2,TypeV>::rtype& def = 0.0) {
+
+    return subregion(v, vec_t<1,TypeR>(std::move(reg)), def);
 }
 
 template<typename TypeV, typename TypeD = double>
