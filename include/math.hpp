@@ -1216,7 +1216,9 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) 
 
 template<typename TypeX, typename TypeY>
 auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y) -> decltype(0.5*y[0]*x[0]) {
-    assert(n_elements(x) == n_elements(y));
+    phypp_check(n_elements(x) == n_elements(y),
+        "integrate: incompatible x and y array dimensions ("+strn(x.size())+" vs "+
+        strn(y.size())+")");
 
     decltype(0.5*y[0]*x[0]) r = 0;
     for (uint_t i = 0; i < x.size()-1; ++i) {
