@@ -24,7 +24,7 @@ std::string today() {
 template<typename T>
 std::string time_str(T t) {
     std::string date;
-    
+
     if (t < 1.0) {
         int mag = floor(log10(t));
         if (mag >= -3) {
@@ -39,17 +39,17 @@ std::string time_str(T t) {
         std::size_t hour = floor(t/(60*60)) - day*24;
         std::size_t min  = floor(t/60) - day*24*60 - hour*60;
         std::size_t sec  = floor(t) - day*24*60*60 - hour*60*60 - min*60;
-        
+
         if (day  != 0) date += strn(day)+'d';
         if (hour != 0) date += strn(hour,2)+'h';
         if (min  != 0) date += strn(min,2)+'m';
         date += strn(sec,2)+'s';
-        
+
         if (date[0] == '0' && date.size() != 2) {
             date.erase(0,1);
         }
     }
-    
+
     return date;
 }
 
@@ -62,16 +62,16 @@ std::string seconds_str(T t) {
     std::size_t ms  = floor((t - sec)*1000);
     std::size_t us  = floor(((t - sec)*1000 - ms)*1000);
     std::size_t ns  = floor((((t - sec)*1000 - ms)*1000 - us)*1000);
-        
+
     if (sec != 0)                  date += strn(sec)+"s";
     if (ms  != 0 || !date.empty()) date += strn(ms,3)+"ms";
     if (us  != 0 || !date.empty()) date += strn(us,3)+"us";
     date += strn(us,3)+"ns";
-    
+
     while (date[0] == '0' && date.size() != 3) {
         date.erase(0,1);
     }
-    
+
     return date;
 }
 
@@ -98,6 +98,7 @@ struct progress_t {
     std::size_t i = 0;
     std::size_t n;
     std::size_t max_length = 0;
+    bool ended = false;
 };
 
 // Begin timing an iterative process of 'n' iterations
@@ -134,6 +135,8 @@ void progress_(progress_t& p) {
 // Updates a progress bar for an iterative process ('p' is created from 'progress_start')
 template<typename M = uint_t>
 void progress(progress_t& p, const M& mod = 1) {
+    if (p.ended) return;
+
     if (p.i % mod == 0 || p.i == p.n-1) {
         progress_(p);
     }
@@ -142,6 +145,7 @@ void progress(progress_t& p, const M& mod = 1) {
 
     if (p.i >= p.n) {
         std::cout << std::endl;
+        p.ended = true;
     }
 }
 
@@ -149,11 +153,14 @@ void progress(progress_t& p, const M& mod = 1) {
 // 'i' is the current iteration number.
 template<typename I, typename M = uint_t>
 void print_progress(progress_t& p, const I& ti, const M& mod = 1) {
+    if (p.ended) return;
+
     p.i = ti;
     if (p.i >= p.n-1) {
         p.i = p.n-1;
         progress_(p);
         std::cout << std::endl;
+        p.ended = true;
     } else if (p.i % mod == 0) {
         progress_(p);
     }
