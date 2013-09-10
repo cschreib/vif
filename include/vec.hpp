@@ -565,7 +565,7 @@ struct vec_t {
         data.reserve(n);
     }
 
-    vec_t<Dim,Type>& concretise() const {
+    const vec_t<Dim,Type>& concretise() const {
         return *this;
     }
 
