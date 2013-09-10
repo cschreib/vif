@@ -1859,6 +1859,28 @@ void prepend(vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
     t1.dims[0] += t2.dims[0];
 }
 
+template<typename Type>
+vec_t<1,rtype_t<Type>> shift(const vec_t<1,Type>& v, int_t n, rtype_t<Type> def = 0) {
+    vec_t<1,rtype_t<Type>> tmp;
+
+    if (uint_t(abs(n)) > v.dims[0]) {
+        tmp = replicate(def, v.dims[0]);
+        return tmp;
+    }
+
+    tmp = v.concretise();
+
+    if (n < 0) {
+        tmp.data.erase(tmp.data.begin(), tmp.data.begin()-n);
+        tmp.data.insert(tmp.data.end(), -n, def);
+    } else if (n > 0) {
+        tmp.data.erase(tmp.data.end()-n, tmp.data.end());
+        tmp.data.insert(tmp.data.begin(), n, def);
+    }
+
+    return tmp;
+}
+
 template<typename Type1, typename Type2>
 vec_t<1,rtype_t<Type1>> merge(const vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
     using rtype = rtype_t<Type1>;
