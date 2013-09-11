@@ -1292,6 +1292,26 @@ auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>:
     return buffer.back();
 }
 
+// Perform the convolution of two arrays, assuming that they are based on the same 'x' coordinate
+template<typename TypeX, typename TypeY1, typename TypeY2>
+auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,TypeY2>& y2) ->
+    vec_t<1,decltype(x[0]*y1[0]*y2[0])> {
+
+    phypp_check(x.size() > 3, "convolve needs arrays of at least 3 elements to work");
+
+    vec_t<1,decltype(x[0]*y1[0]*y2[0])> r(x.size());
+    for (uint_t i = 0; i < x.size(); ++i) {
+        auto dx = x[i];
+        if (i == 0) dx = x[i+1] - dx;
+        else dx -= x[i-1];
+
+        auto tmp = interpolate(y2, x + x[i], x);
+        r += y1[i]*tmp*dx;
+    }
+
+    return r;
+}
+
 // Build the convex hull of a set of points, returning the indices of the points that form the hull
 // in counter-clockwise order.
 // Uses the monotone chain algorithm, taken from:
