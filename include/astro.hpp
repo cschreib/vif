@@ -924,7 +924,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
         }
 
         vec_t<2,Type> cut(2*hsize+1, 2*hsize+1);
-        vec_t<3,Type> wcut(2*hsize+1, 2*hsize+1);
+        vec_t<2,Type> wcut(2*hsize+1, 2*hsize+1);
 
         Type null = fnan;
         int anynul = 0;
