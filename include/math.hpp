@@ -392,8 +392,8 @@ vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>
     return r;
 }
 
-template<std::size_t Dim, typename T>
-double rms(const vec_t<Dim,T>& v) {
+template<std::size_t Dim, typename Type>
+double rms(const vec_t<Dim,Type>& v) {
     double sum = 0;
     for (auto& t : v) {
         sum += t*t;
@@ -402,9 +402,21 @@ double rms(const vec_t<Dim,T>& v) {
     return sqrt(sum/v.size());
 }
 
-template<std::size_t Dim, typename T>
-double stddev(const vec_t<Dim,T>& v) {
+template<std::size_t Dim, typename Type>
+vec_t<Dim-1,double> rms(const vec_t<Dim,Type>& v, uint_t dim) {
+    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
+    return run_index_<fptr, &rms<1,rtype_t<Type>>>(v, dim);
+}
+
+template<std::size_t Dim, typename Type>
+double stddev(const vec_t<Dim,Type>& v) {
     return rms(v - mean(v));
+}
+
+template<std::size_t Dim, typename Type>
+vec_t<Dim-1,double> stddev(const vec_t<Dim,Type>& v, uint_t dim) {
+    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
+    return run_index_<fptr, &stddev<1,rtype_t<Type>>>(v, dim);
 }
 
 template<std::size_t Dim, typename Type, typename TypeB>
