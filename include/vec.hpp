@@ -1393,6 +1393,38 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
             v1.data[i] = v1.data[i] op dref(v2.data[i]); \
         } \
         return std::move(v1); \
+    } \
+    template<std::size_t Dim, typename T, typename enable = typename std::enable_if< \
+        is_bool_t<T>::value>::type> \
+    vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v1, bool b) { \
+        vec_t<Dim,bool> tv = v1; \
+        for (uint_t i = 0; i < v1.size(); ++i) { \
+            tv.data[i] = tv.data[i] op b; \
+        } \
+        return tv; \
+    } \
+    template<std::size_t Dim, typename T, typename enable = typename std::enable_if< \
+        is_bool_t<T>::value>::type> \
+    vec_t<Dim,bool> operator op (bool b, const vec_t<Dim,T>& v2) { \
+        vec_t<Dim,bool> tv = v2; \
+        for (uint_t i = 0; i < v2.size(); ++i) { \
+            tv.data[i] = b op tv.data[i]; \
+        } \
+        return tv; \
+    } \
+    template<std::size_t Dim> \
+    vec_t<Dim,bool> operator op (vec_t<Dim,bool>&& v1, bool b) { \
+        for (uint_t i = 0; i < v1.size(); ++i) { \
+            v1.data[i] = v1.data[i] op b; \
+        } \
+        return std::move(v1); \
+    } \
+    template<std::size_t Dim> \
+    vec_t<Dim,bool> operator op (bool b, vec_t<Dim,bool>&& v2) { \
+        for (uint_t i = 0; i < v2.size(); ++i) { \
+            v2.data[i] = b op v2.data[i]; \
+        } \
+        return std::move(v2); \
     }
 
 VECTORIZE(&&)
