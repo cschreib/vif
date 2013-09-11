@@ -498,8 +498,6 @@ namespace fits {
     }
 
     // Load the content of a FITS file into a set of arrays.
-    void read_table_(fitsfile* fptr) {}
-
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
     void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
@@ -661,10 +659,12 @@ namespace fits {
         reflex::foreach_member(data, do_read);
     }
 
+    void read_table_(fitsfile* fptr, bool loose) {}
+
     template<typename T, typename ... Args>
-    void read_table_(fitsfile* fptr, const std::string& name, T& v, Args&& ... args) {
-        read_table_impl_(fptr, name, v);
-        read_table_(fptr, std::forward<Args>(args)...);
+    void read_table_(fitsfile* fptr, bool loose, const std::string& name, T& v, Args&& ... args) {
+        read_table_impl_(fptr, name, v, loose);
+        read_table_(fptr, loose, std::forward<Args>(args)...);
     }
 
     template<typename ... Args>
@@ -682,7 +682,33 @@ namespace fits {
                 "too few collumns in this FITS file ("+
                 strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
 
-            read_table_(fptr, name, std::forward<Args>(args)...);
+            read_table_(fptr, false, name, std::forward<Args>(args)...);
+
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+name);
+            error(e.msg);
+            throw;
+        }
+    }
+
+    template<typename ... Args>
+    void read_table_loose(const std::string& filename, const std::string& name, Args&& ... args) {
+        fitsfile* fptr;
+        int status = 0;
+
+        try {
+            fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file");
+
+            int ncol;
+            fits_get_num_cols(fptr, &ncol, &status);
+            phypp_check_fits((sizeof...(Args)+1)/2 <= std::size_t(ncol),
+                "too few collumns in this FITS file ("+
+                strn(ncol)+" vs "+strn((sizeof...(Args)+1)/2)+")");
+
+            read_table_(fptr, true, name, std::forward<Args>(args)...);
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
