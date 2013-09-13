@@ -157,4 +157,19 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
     return mean(m,2);
 }
 
+template<typename Type>
+vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
+    vec_t<1, rtype_t<Type>> res(npix);
+    uint_t hsx = img.dims[0]/2;
+    uint_t hsy = img.dims[1]/2;
+    res[0] = img(hsx,hsy);
+    for (uint_t i = 1; i < npix; ++i) {
+        vec2d mask = circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i)*
+            (1.0 - circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i-1));
+        res[i] = total(mask*img)/total(mask);
+    }
+
+    return res;
+}
+
 #endif
