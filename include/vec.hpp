@@ -130,15 +130,15 @@ struct make_vtype {
 // The result is a scalar.
 template<std::size_t Dim, typename Type, typename ... Args>
 struct make_vrtype_i {
-    using type = dtype_t<typename std::remove_pointer<Type>::type>&;
-    using vrtype = vec_t<Dim, typename make_vtype<Type>::type>;
-    using vtype = typename std::conditional<std::is_const<Type>::value, const vrtype, vrtype>::type;
+    using rptype = typename std::remove_pointer<Type>::type;
+    using type = dtype_t<rptype>&;
 
+    template<typename vtype>
     static uint_t make_(vtype& vi, uint_t idx) {
         return idx;
     }
 
-    template<typename T, typename ... Args2>
+    template<typename vtype, typename T, typename ... Args2>
     static uint_t make_(vtype& v, uint_t idx, const T& ix, const Args2& ... i) {
         uint_t pitch = 1;
         for (uint_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
@@ -150,15 +150,17 @@ struct make_vrtype_i {
         return make_(v, idx, i...);
     }
 
+    template<typename vtype>
     static type make(vtype& v, const Args& ... i) {
         return reinterpret_cast<type>(dref(v.data[make_(v, 0, i...)]));
     }
 
+    template<typename vtype>
     static type make(vtype& v, const std::tuple<Args...>& i) {
         return make_tuple_1(v, i, gen_seq_t<sizeof...(Args)>());
     }
 
-    template<std::size_t ... S>
+    template<typename vtype, std::size_t ... S>
     static type make_tuple_1(vtype& v, const std::tuple<Args...>& i, seq_t<S...>) {
         return make(v, std::get<S>(i)...);
     }
@@ -166,15 +168,15 @@ struct make_vrtype_i {
 
 template<typename Type, typename ... Args>
 struct make_vrtype_i<1, Type, Args...> {
-    using type = dtype_t<typename std::remove_pointer<Type>::type>&;
-    using vrtype = vec_t<1, typename make_vtype<Type>::type>;
-    using vtype = typename std::conditional<std::is_const<Type>::value, const vrtype, vrtype>::type;
+    using rptype = typename std::remove_pointer<Type>::type;
+    using type = dtype_t<rptype>&;
 
+    template<typename vtype>
     static type make(vtype& v, const std::tuple<Args...>& i) {
         return dref(v.data[v.to_idx(std::get<0>(i))]);
     }
 
-    template<typename T>
+    template<typename vtype, typename T>
     static type make(vtype& v, const T& i) {
         return dref(v.data[v.to_idx(i)]);
     }
@@ -194,83 +196,101 @@ void* get_parent(const vec_t<Dim,Type*>& v) {
 // The result is another array.
 template<std::size_t Dim, typename Type, typename ... Args>
 struct make_vrtype_v {
-    static const std::size_t ODim = count_vec<decay_t<Args>...>::value + count_same<placeholder_t, decay_t<Args>...>::value;
-    using type = vec_t<ODim, typename std::remove_pointer<Type>::type*>;
-    using vrtype = vec_t<Dim, typename make_vtype<Type>::type>;
-    using vtype = typename std::conditional<std::is_const<Type>::value, const vrtype, vrtype>::type;
+    static const std::size_t ODim = count_vec<decay_t<Args>...>::value +
+        count_same<placeholder_t, decay_t<Args>...>::value;
+    using rptype = typename std::remove_pointer<Type>::type;
+    using type = vec_t<ODim, rptype*>;
 
-    template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
+    template<typename vtype, typename T, typename enable =
+        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
     static void resize_(vtype& v, type& t, cte_t<ODim>, const T& ix) {
         t.resize();
     }
 
+    template<typename vtype>
     static void resize_(vtype& v, type& t, cte_t<ODim-1>, placeholder_t) {
         t.dims[ODim-1] = v.dims[Dim-1];
         t.resize();
     }
 
-    template<typename T>
+    template<typename vtype, typename T>
     static void resize_(vtype& v, type& t, cte_t<ODim-1>, const vec_t<1,T>& r) {
         t.dims[ODim-1] = r.data.size();
         t.resize();
     }
 
-    template<std::size_t M, typename T, typename ... Args2, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
+    template<typename vtype, std::size_t M, typename T, typename ... Args2, typename enable =
+        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
     static void resize_(vtype& v, type& t, cte_t<M>, const T& ix, const Args2&... i) {
         resize_(v, t, cte_t<M>(), i...);
     }
 
-    template<std::size_t M, typename ... Args2>
+    template<typename vtype, std::size_t M, typename ... Args2>
     static void resize_(vtype& v, type& t, cte_t<M>, placeholder_t, const Args2&... i) {
         t.dims[M] = v.dims[Dim-1-sizeof...(Args2)];
         resize_(v, t, cte_t<M+1>(), i...);
     }
 
-    template<std::size_t M, typename T, typename ... Args2>
+    template<typename vtype, std::size_t M, typename T, typename ... Args2>
     static void resize_(vtype& v, type& t, cte_t<M>, const vec_t<1,T>& r, const Args2&... i) {
         t.dims[M] = r.data.size();
         resize_(v, t, cte_t<M+1>(), i...);
     }
 
 
-    template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const T& ix) {
+    template<typename vtype, typename T, typename enable =
+        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
+    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
+        uint_t& itx, const T& ix) {
+
         t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
         ++itx;
     }
 
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, placeholder_t) {
+    template<typename vtype>
+    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
+        uint_t& itx, placeholder_t) {
+
         for (uint_t j = 0; j < v.dims[Dim-1]; ++j) {
             t.data[itx] = ref(v.data[ivx+j]);
             ++itx;
         }
     }
 
-    template<typename T>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const vec_t<1,T>& r) {
+    template<typename vtype, typename T>
+    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
+        uint_t& itx, const vec_t<1,T>& r) {
+
         for (uint_t j = 0; j < r.data.size(); ++j) {
             t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(dref(r.data[j]))]);
             ++itx;
         }
     }
 
-    template<typename T, typename ... Args2, typename enable = typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const T& ix, const Args2&... i) {
+    template<typename vtype, typename T, typename ... Args2, typename enable =
+        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
+    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
+        uint_t& itx, const T& ix, const Args2&... i) {
+
         make_(v, ivx +
             v.template to_idx<Dim-1-sizeof...(Args2)>(ix)*pitch[Dim-1-sizeof...(Args2)],
             pitch, t, itx, i...
         );
     }
 
-    template<typename ... Args2>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, placeholder_t, const Args2&... i) {
+    template<typename vtype, typename ... Args2>
+    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
+        uint_t& itx, placeholder_t, const Args2&... i) {
+
         for (uint_t j = 0; j < v.dims[Dim-1-sizeof...(Args2)]; ++j) {
             make_(v, ivx + j*pitch[Dim-1-sizeof...(Args2)], pitch, t, itx, i...);
         }
     }
 
-    template<typename T, typename ... Args2>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t, uint_t& itx, const vec_t<1,T>& r, const Args2&... i) {
+    template<typename vtype, typename T, typename ... Args2>
+    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
+        uint_t& itx, const vec_t<1,T>& r, const Args2&... i) {
+
         for (uint_t j = 0; j < r.data.size(); ++j) {
             make_(v, ivx +
                 v.template to_idx<Dim-1-sizeof...(Args2)>(dref(r.data[j]))*
@@ -279,6 +299,7 @@ struct make_vrtype_v {
         }
     }
 
+    template<typename vtype>
     static type make(vtype& v, const Args&... i) {
         type t(get_parent(v));
         resize_(v, t, cte_t<0>(), i...);
@@ -297,11 +318,12 @@ struct make_vrtype_v {
         return t;
     }
 
+    template<typename vtype>
     static type make(vtype& v, const std::tuple<Args...>& i) {
         return make_tuple_(v, i, gen_seq_t<sizeof...(Args)>());
     }
 
-    template<std::size_t ... S>
+    template<typename vtype, std::size_t ... S>
     static type make_tuple_(vtype& v, const std::tuple<Args...>& i, seq_t<S...>) {
         return make(v, std::get<S>(i)...);
     }
