@@ -244,6 +244,34 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
     return r;
 }
 
+template<typename F, std::size_t Dim, typename Type>
+auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& f) -> vec_t<Dim-1,typename return_type<F>::type> {
+    vec_t<Dim-1,typename return_type<F>::type> r;
+    for (uint_t i = 0; i < dim; ++i) {
+        r.dims[i] = v.dims[i];
+    }
+    for (uint_t i = dim+1; i < Dim; ++i) {
+        r.dims[i-1] = v.dims[i];
+    }
+    r.resize();
+
+    uint_t mpitch = 1;
+    for (uint_t i = dim+1; i < Dim; ++i) {
+        mpitch *= v.dims[i];
+    }
+
+    typename vec_t<1,Type>::effective_type tmp = arr<rtype_t<Type>>(v.dims[dim]);
+    for (uint_t i = 0; i < r.size(); ++i) {
+        for (uint_t j = 0; j < v.dims[dim]; ++j) {
+            tmp[j] = dref(v.data[(i%mpitch) + ((i/mpitch)*v.dims[dim] + j)*mpitch]);
+        }
+
+        r[i] = f(tmp);
+    }
+
+    return r;
+}
+
 template<std::size_t Dim, typename Type>
 double total(const vec_t<Dim,Type>& v) {
     double total = 0;
