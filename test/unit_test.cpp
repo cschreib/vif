@@ -380,6 +380,14 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'run_dim' function");
+        vec2i v = {{1,2,3},{4,5,6}};
+        vec1d mv = mean(v, 0);
+        vec1d tmv = run_dim(v, 0, [](const vec1d& d) { return mean(d); });
+        check(total(mv != tmv), "0");
+    }
+
+    {
         print("'replicate' function");
         vec1i v = replicate(3, 5);
         check(v.dims, "5");
