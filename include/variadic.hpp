@@ -129,10 +129,22 @@ void set_array(std::array<T,N>& v, Args&& ... args) {
 }
 
 template<typename T>
-struct return_type;
+struct return_type {
+    using type = typename return_type<decltype(&T::operator())>::type;
+};
 
 template<typename R, typename ... Args>
 struct return_type<R (*)(Args...)> {
+    using type = R;
+};
+
+template<typename R, typename T, typename ... Args>
+struct return_type<R (T::*)(Args...)> {
+    using type = R;
+};
+
+template<typename R, typename T, typename ... Args>
+struct return_type<R (T::*)(Args...) const> {
     using type = R;
 };
 
