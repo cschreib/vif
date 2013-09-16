@@ -327,7 +327,7 @@ int main(int argc, char* argv[]) {
 
     {
         print("'randomn', 'mean', 'median', 'percentile' functions");
-        uint_t seed = 42;
+        auto seed = make_seed(42);
         uint_t ntry = 20000;
         vec1d r = randomn(seed, ntry);
 
@@ -350,7 +350,7 @@ int main(int argc, char* argv[]) {
 
     {
         print("'shuffle' function");
-        uint_t seed = 42;
+        auto seed = make_seed(42);
         vec1i i = {4,5,-8,5,2,0};
         vec1i si = shuffle(i, seed);
         vec1u id1, id2;
@@ -683,7 +683,7 @@ int main(int argc, char* argv[]) {
         vec1i id = uniq(v);
         check(id, "0, 1, 4, 6, 7, 9");
 
-        uint_t seed = 42;
+        auto seed = make_seed(42);
         v = shuffle(v, seed);
         vec1i sid = sort(v);
         vec1i id2 = uniq(v, sid);
