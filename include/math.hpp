@@ -132,52 +132,52 @@ vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
     return r;
 }
 
+using seed_t = std::mt19937;
+
+template<typename T>
+seed_t make_seed(T seed) {
+    return std::mt19937(seed);
+}
+
 template<typename T>
 double randomn(T& seed) {
-    std::mt19937 generator(seed);
     std::normal_distribution<double> distribution(0.0, 1.0);
-    double v = distribution(generator);
-    seed = generator();
-    return v;
+    return distribution(seed);
 }
 
 template<typename T, typename ... Args>
 auto randomn(T& seed, Args&& ... args) {
     auto v = dblarr(std::forward<Args>(args)...);
-
-    std::mt19937 generator(seed);
     std::normal_distribution<double> distribution(0.0, 1.0);
     for (uint_t i = 0; i < v.size(); ++i) {
-        v.data[i] = distribution(generator);
+        v.data[i] = distribution(seed);
     }
-
-    seed = generator();
 
     return v;
 }
 
 template<typename T>
 double randomu(T& seed) {
-    std::mt19937 generator(seed);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    double v = distribution(generator);
-    seed = generator();
-    return v;
+    return distribution(seed);
 }
 
 template<typename T, typename ... Args>
 auto randomu(T& seed, Args&& ... args) {
     auto v = dblarr(std::forward<Args>(args)...);
-
-    std::mt19937 generator(seed);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
     for (uint_t i = 0; i < v.size(); ++i) {
-        v.data[i] = distribution(generator);
+        v.data[i] = distribution(seed);
     }
 
-    seed = generator();
-
     return v;
+}
+
+template<typename T, typename TMi, typename TMa>
+auto randomi(T& seed, TMi mi, TMa ma) -> decltype(mi + ma) {
+    using rtype = decltype(mi + ma);
+    std::uniform_int_distribution<rtype> distribution(mi, ma);
+    return distribution(seed);
 }
 
 template<typename T, typename TMi, typename TMa, typename ... Args>
@@ -187,10 +187,10 @@ auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) {
     return vec_t<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
 }
 
-
 template<std::size_t Dim, typename Type, typename T>
-auto shuffle(const vec_t<Dim,Type>& v, T& seed) {
-    return v[sort(randomu(seed, v.size()))];
+auto shuffle(vec_t<Dim,Type> v, T& seed) {
+    std::shuffle(v.begin(), v.end(), seed);
+    return v;
 }
 
 template<typename F, F f, std::size_t Dim, typename Type>
