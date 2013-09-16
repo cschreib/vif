@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 
     fits::read_table_loose(argv[1], cat);
 
-    uint_t ngal = dim(cat.flux)[1];
+    uint_t ngal = dim(cat.flux)[0];
 
     if (n_elements(cat.lambda) == 0) {
         cat.lambda = fltarr(n_elements(cat.bands));
@@ -49,8 +49,14 @@ int main(int argc, char* argv[]) {
     print("Photometry: [", ngal, " sources]");
     vec1u gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
         && cat.flux/cat.flux_err > 3);
-    uint_t seed = 42;
-    vec1u rndid = shuffle(gidg, seed)[indgen(1000)];
+
+    vec1u rndid;
+    if (gidg.size() > 2000) {
+        auto seed = make_seed(42);
+        rndid = shuffle(gidg, seed)[uindgen(2000)];
+    } else {
+        rndid = uindgen(gidg.size());
+    }
 
     std::string hband = "band";
     std::string hnote = "note";
