@@ -13,6 +13,11 @@ static const float  finf = std::numeric_limits<float>::infinity();
 static const double dpi = 3.14159265359;
 static const float  fpi = 3.14159265359;
 
+template<typename T>
+auto e10(const T& t) {
+    return pow(10.0, t);
+}
+
 // Create a range.
 template<typename T>
 vec1u rgen(T n) {
@@ -78,7 +83,7 @@ vec1d rgen_log(T i, U j, V n) {
 
         double dx = log10(j/i)/double(n-1);
         for (uint_t k = 0; k < uint_t(n); ++k) {
-            v[k] = i*pow(10.0, k*dx);
+            v[k] = i*e10(k*dx);
         }
 
         return v;
@@ -232,10 +237,11 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
 //  Final recipe:
 //      ((u/mpitch)*dim[d] + i)*mpitch + (u%mpitch)
 
-    typename vec_t<1,Type>::effective_type tmp = arr<rtype_t<Type>>(v.dims[dim]);
+    vec_t<1,rtype_t<Type>> tmp(v.dims[dim]);
     for (uint_t i = 0; i < r.size(); ++i) {
+        uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
         for (uint_t j = 0; j < v.dims[dim]; ++j) {
-            tmp[j] = dref(v.data[(i%mpitch) + ((i/mpitch)*v.dims[dim] + j)*mpitch]);
+            tmp[j] = dref(v.data[base + j*mpitch]);
         }
 
         r[i] = (*f)(tmp);
@@ -245,7 +251,61 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
 }
 
 template<typename F, std::size_t Dim, typename Type>
-auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& f) -> vec_t<Dim-1,typename return_type<F>::type> {
+void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
+    uint_t nint = v.dims[dim];
+    uint_t np = v.size()/nint;
+    uint_t mpitch = 1;
+    for (uint_t i = dim+1; i < Dim; ++i) {
+        mpitch *= v.dims[i];
+    }
+
+    vec_t<1,rtype_t<Type>> tmp(nint);
+    for (uint_t i = 0; i < np; ++i) {
+        uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
+        for (uint_t j = 0; j < nint; ++j) {
+            tmp[j] = dref(v.data[base + j*mpitch]);
+        }
+
+        func(i, tmp);
+    }
+}
+
+template<std::size_t Dim, typename Type>
+vec_t<1,rtype_t<Type>> run_dim_idx_apply_ids_(const vec1u& ids, const vec_t<Dim,Type>& v) {
+    return v[ids].concretise();
+}
+
+template<std::size_t Dim, typename Type, typename ... Args>
+std::array<uint_t,Dim> run_dim_idx_get_dim_(const vec_t<Dim,Type>& v, const Args& ... vs) {
+    return v.dims;
+}
+
+template<typename F, typename ... Args>
+void run_dim_idx(uint_t dim, F&& func, const Args& ... vs) {
+    auto ds = run_dim_idx_get_dim_(vs...);
+    const uint_t N = array_size<decltype(ds)>::size;
+
+    uint_t nint = ds[dim];
+    uint_t mpitch = 1;
+    uint_t np = 1;
+    for (uint_t i = 0; i < N; ++i) {
+        if (i != dim) np *= ds[i];
+        if (i > dim) mpitch *= ds[i];
+    }
+
+    vec1u ids(nint);
+    for (uint_t i = 0; i < np; ++i) {
+        uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
+        for (uint_t j = 0; j < nint; ++j) {
+            ids[j] = base + j*mpitch;
+        }
+
+        func(i, run_dim_idx_apply_ids_<N>(ids, vs)...);
+    }
+}
+
+template<typename F, std::size_t Dim, typename Type>
+auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) -> vec_t<Dim-1,typename return_type<F>::type> {
     vec_t<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
         r.dims[i] = v.dims[i];
@@ -255,22 +315,40 @@ auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& f) -> vec_t<Dim-1,typenam
     }
     r.resize();
 
-    uint_t mpitch = 1;
-    for (uint_t i = dim+1; i < Dim; ++i) {
-        mpitch *= v.dims[i];
-    }
-
-    typename vec_t<1,Type>::effective_type tmp = arr<rtype_t<Type>>(v.dims[dim]);
-    for (uint_t i = 0; i < r.size(); ++i) {
-        for (uint_t j = 0; j < v.dims[dim]; ++j) {
-            tmp[j] = dref(v.data[(i%mpitch) + ((i/mpitch)*v.dims[dim] + j)*mpitch]);
-        }
-
-        r[i] = f(tmp);
-    }
+    run_dim_idx(v, dim, [&](uint_t i, const vec_t<1, rtype_t<Type>>& tv) {
+        r[i] = func(tv);
+    });
 
     return r;
 }
+
+// template<typename F, std::size_t Dim, typename Type>
+// auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& f) -> vec_t<Dim-1,typename return_type<F>::type> {
+//     vec_t<Dim-1,typename return_type<F>::type> r;
+//     for (uint_t i = 0; i < dim; ++i) {
+//         r.dims[i] = v.dims[i];
+//     }
+//     for (uint_t i = dim+1; i < Dim; ++i) {
+//         r.dims[i-1] = v.dims[i];
+//     }
+//     r.resize();
+
+//     uint_t mpitch = 1;
+//     for (uint_t i = dim+1; i < Dim; ++i) {
+//         mpitch *= v.dims[i];
+//     }
+
+//     typename vec_t<1,Type>::effective_type tmp = arr<rtype_t<Type>>(v.dims[dim]);
+//     for (uint_t i = 0; i < r.size(); ++i) {
+//         for (uint_t j = 0; j < v.dims[dim]; ++j) {
+//             tmp[j] = dref(v.data[(i%mpitch) + ((i/mpitch)*v.dims[dim] + j)*mpitch]);
+//         }
+
+//         r[i] = f(tmp);
+//     }
+
+//     return r;
+// }
 
 template<std::size_t Dim, typename Type>
 double total(const vec_t<Dim,Type>& v) {
@@ -518,6 +596,16 @@ auto pow(const U& u, vec_t<Dim,Type>&& v) -> typename std::enable_if<!is_vec<U>:
     return std::move(v);
 }
 
+template<typename T>
+auto sqr(T&& t) {
+    return t*t;
+}
+
+template<typename T>
+auto invsqr(T&& t) {
+    return 1.0/(t*t);
+}
+
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args> \
     auto name(const vec_t<Dim,Type>& v, const Args& ... args) { \
@@ -539,6 +627,8 @@ auto pow(const U& u, vec_t<Dim,Type>&& v) -> typename std::enable_if<!is_vec<U>:
     }
 
 VECTORIZE(sqrt);
+VECTORIZE(sqr);
+VECTORIZE(invsqr);
 VECTORIZE(pow);
 VECTORIZE(cos);
 VECTORIZE(sin);
@@ -566,11 +656,6 @@ VECTORIZE(fabs);
 VECTORIZE(clamp);
 
 #undef VECTORIZE
-
-template<typename T>
-auto e10(const T& t) {
-    return pow(10.0, t);
-}
 
 template<typename F>
 auto derivate1(F func, const double& x, const double ep) -> decltype(func(x)) {
@@ -893,7 +978,7 @@ nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double
     vec2d best_alpha  = alpha;
 
     auto make_chi2 = [&](const vec1d& p) {
-        return total(pow((f(p) - y)/ye, 2));
+        return total(sqr((f(p) - y)/ye));
     };
 
     double best_chi2 = make_chi2(params);
@@ -1082,7 +1167,7 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
         model(i) = total(fr.params*cache(_,i));
     }
 
-    fr.chi2 = total(pow(model*flatten(1.0/ye) - flatten(y/ye), 2));
+    fr.chi2 = total(sqr(model*flatten(1.0/ye) - flatten(y/ye)));
 
     return fr;
 }
