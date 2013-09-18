@@ -539,6 +539,12 @@ struct vec_t {
         data.resize(size);
     }
 
+    template<typename ... Args>
+    void resize(Args&& ... d) {
+        set_array(dims, d...);
+        resize();
+    }
+
     void clear() {
         data.clear();
         for (uint_t i = 0; i < Dim; ++i) {
