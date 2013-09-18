@@ -93,6 +93,15 @@ struct is_array : std::false_type {};
 template<typename T, std::size_t N>
 struct is_array<std::array<T,N>> : std::true_type {};
 
+// Get the size of an std::array
+template<typename T>
+struct array_size;
+
+template<std::size_t N, typename T>
+struct array_size<std::array<T,N>> {
+    static const std::size_t size = N;
+};
+
 // Assign an arbitrary list of values to an array.
 template<template<typename> class V, typename T, std::size_t I, typename U, typename ... Args>
 void set_array_(V<T>& v, U&& t, Args&& ... args) {
