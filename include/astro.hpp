@@ -99,7 +99,9 @@ cosmo_t cosmo_wmap() {
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 T lumdist(const T& z, const cosmo_t& cosmo) {
     if (z <= 0) return 0.0;
-    return (1.0+z)*(2.99792458e5/cosmo.H0)*integrate([&](T t) { return pow(pow((1.0+t),3)*cosmo.wm + cosmo.wL, -0.5); }, 0, z);
+    return (1.0+z)*(2.99792458e5/cosmo.H0)*integrate([&](T t) {
+        return pow(pow((1.0+t),3)*cosmo.wm + cosmo.wL, -0.5);
+    }, 0, z);
 }
 
 // Lookback time [Gyr] as a function of redshift 'z'.
@@ -109,7 +111,9 @@ T lumdist(const T& z, const cosmo_t& cosmo) {
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 T lookback_time(const T& z, const cosmo_t& cosmo) {
     if (z <= 0) return 0.0;
-    return (3.09/(cosmo.H0*3.155e-3))*integrate([&](T t) { return pow(pow((1+t),3)*cosmo.wm + cosmo.wL + pow(1+t,2)*cosmo.wk, -0.5)/(1+t); }, 0, z);
+    return (3.09/(cosmo.H0*3.155e-3))*integrate([&](T t) {
+        return pow(pow((1+t),3)*cosmo.wm + cosmo.wL + pow(1+t,2)*cosmo.wk, -0.5)/(1+t);
+    }, 0, z);
 }
 
 // The above functions have a vectorized version that, when trying to compute lots of elements,
@@ -966,6 +970,48 @@ vec_t<2,rtype_t<Type>> qstack_median(const vec_t<3,Type>& fcube) {
     return median(fcube, 0);
 }
 
+template<typename Type, typename TypeS, typename F>
+void qstack_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
+    uint_t nsel, TypeS& seed, F&& func) {
+
+    for (uint_t i = 0; i < nbstrap; ++i) {
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
+        auto tfcube = fcube(ids,_,_).concretise();
+        func(tfcube);
+    }
+}
+
+template<typename Type, typename TypeS, typename F>
+void qstack_bootstrap(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube, uint_t nbstrap,
+    uint_t nsel, TypeS& seed, F&& func) {
+
+    for (uint_t i = 0; i < nbstrap; ++i) {
+        vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
+        auto tfcube = fcube(ids,_,_).concretise();
+        auto twcube = wcube(ids,_,_).concretise();
+        func(tfcube, twcube);
+    }
+}
+
+template<typename Type>
+vec_t<3,rtype_t<Type>> qstack_bootstrap_apply_id_(const vec1u& ids, const vec_t<3,Type>& cube) {
+    return cube(ids,_,_).concretise();
+}
+
+template<typename Type, typename ... Args>
+uint_t qstack_bootstrap_get_size_(const vec_t<3,Type>& cube, const Args& ... cubes) {
+    return cube.dims[0];
+}
+
+template<typename TypeS, typename F, typename ... Args>
+void qstack_bootstrap(uint_t nbstrap, uint_t nsel, TypeS& seed, F&& func, const Args& ... cubes) {
+    const uint_t nsrc = qstack_bootstrap_get_size_(cubes...);
+    for (uint_t i = 0; i < nbstrap; ++i) {
+        vec1u ids = randomi(seed, 0, nsrc-1, nsel);
+        func(qstack_bootstrap_apply_id_(ids, cubes)...);
+    }
+}
+
 template<typename Type, typename TypeS>
 vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
     uint_t nsel, TypeS& seed) {
@@ -1176,7 +1222,7 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
     res.flux = template_observed(lib, z, d, filters);
 
     // Compute chi2 & renormalization factor
-    auto weight = pow(err, -2);
+    auto weight = invsqr(err);
     using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
 
     const uint_t nsed = res.flux.dims[0];
@@ -1241,7 +1287,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ&
     res.flux = template_observed(lib, z, d, filters);
 
     // Compute chi2 & renormalization factor
-    auto weight = pow(err, -2);
+    auto weight = invsqr(err);
     using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
 
     uint_t nsed = res.flux.dims[0];
