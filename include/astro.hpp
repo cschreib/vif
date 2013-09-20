@@ -960,8 +960,8 @@ vec_t<2,rtype_t<Type>> qstack_mean(const vec_t<3,Type>& fcube) {
     return mean(fcube, 0);
 }
 
-template<typename Type>
-vec_t<2,rtype_t<Type>> qstack_mean(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube) {
+template<typename TypeF, typename TypeW>
+vec_t<2,rtype_t<TypeF>> qstack_mean(const vec_t<3,TypeF>& fcube, const vec_t<3,TypeW>& wcube) {
     return total(fcube*wcube, 0)/total(wcube, 0);
 }
 
@@ -981,8 +981,8 @@ void qstack_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
     }
 }
 
-template<typename Type, typename TypeS, typename F>
-void qstack_bootstrap(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube, uint_t nbstrap,
+template<typename TypeF, typename TypeW, typename TypeS, typename F>
+void qstack_bootstrap(const vec_t<3,TypeF>& fcube, const vec_t<3,TypeW>& wcube, uint_t nbstrap,
     uint_t nsel, TypeS& seed, F&& func) {
 
     for (uint_t i = 0; i < nbstrap; ++i) {
@@ -1026,11 +1026,11 @@ vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t 
     return bs;
 }
 
-template<typename Type, typename TypeS>
-vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, const vec_t<3,Type>& wcube,
-    uint_t nbstrap, uint_t nsel, TypeS& seed) {
+template<typename TypeF, typename TypeW, typename TypeS>
+vec_t<3,rtype_t<TypeF>> qstack_mean_bootstrap(const vec_t<3,TypeF>& fcube,
+    const vec_t<3,TypeW>& wcube, uint_t nbstrap, uint_t nsel, TypeS& seed) {
 
-    vec_t<3,rtype_t<Type>> bs;
+    vec_t<3,rtype_t<TypeF>> bs;
     bs.reserve(nbstrap*fcube.dims[1]*fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
         vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
