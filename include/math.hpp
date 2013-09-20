@@ -1468,4 +1468,40 @@ vec1u convex_hull(const TX& x, const TY& y) {
     return res;
 }
 
+template<typename TX, typename TY, typename THX, typename THY>
+bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, const THY& hy) {
+    phypp_check(n_elements(hx) == n_elements(hy),
+        "is_in_convex_hull requires same number of elements in 'hx' and 'hy'");
+
+    for (uint_t i = 0; i < hull.size()-1; ++i) {
+        uint_t p1 = hull[i], p2 = hull[i+1];
+        auto cross = (hx[p2] - hx[p1])*(y - hy[p1]) - (hy[p2] - hy[p1])*(x - hx[p1]);
+        if (cross < 0) return false;
+    }
+
+    return true;
+}
+
+template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
+vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
+    const THX& hx, const THY& hy) {
+
+    phypp_check(n_elements(x) == n_elements(y),
+        "is_in_convex_hull requires same number of elements in 'x' and 'y'");
+    phypp_check(n_elements(hx) == n_elements(hy),
+        "is_in_convex_hull requires same number of elements in 'hx' and 'hy'");
+
+    vec_t<Dim,bool> res = replicate(true, x.dims);
+    for (uint_t i = 0; i < hull.size()-1; ++i) {
+        uint_t p1 = hull[i], p2 = hull[i+1];
+        for (uint_t p = 0; p < x.size(); ++p) {
+            if (!res[p]) continue;
+            auto cross = (hx[p2] - hx[p1])*(y[p] - hy[p1]) - (hy[p2] - hy[p1])*(x[p] - hx[p1]);
+            if (cross < 0) res[p] = false;
+        }
+    }
+
+    return res;
+}
+
 #endif
