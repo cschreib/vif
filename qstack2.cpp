@@ -13,6 +13,11 @@ void print_help() {
         "image)."
     );
 
+    paragraph(
+        "If 'cat' is empty, then 'img' is assumed to be a cube of cutouts that will be collapsed "
+        "by the program to form a single stacked cutout."
+    );
+
     header("List of available command line options:");
     bullet("cat", "[string] path to the source catalog (FITS file)");
     bullet("img", "[string] path to the flux map (FITS file)");
@@ -26,6 +31,12 @@ void print_help() {
     bullet("pos", "[string, optional] prefix of the RA and Dec coordinates in 'cat'");
     bullet("mean", "[flag] perform mean stacking (default)");
     bullet("median", "[flag] perform median stacking");
+    bullet("cube", "[flag] do not stack, just ouput the cube");
+    bullet("bstrap", "[flag] perform bootstraping and save the resulting cube");
+    bullet("nbstrap", "[unsigned integer, optional] number of boostraping realisations");
+    bullet("sbstrap", "[unsigned integer, optional] size of a boostraping realisation");
+    bullet("randomize", "[flag] when stacking from a catalog, randomize the positions inside the "
+        "area that is covered by the selected sources");
     bullet("verbose", "[flag] print some information about the stacking process");
     print("");
 
@@ -65,7 +76,19 @@ int main(int argc, char* argv[]) {
     bool median = false;
     bool mean = false;
     bool verbose = false;
-    read_args(argc, argv, arg_list(out, cat, img, wht, err, pos, hsize, median, mean, verbose));
+    bool bstrap = false;
+    uint_t randomize = 0;
+    bool tcube = false;
+    uint_t nbstrap = 200;
+    uint_t sbstrap = 0;
+    uint_t tseed = 42;
+
+    read_args(argc, argv, arg_list(
+        out, cat, img, wht, err, pos, hsize, median, mean, bstrap, nbstrap, sbstrap,
+        randomize, name(tseed, "seed"), name(tcube, "cube"), verbose
+    ));
+
+    auto seed = make_seed(tseed);
 
     if (!median && !mean) {
         mean = true;
@@ -73,7 +96,7 @@ int main(int argc, char* argv[]) {
         median = false;
     }
 
-    if (hsize == npos) {
+    if (!cat.empty() && hsize == npos) {
         error("missing cutout size 'hsize'\n");
         print_help();
         return 1;
@@ -86,9 +109,11 @@ int main(int argc, char* argv[]) {
     }
 
     if (cat.empty()) {
-        error("missing catalog file 'cat'\n");
-        print_help();
-        return 1;
+        if (img.empty()) {
+            error("missing catalog file 'cat'\n");
+            print_help();
+            return 1;
+        }
     } else if (!file::exists(cat)) {
         error("cannot find '"+cat+"'\n");
         return 1;
@@ -117,23 +142,62 @@ int main(int argc, char* argv[]) {
         vec1d ra, dec;
     } fcat;
 
-    std::string posh = pos.empty() ? "" : pos+".";
+    if (!cat.empty()) {
+        std::string posh = pos.empty() ? "" : pos+".";
+        fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
+        vec1u id = where(finite(fcat.ra) && finite(fcat.dec));
+        fcat.ra = fcat.ra[id];
+        fcat.dec = fcat.dec[id];
 
-    fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
+        if (randomize > 0) {
+            if (randomize == 1) randomize = fcat.ra.size();
+
+            auto ocat = fcat;
+            vec1d rra = {min(ocat.ra), max(ocat.ra)};
+            vec1d rdec = {min(ocat.dec), max(ocat.dec)};
+            vec1u hull = convex_hull(ocat.ra, ocat.dec);
+
+            fcat.ra = randomu(seed, randomize)*(rra[1] - rra[0]) + rra[0];
+            fcat.dec = randomu(seed, randomize)*(rdec[1] - rdec[0]) + rdec[0];
+
+            vec1u bid = where(!in_convex_hull(fcat.ra, fcat.dec, hull, ocat.ra, ocat.dec));
+            while (!bid.empty()) {
+                fcat.ra[bid] = randomu(seed, bid.size())*(rra[1] - rra[0]) + rra[0];
+                fcat.dec[bid] = randomu(seed, bid.size())*(rdec[1] - rdec[0]) + rdec[0];
+                bid = bid[where(!in_convex_hull(fcat.ra[bid], fcat.dec[bid], hull, ocat.ra, ocat.dec))];
+            }
+        }
+    }
 
     vec2f stack;
+    vec3f cube;
+    vec3f bs;
 
     if ((wht.empty() && err.empty()) || median) {
-        vec3f cube;
-        vec1u ids;
-        qstack(fcat.ra, fcat.dec, img, hsize, cube, ids);
-
-        if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
-
-        if (mean) {
-            stack = qstack_mean(cube);
+        if (cat.empty()) {
+            fits::read(img, cube);
+            if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
-            stack = qstack_median(cube);
+            vec1u ids;
+            qstack(fcat.ra, fcat.dec, img, hsize, cube, ids);
+            if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
+        }
+
+        if (!tcube) {
+            if (mean) {
+                stack = qstack_mean(cube);
+            } else {
+                stack = qstack_median(cube);
+            }
+
+            if (bstrap) {
+                if (sbstrap == 0) sbstrap = cube.dims[0]/2;
+                if (mean) {
+                    bs = qstack_mean_bootstrap(cube, nbstrap, sbstrap, seed);
+                } else {
+                    bs = qstack_median_bootstrap(cube, nbstrap, sbstrap, seed);
+                }
+            }
         }
     } else {
         if (median) {
@@ -141,20 +205,50 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        vec3f cube, wcube;
-        vec1u ids;
-        qstack(fcat.ra, fcat.dec, img, wht.empty() ? err : wht, hsize, cube, wcube, ids);
-        if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
-
-        if (!wht.empty()) {
-            stack = qstack_mean(cube, wcube);
+        vec3f wcube;
+        if (cat.empty()) {
+            fits::read(img, cube);
+            fits::read(wht.empty() ? err : wht, wcube);
+            if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
-            stack = qstack_mean(cube, pow(wcube, -2));
+            vec1u ids;
+            qstack(fcat.ra, fcat.dec, img, wht.empty() ? err : wht, hsize, cube, wcube, ids);
+            if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
+        }
+
+        if (!tcube) {
+            if (!wht.empty()) {
+                stack = qstack_mean(cube, wcube);
+            } else {
+                stack = qstack_mean(cube, invsqr(wcube));
+            }
+
+            if (bstrap) {
+                if (sbstrap == 0) sbstrap = cube.dims[0]/2;
+                bs = qstack_mean_bootstrap(cube, nbstrap, sbstrap, seed);
+            }
         }
     }
 
+    out = trim(out);
     file::mkdir(file::get_directory(out));
-    fits::write(out, stack);
+
+    if (tcube) {
+        fits::write(out, cube);
+    } else {
+        fits::write(out, stack);
+    }
+
+    if (bstrap) {
+        std::string bstrap_out;
+        if (end_with(out, ".fits")) {
+            bstrap_out = out.substr(0, out.size()-5) + "_bs.fits";
+        } else {
+            bstrap_out = file::get_directory(out) + "bstrap.fits";
+        }
+
+        fits::write(bstrap_out, bs);
+    }
 
     return 0;
 }
