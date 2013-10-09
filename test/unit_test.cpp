@@ -850,6 +850,9 @@ int main(int argc, char* argv[]) {
         fits::write_table("out/hull.fits", cat);
 
         print(field_area(cat));
+
+        check(in_convex_hull(mean(cat.ra), mean(cat.dec), cat.hull, cat.ra, cat.dec), "1");
+        check(in_convex_hull(2*mean(cat.ra), 2*mean(cat.dec), cat.hull, cat.ra, cat.dec), "0");
     }
 
     print("\nall tests passed!\n");
