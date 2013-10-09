@@ -58,6 +58,7 @@ int main(int argc, char* argv[]) {
         rndid = uindgen(gidg.size());
     }
 
+    std::string hid = "id";
     std::string hband = "band";
     std::string hnote = "note";
     std::string hlam  = "lambda [um]";
@@ -68,6 +69,7 @@ int main(int argc, char* argv[]) {
     std::string hd5s = "5-sigma";
     std::string har = "area [deg^2]";
 
+    uint_t maxi = std::max(hid.size(), uint_t(1+log10(cat.bands.size())));
     uint_t maxb = std::max(hband.size(), max(length(cat.bands)));
     uint_t maxn = std::max(hnote.size(), max(length(cat.notes)));
     uint_t maxl = std::max(hlam.size(), max(length(strna(cat.lambda))));
@@ -79,6 +81,7 @@ int main(int argc, char* argv[]) {
     uint_t maxar = std::max(har.size(), max(length(strna(cat.lambda))));
 
     std::string header = " "+
+        align_center(hid, maxi)+" | "+
         align_center(hband, maxb)+" | "+
         align_center(hnote, maxn)+" | "+
         align_center(hlam, maxl)+" | "+
@@ -102,6 +105,7 @@ int main(int argc, char* argv[]) {
         if (idg.empty() || idg3s.empty()) continue;
 
         print(" ",
+            align_center(strn(i), maxi), " | ",
             align_center(cat.bands[i], maxb), " | ",
             align_center(cat.notes[i], maxn), " | ",
             align_right(strn(cat.lambda[i]), maxl), " | ",
