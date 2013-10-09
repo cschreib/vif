@@ -799,6 +799,35 @@ void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& ban
 }
 
 template<typename Type>
+void pick_sources(const vec_t<2,Type>& img, const vec1d& x, const vec1d& y,
+    int_t hsize, vec_t<3,rtype_t<Type>>& cube, vec1u& ids) {
+
+    uint_t width = img.dims[0];
+    uint_t height = img.dims[1];
+    cube.reserve(cube.size() + (2*hsize+1)*(2*hsize+1)*x.size());
+    ids.reserve(ids.size() + x.size());
+
+    // Loop over all sources
+    vec1i r = rgen(-hsize, hsize);
+    for (uint_t i = 0; i < x.size(); ++i) {
+        // Discard any source that falls out of the boundaries of the image
+        if (x[i]-hsize < 1 || x[i]+hsize >= width || y[i] - hsize < 1 || y[i] + hsize >= height) {
+            continue;
+        }
+
+        auto cut = img(x[i]+r, y[i]+r).concretise();
+
+        // Discard any source that contains a bad pixel (either infinite or NaN)
+        if (total(!finite(cut)) != 0) {
+            continue;
+        }
+
+        ids.push_back(i);
+        cube.push_back(cut);
+    }
+}
+
+template<typename Type>
 void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint_t hsize,
     vec_t<3,Type>& cube, vec1u& ids) {
 
@@ -1099,6 +1128,20 @@ struct filter_t {
 
 template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
+    // NOTE: this should be more correct, and will not miss any feature of both the
+    // SED and the filter, but is much slower
+
+    // vec1d xgrid = merge(filter.lam, lam);
+    // xgrid = xgrid[sort(xgrid)];
+    // vec1d ifil = interpolate(filter.res, filter.lam, xgrid);
+    // double mx = min(filter.lam);
+    // ifil[where(xgrid < mx)] = 0;
+    // mx = max(filter.lam);
+    // ifil[where(xgrid > mx)] = 0;
+    // return integrate(xgrid, ifil*interpolate(sed, lam, xgrid))/integrate(xgrid, ifil);
+
+    // NOTE: this is a faster approximation, where the SED is interpolated on the
+    // response curve of the filter
     return integrate(filter.lam, filter.res*interpolate(sed, lam, filter.lam));
 }
 
@@ -1113,6 +1156,18 @@ auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,T
     }
 
     return r;
+}
+
+template<typename TypeL, typename TypeS>
+double sed_convert(const filter_t& from, const filter_t& to, double z, double d,
+    const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
+
+    vec1d rflam = lam*(1.0 + z);
+    vec1d rfsed = lsun2uJy(z, d, lam, sed);
+    double flx = sed2flux(from, rflam, rfsed);
+    double ref = sed2flux(to, lam, sed);
+
+    return ref/flx;
 }
 
 struct template_fit_res_t {
