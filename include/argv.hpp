@@ -3,6 +3,7 @@
 
 #include "vec.hpp"
 #include "string.hpp"
+#include <fstream>
 
 #define arg_list(...) #__VA_ARGS__, __VA_ARGS__
 
@@ -177,6 +178,14 @@ void read_args(uint_t argc, char* argv[], const std::string& names, Args&& ... a
     vec1u idm = where(!read);
     for (auto& i : idm) {
         warning("unrecognized program argument '", sargv[i],"'");
+    }
+}
+
+void save_args(const std::string& file, const std::string& pname, int argc, char* argv[]) {
+    std::ofstream cmd(file);
+    cmd << pname;
+    for (int_t i = 1; i < argc; ++i) {
+        cmd << " " << argv[i];
     }
 }
 
