@@ -367,6 +367,10 @@ vec_t<Dim-1,double> total(const vec_t<Dim,Type>& v, uint_t dim) {
     return run_index_<fptr, &total<1,rtype_t<Type>>>(v, dim);
 }
 
+template<std::size_t Dim>
+double fraction(const vec_t<Dim,bool>& b) {
+    return total(b)/b.size();
+}
 
 template<std::size_t Dim, typename Type>
 double mean(const vec_t<Dim,Type>& v) {
@@ -498,6 +502,42 @@ vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>
     return r;
 }
 
+template<std::size_t Dim, typename Type1, typename Type2>
+vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const Type2& v2) {
+    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+    for (uint_t i = 0; i < v1.size(); ++i) {
+        r[i] = std::min(v1[i], v2);
+    }
+    return r;
+}
+
+template<std::size_t Dim, typename Type1, typename Type2>
+vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const Type2& v2) {
+    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+    for (uint_t i = 0; i < v1.size(); ++i) {
+        r[i] = std::max(v1[i], v2);
+    }
+    return r;
+}
+
+template<std::size_t Dim, typename Type1, typename Type2>
+vec_t<Dim,rtype_t<Type1>> min(const Type1& v1, const vec_t<Dim,Type2>& v2) {
+    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
+    for (uint_t i = 0; i < v2.size(); ++i) {
+        r[i] = std::min(v1, v2[i]);
+    }
+    return r;
+}
+
+template<std::size_t Dim, typename Type1, typename Type2>
+vec_t<Dim,rtype_t<Type1>> max(const Type1& v1, const vec_t<Dim,Type2>& v2) {
+    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
+    for (uint_t i = 0; i < v2.size(); ++i) {
+        r[i] = std::max(v1, v2[i]);
+    }
+    return r;
+}
+
 template<std::size_t Dim, typename Type>
 double rms(const vec_t<Dim,Type>& v) {
     double sum = 0;
@@ -523,6 +563,17 @@ template<std::size_t Dim, typename Type>
 vec_t<Dim-1,double> stddev(const vec_t<Dim,Type>& v, uint_t dim) {
     using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
     return run_index_<fptr, &stddev<1,rtype_t<Type>>>(v, dim);
+}
+
+template<std::size_t Dim, typename Type>
+double mad(const vec_t<Dim,Type>& v) {
+    return median(fabs(v - median(v)));
+}
+
+template<std::size_t Dim, typename Type>
+vec_t<Dim-1,double> mad(const vec_t<Dim,Type>& v, uint_t dim) {
+    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
+    return run_index_<fptr, &mad<1,rtype_t<Type>>>(v, dim);
 }
 
 template<std::size_t Dim, typename Type, typename TypeB>
@@ -1154,7 +1205,7 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
         fr.chi2 = dnan;
         fr.params = dblarr(np)*dnan;
         fr.errors = dblarr(np)*dnan;
-        fr.cov = alpha*dnan;
+        fr.cov = alpha;
         return fr;
     }
 
@@ -1267,7 +1318,7 @@ bool is_sorted(const vec_t<1,Type>& v) {
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<typename TypeX2, typename TypeY = double, typename TypeX1 = double>
+template<typename TypeX2 = double, typename TypeY = double, typename TypeX1 = double>
 auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
@@ -1307,7 +1358,7 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<typename TypeY, typename TypeX, typename T,
+template<typename TypeY = double, typename TypeX = double, typename T = double,
     typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
     using rtypey = rtype_t<TypeY>;
