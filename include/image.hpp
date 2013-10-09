@@ -172,4 +172,21 @@ vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
     return res;
 }
 
+template<typename F>
+auto generate_img(const vec1u& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
+    phypp_check(dims.size() == 2 || dims.size() == 1,
+        "generate_img: must provide one or two numbers for image size");
+
+    vec_t<2,decltype(expr(0,0))> img;
+    if (dims.size() == 1) img.resize(dims[0], dims[0]);
+    else img.resize(dims[0], dims[1]);
+
+    for (uint_t x = 0; x < img.dims[0]; ++x)
+    for (uint_t y = 0; y < img.dims[0]; ++y) {
+        img(x,y) = expr(x,y);
+    }
+
+    return img;
+}
+
 #endif
