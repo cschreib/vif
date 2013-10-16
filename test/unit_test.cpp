@@ -610,6 +610,30 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'linfit_pack' function");
+        vec1d tx = dindgen(5);
+        vec1d y = 3.1415*tx*tx - 12.0*tx;
+        vec1d ye = y*0 + 1;
+        vec2d x(3,5);
+        x(0,_) = 1.0;
+        x(1,_) = tx;
+        x(2,_) = tx*tx;
+
+        auto fr = linfit_pack(y, ye, x);
+        if (fr.success) {
+            check(abs(fr.params(0)) < 1e-6, "1");
+            check(fr.params(1), "-12");
+            check(fr.params(2), "3.1415");
+        } else {
+            print("failure...");
+            print("param: ", fr.params);
+            print("error: ", fr.errors);
+            print("chi2: ", fr.chi2);
+            check(fr.success, "1");
+        }
+    }
+
+    {
         print("'linfit' function doing PSF fitting");
         vec2d img, psf;
         fits::read("data/stack1.fits", img);

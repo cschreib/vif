@@ -1174,19 +1174,15 @@ void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t, Args&& .
     linfit_make_cache_(cache, ye, i+1, args...);
 }
 
-template<typename TypeY, typename TypeE, typename ... Args>
-linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
+template<typename TypeY, typename TypeE>
+linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     linfit_result fr;
 
-    uint_t np = sizeof...(Args);
-    uint_t nm = n_elements(y);
+    uint_t np = cache.dims[0];
+    uint_t nm = cache.dims[1];
 
-    vec2d alpha = dblarr(np,np);
-    vec1d beta = dblarr(np);
-
-    vec2d cache = dblarr(np,nm);
-    linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
-
+    vec2d alpha(np,np);
+    vec1d beta(np);
     auto tmp = flatten(y/ye);
     for (uint_t i = 0; i < np; ++i) {
         for (uint_t j = 0; j < np; ++j) {
@@ -1223,6 +1219,35 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
     return fr;
 }
 
+template<typename TypeY, typename TypeE, typename ... Args>
+linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
+    uint_t np = sizeof...(Args);
+    uint_t nm = n_elements(y);
+
+    vec2d cache(np,nm);
+    linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
+
+    return linfit_do_(y, ye, cache);
+}
+
+template<std::size_t Dim, typename TypeY, typename TypeE, typename TypeX>
+linfit_result linfit_pack(const vec_t<Dim,TypeY>& y, const vec_t<Dim,TypeE>& ye,
+    const vec_t<Dim+1,TypeX>& x) {
+
+    linfit_result fr;
+
+    uint_t np = x.dims[0];
+    uint_t nm = n_elements(y);
+
+    vec2d cache(np,nm);
+    for (uint_t i = 0; i < np; ++i) {
+        for (uint_t j = 0; j < nm; ++j) {
+            cache(i,j) = x[i*x.pitch(0) + j]/ye[j];
+        }
+    }
+
+    return linfit_do_(y, ye, cache);
+}
 
 struct affinefit_result {
     bool success;
