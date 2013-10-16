@@ -517,7 +517,8 @@ namespace fits {
         std::array<long,Dim> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, Dim, &naxis, naxes.data(), &status);
-        phypp_check_fits(naxis == Dim, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == Dim, "wrong dimension for column '"+colname+"' "
+            "(expected "+strn(Dim)+", got "+strn(naxis)+")");
         status = 0;
 
         for (uint_t i = 0; i < Dim; ++i) {
@@ -549,7 +550,8 @@ namespace fits {
         std::array<long,1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
-        phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"' "
+            "(expected 1, got "+strn(naxis)+")");
         status = 0;
 
         Type def = traits<Type>::def();
@@ -578,7 +580,8 @@ namespace fits {
         std::array<long,Dim+1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, Dim+1, &naxis, naxes.data(), &status);
-        phypp_check_fits(naxis == Dim+1, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == Dim+1, "wrong dimension for column '"+colname+"' "
+            "(expected "+strn(Dim)+", got "+strn(naxis-1)+")");
         status = 0;
 
         for (uint_t i = 0; i < Dim; ++i) {
@@ -624,7 +627,8 @@ namespace fits {
         std::array<long,1> naxes;
         fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
         fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
-        phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"'");
+        phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"' "
+            "(expected 1, got "+strn(naxis)+")");
         status = 0;
 
         char* buffer = new char[naxes[0]+1];
