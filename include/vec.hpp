@@ -647,6 +647,14 @@ struct vec_t {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
 
+    uint_t pitch(uint_t i) const {
+        uint_t p = 1;
+        for (uint_t j = i+1; j < Dim; ++j) {
+            p *= dims[j];
+        }
+        return p;
+    }
+
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
@@ -952,6 +960,14 @@ struct vec_t<Dim,Type*> {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
 
+    uint_t pitch(uint_t i) const {
+        uint_t p = 1;
+        for (uint_t j = i+1; j < Dim; ++j) {
+            p *= dims[j];
+        }
+        return p;
+    }
+
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
@@ -1144,7 +1160,9 @@ MAKE_TYPEDEFS(6)
 
 // A few traits
 template<typename T>
-struct vec_dim;
+struct vec_dim {
+    static const std::size_t value = 0;
+};
 
 template<std::size_t Dim, typename Type>
 struct vec_dim<vec_t<Dim,Type>> {
