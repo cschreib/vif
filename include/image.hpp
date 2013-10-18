@@ -182,7 +182,7 @@ auto generate_img(const vec1u& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
     else img.resize(dims[0], dims[1]);
 
     for (uint_t x = 0; x < img.dims[0]; ++x)
-    for (uint_t y = 0; y < img.dims[0]; ++y) {
+    for (uint_t y = 0; y < img.dims[1]; ++y) {
         img(x,y) = expr(x,y);
     }
 
