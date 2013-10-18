@@ -798,14 +798,16 @@ auto derivate2(F func, const vec1d& x, const double ep, uint_t ip1, uint_t ip2) 
 
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(a(0,0)*b(0,0))> {
-    assert(a.dims[1] == b.dims[0]);
+    phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrices "
+        "("+strn(a.dims)+" x "+strn(b.dims)+")");
+
     const uint_t o = a.dims[1];
 
     using ntype_t = decltype(a(0,0)*b(0,0));
     const uint_t n = a.dims[0];
     const uint_t m = b.dims[1];
 
-    vec_t<2,ntype_t> r = arr<ntype_t>(n,m);
+    vec_t<2,ntype_t> r(n,m);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t j = 0; j < m; ++j)
     for (uint_t k = 0; k < o; ++k) {
@@ -817,13 +819,15 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(
 
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
-    assert(a.dims[1] == b.dims[0]);
+    phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrix by vector "
+        "("+strn(a.dims)+" x "+strn(b.dims)+")");
+
     const uint_t o = a.dims[1];
 
     using ntype_t = decltype(a(0,0)*b(0,0));
     const uint_t n = a.dims[0];
 
-    vec_t<1,ntype_t> r = arr<ntype_t>(n);
+    vec_t<1,ntype_t> r(n);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
         r(i) += a(i,k)*b(k);
@@ -834,7 +838,9 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
 
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
-    assert(a.dims[0] == b.dims[0]);
+    phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying vector by matrix "
+        "("+strn(a.dims)+" x "+strn(b.dims)+")");
+
     const uint_t o = a.dims[0];
 
     using ntype_t = decltype(a(0,0)*b(0,0));
@@ -1187,20 +1193,26 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     for (uint_t i = 0; i < np; ++i) {
         for (uint_t j = 0; j < np; ++j) {
             if (i <= j) {
-                alpha(i,j) = total(cache(i,_)*cache(j,_));
+                alpha(i,j) = 0.0;
+                for (uint_t m = 0; m < nm; ++m) {
+                    alpha(i,j) += cache(i,m)*cache(j,m);
+                }
             } else {
                 alpha(i,j) = alpha(j,i);
             }
         }
 
-        beta(i) = total(cache(i,_)*tmp);
+        beta[i] = 0.0;
+        for (uint_t m = 0; m < nm; ++m) {
+            beta[i] += cache(i,m)*tmp[m];
+        }
     }
 
     if (!invert(alpha)) {
         fr.success = false;
         fr.chi2 = dnan;
-        fr.params = dblarr(np)*dnan;
-        fr.errors = dblarr(np)*dnan;
+        fr.params = replicate(dnan, np);
+        fr.errors = replicate(dnan, np);
         fr.cov = alpha;
         return fr;
     }
@@ -1209,12 +1221,15 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     fr.params = mmul(alpha, beta);
     fr.errors = sqrt(diag(alpha));
 
-    vec1d model = dblarr(nm);
-    for (uint_t i = 0; i < nm; ++i) {
-        model(i) = total(fr.params*cache(_,i));
+    vec1d model(nm);
+    for (uint_t m = 0; m < nm; ++m) {
+        model[m] = 0.0;
+        for (uint_t i = 0; i < np; ++i) {
+            model[m] += fr.params[i]*cache(i,m);
+        }
     }
 
-    fr.chi2 = total(sqr(model*flatten(1.0/ye) - flatten(y/ye)));
+    fr.chi2 = total(sqr(model*flatten(1.0/ye) - tmp));
 
     return fr;
 }
