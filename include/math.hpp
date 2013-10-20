@@ -1075,6 +1075,17 @@ bool solve_symmetric(vec2d& alpha, vec1d& beta) {
     return true;
 }
 
+template<typename Type>
+void symmetrize(vec_t<2,Type>& alpha) {
+    phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
+        alpha.dims, ")");
+
+    for (uint_t i = 0; i < alpha.dims[0]; ++i)
+    for (uint_t j = i+1; j < alpha.dims[0]; ++j) {
+        alpha(i,j) = alpha(j,i);
+    }
+}
+
 enum nlfit_status {
     ILL_MODEL,
     MAX_ITER,
