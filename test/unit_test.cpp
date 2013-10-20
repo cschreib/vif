@@ -537,7 +537,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("Matrix");
+        print("Matrix 'invert', 'mmul', 'identity_matrix'");
         vec2d a = {
             {1.000, 2.000, 3.000},
             {4.000, 1.000, 6.000},
@@ -549,7 +549,6 @@ int main(int argc, char* argv[]) {
         vec2d i;
         check(invert(a,i), "1");
         vec2d tid = mmul(a,i);
-        mprint(tid);
         check(rms(tid - id) < 1e-10, "1");
 
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
@@ -564,13 +563,12 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("Matrix (bis)");
+        print("Matrix 'translation_matrix', 'scale_matrix', 'rotation_matrix'");
         double x = 5, y = 2;
         vec1d p = point2d(x, y);
         check(p, "5, 2, 1");
 
         vec2d tm = identity_matrix(3);
-        mprint(tm);
 
         vec2d m = translation_matrix(2,3);
         vec1d tp = mmul(m, p);
@@ -588,6 +586,44 @@ int main(int argc, char* argv[]) {
         check(tp, "-15, 14, 1");
 
         check(mmul(tm, p), "-15, 14, 1");
+    }
+
+    {
+        print("'invert_symmetric' function");
+        vec2d alpha = identity_matrix(2);
+        alpha(1,0) = alpha(0,1) = 2;
+        vec2d talpha = alpha;
+        check(invert(talpha), "1");
+        check(invert_symmetric(alpha), "1");
+        symmetrize(alpha);
+        check(total(fabs(alpha - talpha) > 1e-6), "0");
+    }
+
+    {
+        print("'solve_symmetric' function");
+        vec1d beta = {1,2,3,4};
+        vec2d alpha = identity_matrix(4);
+        check(solve_symmetric(alpha, beta), "1");
+        check(beta, "1, 2, 3, 4");
+
+        // x + 2*y = b1
+        // 2*x + y = b2
+        // -> x = (2*b2 - b1)/3
+        // -> y = (2*b1 - b2)/3
+        beta = {1,2};
+        vec1d tbeta = beta;
+        alpha = identity_matrix(2);
+        alpha(1,0) = alpha(0,1) = 2;
+        vec2d talpha = alpha;
+        check(solve_symmetric(alpha, beta), "1");
+        check(total(fabs(beta - vec1d{1, 0}) > 1e-6), "0");
+
+        vec1d ubeta = mmul(talpha, beta);
+        check(total(fabs(ubeta - tbeta)) > 1e-6, "0");
+
+        invert(talpha);
+        tbeta = mmul(talpha, tbeta);
+        check(total(fabs(beta - tbeta)) > 1e-6, "0");
     }
 
     {
