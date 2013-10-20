@@ -971,19 +971,19 @@ extern "C" void dgetrf_(int* n, int* m, double* a, int* lda, int* ipiv, int* inf
 extern "C" void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work, int* lwork, int* info);
 
 bool invert(vec2d& i) {
-    assert(i.dims[0] == i.dims[1]);
-    int n = i.dims[0];
+    phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
+    int n = i.dims[0];
     int lda = n;
     int info;
 
-    vec_t<1,int> ipiv = arr<int>(n);
+    vec_t<1,int> ipiv(n);
     dgetrf_(&n, &n, i.data.data(), &lda, ipiv.data.data(), &info);
     if (info < 0) {
         return false;
     }
 
-    vec1d work = dblarr(n);
+    vec1d work(n);
     int lw = n;
     dgetri_(&n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
     if (info != 0) {
@@ -997,6 +997,82 @@ template<typename TypeA>
 bool invert(const vec_t<2,TypeA>& a, vec2d& i) {
     i = a;
     return invert(i);
+}
+
+extern "C" void dsytrf_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work,
+    int* lwork, int* info);
+extern "C" void dsytri_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work, int* info);
+
+bool invert_symmetric(vec2d& i) {
+    phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
+
+    char uplo = 'U';
+    int n = i.dims[0];
+    int lda = n;
+    int info;
+
+    int lw = n*64;
+    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+    // the Lapack User Guide.
+
+    vec1d work(lw);
+    vec_t<1,int> ipiv(n);
+
+    dsytrf_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
+    if (info < 0) {
+        return false;
+    }
+
+    dsytri_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &info);
+    if (info != 0) {
+        return false;
+    }
+
+    return true;
+}
+
+template<typename TypeA>
+bool invert_symmetric(const vec_t<2,TypeA>& a, vec2d& i) {
+    i = a;
+    return invert_symmetric(i);
+}
+
+extern "C" void dsysv_(char* uplo, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
+    int* ldb, double* work, int* lwork, int* info);
+
+bool solve_symmetric(vec2d& alpha, vec1d& beta) {
+    phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
+        alpha.dims, ")");
+    phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimesions (",
+        "got ", alpha.dims[0], " and ", beta.dims[0], ")");
+
+    char uplo = 'U';
+    int n = alpha.dims[0];
+    int nrhs = 1;
+    int lda = n, ldb = n;
+    int info;
+
+    int lw = n*64;
+    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+    // the Lapack User Guide.
+
+    vec1d work(lw);
+    vec_t<1,int> ipiv(n);
+
+    dsytrf_(&uplo, &n, alpha.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
+    if (info < 0) {
+        return false;
+    }
+
+    dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
+        &ldb, work.data.data(), &lw, &info);
+    if (info != 0) {
+        return false;
+    }
+
+    return true;
 }
 
 enum nlfit_status {
@@ -1187,6 +1263,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     uint_t np = cache.dims[0];
     uint_t nm = cache.dims[1];
 
+    // Solving 'y +/- e = sum over i of a[i]*x[i]' to get all a[i]'s
     vec2d alpha(np,np);
     vec1d beta(np);
     auto tmp = flatten(y/ye);
@@ -1194,6 +1271,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
         for (uint_t j = 0; j < np; ++j) {
             if (i <= j) {
                 alpha(i,j) = 0.0;
+                // alpha(i,j) = sum over all points of x[i]*x[j]/e^2
                 for (uint_t m = 0; m < nm; ++m) {
                     alpha(i,j) += cache(i,m)*cache(j,m);
                 }
@@ -1203,6 +1281,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
         }
 
         beta[i] = 0.0;
+        // beta[i] = sum over all points of x[i]*y/e^2
         for (uint_t m = 0; m < nm; ++m) {
             beta[i] += cache(i,m)*tmp[m];
         }
