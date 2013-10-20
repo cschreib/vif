@@ -1061,11 +1061,6 @@ bool solve_symmetric(vec2d& alpha, vec1d& beta) {
     vec1d work(lw);
     vec_t<1,int> ipiv(n);
 
-    dsytrf_(&uplo, &n, alpha.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
-    if (info < 0) {
-        return false;
-    }
-
     dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
         &ldb, work.data.data(), &lw, &info);
     if (info != 0) {
