@@ -432,11 +432,17 @@ namespace fits {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
-            std::size_t cpos = entry.find_first_of("/", eqpos);
+            std::size_t cpos = entry.find_first_of("'/", eqpos);
+            if (cpos == entry.npos) continue;
+            if (entry[cpos] == '\'') {
+                cpos = entry.find_first_of("'", cpos+1);
+                cpos = entry.find_first_of("/", cpos+1);
+            }
 
             std::string nam = trim(entry.substr(0, eqpos));
             char* tnam = const_cast<char*>(nam.c_str());
-            if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") || nam == "EXTEND") {
+            if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") || nam == "EXTEND" ||
+                nam == "XTENSION" || nam == "EXTNAME" || nam == "PCOUNT" || nam == "GCOUNT") {
                 continue;
             }
 
@@ -454,6 +460,9 @@ namespace fits {
 
                 char* tvalue = const_cast<char*>(value.c_str());
                 fits_write_key_str(fptr, tnam, tvalue+1, tcomment, &status);
+            } else if (value[0] == 'F' || value[0] == 'T') {
+                int b = value[0] == 'T';
+                fits_write_key(fptr, TLOGICAL, tnam, &b, tcomment, &status);
             } else {
                 double d;
                 from_string(value, d);
