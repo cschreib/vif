@@ -40,6 +40,13 @@ std::string strn(const T& t) {
     return ss.str();
 }
 
+std::string strn(const double& t) {
+    std::ostringstream ss;
+    ss.precision(12);
+    ss << t;
+    return ss.str();
+}
+
 template<typename T>
 std::string strn(const T& t, std::size_t n, char fill = '0') {
     if (n <= 1) {
