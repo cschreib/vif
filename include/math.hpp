@@ -137,6 +137,21 @@ vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
     return r;
 }
 
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+bool nan(const T& t) {
+    return std::isnan(t);
+}
+
+template<std::size_t Dim, typename Type>
+vec_t<Dim,bool> nan(const vec_t<Dim,Type>& v) {
+    vec_t<Dim,bool> r = boolarr(v.dims);
+    for (uint_t i = 0; i < v.size(); ++i) {
+        r[i] = std::isnan(v[i]);
+    }
+
+    return r;
+}
+
 using seed_t = std::mt19937;
 
 template<typename T>
@@ -444,42 +459,40 @@ typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, con
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec_t<Dim,Type>& v) {
-    vec1u ok = where(finite(v));
-    if (ok.empty()) return 0;
-
-    typename vec_t<1,Type>::effective_type t = v[ok];
-    std::nth_element(t.begin(), t.begin(), t.end());
-    return *t.begin();
+    return dref(*std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
+        if (nan(dref(t1))) return false;
+        if (nan(dref(t2))) return true;
+        return dref(t1) < dref(t2);
+    }));
 }
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> max(const vec_t<Dim,Type>& v) {
-    vec1u ok = where(finite(v));
-    if (ok.empty()) return 0;
-
-    typename vec_t<1,Type>::effective_type t = v[ok];
-    std::nth_element(t.begin(), t.end()-1, t.end());
-    return *(t.end()-1);
+    return dref(*std::max_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
+        if (nan(dref(t1))) return true;
+        if (nan(dref(t2))) return false;
+        return dref(t1) < dref(t2);
+    }));
 }
 
 template<std::size_t Dim, typename Type>
 uint_t min_id(const vec_t<Dim,Type>& v) {
     vec1u tmp = uindgen(v.size());
-    std::nth_element(tmp.begin(), tmp.begin(), tmp.end(), [&](uint_t i, uint_t j) {
-        return dref(v.data[i]) < dref(v.data[j]);
+    return *std::min_element(tmp.begin(), tmp.end(), [&](uint_t i1, uint_t i2){
+        if (nan(v[i1])) return false;
+        if (nan(v[i2])) return true;
+        return v[i1] < v[i2];
     });
-
-    return *tmp.begin();
 }
 
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec_t<Dim,Type>& v) {
     vec1u tmp = uindgen(v.size());
-    std::nth_element(tmp.begin(), tmp.end()-1, tmp.end(), [&](uint_t i, uint_t j) {
-        return dref(v.data[i]) < dref(v.data[j]);
+    return *std::max_element(tmp.begin(), tmp.end(), [&](uint_t i1, uint_t i2){
+        if (nan(v[i1])) return true;
+        if (nan(v[i2])) return false;
+        return v[i1] < v[i2];
     });
-
-    return *(tmp.end()-1);
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
