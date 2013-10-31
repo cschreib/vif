@@ -32,6 +32,7 @@ void print_help() {
     bullet("mean", "[flag] perform mean stacking (default)");
     bullet("median", "[flag] perform median stacking");
     bullet("cube", "[flag] do not stack, just ouput the cube");
+    bullet("keepnan", "[flag] do not reject sources with NaN pixels");
     bullet("bstrap", "[flag] perform bootstraping and save the resulting cube");
     bullet("nbstrap", "[unsigned integer, optional] number of boostraping realisations");
     bullet("sbstrap", "[unsigned integer, optional] size of a boostraping realisation");
@@ -79,13 +80,14 @@ int main(int argc, char* argv[]) {
     bool bstrap = false;
     uint_t randomize = 0;
     bool tcube = false;
+    bool keepnan = false;
     uint_t nbstrap = 200;
     uint_t sbstrap = 0;
     uint_t tseed = 42;
 
     read_args(argc, argv, arg_list(
         out, cat, img, wht, err, pos, hsize, median, mean, bstrap, nbstrap, sbstrap,
-        randomize, name(tseed, "seed"), name(tcube, "cube"), verbose
+        randomize, name(tseed, "seed"), name(tcube, "cube"), verbose, keepnan
     ));
 
     auto seed = make_seed(tseed);
@@ -173,13 +175,16 @@ int main(int argc, char* argv[]) {
     vec3f cube;
     vec3f bs;
 
+    qstack_params params;
+    params.keepnan = keepnan;
+
     if ((wht.empty() && err.empty()) || median) {
         if (cat.empty()) {
             fits::read(img, cube);
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
             vec1u ids;
-            qstack(fcat.ra, fcat.dec, img, hsize, cube, ids);
+            qstack(fcat.ra, fcat.dec, img, hsize, cube, ids, params);
             if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
         }
 
@@ -212,7 +217,7 @@ int main(int argc, char* argv[]) {
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
             vec1u ids;
-            qstack(fcat.ra, fcat.dec, img, wht.empty() ? err : wht, hsize, cube, wcube, ids);
+            qstack(fcat.ra, fcat.dec, img, wht.empty() ? err : wht, hsize, cube, wcube, ids, params);
             if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
         }
 
