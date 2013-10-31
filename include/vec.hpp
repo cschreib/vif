@@ -1888,7 +1888,7 @@ vec_t<Dim,std::string> replicate(const char v[N], const std::array<uint_t,Dim>& 
 template<std::size_t Dim, typename Type>
 vec1u sort(const vec_t<Dim,Type>& v) {
     vec1u r = uindgen(v.size());
-    std::sort(r.data.begin(), r.data.end(), [&v](uint_t i, uint_t j) {
+    std::stable_sort(r.data.begin(), r.data.end(), [&v](uint_t i, uint_t j) {
         return typename vec_t<Dim,Type>::comparator()(v.data[i], v.data[j]);
     });
 
