@@ -652,9 +652,27 @@ auto sqr(T&& t) {
     return t*t;
 }
 
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<!std::is_pointer<Type>::value>::type>
+auto sqr(vec_t<Dim,Type>&& v) {
+    for (auto& t : v) {
+        t *= t;
+    }
+    return std::move(v);
+}
+
 template<typename T>
 auto invsqr(T&& t) {
     return 1.0/(t*t);
+}
+
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<!std::is_pointer<Type>::value>::type>
+auto invsqr(vec_t<Dim,Type>&& v) {
+    for (auto& t : v) {
+        t = 1.0/(t*t);
+    }
+    return std::move(v);
 }
 
 #define VECTORIZE(name) \
@@ -1293,15 +1311,17 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
         }
     }
 
-    if (!invert(alpha)) {
+    if (!invert_symmetric(alpha)) {
         fr.success = false;
         fr.chi2 = dnan;
         fr.params = replicate(dnan, np);
         fr.errors = replicate(dnan, np);
+        symmetrize(alpha);
         fr.cov = alpha;
         return fr;
     }
 
+    symmetrize(alpha);
     fr.success = true;
     fr.params = mmul(alpha, beta);
     fr.errors = sqrt(diag(alpha));
