@@ -827,9 +827,13 @@ void pick_sources(const vec_t<2,Type>& img, const vec1d& x, const vec1d& y,
     }
 }
 
+struct qstack_params {
+    bool keepnan = false;
+};
+
 template<typename Type>
 void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint_t hsize,
-    vec_t<3,Type>& cube, vec1u& ids) {
+    vec_t<3,Type>& cube, vec1u& ids, qstack_params params = qstack_params()) {
 
     phypp_check(file::exists(filename), "cannot stack on inexistant file '"+filename+"'");
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
@@ -886,7 +890,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
             cut.data.data(), &anynul, &status);
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
-        if (total(!finite(cut)) != 0) {
+        if (!params.keepnan && total(!finite(cut)) != 0) {
             continue;
         }
 
@@ -899,7 +903,8 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
 
 template<typename Type>
 void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const std::string& wfile,
-	uint_t hsize, vec_t<3,Type>& cube, vec_t<3,Type>& wcube, vec1u& ids) {
+	uint_t hsize, vec_t<3,Type>& cube, vec_t<3,Type>& wcube, vec1u& ids,
+    qstack_params params = qstack_params()) {
 
     phypp_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
     phypp_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
@@ -971,7 +976,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
             wcut.data.data(), &anynul, &status);
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
-        if (total(!finite(cut) || !finite(wcut)) != 0) {
+        if (!params.keepnan && total(!finite(cut) || !finite(wcut)) != 0) {
             continue;
         }
 
@@ -1307,7 +1312,6 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
     res.amp_sim = fltarr(nsim);
     res.sed_sim = fltarr(nsim);
 
-    // auto otmp2 = tmp2;
     const uint_t nflux = flux.size();
     for (uint_t i = 0; i < nsim; ++i) {
         auto fsim = flux + randomn(seed, nflux)*err;
