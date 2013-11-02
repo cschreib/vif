@@ -9,22 +9,26 @@ typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix
     const typename vec_t<2,Type>::rtype& def = 0.0) {
 
     if (pix >= 0) {
-        typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]+2*pix, v.dims[1]+2*pix) + def;
+        uint_t upix = pix;
 
-        for (int_t y : rgen(v.dims[0]))
-        for (int_t x : rgen(v.dims[1])) {
-            r(x+pix,y+pix) = v(x,y);
+        typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]+2*upix, v.dims[1]+2*upix) + def;
+
+        for (uint_t y : range(v.dims[0]))
+        for (uint_t x : range(v.dims[1])) {
+            r(x+upix,y+upix) = v(x,y);
         }
 
         return r;
     } else {
-        assert(uint_t(-2*pix) < v.dims[0] && uint_t(-2*pix) < v.dims[1]);
+        uint_t upix = -pix;
+        phypp_check(2*upix < v.dims[0] && 2*upix < v.dims[1],
+            "cannot shrink image to negative size (", upix, " vs [", v.dims, "]");
 
-        typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]+2*pix, v.dims[1]+2*pix);
+        typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]-2*upix, v.dims[1]-2*upix);
 
-        for (int_t y : rgen(r.dims[0]))
-        for (int_t x : rgen(r.dims[1])) {
-            r(x,y) = v(x-pix,y-pix);
+        for (uint_t y : range(r.dims[0]))
+        for (uint_t x : range(r.dims[1])) {
+            r(x,y) = v(x+upix,y+upix);
         }
 
         return r;
@@ -100,8 +104,8 @@ typename vec_t<2,TypeV>::effective_type translate(const vec_t<2,TypeV>& v, doubl
     const typename vec_t<2,TypeV>::rtype& def = 0.0) {
 
     vec_t<2,rtype_t<TypeV>> trs = replicate(rtype_t<TypeV>(def), v.dims);
-    for (uint_t x = 0; x < v.dims[0]; ++x)
-    for (uint_t y = 0; y < v.dims[1]; ++y) {
+    for (uint_t x : range(v.dims[0]))
+    for (uint_t y : range(v.dims[1])) {
         double tx = x - dx;
         double ty = y - dy;
         int_t rx = round(tx);
@@ -163,7 +167,7 @@ vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
     uint_t hsx = img.dims[0]/2;
     uint_t hsy = img.dims[1]/2;
     res[0] = img(hsx,hsy);
-    for (uint_t i = 1; i < npix; ++i) {
+    for (uint_t i : range(1u, npix)) {
         vec2d mask = circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i)*
             (1.0 - circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i-1));
         res[i] = total(mask*img)/total(mask);
@@ -181,8 +185,8 @@ auto generate_img(const vec1u& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
     if (dims.size() == 1) img.resize(dims[0], dims[0]);
     else img.resize(dims[0], dims[1]);
 
-    for (uint_t x = 0; x < img.dims[0]; ++x)
-    for (uint_t y = 0; y < img.dims[1]; ++y) {
+    for (uint_t x : range(img.dims[0]))
+    for (uint_t y : range(img.dims[1])) {
         img(x,y) = expr(x,y);
     }
 

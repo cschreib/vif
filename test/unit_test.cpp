@@ -30,6 +30,34 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("Range");
+        bool good = true;
+        uint_t j = 0;
+        for (uint_t i : range(10)) {
+            good = good && i == j;
+            ++j;
+        }
+        check(good, "1");
+        check(j, "10");
+
+        j = 2;
+        for (uint_t i : range(2, 10)) {
+            good = good && i == j;
+            ++j;
+        }
+        check(good, "1");
+        check(j, "10");
+
+        j = 2;
+        for (uint_t i : range(2, 10, 4)) {
+            good = good && i == j;
+            j += 2;
+        }
+        check(good, "1");
+        check(j, "10");
+    }
+
+    {
         print("Index generation 'indgen'");
         vec1f v = findgen(7);
         check(v, "0, 1, 2, 3, 4, 5, 6");

@@ -1,6 +1,7 @@
 #include <vec.hpp>
 #include <reflex.hpp>
 #include <reflex_helpers.hpp>
+#include <range.hpp>
 #include <keyword.hpp>
 #include <string.hpp>
 #include <print.hpp>
