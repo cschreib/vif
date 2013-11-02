@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
         vec2d v; fits::header hdr;
         fits::read("data/image.fits", v, hdr);
         check(v.dims, "161, 161");
-        check(v(80,79), "0.0191503");
+        check(float(v(80,79)), "0.0191503");
         check(hdr.size()/80, "9");
 
         print("Header functionalities");
@@ -519,8 +519,8 @@ int main(int argc, char* argv[]) {
 
     {
         print("Calculus functions");
-        check(derivate1([](double x) { return cos(x); }, 1.0, 0.001), "-0.841471");
-        check(derivate2([](double x) { return cos(x); }, 1.0, 0.001), "-0.540302");
+        check(float(derivate1([](double x) { return cos(x); }, 1.0, 0.001)), "-0.841471");
+        check(float(derivate2([](double x) { return cos(x); }, 1.0, 0.001)), "-0.540302");
 
         vec1d x = {0,1,2};
         vec1d y = {0,1,0};
@@ -530,9 +530,9 @@ int main(int argc, char* argv[]) {
         y = cos(x);
         check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
 
-        check(integrate([](float t) -> float {
+        check(float(integrate([](float t) -> float {
                 return (2.0/sqrt(3.14159))*exp(-t*t);
-            }, 0.0, 1.0), strn(erf(1.0))
+            }, 0.0, 1.0)), strn(float(erf(1.0)))
         );
     }
 
@@ -677,8 +677,8 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit(img, 1.0, 1.0, psf);
         if (fr.success) {
-            check(fr.params(0), "21.6113");
-            check(fr.params(1), "90.4965");
+            check(float(fr.params(0)), "21.6113");
+            check(float(fr.params(1)), "90.4965");
         } else {
             print("params: ", fr.params);
             print("errors: ", fr.errors);
@@ -751,6 +751,20 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'min', 'max'");
+        vec1f f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, -1.5f};
+        check(min(f), "-1.5"); check(max(f), "4.45");
+        f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, fnan, -1.5f};
+        check(min(f), "-1.5"); check(max(f), "4.45");
+        f = {2.0f, fnan, -1.0f, 0.0f, 4.45f, fnan, -1.5f};
+        check(min(f), "-1.5"); check(max(f), "4.45");
+        f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, finf, -1.5f};
+        check(min(f), "-1.5"); check(!finite(max(f)), "1");
+        f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, -finf, -1.5f};
+        check(!finite(min(f)), "1"); check(max(f), "4.45");
+    }
+
+    {
         print("'min_id', 'max_id'");
         vec1i i = {5,2,4,9,6,-5,2,-3};
         uint_t mi = min_id(i);
@@ -778,8 +792,8 @@ int main(int argc, char* argv[]) {
     {
         print("Cosmology functions");
         auto cosmo = cosmo_wmap();
-        check(lumdist(0.5, cosmo), "2863.03");
-        check(lookback_time(0.5, cosmo), "5.09887");
+        check(float(lumdist(0.5, cosmo)), "2863.03");
+        check(float(lookback_time(0.5, cosmo)), "5.09887");
 
         vec1d v = rgen(0.0, 12.0, 1500);
         auto r = lumdist(v, cosmo);
