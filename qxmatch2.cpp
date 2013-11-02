@@ -3,7 +3,7 @@
 void print_help() {
     std::cout << "qxmatch2 v2.0\n";
     std::cout << "  usage: qxmatch2 cats=[file1,file2] output=ofile (options=...)\n\n";
-    
+
     std::cout << "  'file1' and 'file2' must be FITS files, expected to contain an extension with\n";
     std::cout << "  at least two vector columns named 'RA' and 'DEC', each containing a single row.\n";
     std::cout << "  Both are assumed to contain galactic coordinates in degrees.\n";
@@ -18,7 +18,7 @@ void print_help() {
     std::cout << "          second_best = res.id[*,1]\n";
     std::cout << "  The program also outputs the crossmatch distance in a column called 'D', with a\n";
     std::cout << "  format similar to that of 'ID', in arcseconds.\n\n";
-    
+
     std::cout << "  It is also possible to compute an 'auto crossmatch' of a single catalog by only\n";
     std::cout << "  providing one file in the 'cats' parameter. The program will then compute the\n";
     std::cout << "  n'th nearest neighbors for each source within this catalog.\n";
@@ -29,40 +29,41 @@ void print_help() {
     std::cout << "                  retrieve (default: 1).\n";
     std::cout << "    thread=[number]: set this value to the number of concurrent threads you want\n";
     std::cout << "                     to run (default: 1).\n";
-    
+
     std::cout << "  Copyright (c) 2013 C. Schreiber (corentin.schreiber@cea.fr)\n\n";
 
     std::cout << "  This software is provided 'as-is', without any express or implied warranty.\n";
     std::cout << "  In no event will the authors be held liable for any damages arising from the\n";
     std::cout << "  use of this software.\n";
-      
+
     std::cout << "  Permission is granted to anyone to use this software for any purpose,\n";
     std::cout << "  including commercial applications, and to alter it and redistribute it\n";
     std::cout << "  freely, subject to the following restrictions:\n\n";
-      
+
     std::cout << "    1. The origin of this software must not be misrepresented; you must not\n";
     std::cout << "       claim that you wrote the original software. If you use this software in\n";
     std::cout << "       a product, an acknowledgment in the product documentation would be\n";
     std::cout << "       appreciated but is not required.\n\n";
-                  
+
     std::cout << "    2. Altered source versions must be plainly marked as such, and must not be\n";
     std::cout << "       misrepresented as being the original software.\n\n";
-                  
+
     std::cout << "    3. This notice may not be removed or altered from any source distribution.\n\n";
-    
+
     std::cout << std::flush;
 }
 
 int main(int argc, char* argv[]) {
     vec1s cats;
-    std::string output; 
+    std::string output;
+    vec1s pos;
 
     uint_t nth = 1;
     uint_t thread = 1;
     bool   verbose = false;
     bool   quiet = false;
 
-    read_args(argc, argv, arg_list(cats, output, nth, thread, verbose, quiet));
+    read_args(argc, argv, arg_list(cats, output, nth, thread, verbose, quiet, pos));
 
     if (quiet) verbose = false;
 
@@ -77,20 +78,40 @@ int main(int argc, char* argv[]) {
 
     qxmatch_res res;
 
-    if (n_elements(cats) == 2) {
+    if (cats.size() == 2) {
+        if (pos.size() == 1) pos = replicate(pos[0], 2);
+        else if (pos.empty()) pos = {"", ""};
+        vec1u idne = where(!empty(pos));
+        pos[idne] += ".";
+
         coord_t cat1, cat2;
-        fits::read_table(cats[0], cat1);
-        fits::read_table(cats[1], cat2);
+        fits::read_table(cats[0], pos[0]+"ra", cat1.ra, pos[0]+"dec", cat1.dec);
+        fits::read_table(cats[1], pos[1]+"ra", cat2.ra, pos[1]+"dec", cat2.dec);
+
+        if (cat1.ra.size() == 0 || cat1.dec.size() == 0) {
+            error("qxmatch: first catalog is empty");
+        }
+
+        if (cat2.ra.size() == 0 || cat2.dec.size() == 0) {
+            error("qxmatch: second catalog is empty");
+        }
 
         if (verbose) {
-            print("qxmatch: crossmatching ", n_elements(cat1.ra), " sources from '", cats[0], 
+            print("qxmatch: crossmatching ", n_elements(cat1.ra), " sources from '", cats[0],
                 "' with ", n_elements(cat2.ra), " sources from '", cats[1], "'...");
         }
 
         res = qxmatch(cat1, cat2, keywords(_nth(nth), _thread(thread), _verbose(verbose)));
-    } else if (n_elements(cats) == 1) {
+    } else if (cats.size() == 1) {
+        if (pos.empty()) pos = {""};
+        if (!pos[0].empty()) pos += ".";
+
         coord_t cat;
-        fits::read_table(cats[0], cat);
+        fits::read_table(cats[0], pos[0]+"ra", cat.ra, pos[0]+"dec", cat.dec);
+
+        if (cat.ra.size() == 0 || cat.dec.size() == 0) {
+            error("qxmatch: catalog is empty");
+        }
 
         if (verbose) {
             print("qxmatch: self matching ", n_elements(cat.ra), " sources from '", cats[0], "'...");
