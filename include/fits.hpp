@@ -700,7 +700,7 @@ namespace fits {
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
             fits_close_file(fptr, &status);
-            error("reading: "+name);
+            error("reading: "+filename);
             error(e.msg);
             throw;
         }
@@ -726,7 +726,7 @@ namespace fits {
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
             fits_close_file(fptr, &status);
-            error("reading: "+name);
+            error("reading: "+filename);
             error(e.msg);
             throw;
         }
@@ -785,7 +785,7 @@ namespace fits {
 
                 template<typename P>
                 void operator () (reflex::member_t& m, P&& v) {
-                    read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
+                    read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), false);
                 }
             } do_read{fptr};
 
