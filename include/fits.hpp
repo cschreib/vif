@@ -381,13 +381,13 @@ namespace fits {
 
         std::size_t ngal = ra.size();
 
-        vec1d world = dblarr(2*ngal);
+        vec1d world(2*ngal);
         vec1u ids1 = 2*uindgen(ngal);
         vec1u ids2 = ids1+1;
         world[ids1] = ra;
         world[ids2] = dec;
 
-        vec1d pos = dblarr(2*ngal);
+        vec1d pos(2*ngal);
 
         std::vector<double> phi(ngal), theta(ngal);
         std::vector<double> itmp(2*ngal);
@@ -398,6 +398,35 @@ namespace fits {
 
         x = pos[ids1];
         y = pos[ids2];
+    }
+
+    template<typename T, typename U, typename V, typename W>
+    void xy2ad(const fits::wcs& w, const vec_t<1,T>& x, const vec_t<1,U>& y,
+        vec_t<1,V>& ra, vec_t<1,W>& dec) {
+
+        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+        phypp_check(x.size() == y.size(), "x and y arrays do not match sizes ("+
+            strn(x.size())+" vs "+strn(y.size())+")");
+
+        std::size_t ngal = x.size();
+
+        vec1d map(2*ngal);
+        vec1u ids1 = 2*uindgen(ngal);
+        vec1u ids2 = ids1+1;
+        map[ids1] = x;
+        map[ids2] = y;
+
+        vec1d world(2*ngal);
+
+        std::vector<double> phi(ngal), theta(ngal);
+        std::vector<double> itmp(2*ngal);
+        std::vector<int>    stat(ngal);
+
+        wcsp2s(w.w, ngal, 2, map.data.data(), itmp.data(), phi.data(), theta.data(),
+            world.data.data(), stat.data());
+
+        ra = world[ids1];
+        dec = world[ids2];
     }
 
     // Write an image in a FITS file
@@ -991,6 +1020,19 @@ namespace fits {
 
         std::size_t pos = names.find_first_of(',');
         write_table_impl_(fptr, id, bake_macroed_name(names.substr(0, pos)), v);
+
+        if (pos != names.npos) {
+            write_table_(macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
+        }
+    }
+
+    template<typename T, typename ... Args>
+    void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names,
+        const named_t<T>& v, Args&& ... args) {
+
+        std::size_t pos = names.find_first_of(')');
+        if (pos != names.npos) ++pos;
+        write_table_impl_(fptr, id, v.name, v.obj);
 
         if (pos != names.npos) {
             write_table_(macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
