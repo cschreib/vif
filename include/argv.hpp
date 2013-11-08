@@ -189,4 +189,22 @@ void save_args(const std::string& file, const std::string& pname, int argc, char
     }
 }
 
+std::string make_cmd(int argc, char* argv[]) {
+    std::string cmd = argv[0];
+    for (int i = 1; i < argc; ++i) {
+        std::string tmp = argv[i];
+        if (tmp.find_first_of(" \t") != tmp.npos) {
+            uint_t p = tmp.find_first_of("=");
+            if (p == tmp.npos) {
+                tmp = "\"" + tmp + "\"";
+            } else {
+                tmp = tmp.substr(0, p+1) + "\"" + tmp.substr(p+1) + "\"";
+            }
+        }
+        cmd += " "+tmp;
+    }
+
+    return cmd;
+}
+
 #endif
