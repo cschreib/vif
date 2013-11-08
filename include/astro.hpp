@@ -197,10 +197,20 @@ auto mag2uJy(const T& x, double zp = 23.9) {
 
 // Compute the angular distance between two RA/Dec positions [radian].
 // Assumes that RA & Dec coordinates are in radian.
-double angdist(double ra1, double dec1, double ra2, double dec2) {
+double angdistr(double ra1, double dec1, double ra2, double dec2) {
     double sra = sin(0.5*(ra2 - ra1));
     double sde = sin(0.5*(dec2 - dec1));
     return 2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)));
+}
+
+// Compute the angular distance between two RA/Dec positions [arcsec].
+// Assumes that RA & Dec coordinates are in degrees.
+double angdist(double tra1, double tdec1, double tra2, double tdec2) {
+    const double d2r = 3.14159265359/180.0;
+    double ra1 = d2r*tra1, ra2 = d2r*tra2, dec1 = d2r*tdec1, dec2 = d2r*tdec2;
+    double sra = sin(0.5*(ra2 - ra1));
+    double sde = sin(0.5*(dec2 - dec1));
+    return 3600.0*2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)))/d2r;
 }
 
 struct qxmatch_res {
@@ -432,6 +442,65 @@ void xmatch_check_lost(const id_pair& p, declare_keywords(_save(""))) {
             fits::write_table(get_keyword(_save), ftable(p.lost));
         }
     }
+}
+
+template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
+vec1d qxcor(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
+    const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2) {
+
+    phypp_check(n_elements(ra1) == n_elements(dec1), "qxcor: not as many RA as there are Dec");
+    phypp_check(n_elements(ra2) == n_elements(dec2), "qxcor: not as many RA as there are Dec");
+
+    const uint_t n1 = n_elements(ra1);
+    const uint_t n2 = n_elements(ra2);
+
+    vec1d res;
+    res.reserve(n1*n2);
+
+    const double d2r = 3.14159265359/180.0;
+    auto dra1  = ra1*d2r;
+    auto ddec1 = dec1*d2r;
+    auto dcdec1 = cos(ddec1);
+    auto dra2  = ra2*d2r;
+    auto ddec2 = dec2*d2r;
+    auto dcdec2 = cos(ddec2);
+
+    for (uint_t i1 : range(n1))
+    for (uint_t i2 : range(n2)) {
+        double sra = sin(0.5*(dra2[i2] - dra1[i1]));
+        double sde = sin(0.5*(ddec2[i2] - ddec1[i1]));
+        double sd = sde*sde + sra*sra*dcdec2[i2]*dcdec1[i1];
+        res.push_back(3600.0*(180.0/3.14159265359)*2*asin(sqrt(sd)));
+    }
+
+    return res;
+}
+
+template<typename TypeR, typename TypeD>
+vec1d qxcor_self(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec) {
+    phypp_check(n_elements(ra) == n_elements(dec), "qxcor_self: not as many RA as there are Dec");
+
+    const uint_t n = n_elements(ra);
+
+    vec1d res;
+    if (n < 2) return res;
+
+    res.reserve(n*(n-1));
+
+    const double d2r = 3.14159265359/180.0;
+    auto dra  = ra*d2r;
+    auto ddec = dec*d2r;
+    auto dcdec = cos(ddec);
+
+    for (uint_t i1 : range(n))
+    for (uint_t i2 : range(i1+1, n)) {
+        double sra = sin(0.5*(dra[i2] - dra[i1]));
+        double sde = sin(0.5*(ddec[i2] - ddec[i1]));
+        double sd = sde*sde + sra*sra*dcdec[i2]*dcdec[i1];
+        res.push_back(3600.0*(180.0/3.14159265359)*2*asin(sqrt(sd)));
+    }
+
+    return res;
 }
 
 struct comment_pool_t {
@@ -1101,9 +1170,9 @@ auto field_area(const TX& ra, const TY& dec) {
     typename TY::effective_type hy = dec[hull]*d2r;
     uint_t nh = hull.size();
     for (uint_t i = 2; i < nh; ++i) {
-        double e1 = angdist(hx[0],   hy[0],   hx[i-1], hy[i-1]);
-        double e2 = angdist(hx[i-1], hy[i-1], hx[i],   hy[i]);
-        double e3 = angdist(hx[i],   hy[i],   hx[0],   hy[0]);
+        double e1 = angdistr(hx[0],   hy[0],   hx[i-1], hy[i-1]);
+        double e2 = angdistr(hx[i-1], hy[i-1], hx[i],   hy[i]);
+        double e3 = angdistr(hx[i],   hy[i],   hx[0],   hy[0]);
         double p = 0.5*(e1 + e2 + e3);
         area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
     }
