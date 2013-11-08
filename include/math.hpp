@@ -6,6 +6,10 @@
 #include <random>
 #include <cmath>
 
+#ifndef NO_GSL
+#include <gsl/gsl_sf_bessel.h>
+#endif
+
 static const double dnan = std::numeric_limits<double>::quiet_NaN();
 static const float  fnan = std::numeric_limits<float>::quiet_NaN();
 static const double dinf = std::numeric_limits<double>::infinity();
@@ -708,6 +712,30 @@ auto invsqr(vec_t<Dim,Type>&& v) {
         return std::move(v); \
     }
 
+#define VECTORIZE_REN(name, orig) \
+    template<std::size_t Dim, typename Type, typename ... Args> \
+    auto name(const vec_t<Dim,Type>& v, const Args& ... args) { \
+        using ntype = decltype(orig(v[0], args...)); \
+        vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
+        for (auto& t : v.data) { \
+            r.data.push_back(orig(dref(t), args...)); \
+        } \
+        return r; \
+    } \
+    template<std::size_t Dim, typename Type, typename ... Args> \
+    auto name(vec_t<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
+        !std::is_pointer<Type>::value && std::is_same<decltype(orig(v[0], args...)), Type>::value, \
+        vec_t<Dim,Type>>::type { \
+        for (auto& t : v) { \
+            t = orig(t, args...); \
+        } \
+        return std::move(v); \
+    } \
+    template<typename ... Args> \
+    auto name(Args&& ... args) { \
+        return orig(std::forward<Args>(args)...); \
+    }
+
 VECTORIZE(sqrt);
 VECTORIZE(sqr);
 VECTORIZE(invsqr);
@@ -736,6 +764,17 @@ VECTORIZE(floor);
 VECTORIZE(round);
 VECTORIZE(fabs);
 VECTORIZE(clamp);
+VECTORIZE_REN(bessel_j0, j0);
+VECTORIZE_REN(bessel_j1, j1);
+VECTORIZE_REN(bessel_y0, y0);
+VECTORIZE_REN(bessel_y1, y1);
+
+#ifndef NO_GSL
+VECTORIZE_REN(bessel_i0, gsl_sf_bessel_I0);
+VECTORIZE_REN(bessel_i1, gsl_sf_bessel_I1);
+VECTORIZE_REN(bessel_k0, gsl_sf_bessel_K0);
+VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
+#endif
 
 #undef VECTORIZE
 
