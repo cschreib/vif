@@ -37,11 +37,20 @@ struct range_iterator_t<range_t<T>> {
 };
 
 template<typename T>
+using range_dtype = typename std::conditional<
+    std::is_unsigned<T>::value,
+    typename std::make_signed<T>::type,
+    T
+>::type;
+
+template<typename T>
 struct range_t {
-    T b, e, d;
+    T b, e;
+    range_dtype<T> d;
     std::size_t n;
 
-    range_t(T b_, T e_, std::size_t n_) : b(b_), e(e_), d((e_-b_)/n_), n(n_) {}
+    range_t(T b_, T e_, std::size_t n_) : b(b_), e(e_),
+        d(n_ == 0 ? 0 : (range_dtype<T>(e_)-range_dtype<T>(b_))/range_dtype<T>(n_)), n(n_) {}
 
     using iterator = range_iterator_t<range_t>;
 
@@ -56,16 +65,16 @@ range_t<T> range(T i, U e, std::size_t n) {
 
 template<typename T, typename U = T>
 range_t<T> range(T i, U e) {
-    return range(i, e, e-i);
+    return range(i, e, abs(range_dtype<T>(e)-range_dtype<T>(i)));
 }
 
-template<typename T>
+template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
 range_t<T> range(T n) {
     return range(T(0), n);
 }
 
-template<typename T, typename enable = typename std::enable_if<is_vec<T>::value>::type>
-range_t<T> range(T n) {
+template<std::size_t Dim, typename T>
+range_t<std::size_t> range(const vec_t<Dim,T>& n) {
     return range(n.size());
 }
 
