@@ -462,6 +462,16 @@ typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, con
 }
 
 template<std::size_t Dim, typename Type>
+vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double percu = -1.0) {
+    if (percl > 0.5) percl = 1 - percl;
+    if (percu < 0.0) percu = 1 - percl;
+    else if (percu < percl) std::swap(percu, percl);
+
+    auto p = percentiles(v, percl, percu);
+    return v > p[0] && v < p[1];
+}
+
+template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec_t<Dim,Type>& v) {
     return dref(*std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
         if (nan(dref(t1))) return false;
