@@ -1,10 +1,6 @@
 #include <phypp.hpp>
 
-void print_help() {
-    using namespace format;
-
-    print("fcolop v1.0");
-}
+void print_help();
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -13,6 +9,11 @@ int main(int argc, char* argv[]) {
     }
 
     std::string file = argv[1];
+    if (!file::exists(file)) {
+        error("cannot open file '"+file+"'");
+        return 1;
+    }
+
     std::string op = tolower(argv[2]);
     vec1s cols;
     bool force = false;
@@ -289,4 +290,16 @@ int main(int argc, char* argv[]) {
     fits_close_file(fptr, &status);
 
     return 0;
+}
+
+void print_help() {
+    using namespace format;
+
+    print("fcolop v1.0");
+    header("Usage: fcolop op cols=[...] [force]");
+    header("Available commands:");
+    bullet("remove", "remove the specified columns from this FITS file");
+    bullet("transpose", "transpose the specified columns within this FITS file");
+    bullet("meta", "shift all 'meta' columns into a new extension so that the file can be read in "
+        "programs like TOPCAT that expect a single invariant dimension for all columns");
 }
