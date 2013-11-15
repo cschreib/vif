@@ -803,9 +803,9 @@ int main(int argc, char* argv[]) {
 
     {
         print("'replace' & 'split'");
-        vec1s s = {"/home/dir/", "/bin/ds9", "ls"};
+        vec1s s = {"/home/dir/", "/bin//ds9", "ls"};
         s = replace(s, "/", ":");
-        check(s, ":home:dir:, :bin:ds9, ls");
+        check(s, ":home:dir:, :bin::ds9, ls");
 
         vec1s t = split(s[0], ":");
         check(t, ", home, dir, ");
