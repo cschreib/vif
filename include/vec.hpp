@@ -545,6 +545,11 @@ struct vec_t {
         resize();
     }
 
+    void resize(const std::array<std::size_t, Dim> d) {
+        dims = d;
+        resize();
+    }
+
     void clear() {
         data.clear();
         for (uint_t i = 0; i < Dim; ++i) {
@@ -1900,7 +1905,12 @@ void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
         t1 = t2;
     } else {
+        if (t2.empty()) return;
+
         std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
+        phypp_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
+            ") and (", t2.dims, ")");
+
         auto tmp = t1;
         t1.dims[N] += n2;
         t1.resize();
@@ -1915,7 +1925,12 @@ void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
         t1 = t2;
     } else {
+        if (t2.empty()) return;
+
         std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
+        phypp_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
+            ") and (", t2.dims, ")");
+
         auto tmp = t1;
         t1.dims[N] += n2;
         t1.resize();
