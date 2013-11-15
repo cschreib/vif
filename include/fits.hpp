@@ -318,6 +318,7 @@ namespace fits {
         const std::string& comment = "") {
 
         if (key.size() > 8) return false;
+
         std::string entry = key+std::string(8-key.size(), ' ')+"= ";
         std::string value = strn(v);
         if (!comment.empty()) {
@@ -325,10 +326,41 @@ namespace fits {
         }
         if (value.size() > 80) return false;
         entry += value;
+
+        std::size_t ipos = hdr.find_last_of('E');
+        std::size_t nentry = hdr.size()/80 + 1;
+        for (uint_t i = 0; i < nentry; ++i) {
+            std::string tentry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
+            std::size_t eqpos = tentry.find_first_of("=");
+            if (eqpos == tentry.npos) continue;
+            std::size_t cpos = tentry.find_first_of("/", eqpos);
+            std::string nam = trim(tentry.substr(0, eqpos));
+
+            if (nam == key) {
+                ipos = i*80;
+
+                if (comment.empty() && cpos != tentry.npos) {
+                    std::string cmt = tentry.substr(cpos+1);
+                    entry += " /"+cmt;
+                    if (entry.size() > 80) {
+                        if (entry.back() == '&') {
+                            entry.resize(80);
+                            entry.back() = '&';
+                        } else {
+                            entry.resize(80);
+                        }
+                    }
+                }
+
+                hdr.erase(ipos, 80);
+
+                break;
+            }
+        }
+
         entry += std::string(80-entry.size(), ' ');
 
-        std::size_t pos = hdr.find_last_of('E');
-        hdr.insert(pos, entry);
+        hdr.insert(ipos, entry);
         return true;
     }
 
@@ -461,11 +493,13 @@ namespace fits {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
+
             std::size_t cpos = entry.find_first_of("'/", eqpos);
-            if (cpos == entry.npos) continue;
-            if (entry[cpos] == '\'') {
-                cpos = entry.find_first_of("'", cpos+1);
-                cpos = entry.find_first_of("/", cpos+1);
+            if (cpos != entry.npos) {
+                if (entry[cpos] == '\'') {
+                    cpos = entry.find_first_of("'", cpos+1);
+                    cpos = entry.find_first_of("/", cpos+1);
+                }
             }
 
             std::string nam = trim(entry.substr(0, eqpos));
@@ -475,10 +509,20 @@ namespace fits {
                 continue;
             }
 
-            std::string comment = trim(entry.substr(cpos+1));
+            std::string comment;
+            if (cpos != entry.npos) {
+                comment = trim(entry.substr(cpos+1));
+            }
+
             char* tcomment = const_cast<char*>(comment.c_str());
 
-            std::string value = trim(entry.substr(eqpos+1, cpos-eqpos-1));
+            std::size_t vsize;
+            if (cpos == entry.npos) {
+                vsize = entry.size() - eqpos - 1;
+            } else {
+                vsize = cpos - eqpos - 1;
+            }
+            std::string value = trim(entry.substr(eqpos+1, vsize));
             if (value[0] == '\'') {
                 for (uint_t j = value.size()-1; j != npos; --j) {
                     if (value[j] == '\'') {
