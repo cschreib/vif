@@ -375,6 +375,16 @@ vec1s split(const std::string& ts, const T& pattern) {
     return ret;
 }
 
+vec1s cut(const std::string& ts, uint_t size) {
+    uint_t ncut = floor(ts.size()/float(size));
+    vec1s res(ncut);
+    for (uint_t i = 0; i < ncut; ++i) {
+        res[i] = ts.substr(i*size, std::min(size, ts.size() - i*size));
+    }
+
+    return res;
+}
+
 vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", bool ellipse = false) {
     vec1s ret;
     std::string s = ts;
