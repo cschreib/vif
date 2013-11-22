@@ -490,42 +490,64 @@ namespace file {
         }
     }
 
-    void write_table_phypp_check_size_(std::size_t n) {}
+    void write_table_phypp_check_size_(std::size_t n, std::size_t i) {}
 
     template<typename Type, typename ... Args>
-    void write_table_phypp_check_size_(std::size_t& n, const vec_t<1,Type>& v, const Args& ... args) {
+    void write_table_phypp_check_size_(std::size_t& n, std::size_t i, const vec_t<1,Type>& v,
+        const Args& ... args) {
+
         if (n == 0) {
             n = v.size();
         }
 
-        assert(v.size() == n);
+        phypp_check(v.size() == n, "incorrect dimension for column "+strn(i)+" ("+
+            strn(v.size())+" vs "+strn(n)+")");
 
-        write_table_phypp_check_size_(n, args...);
+        write_table_phypp_check_size_(n, i+1, args...);
     }
 
-    void write_table_do_(std::ofstream& file, std::size_t cwidth, std::size_t i) {
+    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+        std::size_t i, std::size_t j) {
         file << '\n';
     }
 
     template<typename Type, typename ... Args>
-    void write_table_do_(std::ofstream& file, std::size_t cwidth, std::size_t i, const vec_t<1,Type>& v, const Args& ... args) {
-        std::string s = " "+strn(v[i]);
-        if (s.size() < cwidth) {
-            s += std::string(cwidth - s.size(), ' ');
+    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+        std::size_t i, std::size_t j, const vec_t<1,Type>& v, const Args& ... args) {
+
+        if (j != 0) {
+            file << sep;
         }
+
+        std::string s = strn(v[i]);
+        if (s.size() < cwidth) {
+            file << std::string(cwidth - s.size(), ' ');
+        }
+
         file << s;
 
-        write_table_do_(file, cwidth, i, args...);
+        write_table_do_(file, cwidth, sep, i, j+1, args...);
     }
 
     template<typename ... Args>
     void write_table(const std::string& filename, std::size_t cwidth, const Args& ... args) {
-        std::size_t n = 0;
-        write_table_phypp_check_size_(n, args...);
+        std::size_t n = 0, t = 0;
+        write_table_phypp_check_size_(n, t, args...);
 
         std::ofstream file(filename);
         for (std::size_t i = 0; i < n; ++i) {
-            write_table_do_(file, cwidth, i, args...);
+            write_table_do_(file, cwidth, " ", i, 0, args...);
+        }
+    }
+
+    template<typename ... Args>
+    void write_table_csv(const std::string& filename, std::size_t cwidth, const Args& ... args) {
+        std::size_t n = 0, t = 0;
+        write_table_phypp_check_size_(n, t,args...);
+
+        std::ofstream file(filename);
+        for (std::size_t i = 0; i < n; ++i) {
+            write_table_do_(file, cwidth, ",", i, 0, args...);
         }
     }
 }
