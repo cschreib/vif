@@ -957,6 +957,23 @@ int main(int argc, char* argv[]) {
         check(in_convex_hull(2*mean(cat.ra), 2*mean(cat.dec), cat.hull, cat.ra, cat.dec), "0");
     }
 
+    {
+        print("sex2deg & deg2sex");
+        std::string sra = "3:32:21.129";
+        std::string sdec = "-27:56:26.674";
+
+        double ra, dec;
+        sex2deg(sra, sdec, ra, dec);
+
+        check(ra, "53.0880375");
+        check(dec, "-27.9407427778");
+
+        std::string sra2, sdec2;
+        deg2sex(ra, dec, sra2, sdec2);
+        check(sra2, sra);
+        check(sdec2, sdec);
+    }
+
     print("\nall tests passed!\n");
 
     return 0;

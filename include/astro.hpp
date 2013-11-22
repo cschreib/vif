@@ -213,6 +213,99 @@ double angdist(double tra1, double tdec1, double tra2, double tdec2) {
     return 3600.0*2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)))/d2r;
 }
 
+// Convert a set of sexagesimal coordinates ('hh:mm:ss.ms') into degrees
+void sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
+    vec1s starr1 = split(sra, ":");
+    vec1s starr2 = split(sdec, ":");
+
+    if (starr1.size() != 3 || starr2.size() != 3) {
+        ra = dnan;
+        dec = dnan;
+        return;
+    }
+
+    int_t rah, ram, dech, decm;
+    double ras, decs;
+
+    from_string(starr1[0], rah);
+    from_string(starr1[1], ram);
+    from_string(starr1[2], ras);
+    from_string(starr2[0], dech);
+    from_string(starr2[1], decm);
+    from_string(starr2[2], decs);
+
+    double signr = sign(rah);
+    double signd = sign(dech);
+
+    ra = (rah + ram*signr/60.0 + ras*signr/3600.0)*15.0;
+    dec = dech + decm*signd/60.0 + decs*signd/3600.0;
+}
+
+template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
+void sex2deg(const vec_t<Dim,TSR>& sra, const vec_t<Dim,TSD>& sdec, vec_t<Dim,TR>& ra, vec_t<Dim,TD>& dec) {
+    phypp_check(sra.size() == sdec.size(), "sex2deg: RA and Dec dimensions do not match (",
+        sra.dims, " vs ", sdec.dims, ")");
+
+    ra.resize(sra.dims);
+    dec.resize(sra.dims);
+    for (uint_t i : range(sra)) {
+        sex2deg(sra[i], sdec[i], ra[i], dec[i]);
+    }
+}
+
+// Convert a set of degree coordinates into sexagesimal format ('hh:mm:ss.ms')
+void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
+    int_t rah, ram, dech, decm;
+    double ras, decs;
+
+    double signr = sign(ra);
+    ra /= 15.0*signr;
+    rah = ra;
+    ram = (ra - rah)*60.0;
+    ras = ((ra - rah)*60 - ram)*60;
+    rah *= signr;
+
+    double signd = sign(dec);
+    dec *= signd;
+    dech = dec;
+    decm = (dec - dech)*60.0;
+    decs = ((dec - dech)*60 - decm)*60;
+    dech *= signd;
+
+    auto format_sec = [](double sec) {
+        std::string s = strn(sec);
+        auto p = s.find_first_of('.');
+        if (p == s.npos) {
+            if (s.size() != 2) {
+                return "0"+ s + ".0";
+            } else {
+                return s + ".0";
+            }
+        } else {
+            if (p != 2u) {
+                return "0"+ s;
+            } else {
+                return s;
+            }
+        }
+    };
+
+    sra = strn(rah)+':'+strn(ram,2)+':'+format_sec(ras);
+    sdec = strn(dech)+':'+strn(decm,2)+':'+format_sec(decs);
+}
+
+template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
+void deg2sex(const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec, vec_t<Dim,TSR>& sra, vec_t<Dim,TSD>& sdec) {
+    phypp_check(ra.size() == dec.size(), "deg2sex: RA and Dec dimensions do not match (",
+        ra.dims, " vs ", dec.dims, ")");
+
+    sra.resize(ra.dims);
+    sdec.resize(ra.dims);
+    for (uint_t i : range(ra)) {
+        deg2sex(ra[i], dec[i], sra[i], sdec[i]);
+    }
+}
+
 struct qxmatch_res {
     vec2u id;
     vec2d d;
