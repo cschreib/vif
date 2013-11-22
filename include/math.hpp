@@ -654,6 +654,11 @@ auto clamp(const T& t, const U& mi, const V& ma) {
     return (t < mi ? mi : (t > ma ? ma : t));
 }
 
+template<typename T>
+auto sign(const T& t) {
+    return 2*(t > 0) - 1;
+}
+
 template<std::size_t Dim, typename Type, typename U,
     typename enable = typename std::enable_if<!is_vec<U>::value>::type>
 auto pow(const U& u, const vec_t<Dim,Type>& v) -> vec_t<Dim, decltype(pow(u,v(0)))> {
