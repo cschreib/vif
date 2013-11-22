@@ -316,6 +316,6 @@ namespace reflex {
 
 #define NO_MEMBER(name) \
     using _reflex_types = decltype(reflex::make_types_()); \
-    reflex::data_t _reflex = {REFLEX_MEM_HEADER, typeid(*this), name, {}}
+    reflex::data_t _reflex = reflex::data_impl_t{typeid(*this), name, {}}
 
 #endif
