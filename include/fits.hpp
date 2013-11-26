@@ -1074,9 +1074,10 @@ namespace fits {
     void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names,
         const named_t<T>& v, Args&& ... args) {
 
-        std::size_t pos = names.find_first_of(')');
-        if (pos != names.npos) ++pos;
         write_table_impl_(fptr, id, v.name, v.obj);
+
+        std::size_t pos = names.find_first_of(')');
+        pos = names.find_first_of(',', pos);
 
         if (pos != names.npos) {
             write_table_(macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
