@@ -1295,21 +1295,35 @@ struct filter_t {
 
 template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
-    // NOTE: this should be more correct, and will not miss any feature of both the
-    // SED and the filter, but is much slower
+    if (filter.lam[0] < lam[0] || filter.lam[-1] > lam[-1]) {
+        return dnan;
+    }
 
-    // vec1d xgrid = merge(filter.lam, lam);
-    // xgrid = xgrid[sort(xgrid)];
-    // vec1d ifil = interpolate(filter.res, filter.lam, xgrid);
-    // double mx = min(filter.lam);
-    // ifil[where(xgrid < mx)] = 0;
-    // mx = max(filter.lam);
-    // ifil[where(xgrid > mx)] = 0;
-    // return integrate(xgrid, ifil*interpolate(sed, lam, xgrid))/integrate(xgrid, ifil);
+    uint_t sp = lower_bound(filter.lam[0], lam);
+    uint_t ep = upper_bound(filter.lam[-1], lam);
 
-    // NOTE: this is a faster approximation, where the SED is interpolated on the
-    // response curve of the filter
-    return integrate(filter.lam, filter.res*interpolate(sed, lam, filter.lam));
+    vec1d nlam; nlam.reserve(filter.lam.size() + ep - sp + 1);
+    vec1d nrs; nrs.reserve(filter.lam.size() + ep - sp + 1);
+
+    uint_t j = sp;
+    for (uint_t i : range(filter.lam)) {
+        nlam.push_back(filter.lam[i]);
+        nrs.push_back(filter.res[i]*interpolate(
+            sed[j-1], sed[j], lam[j-1], lam[j], filter.lam[i]
+        ));
+
+        if (i != filter.lam.size() - 1) {
+            while (lam[j] < filter.lam[i+1]) {
+                nlam.push_back(lam[j]);
+                nrs.push_back(sed[j]*interpolate(
+                    filter.res[i], filter.res[i+1], filter.lam[i], filter.lam[i+1], lam[j]
+                ));
+                ++j;
+            }
+        }
+    }
+
+    return integrate(nlam, nrs);
 }
 
 template<typename TypeL, typename TypeS>
@@ -1319,7 +1333,7 @@ auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,T
     vec_t<1,rtype> r; r.reserve(nsed);
 
     for (uint_t s = 0; s < nsed; ++s) {
-        r.push_back(integrate(filter.lam, filter.res*interpolate(sed(s,_), lam(s,_), filter.lam)));
+        r.push_back(sed2flux(filter, lam(s,_).concretise(), sed(s,_).concretise()));
     }
 
     return r;
