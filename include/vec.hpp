@@ -17,6 +17,9 @@ using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;
 static const uint_t npos = uint_t(-1);
 
+template<typename T>
+std::string strn(const T&);
+
 // Generic vector type
 template<std::size_t Dim, typename Type>
 struct vec_t;
@@ -774,7 +777,8 @@ struct vec_t {
     #define OPERATOR(op) \
         template<typename U> \
         vec_t& operator op (const vec_t<Dim,U>& u) { \
-            assert(data.size() == u.data.size()); \
+            phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
+                "' ("+strn(dims)+" vs "+strn(u.dims)+")"); \
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
@@ -1087,7 +1091,8 @@ struct vec_t<Dim,Type*> {
     #define OPERATOR(op) \
         template<typename U> \
         vec_t& operator op (const vec_t<Dim,U>& u) { \
-            assert(data.size() == u.data.size()); \
+            phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
+                "' ("+strn(dims)+" vs "+strn(u.dims)+")"); \
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
@@ -1294,6 +1299,8 @@ auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
 #define VECTORIZE(op, sop) \
     template<std::size_t Dim, typename T, typename U> \
     vec_t<Dim,typename op_res_t<OP_TYPE(op),T,U>::type> operator op (const vec_t<Dim,T>& v, const vec_t<Dim,U>& u) { \
+        phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         vec_t<Dim,typename op_res_t<OP_TYPE(op),T,U>::type> tv; tv.dims = v.dims; tv.reserve(v.size()); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             tv.data.push_back(get_element_(v, i) op get_element_(u, i)); \
@@ -1311,6 +1318,8 @@ auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
     template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
         std::is_same<typename op_res_t<OP_TYPE(op),T,U>::type, T>::value>::type> \
     vec_t<Dim,T> operator op (vec_t<Dim,T>&& v, const vec_t<Dim,U>& u) { \
+        phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             v.data[i] sop get_element_(u, i); \
         } \
@@ -1336,6 +1345,8 @@ auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
     template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
         std::is_same<typename op_res_t<OP_TYPE(op),U,T>::type, T>::value>::type> \
     vec_t<Dim,T> operator op (const vec_t<Dim,U>& u, vec_t<Dim,T>&& v) { \
+        phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             v.data[i] = get_element_(u, i) op v.data[i]; \
         } \
@@ -1353,6 +1364,8 @@ auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
         std::is_same<typename op_res_t<OP_TYPE(op),T,U>::type, T>::value && \
         !std::is_pointer<U>::value>::type> \
     vec_t<Dim,T> operator op (vec_t<Dim,T>&& v, vec_t<Dim,U>&& u) { \
+        phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             v.data[i] sop u.data[i]; \
         } \
@@ -1388,7 +1401,8 @@ VECTORIZE(-, -=)
     \
     template<std::size_t Dim, typename T, typename U> \
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v, const vec_t<Dim,U>& u) { \
-        assert(v.size() == u.size()); \
+        phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             tv.data[i] = (dref(v.data[i]) op dref(u.data[i])); \
@@ -1412,7 +1426,8 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
     template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
         is_bool_t<T>::value && is_bool_t<U>::value>::type> \
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v1, const vec_t<Dim,U>& v2) { \
-        assert(v1.size() == v2.size()); \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         vec_t<Dim,bool> tv = v1; \
         for (uint_t i = 0; i < v1.size(); ++i) { \
             tv.data[i] = tv.data[i] op dref(v2.data[i]); \
@@ -1422,7 +1437,8 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
     template<std::size_t Dim, typename U, typename enable = typename std::enable_if< \
         is_bool_t<U>::value>::type> \
     vec_t<Dim,bool> operator op (vec_t<Dim,bool>&& v1, const vec_t<Dim,U>& v2) { \
-        assert(v1.size() == v2.size()); \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v1.size(); ++i) { \
             v1.data[i] = v1.data[i] op dref(v2.data[i]); \
         } \
@@ -1431,7 +1447,8 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
     template<std::size_t Dim, typename T, typename enable = typename std::enable_if< \
         is_bool_t<T>::value>::type> \
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v1, vec_t<Dim,bool>&& v2) { \
-        assert(v1.size() == v2.size()); \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v2.size(); ++i) { \
             v2.data[i] = dref(v1.data[i]) op v2.data[i]; \
         } \
@@ -1439,7 +1456,8 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
     } \
     template<std::size_t Dim> \
     vec_t<Dim,bool> operator op (vec_t<Dim,bool>&& v1, vec_t<Dim,bool>&& v2) { \
-        assert(v1.size() == v2.size()); \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v1.size(); ++i) { \
             v1.data[i] = v1.data[i] op dref(v2.data[i]); \
         } \
