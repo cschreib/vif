@@ -1295,7 +1295,7 @@ struct filter_t {
 
 template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
-    if (filter.lam[0] < lam[0] || filter.lam[-1] > lam[-1]) {
+    if (!(filter.lam[0] > lam[0] && filter.lam[-1] < lam[-1])) {
         return dnan;
     }
 
