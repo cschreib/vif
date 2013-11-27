@@ -66,7 +66,7 @@ std::string seconds_str(T t) {
     if (sec != 0)                  date += strn(sec)+"s";
     if (ms  != 0 || !date.empty()) date += strn(ms,3)+"ms";
     if (us  != 0 || !date.empty()) date += strn(us,3)+"us";
-    date += strn(us,3)+"ns";
+    date += strn(ns,3)+"ns";
 
     while (date[0] == '0' && date.size() != 3) {
         date.erase(0,1);
