@@ -1526,6 +1526,10 @@ bool is_sorted(const vec_t<1,Type>& v) {
     return true;
 }
 
+double interpolate(double y1, double y2, double x1, double x2, double x) {
+    return y1 + (y2 - y1)*(x - x1)/(x2 - x1);
+}
+
 // Perform linear interpolation of data 'y' of position 'x' at new positions 'nx'.
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
