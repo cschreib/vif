@@ -110,6 +110,17 @@ bool from_string(const std::string& s, T& t) {
     return (ss >> t);
 }
 
+template<std::size_t Dim, typename T>
+vec_t<Dim,bool> from_string(const vec_t<Dim,std::string>& s, vec_t<Dim,T>& t) {
+    vec_t<Dim,bool> res(s.dims);
+    t.resize(s.dims);
+    for (uint_t i : range(s)) {
+        res[i] = from_string(s[i], t[i]);
+    }
+
+    return res;
+}
+
 template<typename T>
 T nstr(const std::string& s) {
     std::istringstream ss(s);
