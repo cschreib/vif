@@ -22,7 +22,13 @@ auto e10(const T& t) {
     return pow(10.0, t);
 }
 
-// Create a range.
+template<typename T, typename U, typename V,
+    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+auto clamp(const T& t, const U& mi, const V& ma) {
+    return (t < mi ? mi : (t > ma ? ma : t));
+}
+
+// Create a range with integer step from 0 to n (exclusive)
 template<typename T>
 vec1u rgen(T n) {
     phypp_check(n >= 0, "'rgen(n)' needs a positive or null value for 'n' (got ", n, ")");
@@ -35,6 +41,7 @@ vec1u rgen(T n) {
     return v;
 }
 
+// Create a range with integer step from i to j (inclusive)
 template<typename T, typename U>
 vec_t<1,T> rgen(T i, U j) {
     if (i < T(j)) {
@@ -54,6 +61,7 @@ vec_t<1,T> rgen(T i, U j) {
     }
 }
 
+// Create a range of n steps from i to j (inclusive)
 template<typename T, typename U, typename V>
 vec1d rgen(T i, U j, V n) {
     phypp_check(n >= 0, "'rgen(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
@@ -430,7 +438,7 @@ rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
     if (ok.empty()) return 0;
 
     typename vec_t<1,Type>::effective_type t = v[ok];
-    std::ptrdiff_t offset = t.size()*u;
+    std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     return *(t.begin() + offset);
 }
@@ -440,7 +448,7 @@ void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t) {}
 
 template<std::size_t Dim, typename Type, typename U, typename ... Args>
 void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, const Args& ... args) {
-    std::ptrdiff_t offset = t.size()*u;
+    std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     r.data[i] = *(t.begin() + offset);
     ++i;
@@ -647,12 +655,6 @@ void data_info_(const vec_t<Dim,Type>& v) {
 #define data_info(x) \
     print("data info: ", #x); \
     data_info_(x);
-
-template<typename T, typename U, typename V,
-    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-auto clamp(const T& t, const U& mi, const V& ma) {
-    return (t < mi ? mi : (t > ma ? ma : t));
-}
 
 template<typename T>
 auto sign(const T& t) {
