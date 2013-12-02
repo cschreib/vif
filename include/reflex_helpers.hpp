@@ -53,7 +53,7 @@ namespace reflex {
         return typeid(typename std::decay<T>::type).name();
     }
 }
-    
+
 template<typename T, typename U>
 void merge_elements(T& t, const U& u);
 
@@ -103,6 +103,69 @@ void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u) {
 template<typename T, typename U>
 void merge_elements(T& t, const U& u) {
     merge_elements_(reflex::wrap(t), reflex::wrap(u));
+}
+
+template<typename T, typename U>
+void merge_elements(T& t, const U& u, const vec1u& ids);
+
+template<typename T, typename U>
+void merge_elements_(T& t, const U& u, const vec1u& ids) {
+    t = u;
+}
+
+template<typename T, typename U>
+void merge_elements_(vec_t<1,T>& t, const vec_t<1,U>& u, const vec1u& ids) {
+    t = u[ids];
+}
+
+template<typename T, typename U>
+void merge_elements_(vec_t<2,T>& t, const vec_t<2,U>& u, const vec1u& ids) {
+    t = u(ids,_);
+}
+
+template<typename T, typename U>
+void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u, const vec1u& ids) {
+    struct {
+        reflex::struct_t<T> t;
+        const vec1u& ids;
+
+        template<typename M>
+        void operator () (const reflex::member_t& m, const M& v) {
+            struct {
+                const reflex::member_t& m;
+                const M& v;
+                const vec1u& ids;
+
+                void operator () (reflex::member_t& n, M& p) {
+                    if (this->m.name == n.name) {
+                        merge_elements(p, this->v, this->ids);
+                    }
+                }
+
+                template<typename P, typename enable =
+                    typename std::enable_if<reflex::is_struct<M>::value>::type>
+                void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
+                    merge_elements_(p, this->v, this->ids);
+                }
+
+                template<typename P>
+                void operator () (reflex::member_t& n, P&& p) {
+                    phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                        this->m.full_name(), "' into '", n.full_name(), "'"
+                    );
+                }
+            } do_run{m, v, this->ids};
+
+            reflex::foreach_member(this->t, do_run);
+        }
+    } do_merge{t, ids};
+
+    reflex::foreach_member(u, do_merge);
+}
+
+template<typename T, typename U>
+void merge_elements(T& t, const U& u, const vec1u& ids) {
+    merge_elements_(reflex::wrap(t), reflex::wrap(u), ids);
 }
 
 #endif
