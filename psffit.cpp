@@ -11,6 +11,7 @@ int main(int argc, char* argv[]) {
     std::string psf_model;
     std::string serr;
     float radius = 0.0;
+    float psf_frac = 1.0;
     float fconv = 1.0;
     bool silent = false;
     bool nobg = false;
@@ -18,7 +19,7 @@ int main(int argc, char* argv[]) {
     std::string resi;
 
     read_args(argc-3, argv+3, arg_list(
-        name(psf_model, "psf"), radius, name(serr, "error"), fconv, silent,
+        name(psf_model, "psf"), radius, psf_frac, name(serr, "error"), fconv, silent,
         name(resi, "residual"), nobg, save
     ));
 
@@ -100,7 +101,10 @@ int main(int argc, char* argv[]) {
     }
 
     vec1u idf;
-    if (radius != 0.0) {
+    if (psf_frac != 1.0) {
+        idf = where(finite(img) && finite(err) && finite(psf) &&
+            psf > (1.0 - psf_frac)*max(psf[where(finite(psf))]));
+    } else if (radius != 0.0) {
         vec2d rad = generate_img({img.dims[0], img.dims[1]}, [=](uint_t x, uint_t y) {
             return sqr(double(x) - x0) + sqr(double(y) - y0);
         });
