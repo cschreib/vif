@@ -195,7 +195,7 @@ namespace fits {
     // Load the content of a FITS file into an array.
     // Be careful that C++ is a row-major language, in the sense that to get the (x,y) pixel of a
     // given image, one has to get the (y,x) element in the array.
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim = 2, typename Type = double>
     vec_t<Dim, Type> read(const std::string& name) {
         try {
             fits::FITS file(name, fits::Read);
