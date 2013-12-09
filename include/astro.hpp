@@ -213,6 +213,26 @@ double angdist(double tra1, double tdec1, double tra2, double tdec2) {
     return 3600.0*2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)))/d2r;
 }
 
+// Compute the angular distance between two RA/Dec positions [arcsec].
+// Assumes that RA & Dec coordinates are in degrees.
+template<std::size_t N, typename TR1, typename TD1, typename TR2, typename TD2>
+vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
+    const vec_t<N,TR2>& tra2, const vec_t<N,TD2>& tdec2) {
+    phypp_check(tra1.dims == tdec1.dims, "first RA and Dec dimensions do not match (",
+        tra1.dims, " vs ", tdec1.dims, ")");
+    phypp_check(tra2.dims == tdec2.dims, "second RA and Dec dimensions do not match (",
+        tra2.dims, " vs ", tdec2.dims, ")");
+    phypp_check(tra1.dims == tra2.dims, "position sets dimensions do not match (",
+        tra1.dims, " vs ", tra2.dims, ")");
+
+    vec_t<N,double> res(tra1.dims);
+    for (uint_t i : range(tra1)) {
+        res[i] = angdist(tra1[i], tdec1[i], tra2[i], tdec2[i]);
+    }
+
+    return res;
+}
+
 // Convert a set of sexagesimal coordinates ('hh:mm:ss.ms') into degrees
 void sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
     vec1s starr1 = split(sra, ":");
@@ -243,7 +263,7 @@ void sex2deg(const std::string& sra, const std::string& sdec, double& ra, double
 
 template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
 void sex2deg(const vec_t<Dim,TSR>& sra, const vec_t<Dim,TSD>& sdec, vec_t<Dim,TR>& ra, vec_t<Dim,TD>& dec) {
-    phypp_check(sra.size() == sdec.size(), "sex2deg: RA and Dec dimensions do not match (",
+    phypp_check(sra.size() == sdec.size(), "RA and Dec dimensions do not match (",
         sra.dims, " vs ", sdec.dims, ")");
 
     ra.resize(sra.dims);
@@ -296,7 +316,7 @@ void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
 
 template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
 void deg2sex(const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec, vec_t<Dim,TSR>& sra, vec_t<Dim,TSD>& sdec) {
-    phypp_check(ra.size() == dec.size(), "deg2sex: RA and Dec dimensions do not match (",
+    phypp_check(ra.size() == dec.size(), "RA and Dec dimensions do not match (",
         ra.dims, " vs ", dec.dims, ")");
 
     sra.resize(ra.dims);
@@ -337,9 +357,10 @@ template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
 qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
     declare_keywords(_thread(1u), _nth(1u), _verbose(false), _self(false))) {
-
-    phypp_check(n_elements(ra1) == n_elements(dec1), "qxmatch: not as many RA as there are Dec");
-    phypp_check(n_elements(ra2) == n_elements(dec2), "qxmatch: not as many RA as there are Dec");
+    phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
+        ra1.dims, " vs ", dec1.dims, ")");
+    phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
+        ra2.dims, " vs ", dec2.dims, ")");
 
     const double d2r = 3.14159265359/180.0;
     auto dra1  = ra1*d2r;
@@ -540,9 +561,10 @@ void xmatch_check_lost(const id_pair& p, declare_keywords(_save(""))) {
 template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
 vec1d qxcor(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2) {
-
-    phypp_check(n_elements(ra1) == n_elements(dec1), "qxcor: not as many RA as there are Dec");
-    phypp_check(n_elements(ra2) == n_elements(dec2), "qxcor: not as many RA as there are Dec");
+    phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
+        ra1.dims, " vs ", dec1.dims, ")");
+    phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
+        ra2.dims, " vs ", dec2.dims, ")");
 
     const uint_t n1 = n_elements(ra1);
     const uint_t n2 = n_elements(ra2);
@@ -571,7 +593,8 @@ vec1d qxcor(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
 
 template<typename TypeR, typename TypeD>
 vec1d qxcor_self(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec) {
-    phypp_check(n_elements(ra) == n_elements(dec), "qxcor_self: not as many RA as there are Dec");
+    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
+        ra.dims, " vs ", dec.dims, ")");
 
     const uint_t n = n_elements(ra);
 
