@@ -55,8 +55,20 @@ int main(int argc, char* argv[]) {
 
     vec1d tra(1);
     vec1d tdec(1);
-    from_string(argv[2], tra[0]);
-    from_string(argv[3], tdec[0]);
+    std::string sra = argv[2];
+    std::string sdec = argv[3];
+    if (find(sra, ":")) {
+        sex2deg(sra, sdec, tra[0], tdec[0]);
+    } else {
+        if (!from_string(sra, tra[0])) {
+            error("could not parse RA coordinate ", sra);
+            return 1;
+        }
+        if (!from_string(sdec, tdec[0])) {
+            error("could not parse Dec coordinate ", sdec);
+            return 1;
+        }
+    }
 
     auto res = qxmatch(tra, tdec, cra, cdec, keywords(_nth(nsrc)));
 
