@@ -7,6 +7,7 @@ int main(int argc, char* argv[]) {
     std::string out = "";
     std::string nbase = "";
     std::string dir = "";
+    vec1s show;
     bool verbose = false;
 
     if (argc < 3) {
@@ -16,7 +17,9 @@ int main(int argc, char* argv[]) {
 
     std::string clist = argv[1];
 
-    read_args(argc-1, argv+1, arg_list(name(tsrc, "src"), out, name(nbase, "name"), dir, verbose));
+    read_args(argc-1, argv+1, arg_list(
+        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show
+    ));
 
     if (!dir.empty()) {
         dir = file::directorize(dir);
@@ -174,6 +177,24 @@ int main(int argc, char* argv[]) {
             fits::setkey(nhdr, "CRPIX1", crx[ids[i]]);
             fits::setkey(nhdr, "CRPIX2", cry[ids[i]]);
             fits::write(out+name[ids[i]]+mname[b]+".fits", empty, nhdr);
+        }
+    }
+
+    if (show.size() > 0) {
+        if (ra.size() != 1) {
+            warning("can only display sources with DS9 for single objects, not catalogs");
+        } else {
+            if (show.size() > 3) {
+                warning("cannot display more than 3 images at the same time, ignoring");
+                show.resize(3);
+            }
+
+            vec1s chanels = {"red", "green", "blue"};
+            chanels = chanels[uindgen(show.size())];
+
+            spawn("ds9 -rgb "+
+                collapse("-"+chanels+" "+out+name[0]+show+".fits ")
+            );
         }
     }
 
