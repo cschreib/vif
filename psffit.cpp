@@ -49,54 +49,8 @@ int main(int argc, char* argv[]) {
         psf = img*0;
         psf[rr] = tpsf[rs];
     } else {
-        vec1s params = trim(split(psf_model, ","));
-        if (params[0] == "gaussian") {
-            uint_t narg = 2;
-            if (params.size() < narg+1) {
-                error("'gaussian' PSF model requires ", narg, " arguments (peak amplitude "
-                    "and width in pixels), but only ", params.size()-1, " are provided");
-                return false;
-            } else if (params.size() > narg+1 && !silent) {
-                warning("'gaussian' PSF model requires ", narg, " arguments (peak amplitude "
-                    "and width in pixels), but ", params.size()-1, " are provided");
-            }
-
-            double amp, width;
-            from_string(params[1], amp);
-            from_string(params[2], width);
-
-            psf = generate_img({img.dims[0], img.dims[1]}, [=](uint_t x, uint_t y) {
-                return amp*exp(-(sqr(double(x) - x0) + sqr(double(y) - y0))/(2*sqr(width)));
-            });
-        } else if (params[0] == "gaussring") {
-            uint_t narg = 5;
-            if (params.size() < narg+1) {
-                error("'gaussring' PSF model requires ", narg, " arguments (peak amplitude "
-                    ", peak width in pixels, ring distance in pixels, ring fraction and ring width "
-                    "in pixels), but only ", params.size()-1, " are provided");
-                return false;
-            } else if (params.size() > narg+1 && !silent) {
-                warning("'gaussring' PSF model requires ", narg, " arguments (peak amplitude "
-                    ", peak width in pixels, ring distance in pixels, ring fraction and ring width "
-                    "in pixels), but ", params.size()-1, " are provided");
-            }
-
-            double amp, width, rpos, rfrac, rwidth;
-            from_string(params[1], amp);
-            from_string(params[2], width);
-            from_string(params[3], rpos);
-            from_string(params[4], rfrac);
-            from_string(params[5], rwidth);
-
-            psf = generate_img({img.dims[0], img.dims[1]}, [=](uint_t x, uint_t y) {
-                double r2 = sqr(double(x) - x0) + sqr(double(y) - y0);
-                return amp*(
-                    exp(-r2/(2*sqr(width)))
-                    + rfrac*exp(-sqr(sqrt(r2) - rpos)/(2.0*sqr(rwidth)))
-                );
-            });
-        } else {
-            error("unknown PSF model '", params[0], "'");
+        if (!make_psf({img.dims[0], img.dims[1]}, x0, y0, psf_model, psf)) {
+            return 1;
         }
     }
 
