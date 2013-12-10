@@ -329,8 +329,8 @@ void deg2sex(const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec, vec_t<Dim,TSR>& 
 struct qxmatch_res {
     vec2u id;
     vec2d d;
-    vec2u rid;
-    vec2d rd;
+    vec1u rid;
+    vec1d rd;
 
     // Reflection data
     MEMBERS1(id, d, rid, rd);
@@ -379,8 +379,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     qxmatch_res res;
     res.id = replicate(npos, nth, n1);
     res.d  = dblarr(nth, n1)+dinf;
-    res.rid = replicate(npos, nth, n2);
-    res.rd  = dblarr(nth, n2)+dinf;
+    res.rid = replicate(npos, n2);
+    res.rd  = dblarr(n2)+dinf;
 
     auto work = [&, nth] (uint_t i, uint_t j, qxmatch_res& tres) {
         // For each pair of source, compute a distance indicator.
@@ -406,15 +406,9 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 --k;
             }
         }
-        if (sd < tres.rd(nth-1,j)) {
-            tres.rid(nth-1,j) = i;
-            tres.rd(nth-1,j) = sd;
-            uint_t k = nth-2;
-            while (k != npos && tres.rd(k,j) > tres.rd(k+1,j)) {
-                std::swap(tres.rd(k,j), tres.rd(k+1,j));
-                std::swap(tres.rid(k,j), tres.rid(k+1,j));
-                --k;
-            }
+        if (sd < tres.rd[j]) {
+            tres.rid[j] = i;
+            tres.rd[j] = sd;
         }
     };
 
@@ -440,8 +434,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         for (auto& r : vres) {
             r.id = replicate(npos, nth, n1);
             r.d  = dblarr(nth, n1)+dinf;
-            r.rid = replicate(npos, nth, n2);
-            r.rd  = dblarr(nth, n2)+dinf;
+            r.rid = replicate(npos, n2);
+            r.rd  = dblarr(n2)+dinf;
         }
         vec1u tbeg(nthread);
         vec1u tend(nthread);
@@ -496,18 +490,22 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 res.rd = vres[t].rd;
             } else {
                 for (uint_t j = 0; j < n2; ++j) {
-                    for (uint_t n = 0; n < nth; ++n) {
-                        if (res.rd(nth-1,j) < vres[t].rd(n,j)) break;
+                    if (res.rd[j] < vres[t].rd[j]) break;
+                    res.rid[j] = vres[t].rid[j];
+                    res.rd[j] = vres[t].rd[j];
 
-                        res.rid(nth-1,j) = vres[t].rid(n,j);
-                        res.rd(nth-1,j) = vres[t].rd(n,j);
-                        uint_t k = nth-2;
-                        while (k != npos && res.rd(k,j) > res.rd(k+1,j)) {
-                            std::swap(res.rd(k,j), res.rd(k+1,j));
-                            std::swap(res.rid(k,j), res.rid(k+1,j));
-                            --k;
-                        }
-                    }
+                    // for (uint_t n = 0; n < nth; ++n) {
+                    //     if (res.rd(nth-1,j) < vres[t].rd(n,j)) break;
+
+                    //     res.rid(nth-1,j) = vres[t].rid(n,j);
+                    //     res.rd(nth-1,j) = vres[t].rd(n,j);
+                    //     uint_t k = nth-2;
+                    //     while (k != npos && res.rd(k,j) > res.rd(k+1,j)) {
+                    //         std::swap(res.rd(k,j), res.rd(k+1,j));
+                    //         std::swap(res.rid(k,j), res.rid(k+1,j));
+                    //         --k;
+                    //     }
+                    // }
                 }
             }
         }
