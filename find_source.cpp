@@ -57,9 +57,11 @@ int main(int argc, char* argv[]) {
     vec1d tdec(1);
     std::string sra = argv[2];
     std::string sdec = argv[3];
-    if (find(sra, ":")) {
+    if (find(sra, ":") != npos) {
+        note("using sexagesimal coordinates (hh:mm:ss, deg:mm:ss)");
         sex2deg(sra, sdec, tra[0], tdec[0]);
     } else {
+        note("using decimal coordinates (degree)");
         if (!from_string(sra, tra[0])) {
             error("could not parse RA coordinate ", sra);
             return 1;
