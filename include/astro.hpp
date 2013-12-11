@@ -326,6 +326,15 @@ void deg2sex(const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec, vec_t<Dim,TSR>& 
     }
 }
 
+template<std::size_t Dim, typename TR, typename TD>
+void print_radec(const std::string& file, const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec) {
+    std::ofstream f(file);
+
+    for (uint_t i : range(ra)) {
+        f << ra[i] << "\t" << dec[i] << "\n";
+    }
+}
+
 struct qxmatch_res {
     vec2u id;
     vec2d d;
@@ -716,6 +725,9 @@ struct catalog_t {
     template<typename T, typename U, typename V>
     void merge(T& in, const U& out, const V& def, const std::string& com);
 
+    template<typename T, typename U>
+    void assign(T& in, const U& out, const std::string& com);
+
     void merge_flux(const vec2f& flux, const vec2f& err, const vec1s& bands, const vec1s& notes);
 };
 
@@ -953,6 +965,12 @@ void catalog_t::merge(T& in, const U& out, const V& def) {
 template<typename T, typename U, typename V>
 void catalog_t::merge(T& in, const U& out, const V& def, const std::string& com) {
     merge(in, out, def);
+    add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
+}
+
+template<typename T, typename U>
+void catalog_t::assign(T& in, const U& out, const std::string& com) {
+    in = out;
     add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
 }
 
