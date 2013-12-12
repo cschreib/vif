@@ -499,22 +499,10 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 res.rd = vres[t].rd;
             } else {
                 for (uint_t j = 0; j < n2; ++j) {
-                    if (res.rd[j] < vres[t].rd[j]) break;
-                    res.rid[j] = vres[t].rid[j];
-                    res.rd[j] = vres[t].rd[j];
-
-                    // for (uint_t n = 0; n < nth; ++n) {
-                    //     if (res.rd(nth-1,j) < vres[t].rd(n,j)) break;
-
-                    //     res.rid(nth-1,j) = vres[t].rid(n,j);
-                    //     res.rd(nth-1,j) = vres[t].rd(n,j);
-                    //     uint_t k = nth-2;
-                    //     while (k != npos && res.rd(k,j) > res.rd(k+1,j)) {
-                    //         std::swap(res.rd(k,j), res.rd(k+1,j));
-                    //         std::swap(res.rid(k,j), res.rid(k+1,j));
-                    //         --k;
-                    //     }
-                    // }
+                    if (res.rd[j] >= vres[t].rd[j]) {
+                        res.rid[j] = vres[t].rid[j];
+                        res.rd[j] = vres[t].rd[j];
+                    }
                 }
             }
         }
@@ -804,8 +792,8 @@ struct catalog_pool {
                 vec1u idn;
 
                 for (uint_t i = 0; i < n; ++i) {
-                    if (xm.rid[xm.id[i]] == i) {
-                        idm[i] = xm.id[i];
+                    if (xm.rid[xm.id(0,i)] == i) {
+                        idm[i] = xm.id(0,i);
                     } else {
                         idn.push_back(i);
                         idm[i] = ra.size();
