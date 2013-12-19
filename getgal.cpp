@@ -62,6 +62,9 @@ int main(int argc, char* argv[]) {
 
         ra = tmp.ra;
         dec = tmp.dec;
+    } else if (tsrc.size() == 1 && end_with(tsrc[0], ".reg")) {
+        file::read_table(tsrc[0], 0, ra, dec);
+        name = strna(uindgen(ra.size())) + "_";
     } else if (tsrc.size() == 2) {
         name.resize(1);
         if (!nbase.empty()) name[0] = nbase + "_";
