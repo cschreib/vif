@@ -417,7 +417,8 @@ namespace file {
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
         std::string s;
         if (!(fs >> s)) {
-            phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
+            phypp_check(!fs.eof(), "cannot extract value at l."+strn(i)+":"+strn(j)+" from file, "
+                "too few columns");
         }
         read_table_cols_(fs, i, ++j, k, args...);
     }
@@ -439,7 +440,8 @@ namespace file {
 
     template<typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
-        phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
+        phypp_check(!fs.eof(), "cannot extract value at l."+strn(i)+":"+strn(j)+" from file, "
+            "too few columns");
         std::string s;
         fs >> s;
         read_table_(fs, i, ++j, args...);
