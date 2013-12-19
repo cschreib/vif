@@ -684,6 +684,7 @@ struct catalog_pool;
 struct catalog_t {
     catalog_pool& pool;
 
+    vec1u       idi;
     vec1u       idm;
     vec2d       d;
 
@@ -699,6 +700,9 @@ struct catalog_t {
 
     template<typename T, typename U, typename V>
     void merge(vec_t<1,T>& in, const U& out, const V& def);
+
+    template<typename T, typename U, typename V>
+    void merge(vec_t<1,T>& in, const vec_t<1,U>& out, const V& def);
 
     template<std::size_t Dim, typename T, typename U, typename V,
         typename enable = typename std::enable_if<Dim != 1>::type>
@@ -741,29 +745,34 @@ struct catalog_pool {
         const std::string& comment = "") {
 
         std::string ref = "["+strn(pool.size()+1)+"]";
-        pool.push_back({*this, uindgen(ngal), {}, name, sources, files, comment, ref});
+        pool.push_back({*this, uindgen(ngal), uindgen(ngal), {}, name, sources, files, comment, ref});
         return pool.back();
     }
 
-    catalog_t& add_catalog(const vec1d& cra, const vec1d& cdec, const std::string& name,
-        const vec1s& sources, const vec1s& files, const std::string& comment = "") {
+    catalog_t& add_catalog(const vec1d& cra, const vec1d& cdec, vec1u sel,
+        const std::string& name, const vec1s& sources, const vec1s& files,
+        const std::string& comment = "") {
 
-        phypp_check(cra.size() == cdec.size(), "add_catalog: need ra.size() == dec.size()");
+        phypp_check(cra.size() == cdec.size(), "need ra.size() == dec.size()");
+
+        if (sel.empty()) {
+            sel = uindgen(cra.size());
+        }
 
         if (pool.empty()) {
-            ngal = cra.size();
+            ngal = sel.size();
             origin = replicate(1, ngal);
-            ra = cra;
-            dec = cdec;
+            ra = cra[sel];
+            dec = cdec[sel];
             vec1u idm = uindgen(ngal);
             std::string ref = "[1]";
-            pool.push_back({*this, idm, {}, name, sources, files, comment, ref});
+            pool.push_back({*this, sel, idm, {}, name, sources, files, comment, ref});
             return pool.back();
         } else {
             print("cross-matching "+name+"...");
 
             std::string file = xmatch_file+"_"+strn(std::hash<std::string>()(
-                name+strn(sources)+strn(files)+comment
+                name+strn(cra.size())+strn(sel.size())+strn(ngal)+strn(sources)+strn(files)
             ))+".fits";
 
             bool rematch = false;
@@ -774,7 +783,7 @@ struct catalog_pool {
                 } tmp;
 
                 fits::read_table(file, ftable(tmp.idm, tmp.ngal));
-                if (tmp.idm.size() != cra.size() || tmp.ngal != ngal) {
+                if (tmp.idm.size() != sel.size() || tmp.ngal != ngal) {
                     warning("incompatible cross-match data, re-matching");
                     rematch = true;
                 }
@@ -783,11 +792,11 @@ struct catalog_pool {
             }
 
             if (rematch) {
-                qxmatch_res xm = qxmatch(cra, cdec, ra, dec,
+                qxmatch_res xm = qxmatch(cra[sel], cdec[sel], ra, dec,
                     keywords(_nth(2), _thread(4), _verbose(true))
                 );
 
-                const uint_t n = cra.size();
+                const uint_t n = sel.size();
                 vec1u idm(n);
                 vec1u idn;
 
@@ -795,21 +804,21 @@ struct catalog_pool {
                     if (xm.rid[xm.id(0,i)] == i) {
                         idm[i] = xm.id(0,i);
                     } else {
-                        idn.push_back(i);
+                        idn.push_back(sel[i]);
                         idm[i] = ra.size();
-                        ra.push_back(cra[i]);
-                        dec.push_back(cdec[i]);
+                        ra.push_back(cra[sel[i]]);
+                        dec.push_back(cdec[sel[i]]);
                         origin.push_back(pool.size()+1);
                     }
                 }
 
-                fits::write_table(file, ftable(xm.d, idm, idn, ngal));
+                fits::write_table(file, ftable(xm.id, xm.d, xm.rid, xm.rd, idm, idn, ngal));
 
                 print("> ", n - idn.size(), " matched sources, ", idn.size(), " new sources");
                 ngal += idn.size();
 
                 std::string ref = "["+strn(pool.size()+1)+"]";
-                pool.push_back({*this, idm, std::move(xm.d), name, sources, files, comment, ref});
+                pool.push_back({*this, sel, idm, std::move(xm.d), name, sources, files, comment, ref});
                 return pool.back();
             } else {
                 print("reading data from "+file);
@@ -831,7 +840,7 @@ struct catalog_pool {
                 ngal += idn.size();
 
                 std::string ref = "["+strn(pool.size()+1)+"]";
-                pool.push_back({*this, idm, std::move(d), name, sources, files, comment, ref});
+                pool.push_back({*this, sel, idm, std::move(d), name, sources, files, comment, ref});
                 return pool.back();
             }
         }
@@ -884,7 +893,7 @@ void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def) {
     in.dims[0] = pool.ngal;
     in.resize();
     in[_] = def;
-    in[ix(idm,rep<Dim-1>(_))] = out;
+    in[ix(idm,rep<Dim-1>(_))] = out[ix(idi,rep<Dim-1>(_))];
 }
 
 template<typename T, typename U, typename V>
@@ -892,6 +901,13 @@ void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def) {
     phypp_check(in.empty(), name+": merging twice into the same variable");
     in = replicate(def, pool.ngal);
     in[idm] = out;
+}
+
+template<typename T, typename U, typename V>
+void catalog_t::merge(vec_t<1,T>& in, const vec_t<1,U>& out, const V& def) {
+    phypp_check(in.empty(), name+": merging twice into the same variable");
+    in = replicate(def, pool.ngal);
+    in[idm] = out[idi];
 }
 
 template<std::size_t Dim, typename T, typename U, typename V, typename enable>
@@ -1475,11 +1491,15 @@ vec2d template_observed(const TypeLib& lib, const vec_t<2,TypeZ>& z, const vec_t
     return flux;
 }
 
+struct template_fit_params {
+    uint_t nsim = 200;
+};
+
 template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
     typename TypeZ, typename TypeD>
 template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const TypeZ& z,
    const TypeD& d, const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err,
-   const vec_t<1,TypeFi>& filters) {
+   const vec_t<1,TypeFi>& filters, template_fit_params params = template_fit_params()) {
 
     template_fit_res_t res;
     res.flux = template_observed(lib, z, d, filters);
@@ -1510,13 +1530,12 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
     // to the provided error. The fit is performed on each of these random realizations and the
     // error on the parameters are computed as the standard deviation of the fit results over all
     // the realizations.
-    const uint_t nsim = 200;
-    res.amp_bfit_sim = fltarr(nsim);
-    res.amp_sim = fltarr(nsim);
-    res.sed_sim = fltarr(nsim);
+    res.amp_bfit_sim = fltarr(params.nsim);
+    res.amp_sim = fltarr(params.nsim);
+    res.sed_sim = fltarr(params.nsim);
 
     const uint_t nflux = flux.size();
-    for (uint_t i = 0; i < nsim; ++i) {
+    for (uint_t i = 0; i < params.nsim; ++i) {
         auto fsim = flux + randomn(seed, nflux)*err;
         for (uint_t t = 0; t < nsed; ++t) {
             tmp1[t] = total(weight*fsim*res.flux(t,_));
@@ -1543,7 +1562,8 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
 template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
     typename TypeZ, typename TypeD>
 template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ& z, const TypeD& d,
-    const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters) {
+    const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters,
+    template_fit_params params = template_fit_params()) {
 
     template_fit_res_t res;
     res.flux = template_observed(lib, z, d, filters);
@@ -1573,13 +1593,12 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ&
     // to the provided error. The fit is performed on each of these random realizations and the
     // error on the parameters are computed as the standard deviation of the fit results over all
     // the realizations.
-    const uint_t nsim = 1000;
-    res.amp_bfit_sim = fltarr(nsim);
-    res.amp_sim = fltarr(nsim);
-    res.sed_sim = fltarr(nsim);
+    res.amp_bfit_sim = fltarr(params.nsim);
+    res.amp_sim = fltarr(params.nsim);
+    res.sed_sim = fltarr(params.nsim);
 
     const uint_t nflux = flux.size();
-    for (uint_t i = 0; i < nsim; ++i) {
+    for (uint_t i = 0; i < params.nsim; ++i) {
         auto fsim = flux + randomn(seed, nflux)*err;
         for (uint_t t = 0; t < nsed; ++t) {
             tmp1[t] = total(weight*fsim*res.flux(t,_));
