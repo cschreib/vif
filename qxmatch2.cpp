@@ -1,56 +1,66 @@
 #include <phypp.hpp>
 
 void print_help() {
-    std::cout << "qxmatch2 v2.0\n";
-    std::cout << "  usage: qxmatch2 cats=[file1,file2] output=ofile (options=...)\n\n";
+    using namespace format;
 
-    std::cout << "  'file1' and 'file2' must be FITS files, expected to contain an extension with\n";
-    std::cout << "  at least two vector columns named 'RA' and 'DEC', each containing a single row.\n";
-    std::cout << "  Both are assumed to contain galactic coordinates in degrees.\n";
-    std::cout << "  They can be created in IDL using:\n";
-    std::cout << "          mwrfits, {ra:[...], dec:[...]}, \"filename.fits\", /create\n";
-    std::cout << "  The output file is written in a similar way: it contains one extension named\n";
-    std::cout << "  'RESULT_BINARY', which contains a single column named 'ID', itself being a two\n";
-    std::cout << "  dimensional vector containing the ID of the n'th closest sources. It can be \n";
-    std::cout << "  read in IDL using:\n";
-    std::cout << "          res = mrdfits(\"output.fits\", 1)\n";
-    std::cout << "          best = res.id[*,0]\n";
-    std::cout << "          second_best = res.id[*,1]\n";
-    std::cout << "  The program also outputs the crossmatch distance in a column called 'D', with a\n";
-    std::cout << "  format similar to that of 'ID', in arcseconds.\n\n";
+    print("qxmatch2 v2.0");
+    paragraph("usage: qxmatch2 cats=[file1,file2] output=ofile [options=...]");
 
-    std::cout << "  It is also possible to compute an 'auto crossmatch' of a single catalog by only\n";
-    std::cout << "  providing one file in the 'cats' parameter. The program will then compute the\n";
-    std::cout << "  n'th nearest neighbors for each source within this catalog.\n";
+    paragraph(
+        "'file1' and 'file2' must be FITS files, expected to contain an extension with "
+        "at least two vector columns named 'RA' and 'DEC', each containing a single row. "
+        "Both are assumed to contain galactic coordinates in degrees. "
+        "They can be created in IDL using: "
+    );
+    print("        mwrfits, {ra:[...], dec:[...]}, \"filename.fits\", /create\n");
+    paragraph(
+        "The output file is written in a similar way: it contains one extension named "
+        "'RESULT_BINARY', which contains a single column named 'ID', itself being a two "
+        "dimensional vector containing the ID of the n'th closest sources. It can be  "
+        "read in IDL using: "
+    );
+    print("        res = mrdfits(\"output.fits\", 1)");
+    print("        best = res.id[*,0]");
+    print("        second_best = res.id[*,1]\n");
+    paragraph(
+        "The program also outputs the crossmatch distance in a column called 'D', with a "
+        "format similar to that of 'ID', in arcseconds."
+    );
 
-    std::cout << "  List of available command line options:\n";
-    std::cout << "    verbose: set this flag to print additional information in the standard output\n";
-    std::cout << "    nth=[number]: set this value to the number of closest neighbors you want to\n";
-    std::cout << "                  retrieve (default: 1).\n";
-    std::cout << "    thread=[number]: set this value to the number of concurrent threads you want\n";
-    std::cout << "                     to run (default: 1).\n";
+    paragraph(
+        "It is also possible to compute an 'auto crossmatch' of a single catalog by only "
+        "providing one file in the 'cats' parameter. The program will then compute the "
+        "n'th nearest neighbors for each source within this catalog."
+    );
 
-    std::cout << "  Copyright (c) 2013 C. Schreiber (corentin.schreiber@cea.fr)\n\n";
+    header("List of available command line options:");
+    bullet("verbose", "set this flag to print additional information in the standard output");
+    bullet("nth", "[number] set this value to the number of closest neighbors you want to retrieve "
+        "(default: 1).");
+    bullet("pos", "[string(array)]: defines the suffix of the RA and Dec variables inside the two "
+        "catalogs (default: \"\")");
+    bullet("thread", "[number]: set this value to the number of concurrent threads you want to run "
+        "(default: 1).");
+    print("");
 
-    std::cout << "  This software is provided 'as-is', without any express or implied warranty.\n";
-    std::cout << "  In no event will the authors be held liable for any damages arising from the\n";
-    std::cout << "  use of this software.\n";
+    paragraph("Copyright (c) 2013 C. Schreiber (corentin.schreiber@cea.fr)");
 
-    std::cout << "  Permission is granted to anyone to use this software for any purpose,\n";
-    std::cout << "  including commercial applications, and to alter it and redistribute it\n";
-    std::cout << "  freely, subject to the following restrictions:\n\n";
+    paragraph("This software is provided 'as-is', without any express or implied warranty. In no "
+        "event will the authors be held liable for any damages arising from the use of this "
+        "software.");
 
-    std::cout << "    1. The origin of this software must not be misrepresented; you must not\n";
-    std::cout << "       claim that you wrote the original software. If you use this software in\n";
-    std::cout << "       a product, an acknowledgment in the product documentation would be\n";
-    std::cout << "       appreciated but is not required.\n\n";
+    paragraph("Permission is granted to anyone to use this software for any purpose, including "
+        "commercial applications, and to alter it and redistribute it freely, subject to the "
+        "following restrictions:");
 
-    std::cout << "    2. Altered source versions must be plainly marked as such, and must not be\n";
-    std::cout << "       misrepresented as being the original software.\n\n";
+    bullet("1", "The origin of this software must not be misrepresented; you must not claim that "
+        "you wrote the original software. If you use this software in a product, an acknowledgment "
+        "in the product documentation would be appreciated but is not required.");
+    bullet("2", "Altered source versions must be plainly marked as such, and must not be "
+        "misrepresented as being the original software.");
+    bullet("3", "This notice may not be removed or altered from any source distribution.");
 
-    std::cout << "    3. This notice may not be removed or altered from any source distribution.\n\n";
-
-    std::cout << std::flush;
+    print("");
 }
 
 int main(int argc, char* argv[]) {
