@@ -818,6 +818,12 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("keep_start, keep_end");
+        check(keep_start("hello world", 5), "hello");
+        check(keep_end("hello world", 5), "world");
+    }
+
+    {
         print("Cosmology functions");
         auto cosmo = cosmo_wmap();
         check(float(lumdist(0.5, cosmo)), "2863.03");

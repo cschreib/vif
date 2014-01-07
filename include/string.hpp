@@ -350,6 +350,20 @@ bool end_with(const std::string& s, const std::string& pattern) {
     return true;
 }
 
+std::string keep_start(std::string s, uint_t n = 1) {
+    if (s.size() > n) {
+        s.erase(n);
+    }
+    return s;
+}
+
+std::string keep_end(std::string s, uint_t n = 1) {
+    if (s.size() > n) {
+        s.erase(0, s.size()-n);
+    }
+    return s;
+}
+
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
@@ -379,6 +393,8 @@ VECTORIZE(align_right)
 VECTORIZE(align_center)
 VECTORIZE(start_with)
 VECTORIZE(end_with)
+VECTORIZE(keep_start)
+VECTORIZE(keep_end)
 
 #undef VECTORIZE
 
