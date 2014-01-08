@@ -420,6 +420,12 @@ static bool do_print = false;
 
 // The generic vector itself.
 template<std::size_t Dim, typename Type>
+struct vec_t;
+
+template<typename Type>
+struct vec_t<0,Type> {};
+
+template<std::size_t Dim, typename Type>
 struct vec_t {
     using effective_type = vec_t;
     using rtype = rtype_t<Type>;
@@ -445,9 +451,10 @@ struct vec_t {
         resize();
     }
 
-    template<std::size_t N,
-        typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
+    template<std::size_t N>
     vec_t(const char t[N]) {
+        static_assert(std::is_same<Type, std::string>::value,
+            "character array constructor is only available for std::string vectors");
         for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = 1;
         }
@@ -455,8 +462,9 @@ struct vec_t {
         data[0] = t;
     }
 
-    template<typename enable = typename std::enable_if<std::is_same<Type, std::string>::value>::type>
     vec_t(const char* t) {
+        static_assert(std::is_same<Type, std::string>::value,
+            "character array constructor is only available for std::string vectors");
         for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = 1;
         }
@@ -572,9 +580,9 @@ struct vec_t {
         ++dims[0];
     }
 
-
-    template<typename enable = typename std::enable_if<(Dim > 1)>::type>
-    void push_back(const vec_t<Dim-1,Type>& t) {
+    template<typename T = Type, typename enable = typename std::enable_if<std::is_convertible<T,Type>::value>::type>
+    void push_back(const vec_t<Dim-1,T>& t) {
+        static_assert(Dim > 1, "cannot call push_back(vec_t<D-1>) on monodimensional vectors");
         if (empty()) {
             dims[0] = 1;
             for (uint_t i = 1; i < Dim; ++i) {
@@ -584,7 +592,8 @@ struct vec_t {
             data = t.data;
         } else {
             for (uint_t i = 0; i < Dim-1; ++i) {
-                phypp_check(dims[i+1] == t.dims[i], "push_back: incompatible dimensions (", dims, " vs ", t.dims, ")");
+                phypp_check(dims[i+1] == t.dims[i],
+                    "push_back: incompatible dimensions (", dims, " vs ", t.dims, ")");
             }
 
             data.insert(data.end(), t.data.begin(), t.data.end());
@@ -592,8 +601,9 @@ struct vec_t {
         }
     }
 
-    template<typename T, typename enable = typename std::enable_if<(Dim > 1)>::type>
+    template<typename T = Type, typename enable = typename std::enable_if<std::is_convertible<T,Type>::value>::type>
     void push_back(const vec_t<Dim-1,T*>& t) {
+        static_assert(Dim > 1, "cannot call push_back(vec_t<D-1>) on monodimensional vectors");
         push_back(t.concretise());
     }
 
