@@ -148,15 +148,15 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
 
     assert(n_elements(center) == 2);
 
-    vec3d m = dblarr(dim(0), dim(1), 4);
+    vec3d m = dblarr(dim[0], dim[1], 4);
 
-    vec2d px = replicate(dindgen(dim(1)), dim(0));
-    vec2d py = transpose(replicate(dindgen(dim(0)), dim(1)));
+    vec2d px = replicate(dindgen(dim[1]), dim[0]);
+    vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
 
-    m(_,_,0) = pow(px-0.5 - center(1),2) + pow(py-0.5 - center(0),2) <= radius*radius;
-    m(_,_,1) = pow(px+0.5 - center(1),2) + pow(py-0.5 - center(0),2) <= radius*radius;
-    m(_,_,2) = pow(px+0.5 - center(1),2) + pow(py+0.5 - center(0),2) <= radius*radius;
-    m(_,_,3) = pow(px-0.5 - center(1),2) + pow(py+0.5 - center(0),2) <= radius*radius;
+    m(_,_,0) = pow(px-0.5 - center[1],2) + pow(py-0.5 - center[0],2) <= radius*radius;
+    m(_,_,1) = pow(px+0.5 - center[1],2) + pow(py-0.5 - center[0],2) <= radius*radius;
+    m(_,_,2) = pow(px+0.5 - center[1],2) + pow(py+0.5 - center[0],2) <= radius*radius;
+    m(_,_,3) = pow(px-0.5 - center[1],2) + pow(py+0.5 - center[0],2) <= radius*radius;
 
     return mean(m,2);
 }
