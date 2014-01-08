@@ -437,8 +437,8 @@ int main(int argc, char* argv[]) {
     {
         print("'circular_mask' function");
         vec1u dim = {51,41};
-        vec2d px = replicate(dindgen(dim(1)), dim(0));
-        vec2d py = transpose(replicate(dindgen(dim(0)), dim(1)));
+        vec2d px = replicate(dindgen(dim[1]), dim[0]);
+        vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
         fits::write("out/px.fits", px);
         fits::write("out/py.fits", py);
 
