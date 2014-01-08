@@ -1638,7 +1638,8 @@ auto integrate_trap(F f, T x0, U x1, uint_t n) -> decltype(0.5*f(x0)*x0) {
 }
 
 template<typename F, typename T, typename U>
-auto integrate(F f, T x0, U x1, double e = std::numeric_limits<decltype(f(x0))>::epsilon()) ->
+auto integrate(F f, T x0, U x1,
+    double e = std::numeric_limits<typename std::result_of<F(T)>::type>::epsilon()) ->
     decltype(0.5*f(x0)*x0) {
 
     using rtype = decltype(0.5*f(x0)*x0);
