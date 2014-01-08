@@ -6,6 +6,21 @@
 #include "string.hpp"
 
 namespace reflex {
+    namespace impl {
+        template<typename T>
+        struct do_print {
+            T& o;
+            bool first = true;
+
+            template<typename P>
+            void operator() (const member_t& m, const P& t) {
+                if (!this->first) this->o << ", ";
+                this->o << m.name << "=" << t;
+                this->first = false;
+            }
+        };
+    }
+
     template<typename T, typename F, std::size_t N>
     void foreach_member_(reflex::struct_t<T> d, F& f, cte_t<N>, cte_t<N>) {}
 
@@ -30,20 +45,8 @@ namespace reflex {
             return o;
         }
 
-        struct {
-            O& o;
-            bool first = true;
-
-            template<typename P>
-            void operator() (const member_t& m, const P& t) {
-                if (!this->first) this->o << ", ";
-                this->o << m.name << "=" << t;
-                this->first = false;
-            }
-        } do_print{o};
-
         o << "{ ";
-        reflex::foreach_member(d, do_print);
+        reflex::foreach_member(d, impl::do_print<O>{o});
         o << " }";
         return o;
     }
@@ -63,41 +66,50 @@ void merge_elements_(T& t, const U& u) {
 }
 
 template<typename T, typename U>
-void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u) {
-    struct {
-        reflex::struct_t<T> t;
+void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u);
 
+namespace reflex {
+    namespace impl {
         template<typename M>
-        void operator () (const reflex::member_t& m, const M& v) {
-            struct {
-                const reflex::member_t& m;
-                const M& v;
+        struct do_run {
+            const reflex::member_t& m;
+            const M& v;
 
-                void operator () (reflex::member_t& n, M& p) {
-                    if (this->m.name == n.name) {
-                        merge_elements(p, this->v);
-                    }
+            void operator () (reflex::member_t& n, M& p) {
+                if (this->m.name == n.name) {
+                    merge_elements(p, this->v);
                 }
+            }
 
-                template<typename P, typename enable =
-                    typename std::enable_if<reflex::is_struct<M>::value>::type>
-                void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
-                    merge_elements_(p, this->v);
-                }
+            template<typename P, typename enable =
+                typename std::enable_if<reflex::is_struct<M>::value>::type>
+            void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
+                merge_elements_(p, this->v);
+            }
 
-                template<typename P>
-                void operator () (reflex::member_t& n, P&& p) {
-                    phypp_check(this->m.name != n.name, "incompatible types in merging '",
-                        this->m.full_name(), "' into '", n.full_name(), "'"
-                    );
-                }
-            } do_run{m, v};
+            template<typename P>
+            void operator () (reflex::member_t& n, P&& p) {
+                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                    this->m.full_name(), "' into '", n.full_name(), "'"
+                );
+            }
+        };
 
-            reflex::foreach_member(this->t, do_run);
-        }
-    } do_merge{t};
+        template<typename T>
+        struct do_merge {
+            reflex::struct_t<T> t;
 
-    reflex::foreach_member(u, do_merge);
+            template<typename M>
+            void operator () (const reflex::member_t& m, const M& v) {
+                reflex::foreach_member(this->t, do_run<M>{m, v});
+            }
+        };
+    }
+}
+
+template<typename T, typename U>
+void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u) {
+    reflex::foreach_member(u, reflex::impl::do_merge<T>{t});
 }
 
 template<typename T, typename U>
@@ -124,43 +136,52 @@ void merge_elements_(vec_t<2,T>& t, const vec_t<2,U>& u, const vec1u& ids) {
 }
 
 template<typename T, typename U>
-void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u, const vec1u& ids) {
-    struct {
-        reflex::struct_t<T> t;
-        const vec1u& ids;
+void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u, const vec1u& ids);
 
+namespace reflex {
+    namespace impl {
         template<typename M>
-        void operator () (const reflex::member_t& m, const M& v) {
-            struct {
-                const reflex::member_t& m;
-                const M& v;
-                const vec1u& ids;
+        struct do_run_ids {
+            const reflex::member_t& m;
+            const M& v;
+            const vec1u& ids;
 
-                void operator () (reflex::member_t& n, M& p) {
-                    if (this->m.name == n.name) {
-                        merge_elements(p, this->v, this->ids);
-                    }
+            void operator () (reflex::member_t& n, M& p) {
+                if (this->m.name == n.name) {
+                    merge_elements(p, this->v, this->ids);
                 }
+            }
 
-                template<typename P, typename enable =
-                    typename std::enable_if<reflex::is_struct<M>::value>::type>
-                void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
-                    merge_elements_(p, this->v, this->ids);
-                }
+            template<typename P, typename enable =
+                typename std::enable_if<reflex::is_struct<M>::value>::type>
+            void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
+                merge_elements_(p, this->v, this->ids);
+            }
 
-                template<typename P>
-                void operator () (reflex::member_t& n, P&& p) {
-                    phypp_check(this->m.name != n.name, "incompatible types in merging '",
-                        this->m.full_name(), "' into '", n.full_name(), "'"
-                    );
-                }
-            } do_run{m, v, this->ids};
+            template<typename P>
+            void operator () (reflex::member_t& n, P&& p) {
+                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                    this->m.full_name(), "' into '", n.full_name(), "'"
+                );
+            }
+        };
 
-            reflex::foreach_member(this->t, do_run);
-        }
-    } do_merge{t, ids};
+        template<typename T>
+        struct do_merge_ids {
+            reflex::struct_t<T> t;
+            const vec1u& ids;
 
-    reflex::foreach_member(u, do_merge);
+            template<typename M>
+            void operator () (const reflex::member_t& m, const M& v) {
+                reflex::foreach_member(this->t, do_run_ids<M>{m, v, this->ids});
+            }
+        };
+    }
+}
+
+template<typename T, typename U>
+void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u, const vec1u& ids) {
+    reflex::foreach_member(u, reflex::impl::do_merge_ids<T>{t, ids});
 }
 
 template<typename T, typename U>
