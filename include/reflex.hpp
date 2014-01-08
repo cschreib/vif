@@ -301,7 +301,8 @@ namespace reflex {
     };
 
     template<typename T>
-    auto wrap(T&& t) -> decltype(auto) {
+    auto wrap(T&& t) ->
+        decltype(wrap_t<enabled<typename std::decay<T>::type>::value>::wrap(std::forward<T>(t))) {
         return wrap_t<enabled<typename std::decay<T>::type>::value>::wrap(std::forward<T>(t));
     }
 }
