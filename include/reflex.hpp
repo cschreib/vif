@@ -43,6 +43,10 @@ namespace reflex {
     struct data_t;
 
     struct member_t {
+        member_t(std::string name_, const std::type_info& type_, data_t* parent_ = nullptr,
+            void* value_ = nullptr, data_t* reflex_ = nullptr) :
+            name(name_), type(type_), parent(parent_), value(value_), reflex(reflex_) {}
+
         std::string name;
         const std::type_info& type;
         data_t* parent = nullptr;
@@ -56,6 +60,8 @@ namespace reflex {
 
     struct data_impl_t {
         data_impl_t() = default;
+        data_impl_t(const std::type_info& type_, std::string name_,
+            std::vector<member_t> members_) : type(type_), name(name_), members(members_) {}
         data_impl_t(data_impl_t&&) = default;
         data_impl_t(const data_impl_t& d) = delete;
         data_impl_t& operator = (data_impl_t&&) = default;
