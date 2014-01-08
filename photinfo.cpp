@@ -50,12 +50,58 @@ int main(int argc, char* argv[]) {
     vec1u gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
         && cat.flux/cat.flux_err > 3);
 
+    auto seed = make_seed(42);
+
     vec1u rndid;
     if (gidg.size() > 2000) {
-        auto seed = make_seed(42);
         rndid = shuffle(gidg, seed)[uindgen(2000)];
     } else {
         rndid = uindgen(gidg.size());
+    }
+
+    vec1f areas(cat.bands.size());
+    vec1f mindist(cat.bands.size());
+
+    std::string cache = argv[1];
+    if (end_with(cache, ".fits")) cache = erase_end(cache, 5);
+    cache = "."+cache+"_photinfo_cache.fits";
+
+    if (!file::exists(cache) || file::is_older(cache, argv[1])) {
+        auto pg = progress_start(n_elements(cat.bands));
+        for (uint_t i = 0; i < n_elements(cat.bands); ++i) {
+            auto f = cat.flux(_,i);
+            auto e = cat.flux_err(_,i);
+
+            vec1u idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3);
+            if (!idg3s.empty()) {
+                vec1u hull = convex_hull(cat.ra[idg3s], cat.dec[idg3s]);
+                areas[i] = field_area(cat.ra[idg3s], cat.dec[idg3s], hull);
+
+                vec1d hx = cat.ra[idg3s[hull]];
+                vec1d hy = cat.dec[idg3s[hull]];
+                hull = uindgen(hull.size());
+
+                if (idg3s.size() > 1000) {
+                    double mx = 0.5*(max(hx) + min(hx)), my = 0.5*(max(hy) + min(hy));
+                    hx = (hx - mx)*sqrt(1000.0/idg3s.size()) + mx;
+                    hy = (hy - my)*sqrt(1000.0/idg3s.size()) + my;
+                }
+
+                vec1u central = idg3s[where(in_convex_hull(cat.ra[idg3s], cat.dec[idg3s], hull, hx, hy))];
+                if (!central.empty()) {
+                    auto res = qxmatch(cat.ra[central], cat.dec[central], cat.ra[central], cat.dec[central],
+                        keywords(_self(true), _thread(central.size() > 800 ? 22 : 1)));
+
+                    mindist[i] = min(res.d);
+                }
+            }
+
+            progress(pg);
+        }
+
+        fits::write_table(cache, ftable(areas, mindist));
+    } else {
+        fits::read_table(cache, ftable(areas, mindist));
     }
 
     std::string hid = "id";
@@ -68,6 +114,8 @@ int main(int argc, char* argv[]) {
     std::string hd3s = "3-sigma";
     std::string hd5s = "5-sigma";
     std::string har = "area [deg^2]";
+    std::string hmd = "min dist [\"]";
+    std::string had = "avg dist [\"]";
 
     uint_t maxi = std::max(hid.size(), uint_t(1+log10(cat.bands.size())));
     uint_t maxb = std::max(hband.size(), max(length(cat.bands)));
@@ -79,6 +127,8 @@ int main(int argc, char* argv[]) {
     uint_t maxd3 = std::max(hd3s.size(), length(strn(ngal)));
     uint_t maxd5 = std::max(hd5s.size(), length(strn(ngal)));
     uint_t maxar = std::max(har.size(), max(length(strna(cat.lambda))));
+    uint_t maxmd = std::max(hmd.size(), max(length(strna(mindist))));
+    uint_t maxad = std::max(had.size(), max(length(strna(mindist))));
 
     std::string header = " "+
         align_center(hid, maxi)+" | "+
@@ -90,7 +140,9 @@ int main(int argc, char* argv[]) {
         align_center(hdet, maxdet)+" | "+
         align_center(hd3s, maxd3)+" | "+
         align_center(hd5s, maxd5)+" | "+
-        align_center(har, maxar)+" ";
+        align_center(har, maxar)+" | "+
+        align_center(hmd, maxmd)+" | "+
+        align_center(had, maxad)+" ";
 
     print(header);
     print(std::string(header.size(), '='));
@@ -110,11 +162,13 @@ int main(int argc, char* argv[]) {
             align_center(cat.notes[i], maxn), " | ",
             align_right(strn(cat.lambda[i]), maxl), " | ",
             align_right(strn_sci(3*median(e[idg3s])), maxdJ), " | ",
-            align_right(strn(uJy2mag(3*median(e[idg3s]))), maxdAB), " | ",
+            align_right(keep_start(strn(float(uJy2mag(3*median(e[idg3s])))), 4), maxdAB), " | ",
             align_right(strn(idg.size()), maxdet), " | ",
             align_right(strn(total(f[idg]/e[idg] > 3)), maxd3), " | ",
             align_right(strn(total(f[idg]/e[idg] > 5)), maxd5), " | ",
-            align_right(strn(field_area(cat.ra[idg3s], cat.dec[idg3s])), maxar)
+            align_right(align_left(strn(areas[i]), 9, '0'), maxar), " | ",
+            align_right(strn(mindist[i]), maxmd), " | ",
+            align_right(strn(3600.0*sqrt(areas[i]/idg3s.size())), maxad)
         );
     }
 
