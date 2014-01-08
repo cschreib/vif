@@ -1030,7 +1030,7 @@ namespace fits {
 
     template<typename T, typename ... Args>
     void write_table_(fitsfile* fptr, int id, const std::string& name, const T& v, Args&& ... args) {
-        write_table_impl_(fptr, id, name, v);
+        write_table_impl_(fptr, id, toupper(name), v);
         write_table_(fptr, id, std::forward<Args>(args)...);
     }
 
