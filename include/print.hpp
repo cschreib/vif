@@ -6,11 +6,6 @@
 #include <array>
 #include "reflex.hpp"
 
-namespace reflex {
-    template<typename T>
-    auto wrap(T&& t) -> decltype(auto);
-}
-
 template<typename T>
 void print(const T& t) {
     std::cout << reflex::wrap(t) << std::endl;
