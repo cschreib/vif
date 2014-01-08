@@ -1,0 +1,11 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": false,
+			"path": ".",
+            "folder_exclude_patterns": ["bak", ".git", "bin"],
+            "file_exclude_patterns": ["*.fits",  "._reflex_*", "*.eps", "*.svg", "*.eps", "*.tar.gz"]
+		}
+	]
+}
