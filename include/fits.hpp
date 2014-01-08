@@ -729,20 +729,27 @@ namespace fits {
 
     template<typename T>
     void read_table_impl_(fitsfile* fptr, const std::string& colname,
-        reflex::struct_t<T> data, bool loose = false) {
+        reflex::struct_t<T> data, bool loose = false);
 
-        struct {
+    namespace impl {
+        struct do_read_member {
             fitsfile* fptr;
             std::string base;
             bool loose;
 
             template<typename P>
             void operator () (reflex::member_t& m, P&& v) {
-                read_table_impl_(this->fptr, this->base+toupper(m.name), std::forward<P>(v), this->loose);
+                read_table_impl_(fptr, base+toupper(m.name), std::forward<P>(v), loose);
             }
-        } do_read{fptr, toupper(colname)+".", loose};
+        };
+    }
 
-        reflex::foreach_member(data, do_read);
+    template<typename T>
+    void read_table_impl_(fitsfile* fptr, const std::string& colname,
+        reflex::struct_t<T> data, bool loose) {
+
+        impl::do_read_member run{fptr, toupper(colname)+".", loose};
+        reflex::foreach_member(data, run);
     }
 
     void read_table_(fitsfile* fptr, bool loose) {}
@@ -844,6 +851,18 @@ namespace fits {
         }
     }
 
+    namespace impl {
+        struct do_read_struct {
+            fitsfile* fptr;
+            bool loose;
+
+            template<typename P>
+            void operator () (reflex::member_t& m, P&& v) {
+                read_table_impl_(fptr, toupper(m.name), std::forward<P>(v), loose);
+            }
+        };
+    }
+
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void read_table(const std::string& filename, T& t) {
         fitsfile* fptr;
@@ -853,16 +872,7 @@ namespace fits {
             fits_open_table(&fptr, filename.c_str(), READONLY, &status);
             phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-            struct {
-                fitsfile* fptr;
-
-                template<typename P>
-                void operator () (reflex::member_t& m, P&& v) {
-                    read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), false);
-                }
-            } do_read{fptr};
-
-            reflex::foreach_member(reflex::wrap(t), do_read);
+            reflex::foreach_member(reflex::wrap(t), impl::do_read_struct{fptr,false});
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
@@ -882,16 +892,8 @@ namespace fits {
             fits_open_table(&fptr, filename.c_str(), READONLY, &status);
             phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
 
-            struct {
-                fitsfile* fptr;
 
-                template<typename P>
-                void operator () (reflex::member_t& m, P&& v) {
-                    read_table_impl_(this->fptr, toupper(m.name), std::forward<P>(v), true);
-                }
-            } do_read{fptr};
-
-            reflex::foreach_member(reflex::wrap(t), do_read);
+            reflex::foreach_member(reflex::wrap(t), impl::do_read_struct{fptr,true});
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
@@ -1012,20 +1014,27 @@ namespace fits {
 
     template<typename T>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
-        reflex::struct_t<T> data) {
+        reflex::struct_t<T> data);
 
-        struct {
+    namespace impl {
+        struct do_write_member {
             fitsfile* fptr;
-            int id;
+            int& id;
             std::string base;
 
             template<typename P>
             void operator () (const reflex::member_t& m, const P& v) {
-                write_table_impl_(this->fptr, this->id, this->base+toupper(m.name), v);
+                write_table_impl_(fptr, id, base+toupper(m.name), v);
             }
-        } do_write{fptr, id, colname+"."};
+        };
+    }
 
-        reflex::foreach_member(data, do_write);
+    template<typename T>
+    void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
+        reflex::struct_t<T> data) {
+
+        impl::do_write_member run{fptr, id, colname+"."};
+        reflex::foreach_member(data, run);
     }
 
     template<typename T, typename ... Args>
@@ -1108,6 +1117,18 @@ namespace fits {
         }
     }
 
+    namespace impl {
+        struct do_write_struct {
+            fitsfile* fptr;
+            int id = 1;
+
+            template<typename P>
+            void operator () (const reflex::member_t& m, const P& v) {
+                write_table_impl_(fptr, id, toupper(m.name), v);
+            }
+        };
+    }
+
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void write_table(const std::string& filename, const T& t) {
         fitsfile* fptr;
@@ -1118,17 +1139,7 @@ namespace fits {
             phypp_check_cfitsio(status, "cannot open file");
             fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
-            struct {
-                fitsfile* fptr;
-                int id = 1;
-
-                template<typename P>
-                void operator () (const reflex::member_t& m, const P& v) {
-                    write_table_impl_(this->fptr, this->id, toupper(m.name), v);
-                }
-            } do_write{fptr};
-
-            reflex::foreach_member(reflex::wrap(t), do_write);
+            reflex::foreach_member(reflex::wrap(t), impl::do_write_struct{fptr});
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
