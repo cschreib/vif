@@ -929,46 +929,52 @@ void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def, const std::str
     add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
 }
 
-template<typename T, typename U, typename V>
-void catalog_t::merge(T& in, const U& out, const V& def) {
-    struct {
+namespace astro_impl {
+    template<typename M, typename V>
+    struct do_catalog_merge_run {
+        const reflex::member_t& m;
+        const M& v;
+        const V& def;
+        catalog_t& cat;
+
+        void operator () (reflex::member_t& n, M& p) {
+            if (this->m.name == n.name) {
+                this->cat.merge(p, this->v, this->def);
+            }
+        }
+
+        template<typename P, typename enable2 =
+            typename std::enable_if<reflex::is_struct<M>::value>::type>
+        void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
+            this->cat.merge(p, this->v, this->def);
+        }
+
+        template<typename P>
+        void operator () (reflex::member_t& n, P&& p) {
+            phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                this->m.full_name(), "' into '", n.full_name(), "'"
+            );
+        }
+    };
+
+    template<typename T, typename V>
+    struct do_catalog_merge {
         reflex::struct_t<T> t;
         const V& def;
         catalog_t& cat;
 
         template<typename M>
         void operator () (const reflex::member_t& m, const M& v) {
-            struct {
-                const reflex::member_t& m;
-                const M& v;
-                const V& def;
-                catalog_t& cat;
-
-                void operator () (reflex::member_t& n, M& p) {
-                    if (this->m.name == n.name) {
-                        this->cat.merge(p, this->v, this->def);
-                    }
-                }
-
-                template<typename P, typename enable2 =
-                    typename std::enable_if<reflex::is_struct<M>::value>::type>
-                void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
-                    this->cat.merge(p, this->v, this->def);
-                }
-
-                template<typename P>
-                void operator () (reflex::member_t& n, P&& p) {
-                    phypp_check(this->m.name != n.name, "incompatible types in merging '",
-                        this->m.full_name(), "' into '", n.full_name(), "'"
-                    );
-                }
-            } do_run{m, v, this->def, this->cat};
-
-            reflex::foreach_member(this->t, do_run);
+            do_catalog_merge_run<M,V> run{m, v, this->def, this->cat};
+            reflex::foreach_member(this->t, run);
         }
-    } do_merge{reflex::wrap(in), def, *this};
+    };
+}
 
-    reflex::foreach_member(reflex::wrap(out), do_merge);
+template<typename T, typename U, typename V>
+void catalog_t::merge(T& in, const U& out, const V& def) {
+    astro_impl::do_catalog_merge<T,V> run{reflex::wrap(in), def, *this};
+    reflex::foreach_member(reflex::wrap(out), run);
 }
 
 
