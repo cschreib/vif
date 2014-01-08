@@ -812,13 +812,16 @@ struct catalog_pool {
                     }
                 }
 
-                fits::write_table(file, ftable(xm.id, xm.d, xm.rid, xm.rd, idm, idn, ngal));
+                vec2d td = replicate(dnan, xm.d.dims[0], cra.size());
+                td(_,sel) = xm.d;
+
+                fits::write_table(file, ftable(sel, xm.id, xm.d, xm.rid, xm.rd, idm, idn, ngal));
 
                 print("> ", n - idn.size(), " matched sources, ", idn.size(), " new sources");
                 ngal += idn.size();
 
                 std::string ref = "["+strn(pool.size()+1)+"]";
-                pool.push_back({*this, sel, idm, std::move(xm.d), name, sources, files, comment, ref});
+                pool.push_back({*this, sel, idm, std::move(td), name, sources, files, comment, ref});
                 return pool.back();
             } else {
                 print("reading data from "+file);
@@ -827,6 +830,9 @@ struct catalog_pool {
                 vec2d d;
 
                 fits::read_table(file, ftable(d, idm, idn));
+
+                vec2d td = replicate(dnan, d.dims[0], cra.size());
+                td(_,sel) = d;
 
                 for (uint_t i = 0; i < idn.size(); ++i) {
                     ra.push_back(cra[idn[i]]);
@@ -840,7 +846,7 @@ struct catalog_pool {
                 ngal += idn.size();
 
                 std::string ref = "["+strn(pool.size()+1)+"]";
-                pool.push_back({*this, sel, idm, std::move(d), name, sources, files, comment, ref});
+                pool.push_back({*this, sel, idm, std::move(td), name, sources, files, comment, ref});
                 return pool.back();
             }
         }
@@ -1293,11 +1299,12 @@ vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_
     return bs;
 }
 
-// Compute the area covered by a field given a set of source coordinates [deg^2].
+// Compute the area covered by a field given a set of source coordinates [deg^2] and pre-computed
+// convex hull (as obtained from convex_hull() with the same coordinates).
 // Coordinates are assumed to be given in degrees.
-template<typename TX, typename TY>
-auto field_area(const TX& ra, const TY& dec) {
-    vec1u hull = convex_hull(ra, dec);
+template<typename TX, typename TY, typename TH>
+auto field_area(const TX& ra, const TY& dec, const TH& hull) {
+    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
     decltype(1.0*ra[0]*dec[0]) area = 0;
 
@@ -1316,6 +1323,13 @@ auto field_area(const TX& ra, const TY& dec) {
     area /= d2r*d2r;
 
     return area;
+}
+
+// Compute the area covered by a field given a set of source coordinates [deg^2].
+// Coordinates are assumed to be given in degrees.
+template<typename TX, typename TY>
+auto field_area(const TX& ra, const TY& dec) {
+    return field_area(ra, dec, convex_hull(ra, dec));
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2].
