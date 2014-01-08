@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 #include "vec.hpp"
 #include "math.hpp"
 
@@ -159,6 +160,13 @@ namespace file {
         }
 
         return r;
+    }
+
+    bool is_older(const std::string& file1, const std::string& file2) {
+        struct stat st1, st2;
+        if (::stat(file1.c_str(), &st1) != 0) return false;
+        if (::stat(file2.c_str(), &st2) != 0) return false;
+        return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
     }
 
     vec1s list_directories(const std::string& path = "") {
