@@ -416,8 +416,6 @@ struct ilist_t<Dim, Type*> {
     }
 };
 
-static bool do_print = false;
-
 // The generic vector itself.
 template<std::size_t Dim, typename Type>
 struct vec_t;
@@ -1189,11 +1187,12 @@ struct vec_dim<vec_t<Dim,Type>> {
     static const std::size_t value = Dim;
 };
 
-// Create vectors à la IDL.
-template<typename T, typename ... Dims>
-vec_t<sizeof...(Dims), T> arr(Dims ... ds) {
-    vec_t<sizeof...(Dims), T> v;
-    set_array(v.dims, ds...);
+// Create vectors a la IDL.
+template<typename T, typename I1, typename ... Dims,
+    typename enable = typename std::enable_if<std::is_arithmetic<I1>::value>::type>
+vec_t<sizeof...(Dims)+1, T> arr(I1 i1, Dims ... ds) {
+    vec_t<sizeof...(Dims)+1, T> v;
+    set_array(v.dims, i1, ds...);
     v.resize();
     return v;
 }
@@ -1824,36 +1823,20 @@ vec_t<1,rtype_t<Type>> reverse(const vec_t<1,Type>& v) {
     return r;
 }
 
-template<std::size_t Dim>
-struct replicate_make_tuple_ {
-    template<typename ... Args>
-    static std::tuple<Args...> push_(const std::tuple<Args...>& t, cte_t<0>) {
-        return t;
-    }
-
-    template<std::size_t N, typename ... Args>
-    static auto push_(const std::tuple<Args...>& t, cte_t<N>) -> decltype(push_(std::tuple_cat(t, std::tuple<placeholder_t>()), cte_t<N-1>())) {
-        return push_(std::tuple_cat(t, std::tuple<placeholder_t>()), cte_t<N-1>());
-    }
-
-    static auto make(const uint_t& i) -> decltype(push_(std::tuple<uint_t>(), cte_t<Dim>())) {
-        std::tuple<uint_t> t;
-        std::get<0>(t) = i;
-        return push_(t, cte_t<Dim>());
-    }
-};
-
 template<std::size_t Dim, typename Type, typename T>
 vec_t<Dim+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const T& n) {
     vec_t<Dim+1,rtype_t<Type>> r;
     r.dims[0] = n;
+    std::size_t pitch = 1;
     for (uint_t i = 0; i < Dim; ++i) {
+        pitch *= v.dims[i];
         r.dims[i+1] = v.dims[i];
     }
+
     r.resize();
 
     for (uint_t i = 0; i < std::size_t(n); ++i) {
-        r[replicate_make_tuple_<Dim>::make(i)] = v;
+        std::copy(v.begin(), v.end(), r.begin() + i*pitch);
     }
 
     return r;
