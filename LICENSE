@@ -1,6 +1,16 @@
+Licence for phy++ library and tools
+===================================
+
+Note: This covers all the files present in the 'include' and 'tools' directory
+  (recursively).
+
+Note: If you enable the use of the Gnu Scientific Library (i.e. you have not
+  defined the pre-processor variable NO_GSL), then the whole phy++ library is
+  to be considered as GPL software, as well as your code.
+
 The MIT License (MIT)
 
-Copyright (c) 2013 cschreib
+Copyright (c) 2014 Corentin Schreiber
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -18,3 +28,101 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+Licence for CMake scripts
+=========================
+
+Note: I didn't write any of those scripts myself. They were all taken from other
+  projects, each with a different licence. I am a bit worried about the GPL ones,
+  since I don't know if using them implies licensing phy++ as GPL as well.
+
+
+Licence for FindCCFITS.cmake:
+-----------------------------
+
+Copyright (c) 2012 Brian Kloppenborg
+
+This file is part of the C++ OIFITS Library (CCFITS).
+
+CCFITS is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version.
+
+CCFITS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with CCFITS. If not, see <http://www.gnu.org/licenses/>.
+
+
+Licence for FindCFITSIO.cmake:
+------------------------------
+
+Copyright (C) 2011
+Lars B"ahren (lbaehren@gmail.com)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc.,
+59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+
+Licence for FindWCSLib.cmake:
+-----------------------------
+
+Copyright (C) 2009
+ASTRON (Netherlands Institute for Radio Astronomy)
+P.O.Box 2, 7990 AA Dwingeloo, The Netherlands
+
+This file is part of the LOFAR software suite.
+The LOFAR software suite is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+The LOFAR software suite is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with the LOFAR software suite. If not, see <http://www.gnu.org/licenses/>.
+
+
+Licence for FindLibClang.cmake:
+-------------------------------
+
+Copyright (C) 2011, 2012, 2013 Jan Erik Hanssen and Anders Bakken
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+Licence for FindGSL.cmake:
+--------------------------
+
+Don't know. Present in both GNU Radio (GPL) and CERN's root (LGPL).
