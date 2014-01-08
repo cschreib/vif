@@ -613,7 +613,6 @@ vec_t<Dim-1,double> mad(const vec_t<Dim,Type>& v, uint_t dim) {
 
 template<std::size_t Dim, typename Type, typename TypeB>
 vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
-    using rtype = dtype_t<Type>;
     uint_t nbin = bins.dims[1];
     vec1u counts(nbin);
     for (uint_t i = 0; i < nbin; ++i) {
@@ -627,7 +626,6 @@ template<std::size_t Dim, typename Type, typename TypeB, typename TypeW>
 vec1d histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
     const vec_t<2,TypeB>& bins) {
 
-    using rtype = dtype_t<Type>;
     uint_t nbin = bins.dims[1];
     vec1d counts(nbin);
     for (uint_t i = 0; i < nbin; ++i) {
