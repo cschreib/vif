@@ -6,7 +6,6 @@
 #include <vector>
 #include <deque>
 #include <algorithm>
-// #include <phypp.hpp>
 
 std::string location_str(CXSourceLocation s) {
     std::ostringstream ss;
@@ -24,8 +23,6 @@ template<typename T>
 void get_location(T& t, CXSourceRange s) {
     std::ostringstream ss;
     CXFile f;
-    unsigned int line;
-    unsigned int column;
     unsigned int offset;
     clang_getSpellingLocation(clang_getRangeStart(s), &f, &t.lstart, &t.cend, &offset);
     clang_getSpellingLocation(clang_getRangeEnd(s), &f, &t.lend, &t.cstart, &offset);
@@ -39,7 +36,7 @@ void get_location(T& t, CXSourceRange s) {
         t.cstart -= 1;
         // and the ending one is always one too few
         t.cend += 1;
-    } 
+    }
 }
 
 std::string get_file_name(CXCursor c) {
@@ -147,7 +144,7 @@ CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client
             while (!cstack.empty() && !is_in_parent(cursor, cstack.back().cur)) {
                 cstack.pop_back();
             }
-            
+
             if (!cstack.empty()) {
                 CXString nameString = clang_getCursorDisplayName(cursor);
                 cstack.back().str.members.push_back(clang_getCString(nameString));
@@ -206,9 +203,9 @@ int main(int argc, char* argv[]) {
     // Create a new code with added reflexion data
     std::ifstream code(cpp);
     std::string rname = "._reflex_"+cpp;
-    
+
     std::ofstream enh(rname.c_str());
-    int l = 1;
+    std::size_t l = 1;
     while (!code.eof()) {
         if (db.empty()) {
             std::string line;
