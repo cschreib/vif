@@ -1,0 +1,13 @@
+<snippet>
+	<description>phypp include &amp; main</description>
+    <content><![CDATA[#include <phypp.hpp>
+
+int main(int argc, char* argv[]) {
+	${0}
+
+    return 0;
+}
+]]></content>
+    <tabTrigger>phypp</tabTrigger>
+    <scope>source.c++, source.objc++</scope>
+</snippet>

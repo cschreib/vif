@@ -1,0 +1,9 @@
+<snippet>
+	<name>Class</name>
+    <content><![CDATA[class ${1:${TM_FILENAME/(.+)\..+|.*/$1/:name}} {
+public :
+	${0:/* data */}
+};]]></content>
+    <tabTrigger>class</tabTrigger>
+    <scope>source.c++, source.objc++</scope>
+</snippet>
