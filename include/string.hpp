@@ -197,7 +197,7 @@ std::string replace(const std::string& ts, const std::string& pattern, const std
     auto p = s.find(pattern);
     while (p != s.npos) {
         s.replace(p, pattern.size(), rep);
-        p = s.find(pattern, p+1);
+        p = s.find(pattern, p+rep.size());
     }
 
     return s;
