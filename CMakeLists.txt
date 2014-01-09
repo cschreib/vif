@@ -65,5 +65,4 @@ add_subdirectory(tools/refgen)
 # build pre-phy++ tools (on demand)
 add_subdirectory(tools/qstack)
 add_subdirectory(tools/qxmatch)
-add_subdirectory(test/small)
 
