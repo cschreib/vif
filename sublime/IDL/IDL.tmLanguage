@@ -176,8 +176,10 @@
 					<string>variable.parameter.idl</string>
 				</dict>
 				<dict>
-					<key>include</key>
-					<string>$base</string>
+					<key>match</key>
+					<string>[\,\$]</string>
+					<key>name</key>
+					<string>operator.idl</string>
 				</dict>
 			</array>
 		</dict>
