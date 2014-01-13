@@ -46,12 +46,6 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>(^|\s)\s*\![A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*</string>
-			<key>name</key>
-			<string>support.other.variable</string>
-		</dict>
-		<dict>
-			<key>match</key>
 			<string>(^|\s)\s*\.[A-Za-z_][A-Za-z0-9_]*</string>
 			<key>name</key>
 			<string>support.function</string>
