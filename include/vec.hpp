@@ -587,7 +587,8 @@ struct vec_t {
                 dims[i] = t.dims[i-1];
             }
 
-            data = t.data;
+            data.resize(t.data.size());
+            std::copy(t.data.begin(), t.data.end(), data.begin());
         } else {
             for (uint_t i = 0; i < Dim-1; ++i) {
                 phypp_check(dims[i+1] == t.dims[i],
