@@ -129,7 +129,7 @@ vec_t<2,T> make_bins(const vec_t<1,T>& v) {
     return b;
 }
 
-template<std::size_t Dim, typename Type, typename B>
+template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
     return v >= b[0] && v < b[1];
 }
