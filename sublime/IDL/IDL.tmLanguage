@@ -267,7 +267,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>[\.:&lt;&gt;\(\)\{\}\[\],=+\-*&amp;^/|$]</string>
+			<string>[\.:&lt;&gt;\(\)\{\}\[\],=+\-*&amp;^/|$~]</string>
 			<key>name</key>
 			<string>operator.idl</string>
 		</dict>
