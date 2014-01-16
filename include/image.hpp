@@ -193,4 +193,26 @@ auto generate_img(const vec1u& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
     return img;
 }
 
+template<typename Type, typename KType>
+vec_t<2, rtype_t<Type>> convolve_img(const vec_t<2,Type>& img, const vec_t<2,KType>& kernel) {
+    phypp_check((kernel.dims[0] % 2 == 1) && (kernel.dims[1] % 2 == 1),
+        "kernel image must have odd dimensions");
+
+    vec_t<2, rtype_t<Type>> res(img.dims);
+    res[_] = dnan;
+
+    if (kernel.dims[0]/2 < img.dims[0] && kernel.dims[1]/2 < img.dims[1]) {
+        for (uint_t x = kernel.dims[0]/2; x < img.dims[0] - kernel.dims[0]/2; ++x)
+        for (uint_t y = kernel.dims[1]/2; y < img.dims[1] - kernel.dims[1]/2; ++y) {
+            res(x,y) = 0;
+            for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
+            for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
+                res(x,y) += kernel(kx,ky)*img(x+kx-kernel.dims[0]/2, y+ky-kernel.dims[1]/2);
+            }
+        }
+    }
+
+    return res;
+}
+
 #endif

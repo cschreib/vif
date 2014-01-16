@@ -749,7 +749,8 @@ struct catalog_pool {
         return pool.back();
     }
 
-    catalog_t& add_catalog(const vec1d& cra, const vec1d& cdec, vec1u sel,
+private :
+    catalog_t& add_catalog_(const vec1d& cra, const vec1d& cdec, bool no_new, vec1u sel,
         const std::string& name, const vec1s& sources, const vec1s& files,
         const std::string& comment = "") {
 
@@ -778,12 +779,12 @@ struct catalog_pool {
             bool rematch = false;
             if (!xmatch && file::exists(file)) {
                 struct {
-                    vec1u idm;
+                    vec1u sel;
                     uint_t ngal;
                 } tmp;
 
-                fits::read_table(file, ftable(tmp.idm, tmp.ngal));
-                if (tmp.idm.size() != sel.size() || tmp.ngal != ngal) {
+                fits::read_table(file, ftable(tmp.sel, tmp.ngal));
+                if (tmp.sel.size() != sel.size() || tmp.ngal != ngal) {
                     warning("incompatible cross-match data, re-matching");
                     rematch = true;
                 }
@@ -791,65 +792,77 @@ struct catalog_pool {
                 rematch = true;
             }
 
+            qxmatch_res xm;
+
             if (rematch) {
-                qxmatch_res xm = qxmatch(cra[sel], cdec[sel], ra, dec,
+                xm = qxmatch(cra[sel], cdec[sel], ra, dec,
                     keywords(_nth(2), _thread(4), _verbose(true))
                 );
 
-                const uint_t n = sel.size();
-                vec1u idm(n);
-                vec1u idn;
+                fits::write_table(file, ftable(
+                    sel, ngal, xm.id, xm.d, xm.rid, xm.rd
+                ));
+            } else {
+                print("reading data from "+file);
+                fits::read_table(file, xm);
+            }
 
-                for (uint_t i = 0; i < n; ++i) {
-                    if (xm.rid[xm.id(0,i)] == i) {
-                        idm[i] = xm.id(0,i);
-                    } else {
+            const uint_t n = sel.size();
+            vec1u idm; idm.reserve(n);
+            vec1u idn;
+            vec1u tsel;
+            if (no_new) {
+                tsel.reserve(n);
+            } else {
+                tsel = uindgen(sel.size());
+            }
+
+            for (uint_t i = 0; i < n; ++i) {
+                if (xm.rid[xm.id(0,i)] == i) {
+                    idm.push_back(xm.id(0,i));
+                    if (no_new) {
+                        tsel.push_back(i);
+                    }
+                } else {
+                    if (!no_new) {
                         idn.push_back(sel[i]);
-                        idm[i] = ra.size();
+                        idm.push_back(ra.size());
                         ra.push_back(cra[sel[i]]);
                         dec.push_back(cdec[sel[i]]);
                         origin.push_back(pool.size()+1);
                     }
                 }
+            }
 
-                vec2d td = replicate(dnan, xm.d.dims[0], cra.size());
-                td(_,sel) = xm.d;
+            vec2d td = replicate(dnan, xm.d.dims[0], cra.size());
+            td(_,sel[tsel]) = xm.d(_,tsel);
 
-                fits::write_table(file, ftable(sel, xm.id, xm.d, xm.rid, xm.rd, idm, idn, ngal));
+            sel = sel[tsel];
 
+            if (no_new) {
+                print("> ", idm.size(), " matched sources, ", n - idm.size(), " lost");
+            } else {
                 print("> ", n - idn.size(), " matched sources, ", idn.size(), " new sources");
                 ngal += idn.size();
-
-                std::string ref = "["+strn(pool.size()+1)+"]";
-                pool.push_back({*this, sel, idm, std::move(td), name, sources, files, comment, ref});
-                return pool.back();
-            } else {
-                print("reading data from "+file);
-
-                vec1u idm, idn;
-                vec2d d;
-
-                fits::read_table(file, ftable(d, idm, idn));
-
-                vec2d td = replicate(dnan, d.dims[0], cra.size());
-                td(_,sel) = d;
-
-                for (uint_t i = 0; i < idn.size(); ++i) {
-                    ra.push_back(cra[idn[i]]);
-                    dec.push_back(cdec[idn[i]]);
-                    origin.push_back(pool.size()+1);
-                }
-
-                print("> ", cra.size() - idn.size(), " matched sources, ", idn.size(),
-                    " new sources");
-
-                ngal += idn.size();
-
-                std::string ref = "["+strn(pool.size()+1)+"]";
-                pool.push_back({*this, sel, idm, std::move(td), name, sources, files, comment, ref});
-                return pool.back();
             }
+
+            std::string ref = "["+strn(pool.size()+1)+"]";
+            pool.push_back({*this, sel, idm, std::move(td), name, sources, files, comment, ref});
+            return pool.back();
         }
+    }
+
+public :
+    catalog_t& add_catalog(const vec1d& cra, const vec1d& cdec, vec1u sel,
+        const std::string& name, const vec1s& sources, const vec1s& files,
+        const std::string& comment = "") {
+        return add_catalog_(cra, cdec, false, sel, name, sources, files, comment);
+    }
+
+    catalog_t& match_catalog(const vec1d& cra, const vec1d& cdec, vec1u sel,
+        const std::string& name, const vec1s& sources, const vec1s& files,
+        const std::string& comment = "") {
+        return add_catalog_(cra, cdec, true, sel, name, sources, files, comment);
     }
 
     std::string build_catalog_list(uint_t width = 80) {

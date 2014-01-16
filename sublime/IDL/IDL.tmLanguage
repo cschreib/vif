@@ -46,12 +46,6 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>(^|\s)\s*\![A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*</string>
-			<key>name</key>
-			<string>support.other.variable</string>
-		</dict>
-		<dict>
-			<key>match</key>
 			<string>(^|\s)\s*\.[A-Za-z_][A-Za-z0-9_]*</string>
 			<key>name</key>
 			<string>support.function</string>
@@ -176,8 +170,10 @@
 					<string>variable.parameter.idl</string>
 				</dict>
 				<dict>
-					<key>include</key>
-					<string>$base</string>
+					<key>match</key>
+					<string>[\,\$]</string>
+					<key>name</key>
+					<string>operator.idl</string>
 				</dict>
 			</array>
 		</dict>
@@ -271,7 +267,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>[\.:&lt;&gt;\(\)\{\}\[\],=+\-*&amp;^/|$]</string>
+			<string>[\.:&lt;&gt;\(\)\{\}\[\],=+\-*&amp;^/|$~]</string>
 			<key>name</key>
 			<string>operator.idl</string>
 		</dict>
