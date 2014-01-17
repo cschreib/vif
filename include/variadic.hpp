@@ -168,6 +168,32 @@ struct is_any_of<T,U> {
     static const bool value = std::is_same<T,U>::value;
 };
 
+// Check if the given type is a string literal, i.e. (const) char* or (const) char[N]
+template<typename T>
+struct is_string {
+    static const bool value = false;
+};
+
+template<>
+struct is_string<const char*> {
+    static const bool value = true;
+};
+
+template<>
+struct is_string<char*> {
+    static const bool value = true;
+};
+
+template<>
+struct is_string<std::string> {
+    static const bool value = true;
+};
+
+template<std::size_t N>
+struct is_string<char[N]> {
+    static const bool value = true;
+};
+
 // Get a tuple element by type (only available in C++14)
 template<typename T, typename ... Args, std::size_t N>
 auto& tuple_get_(std::tuple<Args...>& t, cte_t<true>, cte_t<N>) {

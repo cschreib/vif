@@ -1848,7 +1848,7 @@ vec_t<Dim+sizeof...(Args)+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, c
     return replicate(replicate(v, args ...), n);
 }
 
-template<typename Type, typename ... Args, typename enable = typename std::enable_if<!is_vec<Type>::value>::type>
+template<typename Type, typename ... Args, typename enable = typename std::enable_if<!is_vec<Type>::value && !is_string<Type>::value>::type>
 vec_t<sizeof...(Args),Type> replicate(const Type& v, const Args& ... args) {
     auto r = arr<Type>(args...);
     for (auto& t : r) {
