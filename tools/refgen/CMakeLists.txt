@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 2.6)
-project(refgen)
+project(phy++-refgen)
 
 include_directories(${CLANG_INCLUDE})
+include_directories(${LLVM_INCLUDE_DIR})
 
-add_executable(refgen refgen.cpp)
+add_definitions(-D__STDC_CONSTANT_MACROS)
+add_definitions(-D__STDC_FORMAT_MACROS)
+add_definitions(-D__STDC_LIMIT_MACROS)
 
-target_link_libraries(refgen ${CLANG_LIBS})
+add_executable(phy++-refgen refgen.cpp)
+
+target_link_libraries(phy++-refgen ${CLANG_LIBS})
+target_link_libraries(phy++-refgen ${LLVM_MODULE_LIBS})

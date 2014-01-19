@@ -33,16 +33,24 @@ fi
 if [ $RECOMPILE -eq 1 ]; then
     T="$(date +%s%N)"
 
-    clang-3.3 $1.cpp -emit-ast -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" \
-        -DREFLECTION_STAGE -ferror-limit=5 -std=c++1y -o $1.ast -w
+    phy++-refgen $1 -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" \
+        -DREFLECTION_STAGE -ferror-limit=5 -std=c++1y \
+        -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter \
+        -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
+        -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors
+
     RETVAL=$?
     if [ $RETVAL -ne 0 ]; then
         echo phy++: program \'$1\' FAILED to compile
         exit
     fi
-    refgen $1
-    echo phy++: reflection data generated
-    rm $1.ast
+
+    TT="$(($(date +%s%N)-T))"
+    S="$((TT/1000000000))"
+    M="$((TT/1000000))"
+
+    printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
+        "$((S/60%60))" "$((S%60))" "${M}"
 
     clang-3.3 ._reflex_$1.cpp -ferror-limit=5 \
         -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" \
@@ -51,14 +59,14 @@ if [ $RECOMPILE -eq 1 ]; then
         -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
         -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors
 
-    T="$(($(date +%s%N)-T))"
-    S="$((T/1000000000))"
-    M="$((T/1000000))"
+    TT="$(($(date +%s%N)-T))"
+    S="$((TT/1000000000))"
+    M="$((TT/1000000))"
 
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
-        echo phy++: program \'$1\' successfully compiled
-        printf "compilation time: %02d:%02d.%03d\n" "$((S/60%60))" "$((S%60))" "${M}"
+        printf "phy++: program \'$1\' successfully compiled (%02d:%02d.%03d)\n" \
+            "$((S/60%60))" "$((S%60))" "${M}"
     else
         echo phy++: program \'$1\' FAILED to compile
         exit
