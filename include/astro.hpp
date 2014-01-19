@@ -912,7 +912,7 @@ void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def) {
     in.dims[0] = pool.ngal;
     in.resize();
     in[_] = def;
-    in[ix(idm,rep<Dim-1>(_))] = out[ix(idi,rep<Dim-1>(_))];
+    in(idm, repeat<Dim-1>(_)) = out(idi, repeat<Dim-1>(_));
 }
 
 template<typename T, typename U, typename V>

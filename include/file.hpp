@@ -14,6 +14,7 @@
 #include <fstream>
 #include <sstream>
 #include <ctime>
+#include <tuple>
 #include "vec.hpp"
 #include "math.hpp"
 

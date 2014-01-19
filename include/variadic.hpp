@@ -4,7 +4,6 @@
 #include <type_traits>
 #include <array>
 #include <utility>
-#include <tuple>
 #include <cassert>
 
 // Placeholder variable & type.
@@ -50,6 +49,102 @@ struct gen_seq<D, D, S...> {
 // Generate a sequence of integer from 0 to D (exclusive).
 template<std::size_t D>
 using gen_seq_t = typename gen_seq<0, D-1>::type;
+
+// Simple type list
+template<typename ... Args>
+struct type_list {};
+
+// Generate a type indicating that its value is to be repeated N times
+template<std::size_t N, typename T>
+struct repeated_value {
+    T value;
+};
+
+template<std::size_t N, typename T>
+repeated_value<N,T> repeat(T t) {
+    return repeated_value<N,T>{t};
+}
+
+// Unwrap repeated_value arguments into individual arguments
+template<typename ... IArgs>
+struct unfolder;
+
+template<>
+struct unfolder<> {
+    template<typename ... OArgs>
+    struct out {
+        template<typename F>
+        static auto unfold(F&& func, OArgs& ... oargs) {
+            return func(oargs...);
+        }
+    };
+};
+
+template<typename T, typename ... IArgs>
+struct unfolder<T, IArgs...> {
+    template<typename ... OArgs>
+    struct out {
+        template<typename F>
+        static auto unfold(F&& func, T& t, IArgs& ... iargs, OArgs& ... oargs) {
+            using actor = typename unfolder<IArgs...>::template out<OArgs..., T>;
+            return actor::unfold(std::forward<F>(func), iargs..., oargs..., t);
+        }
+    };
+};
+
+template<std::size_t N, typename T, typename ... IArgs>
+struct unfolder<repeated_value<N,T>, IArgs...> {
+    template<typename ... OArgs>
+    struct out {
+        template<typename F, typename U>
+        static auto unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs, OArgs& ... oargs) {
+            using actor = typename unfolder<IArgs...>::template out<OArgs...>;
+            return actor::unfold(std::forward<F>(func), iargs..., oargs...);
+        }
+
+        template<typename F, std::size_t I, typename U>
+        static auto unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs, OArgs& ... oargs) {
+            using actor = typename unfolder::template out<OArgs..., T>;
+            return actor::unfold_repeat(std::forward<F>(func), t, cte_t<I-1>(),
+                iargs..., oargs..., t.value);
+        }
+
+        template<typename F, typename U>
+        static auto unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
+            return unfold_repeat(std::forward<F>(func), t, cte_t<N>(), iargs..., oargs...);
+        }
+    };
+};
+
+template<std::size_t N, typename T, typename ... IArgs>
+struct unfolder<const repeated_value<N,T>, IArgs...> {
+    template<typename ... OArgs>
+    struct out {
+        template<typename F, typename U>
+        static auto unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs, OArgs& ... oargs) {
+            using actor = typename unfolder<IArgs...>::template out<OArgs...>;
+            return actor::unfold(std::forward<F>(func), iargs..., oargs...);
+        }
+
+        template<typename F, std::size_t I, typename U>
+        static auto unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs, OArgs& ... oargs) {
+            using actor = typename unfolder::template out<OArgs..., const T>;
+            return actor::unfold_repeat(std::forward<F>(func), t, cte_t<I-1>(),
+                iargs..., oargs..., t.value);
+        }
+
+        template<typename F, typename U>
+        static auto unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
+            return unfold_repeat(std::forward<F>(func), t, cte_t<N>(), iargs..., oargs...);
+        }
+    };
+};
+
+template<typename F, typename ... Args>
+auto unfold(F&& func, Args& ... args) {
+    using actor = typename unfolder<Args...>::template out<>;
+    return actor::unfold(std::forward<F>(func), args...);
+}
 
 // Check if all the types in a variadic list are of the same given type.
 template<typename U, typename T, typename ... Args>
@@ -109,11 +204,12 @@ template<std::size_t N, typename T>
 struct add_dim<std::array<T,N>> : std::integral_constant<std::size_t, N> {};
 
 template<typename T, typename ... Args>
-struct dim_total : std::integral_constant<std::size_t, add_dim<typename std::decay<T>::type>::value+
-    dim_total<Args...>::value> {};
+struct dim_total : std::integral_constant<std::size_t,
+    add_dim<typename std::decay<T>::type>::value + dim_total<Args...>::value> {};
 
 template<typename T>
-struct dim_total<T> : std::integral_constant<std::size_t, add_dim<typename std::decay<T>::type>::value> {};
+struct dim_total<T> : std::integral_constant<std::size_t,
+    add_dim<typename std::decay<T>::type>::value> {};
 
 template<template<typename> class V, typename T, std::size_t I, typename U, typename ... Args>
 void set_array_(V<T>& v, U&& t, Args&& ... args) {
@@ -186,96 +282,6 @@ template<typename T, typename U>
 struct is_any_of<T,U> {
     static const bool value = std::is_same<T,U>::value;
 };
-
-// Check if the given type is a string literal, i.e. (const) char* or (const) char[N]
-template<typename T>
-struct is_string_ : std::false_type {};
-template<>
-struct is_string_<const char*> : std::true_type {};
-template<>
-struct is_string_<char*> : std::true_type {};
-template<>
-struct is_string_<std::string> : std::true_type {};
-template<std::size_t N>
-struct is_string_<char[N]> : std::true_type {};
-
-template<typename T>
-using is_string = is_string_<typename std::decay<T>::type>;
-
-// Get a tuple element by type (only available in C++14)
-template<typename T, typename ... Args, std::size_t N>
-auto& tuple_get_(std::tuple<Args...>& t, cte_t<true>, cte_t<N>) {
-    return std::get<N>(t);
-}
-
-template<typename T, typename ... Args>
-auto& tuple_get_(std::tuple<Args...>& t, cte_t<false>, cte_t<0>);
-
-template<typename T, typename ... Args, std::size_t N>
-auto& tuple_get_(std::tuple<Args...>& t, cte_t<false>, cte_t<N>) {
-    const bool same = std::is_same<T, typename std::tuple_element<N-1, std::tuple<Args...>>::type>::value;
-    static_assert(!(N == 1 && !same), "no such type T in this tuple");
-    return tuple_get_<T>(t, cte_t<same>(), cte_t<N-1>());
-}
-
-template<typename T, typename ... Args>
-auto& tuple_get(std::tuple<Args...>& t) {
-    return tuple_get_<T>(t, cte_t<false>(), cte_t<sizeof...(Args)>());
-}
-
-// Merge two tuples by matching their types
-template<typename ... Args1, typename ... Args2>
-void tuple_merge_(std::tuple<Args1...>& t1, std::tuple<Args2...>&& t2, cte_t<0>) {
-    using type = typename std::tuple_element<0, std::tuple<Args2...>>::type;
-    tuple_get<type>(t1) = std::move(std::get<0>(t2));
-}
-
-template<typename ... Args1, typename ... Args2, std::size_t N>
-void tuple_merge_(std::tuple<Args1...>& t1, std::tuple<Args2...>&& t2, cte_t<N>) {
-    using type = typename std::tuple_element<N, std::tuple<Args2...>>::type;
-    tuple_get<type>(t1) = std::move(std::get<N>(t2));
-    tuple_merge_(t1, std::move(t2), cte_t<N-1>());
-}
-
-template<typename ... Args1, typename ... Args2>
-void tuple_merge(std::tuple<Args1...>& t1, std::tuple<Args2...>&& t2) {
-    tuple_merge_(t1, std::move(t2), cte_t<sizeof...(Args2)-1>());
-}
-
-// Iterate over the content of a tuple
-template<typename T, typename F, std::size_t ... S>
-void tuple_for__(T& t, F&& f, seq_t<S...>) {
-    auto l = { (f(std::get<S>(t)), 0)... };
-}
-
-template<typename T, typename F>
-void tuple_for_(T& t, F&& tf, cte_t<0>) {}
-
-template<typename T, typename F, std::size_t N>
-void tuple_for_(T& t, F&& tf, cte_t<N>) {
-    F& f = tf;
-    tuple_for__(t, f, gen_seq_t<N>());
-}
-
-template<typename T, typename F>
-void tuple_for(T& t, F&& tf) {
-    F& f = tf;
-    tuple_for_(t, f, cte_t<std::tuple_size<T>::value>());
-}
-
-// Reverse the content of a tuple
-// From: http://stackoverflow.com/questions/17178075/how-do-i-reverse-a-tuple
-template<typename T, size_t ... S>
-auto tuple_reverse_(T&& t, seq_t<S...>) {
-    return std::make_tuple(std::get<sizeof...(S) - 1 - S>(std::forward<T>(t))...);
-}
-
-template<typename T>
-auto tuple_reverse(T&& t) {
-    return tuple_reverse_(std::forward<T>(t),
-        gen_seq_t<std::tuple_size<typename std::decay<T>::type>::value>()
-    );
-}
 
 #endif
 

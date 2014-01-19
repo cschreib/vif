@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
         }
 
         spl[1] = dir+spl2[0];
-        append(spl, spl2[rx(1,spl2.size()-1)]);
+        append(spl, spl2[rgen(1,spl2.size()-1)]);
 
         if (!file::exists(spl[1])) {
             error("could not find '"+spl[1]+"'");
