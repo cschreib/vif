@@ -11,6 +11,17 @@ int main(int argc, char* argv[]) {
     file::mkdir("out");
 
     {
+        print("Checking template metaprogramming");
+        static_assert(is_vec<vec1d>::value, "failed is_vec");
+        static_assert(is_vec<vec2s>::value, "failed is_vec");
+        static_assert(!is_vec<float>::value, "failed is_vec");
+        static_assert(!is_vec<std::vector<int>>::value, "failed is_vec");
+        static_assert(vec_dim<float>::value == 0, "failed vec_dim");
+        static_assert(vec_dim<vec1d>::value == 1, "failed vec_dim");
+        static_assert(vec_dim<vec2s>::value == 2, "failed vec_dim");
+    }
+
+    {
         print("Type checking on array indexation");
         static_assert(std::is_same<make_vrtype<3,float,int_t,int_t,int_t>::type, float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<make_vrtype<3,const float,int_t,int_t,int_t>::type, const float&>::value, "wrong type of indexed array");
