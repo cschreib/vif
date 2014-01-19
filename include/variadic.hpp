@@ -103,6 +103,18 @@ struct array_size<std::array<T,N>> {
 };
 
 // Assign an arbitrary list of values to an array.
+template<typename T>
+struct add_dim : std::integral_constant<std::size_t, 1> {};
+template<std::size_t N, typename T>
+struct add_dim<std::array<T,N>> : std::integral_constant<std::size_t, N> {};
+
+template<typename T, typename ... Args>
+struct dim_total : std::integral_constant<std::size_t, add_dim<typename std::decay<T>::type>::value+
+    dim_total<Args...>::value> {};
+
+template<typename T>
+struct dim_total<T> : std::integral_constant<std::size_t, add_dim<typename std::decay<T>::type>::value> {};
+
 template<template<typename> class V, typename T, std::size_t I, typename U, typename ... Args>
 void set_array_(V<T>& v, U&& t, Args&& ... args) {
     v[I] = std::move(t);
@@ -120,21 +132,28 @@ void set_array(V<T>& v, Args&& ... args) {
     set_array_<V,T,0>(v, std::forward<Args>(args)...);
 }
 
-template<std::size_t N, typename T, std::size_t I, typename U>
-void set_array_(std::array<T,N>& v, U&& t) {
-    v[I] = static_cast<T>(std::move(t));
-}
+template<std::size_t N, typename T, std::size_t I>
+void set_array_(std::array<T,N>& v, cte_t<I>) {}
 
 template<std::size_t N, typename T, std::size_t I, typename U, typename ... Args>
-void set_array_(std::array<T,N>& v, U&& t, Args&& ... args) {
-    v[I] = static_cast<T>(std::move(t));
-    set_array_<N,T,I+1>(v, std::forward<Args>(args)...);
+void set_array_(std::array<T,N>& v, cte_t<I>, const U& t, Args&& ... args) {
+    v[I] = static_cast<T>(t);
+    set_array_(v, cte_t<I+1>{}, std::forward<Args>(args)...);
+}
+
+template<std::size_t N, typename T, std::size_t I, typename U, std::size_t M, typename ... Args>
+void set_array_(std::array<T,N>& v, cte_t<I>, const std::array<U,M>& t, Args&& ... args) {
+    for (std::size_t i = 0; i < M; ++i) {
+        v[I+i] = static_cast<T>(t[i]);
+    }
+
+    set_array_(v, cte_t<I+M>{}, std::forward<Args>(args)...);
 }
 
 template<std::size_t N, typename T, typename ... Args>
 void set_array(std::array<T,N>& v, Args&& ... args) {
-    static_assert(N >= sizeof...(Args), "too many elements for this array");
-    set_array_<N,T,0>(v, std::forward<Args>(args)...);
+    static_assert(N == dim_total<Args...>::value, "wrong number of elements for this array");
+    set_array_(v, cte_t<0>{}, std::forward<Args>(args)...);
 }
 
 template<typename T>
@@ -170,29 +189,18 @@ struct is_any_of<T,U> {
 
 // Check if the given type is a string literal, i.e. (const) char* or (const) char[N]
 template<typename T>
-struct is_string {
-    static const bool value = false;
-};
-
+struct is_string_ : std::false_type {};
 template<>
-struct is_string<const char*> {
-    static const bool value = true;
-};
-
+struct is_string_<const char*> : std::true_type {};
 template<>
-struct is_string<char*> {
-    static const bool value = true;
-};
-
+struct is_string_<char*> : std::true_type {};
 template<>
-struct is_string<std::string> {
-    static const bool value = true;
-};
-
+struct is_string_<std::string> : std::true_type {};
 template<std::size_t N>
-struct is_string<char[N]> {
-    static const bool value = true;
-};
+struct is_string_<char[N]> : std::true_type {};
+
+template<typename T>
+using is_string = is_string_<typename std::decay<T>::type>;
 
 // Get a tuple element by type (only available in C++14)
 template<typename T, typename ... Args, std::size_t N>

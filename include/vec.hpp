@@ -83,17 +83,13 @@ T* ref(T* t) {
 
 // Helper to check if a given type is a generic vector.
 template<typename T>
-struct is_vec : public std::false_type {};
+struct is_vec_ : public std::false_type {};
 
 template<std::size_t Dim, typename Type>
-struct is_vec<vec_t<Dim,Type>> : public std::true_type {};
+struct is_vec_<vec_t<Dim,Type>> : public std::true_type {};
 
-template<std::size_t Dim, typename Type>
-struct is_vec<vec_t<Dim,Type>&> : public std::true_type {};
-
-template<std::size_t Dim, typename Type>
-struct is_vec<const vec_t<Dim,Type>&> : public std::true_type {};
-
+template<typename T>
+using is_vec = is_vec_<typename std::decay<T>::type>;
 
 // Return the data type of the provided type
 template<typename T>
@@ -128,6 +124,30 @@ struct make_vtype {
         typename std::remove_cv<T>::type
     >::type;
 };
+
+// Helper to match a type to the corresponding vector internal type.
+template<typename T>
+struct vec_type_ {
+    using type = T;
+};
+
+template<>
+struct vec_type_<char*> {
+    using type = std::string;
+};
+
+template<>
+struct vec_type_<const char*> {
+    using type = std::string;
+};
+
+template<std::size_t N>
+struct vec_type_<char[N]> {
+    using type = std::string;
+};
+
+template<typename T>
+using vec_type = typename vec_type_<typename std::decay<T>::type>::type;
 
 // Helper to build the result of v[ix(1,2,3)], i.e. when all indices are scalars.
 // The result is a scalar.
@@ -416,6 +436,23 @@ struct ilist_t<Dim, Type*> {
     }
 };
 
+template<typename T>
+struct is_dim_elem : std::is_arithmetic<T> {};
+
+
+template<typename T, std::size_t N>
+struct is_dim_elem<std::array<T,N>> : std::true_type {};
+
+template<typename ... Args>
+struct is_dim_list;
+
+template<>
+struct is_dim_list<> : std::true_type {};
+
+template<typename T, typename ... Args>
+struct is_dim_list<T, Args...> : std::integral_constant<bool,
+    is_dim_elem<typename std::decay<T>::type>::value && is_dim_list<Args...>::value> {};
+
 // The generic vector itself.
 template<std::size_t Dim, typename Type>
 struct vec_t;
@@ -439,13 +476,10 @@ struct vec_t {
     vec_t(const vec_t&) = default;
     vec_t(vec_t&&) = default;
 
-    template<typename ... T>
-    explicit vec_t(T ... d) {
-        set_array(dims, d...);
-        resize();
-    }
-
-    explicit vec_t(const std::array<std::size_t, Dim> d) : dims(d) {
+    template<typename T, typename ... Args, typename enable =
+        typename std::enable_if<is_dim_list<T,Args...>::value>::type>
+    explicit vec_t(T&& t, Args&& ... d) {
+        set_array(dims, std::forward<T>(t), std::forward<Args>(d)...);
         resize();
     }
 
@@ -1179,14 +1213,13 @@ MAKE_TYPEDEFS(6)
 
 // A few traits
 template<typename T>
-struct vec_dim {
-    static const std::size_t value = 0;
-};
+struct vec_dim_ : std::integral_constant<std::size_t, 0> {};
 
 template<std::size_t Dim, typename Type>
-struct vec_dim<vec_t<Dim,Type>> {
-    static const std::size_t value = Dim;
-};
+struct vec_dim_<vec_t<Dim,Type>> : std::integral_constant<std::size_t, Dim> {};
+
+template<typename T>
+using vec_dim = vec_dim_<typename std::decay<T>::type>;
 
 // Create vectors a la IDL.
 template<typename T, typename I1, typename ... Dims,
@@ -1824,82 +1857,31 @@ vec_t<1,rtype_t<Type>> reverse(const vec_t<1,Type>& v) {
     return r;
 }
 
-template<std::size_t Dim, typename Type, typename T>
-vec_t<Dim+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const T& n) {
-    vec_t<Dim+1,rtype_t<Type>> r;
-    r.dims[0] = n;
-    std::size_t pitch = 1;
-    for (uint_t i = 0; i < Dim; ++i) {
-        pitch *= v.dims[i];
-        r.dims[i+1] = v.dims[i];
+template<std::size_t Dim, typename Type, typename ... Args>
+vec_t<Dim+dim_total<Args...>::value, rtype_t<Type>>
+    replicate(const vec_t<Dim,Type>& t, Args&& ... args) {
+    static const std::size_t FDim = Dim+dim_total<Args...>::value;
+    vec_t<FDim, rtype_t<Type>> vec(std::forward<Args>(args)..., t.dims);
+
+    std::size_t pitch = t.size();
+    std::size_t n = vec.size()/pitch;
+    for (uint_t i = 0; i < n; ++i) {
+        std::copy(t.begin(), t.end(), vec.begin() + i*pitch);
     }
-
-    r.resize();
-
-    for (uint_t i = 0; i < std::size_t(n); ++i) {
-        std::copy(v.begin(), v.end(), r.begin() + i*pitch);
-    }
-
-    return r;
+    return vec;
 }
 
-template<std::size_t Dim, typename Type, typename T, typename ... Args>
-vec_t<Dim+sizeof...(Args)+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const Args& ... args, const T& n) {
-    return replicate(replicate(v, args ...), n);
-}
+template<typename Type, typename ... Args>
+vec_t<dim_total<Args...>::value, vec_type<Type>>
+    replicate(const Type& t, Args&& ... args) {
+    static const std::size_t FDim = dim_total<Args...>::value;
+    vec_t<FDim, vec_type<Type>> vec(std::forward<Args>(args)...);
 
-template<typename Type, typename ... Args, typename enable = typename std::enable_if<!is_vec<Type>::value && !is_string<Type>::value>::type>
-vec_t<sizeof...(Args),Type> replicate(const Type& v, const Args& ... args) {
-    auto r = arr<Type>(args...);
-    for (auto& t : r) {
-        t = v;
+    for (auto& e : vec) {
+        e = t;
     }
-    return r;
-}
 
-template<typename ... Args>
-vec_t<sizeof...(Args),std::string> replicate(const char* v, const Args& ... args) {
-    auto r = strarr(args...);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<std::size_t N, typename ... Args>
-vec_t<sizeof...(Args),std::string> replicate(const char v[N], const Args& ... args) {
-    auto r = strarr(args...);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<typename Type, std::size_t Dim>
-vec_t<Dim,Type> replicate(const Type& v, const std::array<uint_t,Dim>& dims) {
-    auto r = arr<Type>(dims);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<std::size_t Dim>
-vec_t<Dim,std::string> replicate(const char* v, const std::array<uint_t,Dim>& dims) {
-    auto r = strarr(dims);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<std::size_t N, std::size_t Dim>
-vec_t<Dim,std::string> replicate(const char v[N], const std::array<uint_t,Dim>& dims) {
-    auto r = strarr(dims);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
+    return vec;
 }
 
 template<std::size_t Dim, typename Type>

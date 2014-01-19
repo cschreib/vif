@@ -135,16 +135,16 @@ namespace reflex {
     std::string seek_name(const T& t, uint_t max_dist = 100000) {
         const char* c = reinterpret_cast<const char*>(&t);
         const char* oc = c;
-        const char motif[] = REFLEX_MEM_HEADER;
+        const char pattern[] = REFLEX_MEM_HEADER;
 
         // Probe the memory that follows the address of the object and look for a reflection header
         while (uint_t(c - oc) < max_dist) {
-            while (*c != motif[0]) ++c;
+            while (*c != pattern[0]) ++c;
             const char* hstart = c;
 
             bool found = true;
-            for (uint_t i = 1; i < sizeof(motif); ++i) {
-                if (*(++c) != motif[i]) {
+            for (uint_t i = 1; i < sizeof(pattern); ++i) {
+                if (*(++c) != pattern[i]) {
                     found = false;
                     break;
                 }
@@ -153,16 +153,16 @@ namespace reflex {
             if (!found) continue;
 
             // If one is found, go back to the corresponding data_t
-            const uint_t offset = &(((reflex::data_t*)nullptr)->header[0]) - (char*)nullptr;
-            const char* rstart = hstart - offset;
-            const reflex::data_t& data = reinterpret_cast<const reflex::data_t&>(*rstart);
+            const reflex::data_t* data = reinterpret_cast<const reflex::data_t*>(hstart);
+            const uint_t offset = &data->header[0] - reinterpret_cast<const char*>(data);
+            data = reinterpret_cast<const reflex::data_t*>(hstart - offset);
 
             // Look for the members of this data_t, and see if one matches both address and type
             // (type is necessary because some objects, although different, share the same address,
             // for example a structure and its first member)
-            for (auto& m : data.members) {
+            for (auto& m : data->members) {
                 if (m.type == typeid(t) && m.value == (const void*)&t) {
-                    return data.full_name() + "." + m.name;
+                    return data->full_name() + "." + m.name;
                 }
             }
 
