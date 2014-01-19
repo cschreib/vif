@@ -1894,6 +1894,11 @@ vec1u sort(const vec_t<Dim,Type>& v) {
     return r;
 }
 
+template<std::size_t Dim, typename Type>
+void inplace_sort(vec_t<Dim,Type>& v) {
+    std::stable_sort(v.data.begin(), v.data.end(), typename vec_t<Dim,Type>::comparator());
+}
+
 template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
 void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
