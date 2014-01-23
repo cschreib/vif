@@ -6,9 +6,9 @@
 #include <cmath>
 #include <algorithm>
 #include <initializer_list>
-#include "variadic.hpp"
-#include "print.hpp"
-#include "iterator.hpp"
+#include "phypp/variadic.hpp"
+#include "phypp/print.hpp"
+#include "phypp/iterator.hpp"
 
 using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;

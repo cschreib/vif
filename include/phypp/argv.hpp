@@ -1,8 +1,8 @@
 #ifndef ARGV_HPP
 #define ARGV_HPP
 
-#include "vec.hpp"
-#include "string.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/string.hpp"
 #include <fstream>
 
 #define arg_list(...) #__VA_ARGS__, __VA_ARGS__

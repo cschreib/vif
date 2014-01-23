@@ -1,11 +1,11 @@
 #ifndef ASTRO_HPP
 #define ASTRO_HPP
 
-#include <vec.hpp>
-#include <math.hpp>
-#include <print.hpp>
-#include <image.hpp>
-#include <thread.hpp>
+#include "phypp/vec.hpp"
+#include "phypp/math.hpp"
+#include "phypp/print.hpp"
+#include "phypp/image.hpp"
+#include "phypp/thread.hpp"
 #include <map>
 
 static std::string data_dir = system_var("PHYPP_DATA_DIR", "./");

@@ -1,7 +1,7 @@
 #ifndef THREAD_HPP
 #define THREAD_HPP
 
-#include "vec.hpp"
+#include "phypp/vec.hpp"
 #include <thread>
 #include <atomic>
 

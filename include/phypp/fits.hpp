@@ -4,11 +4,11 @@
 #include <CCfits/CCfits>
 #include <wcslib/wcshdr.h>
 #include <string>
-#include "vec.hpp"
-#include "reflex.hpp"
-#include "file.hpp"
-#include "print.hpp"
-#include "math.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/reflex.hpp"
+#include "phypp/file.hpp"
+#include "phypp/print.hpp"
+#include "phypp/math.hpp"
 
 namespace fits {
     using namespace CCfits;

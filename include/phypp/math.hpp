@@ -1,8 +1,8 @@
 #ifndef MATH_HPP
 #define MATH_HPP
 
-#include "vec.hpp"
-#include "string.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/string.hpp"
 #include <random>
 #include <cmath>
 

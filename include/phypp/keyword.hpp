@@ -1,7 +1,7 @@
 #ifndef KEYWORD_HPP
 #define KEYWORD_HPP
 
-#include "variadic.hpp"
+#include "phypp/variadic.hpp"
 #include <tuple>
 
 // Check if T = V<X,W> and U = V<Y,W>

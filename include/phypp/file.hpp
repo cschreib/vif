@@ -15,8 +15,8 @@
 #include <sstream>
 #include <ctime>
 #include <tuple>
-#include "vec.hpp"
-#include "math.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/math.hpp"
 
 namespace file {
     namespace impl {

@@ -1,9 +1,9 @@
 #ifndef REFLEX_HELPERS_HPP
 #define REFLEX_HELPERS_HPP
 
-#include "reflex.hpp"
-#include "print.hpp"
-#include "string.hpp"
+#include "phypp/reflex.hpp"
+#include "phypp/print.hpp"
+#include "phypp/string.hpp"
 
 namespace reflex {
     namespace impl {
