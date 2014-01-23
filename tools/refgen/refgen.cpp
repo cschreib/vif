@@ -321,6 +321,7 @@ void format_range(CXDiagnostic d, CXSourceLocation sl) {
         clang_disposeString(tmp);
     }
 
+    // TODO: check that filename exists
     std::string line;
     std::ifstream fs(filename);
     for (std::size_t i = 0; i < lloc; ++i) {
@@ -402,6 +403,7 @@ void format_diagnostic(CXDiagnostic d) {
     }
 
     CXSourceLocation sl = clang_getDiagnosticLocation(d);
+    // TODO: check that location is not empty
     std::string loc = location_str(sl)+": ";
 
     std::string message; {
@@ -431,11 +433,12 @@ int main(int argc, char* argv[]) {
     bool verbose = false;
 
     cpp = std::string(argv[1]) + ".cpp";
+    std::string rname = argv[2];
 
     // Parse the file with clang
     CXIndex cidx = clang_createIndex(0, 0);
     CXTranslationUnit ctu = clang_parseTranslationUnit( // TODO: v optimize
-        cidx, cpp.c_str(), argv+2, argc-2, 0, 0, CXTranslationUnit_None
+        cidx, cpp.c_str(), argv+3, argc-3, 0, 0, CXTranslationUnit_None
     );
 
     std::size_t ndiag = clang_getNumDiagnostics(ctu);
@@ -476,7 +479,6 @@ int main(int argc, char* argv[]) {
 
     // Create a new code with added reflexion data
     std::ifstream code(cpp);
-    std::string rname = "._reflex_"+cpp;
 
     std::ofstream enh(rname.c_str());
     std::size_t l = 1;

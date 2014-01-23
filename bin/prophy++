@@ -33,14 +33,11 @@ fi
 if [ $RECOMPILE -eq 1 ]; then
     T="$(date +%s%N)"
 
-    phy++-refgen $1 -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" \
-        -DREFLECTION_STAGE -ferror-limit=5 -std=c++1y \
-        -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter \
-        -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
-        -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors
+    # Parse file and generate reflection data
+    $PHYPP_REFGEN $1 ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
+        -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" $PHYPP_REFGEN_FLAGS
 
-    RETVAL=$?
-    if [ $RETVAL -ne 0 ]; then
+    if [ $? -ne 0 ]; then
         echo phy++: program \'$1\' FAILED to compile
         exit
     fi
@@ -52,28 +49,28 @@ if [ $RECOMPILE -eq 1 ]; then
     printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
         "$((S/60%60))" "$((S%60))" "${M}"
 
-    clang-3.3 ._reflex_$1.cpp -ferror-limit=5 -O3 -ltcmalloc -lprofiler \
-        -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" \
-        -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -o $1 \
-        -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter \
-        -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal \
-        -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors
+    # Compile the generated file to build the final executable
+    $PHYPP_COMPILER ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
+        $PHYPP_COMPILER_OPT_FLAGS $PHYPP_COMPILER_PROF_FLAGS \
+        -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" $PHYPP_COMPILER_FLAGS -o $1
+
+    if [ $? -ne 0 ]; then
+        echo phy++: program \'$1\' FAILED to compile
+        exit
+    fi
 
     TT="$(($(date +%s%N)-T))"
     S="$((TT/1000000000))"
     M="$((TT/1000000))"
 
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-        printf "phy++: program \'$1\' successfully compiled (%02d:%02d.%03d)\n" \
-            "$((S/60%60))" "$((S%60))" "${M}"
-    else
-        echo phy++: program \'$1\' FAILED to compile
-        exit
-    fi
+    printf "phy++: program \'$1\' successfully compiled (%02d:%02d.%03d)\n" \
+        "$((S/60%60))" "$((S%60))" "${M}"
 fi
 
+# Run the program
 a=./$1
 shift
-env CPUPROFILE=$a.prof $a "$@"
-pprof --gv $a $a.prof
+env CPUPROFILE=${PHYPP_TEMP_DIR}/._prof_$a.prof $a "$@"
+
+# Feed profiling data to the renderer
+pprof --gv $a ${PHYPP_TEMP_DIR}/._prof_$a.prof

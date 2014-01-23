@@ -51,9 +51,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_definitions(-std=c++1y)
     add_definitions(-fmax-errors=5)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  # using Intel C++
+  message(ERROR "Intel C++ compiler is not supported")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  # using Visual Studio C++
+  message(ERROR "Microsoft Visual C++ compiler is not supported")
 endif()
 
 set(PHYPP_INCLUDES "${PROJECT_SOURCE_DIR}/include")
@@ -78,3 +78,41 @@ add_subdirectory(tools/refgen)
 add_subdirectory(tools/qstack)
 add_subdirectory(tools/qxmatch)
 
+# build configuration
+set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
+set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
+file(WRITE ${PHYPP_OUTPUT_CONFIG} "# phy++ configuration file\n\n")
+
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=${PROJECT_SOURCE_DIR}\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}/data\n\n")
+
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DREFLECTION_STAGE -ferror-limit=5 -std=c++1y -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors\"\n\n")
+
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 -ltcmalloc\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Wall\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 -ltcmalloc\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
+endif()
+
+# install headers
+file(GLOB files ${PROJECT_SOURCE_DIR}/include/phypp/*.hpp)
+install(FILES ${PROJECT_SOURCE_DIR}/include/phypp.hpp DESTINATION include)
+install(FILES ${files} DESTINATION include/phypp)
+
+# install build scripts
+install(PROGRAMS bin/phy++ bin/ophy++ bin/gphy++ bin/gophy++ bin/prophy++
+    DESTINATION bin COMPONENT scripts)
+
+# install config
+install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION $ENV{HOME} COMPONENT config)
+install(CODE "message(\"NOTE: to finalize the installation, please source $ENV{HOME}/${PHYPP_OUTPUT_CONFIG_FILE} in your startup script (~/.bashrc).\")")

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(phy++-refgen)
+project(refgen)
 
 include_directories(${CLANG_INCLUDE})
 include_directories(${LLVM_INCLUDE_DIR})
@@ -12,3 +12,5 @@ add_executable(phy++-refgen refgen.cpp)
 
 target_link_libraries(phy++-refgen ${CLANG_LIBS})
 target_link_libraries(phy++-refgen ${LLVM_MODULE_LIBS})
+
+install(TARGETS phy++-refgen RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
