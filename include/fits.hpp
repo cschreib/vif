@@ -403,7 +403,7 @@ namespace fits {
         return fits::wcs(hdr);
     }
 
-    template<typename T, typename U, typename V, typename W>
+    template<typename T = double, typename U = double, typename V, typename W>
     void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
         vec_t<1,V>& x, vec_t<1,W>& y) {
 
@@ -432,7 +432,7 @@ namespace fits {
         y = pos[ids2];
     }
 
-    template<typename T, typename U, typename V, typename W>
+    template<typename T = double, typename U = double, typename V, typename W>
     void xy2ad(const fits::wcs& w, const vec_t<1,T>& x, const vec_t<1,U>& y,
         vec_t<1,V>& ra, vec_t<1,W>& dec) {
 
