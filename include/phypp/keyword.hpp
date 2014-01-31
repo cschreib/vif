@@ -1,7 +1,8 @@
 #ifndef KEYWORD_HPP
 #define KEYWORD_HPP
 
-#include "variadic.hpp"
+#include "phypp/variadic.hpp"
+#include <tuple>
 
 // Check if T = V<X,W> and U = V<Y,W>
 template<typename T, typename U>
@@ -79,7 +80,7 @@ struct check_any_of {
 
     template<typename T, typename ... Args2>
     static constexpr bool check(const std::tuple<T, Args2...>&) {
-        static_assert(is_any_of_tp<T, Args...>::value, "unknown keyword T");    
+        static_assert(is_any_of_tp<T, Args...>::value, "unknown keyword T");
         return check(std::tuple<Args2...>());
     }
 };
@@ -131,12 +132,12 @@ struct keyword_t {
     keyword_t(keyword_t&&) = default;
     keyword_t& operator= (keyword_t&&) = default;
 
-    template<typename U> 
+    template<typename U>
     keyword_t(keyword_t<U,CRTP>&& u) : value(u.value), provided(u.provided) {}
 
-    template<typename U> 
+    template<typename U>
     keyword_t(keyword_t<U&,CRTP>&& u) : value(*u.value), provided(u.provided) {}
-    
+
     T& get() { return value; }
     const T& get() const { return value; }
 
@@ -162,7 +163,7 @@ struct keyword_t<T&, CRTP> {
 
     template<typename U>
     keyword_t(keyword_t<U&,CRTP>&& u) : value(u.value), provided(u.provided) {}
-    
+
     T& get() { return *value; }
     const T& get() const { return *value; }
 

@@ -1,10 +1,10 @@
 #ifndef PLOT_HPP
 #define PLOT_HPP
 
-#include "color.hpp"
-#include "math.hpp"
-#include "string.hpp"
-#include "print.hpp"
+#include "phypp/color.hpp"
+#include "phypp/math.hpp"
+#include "phypp/string.hpp"
+#include "phypp/print.hpp"
 
 namespace plot {
     // Different stroke drawing styles for stroke endings
@@ -193,7 +193,7 @@ namespace plot {
             int_t last_level = 0;
             uint_t size = font_size_;
             float height = char_height();
-            
+
             for (auto& fs : fss) {
                 if (fs.str.empty()) continue;
 
@@ -213,7 +213,7 @@ namespace plot {
                 font(size);
             }
         }
-        
+
         void show_line_(const std::string& text, float align) {
             std::vector<fstring> fss;
             parse_line_(text, fss);
@@ -249,7 +249,7 @@ namespace plot {
             size = font_size_;
             itxt = 0;
             float height = char_height();
-            
+
             for (auto& fs : fss) {
                 if (fs.str.empty()) continue;
 
@@ -387,9 +387,9 @@ namespace plot {
         // View the file as a grid of 'nx' horizontal regions and 'ny' vertical regions, and go the
         // 'n'th one:   #-------#
         //              | 2 | 3 |
-        //              #---#---# 
+        //              #---#---#
         //              | 0 | 1 |
-        //              #---#---# 
+        //              #---#---#
         eps& view_grid(int_t n, int_t nx, int_t ny) {
             float dx = width()/nx, dy = height()/ny;
             int_t x = n % ny, y = n / nx;
@@ -609,7 +609,7 @@ namespace plot {
     // drawing functions such as the ones below in order for the path to be visible. In particular,
     // it is possible to draw the path as a stroke ('stroke') or to fill it with some color
     // ('fill'). Note however that such action destroys the path, so if one needs to plot both a
-    // stroke and fill the path, one has to save the path after it was created, call 'stroke', 
+    // stroke and fill the path, one has to save the path after it was created, call 'stroke',
     // restore the path, then call 'fill'.
 
         // Set the current drawing color in RGB format
@@ -706,7 +706,7 @@ namespace plot {
                     show_line_(text);
                 }
             }
-            
+
             return *this;
         }
 
@@ -727,7 +727,7 @@ namespace plot {
                     show_line_(lines[i], align);
                 }
             }
-            
+
             return *this;
         }
 
@@ -799,7 +799,7 @@ namespace plot {
         }
 
         draw_axis_base(e);
-        
+
         if (inset) {
             e.view_pop();
         }

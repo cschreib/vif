@@ -8,19 +8,59 @@
 }
 
 int main(int argc, char* argv[]) {
+    double start = now();
+
     file::mkdir("out");
 
     {
+        print("Checking template metaprogramming");
+        static_assert(is_vec<vec1d>::value, "failed is_vec");
+        static_assert(is_vec<vec2s>::value, "failed is_vec");
+        static_assert(!is_vec<float>::value, "failed is_vec");
+        static_assert(!is_vec<std::vector<int>>::value, "failed is_vec");
+        static_assert(vec_dim<float>::value == 0, "failed vec_dim");
+        static_assert(vec_dim<vec1d>::value == 1, "failed vec_dim");
+        static_assert(vec_dim<vec2s>::value == 2, "failed vec_dim");
+    }
+
+    {
         print("Type checking on array indexation");
-        static_assert(std::is_same<make_vrtype<3,float,int_t,int_t,int_t>::type, float&>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,const float,int_t,int_t,int_t>::type, const float&>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,float,int_t,placeholder_t,int_t>::type, vec_t<1,float*>>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,const float,int_t,placeholder_t,int_t>::type, vec_t<1,const float*>>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,float,int_t,placeholder_t&,int_t>::type, vec_t<1,float*>>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,float,placeholder_t&,placeholder_t&,placeholder_t&>::type, vec_t<3,float*>>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,float,vec_t<1, int_t>&,placeholder_t&,placeholder_t&>::type, vec_t<3,float*>>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,float,const vec_t<1, int_t>&,placeholder_t&,int_t>::type, vec_t<2,float*>>::value, "wrong type of indexed array");
-        static_assert(std::is_same<make_vrtype<3,float,vec_t<1, int_t>,placeholder_t&,int_t>::type, vec_t<2,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,int_t,int_t,int_t>::type,
+            float&>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<true,3,float,int_t,int_t,int_t>::type,
+            const float&>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,int_t,placeholder_t,int_t>::type,
+            vec_t<1,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<true,3,const float,int_t,placeholder_t,int_t>::type,
+            vec_t<1,const float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,int_t,placeholder_t&,int_t>::type,
+            vec_t<1,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,placeholder_t&,placeholder_t&,placeholder_t&>::type,
+            vec_t<3,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,vec_t<1, int_t>&,placeholder_t&,placeholder_t&>::type,
+            vec_t<3,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,const vec_t<1, int_t>&,placeholder_t&,int_t>::type,
+            vec_t<2,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,vec_t<1, int_t>,placeholder_t&,int_t>::type,
+            vec_t<2,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,repeated_value<3,placeholder_t>>::type,
+            vec_t<3,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,repeated_value<2,placeholder_t>,int_t>::type,
+            vec_t<2,float*>>::value, "wrong type of indexed array");
+        static_assert(std::is_same<
+            vec_access::helper<false,3,float,int_t,repeated_value<2,placeholder_t>>::type,
+            vec_t<2,float*>>::value, "wrong type of indexed array");
     }
 
     {
@@ -64,7 +104,7 @@ int main(int argc, char* argv[]) {
 
         print("Direct data access (single index)");
         check(v[1], "1");
-        check(v[ix(1)], "1");
+        check(v(1), "1");
         print("Placeholder index '_'");
         check(v[_], "0, 1, 2, 3, 4, 5, 6");
 
@@ -72,8 +112,12 @@ int main(int argc, char* argv[]) {
         check(2*v, "0, 2, 4, 6, 8, 10, 12");
         check(pow(2,v), "1, 2, 4, 8, 16, 32, 64");
 
-        print("Range generation 'rx'");
-        vec1i i = rx(5,2);
+        print("'rgen' function");
+        vec1d v1 = rgen(0, 5, 11);
+        check(v1, "0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5");
+        vec1u v2 = rgen(0, 5);
+        check(v2, "0, 1, 2, 3, 4, 5");
+        vec1u i = rgen(5, 2);
         check(i, "5, 4, 3, 2");
 
         print("Index array");
@@ -81,19 +125,19 @@ int main(int argc, char* argv[]) {
         check(2*v[i], "10, 8, 6, 4");
         v[i] = dindgen(4);
         check(v, "0, 1, 3, 2, 1, 0, 6");
-        v[rx(4,6)] = v[rx(2,0)];
+        v[rgen(4,6)] = v[rgen(2,0)];
         check(v, "0, 1, 3, 2, 3, 1, 0");
         v[i] *= 2;
         check(v, "0, 1, 6, 4, 6, 2, 0");
         v[i] += indgen(4);
         check(v, "0, 1, 9, 6, 7, 2, 0");
-        v[rx(0,6)] = v[rx(6,0)];
+        v[rgen(0,6)] = v[rgen(6,0)];
         check(v, "0, 2, 7, 6, 9, 1, 0");
-        check(v[rx(1,4)][rx(1,2)], "7, 6");
-        v[ix(1)] = 3;
+        check(v[rgen(1,4)][rgen(1,2)], "7, 6");
+        v(1) = 3;
         check(v, "0, 3, 7, 6, 9, 1, 0");
         check(v(3), "6");
-        v[rx(0,6)](0) = 1;
+        v[rgen(0,6)](0) = 1;
         check(v, "1, 3, 7, 6, 9, 1, 0");
 
         print("Negative indices");
@@ -160,39 +204,39 @@ int main(int argc, char* argv[]) {
         vec2d u = dindgen(3,2);
         check(u, "0, 1, 2, 3, 4, 5");
         check(u.dims, "3, 2");
-        check(u[ix(0,1)], "1");
-        check(u[ix(1,1)], "3");
+        check(u(0,1), "1");
+        check(u(1,1), "3");
         check(u(2,1), "5");
 
-        u[ix(1,0)] = 9;
-        u[ix(2,1)] = 10;
+        u(1,0) = 9;
+        u(2,1) = 10;
         check(u, "0, 1, 9, 3, 4, 10");
 
         vec2d tu = {{5,8},{4,5},{1,2}};
         check(tu.dims, "3, 2");
         check(tu.data.size(), "6");
         check(tu, "5, 8, 4, 5, 1, 2");
-        check(tu[ix(1,1)], "5");
-        tu(rx(1,2),rx(0,1)) = {{1,2},{3,4}};
+        check(tu(1,1), "5");
+        tu(rgen(1,2),rgen(0,1)) = {{1,2},{3,4}};
         check(tu, "5, 8, 1, 2, 3, 4");
 
         vec2i v = {{4,5,6,7}, {8,9,5,2}, {7,8,2,0}, {-1, -5, -6, -7}, {-4,1,-2,5}};
-        check(v[ix(_,_)].dims, "5, 4");
-        check(v[ix(_,0)].dims, "5");
-        check(v[ix(0,_)].dims, "4");
-        check(v[ix(rx(1,2),rx(1,3))].dims, "2, 3");
-        check(v[ix(rx(1,2),0)].dims, "2");
-        check(v[ix(0,rx(1,3))].dims, "3");
+        check(v(_,_).dims, "5, 4");
+        check(v(_,0).dims, "5");
+        check(v(0,_).dims, "4");
+        check(v(rgen(1,2),rgen(1,3)).dims, "2, 3");
+        check(v(rgen(1,2),0).dims, "2");
+        check(v(0,rgen(1,3)).dims, "3");
 
         check(v(_,_).dims, "5, 4");
         check(v(_,0).dims, "5");
         check(v(0,_).dims, "4");
-        check(v(rx(1,2),rx(1,3)).dims, "2, 3");
-        check(v(rx(1,2),0).dims, "2");
-        check(v(0,rx(1,3)).dims, "3");
+        check(v(rgen(1,2),rgen(1,3)).dims, "2, 3");
+        check(v(rgen(1,2),0).dims, "2");
+        check(v(0,rgen(1,3)).dims, "3");
 
         check(v(1,_), "8, 9, 5, 2");
-        check(v(2,rx(1,2)), "8, 2");
+        check(v(2,rgen(1,2)), "8, 2");
         check(v(_,1), "5, 9, 8, -5, 1");
 
         v(2,_) = indgen(4);
@@ -410,8 +454,8 @@ int main(int argc, char* argv[]) {
     {
         print("'median' for 3-d array");
         vec3d v = dblarr(21,21,11);
-        v(_,_,rx(0,4)) = 0;
-        v(_,_,rx(6,10)) = 1;
+        v(_,_,rgen(0,4)) = 0;
+        v(_,_,rgen(6,10)) = 1;
         v(_,_,5) = 0.5;
 
         vec2d m = median(v,2);
@@ -431,6 +475,10 @@ int main(int argc, char* argv[]) {
         vec1i v = replicate(3, 5);
         check(v.dims, "5");
         check(v, "3, 3, 3, 3, 3");
+        v[uindgen(2)] = indgen(2)+1;
+        vec2i v2 = replicate(v[uindgen(2)], 3);
+        check(v2, "1, 2, 1, 2, 1, 2");
+        check(v2.dims, "3, 2");
     }
 
     {
@@ -496,12 +544,6 @@ int main(int argc, char* argv[]) {
         }
 
         fits::write("out/translated.fits", cube);
-    }
-
-    {
-        print("'rgen' function");
-        vec1d v = rgen(0, 5, 11);
-        check(v, "0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5");
     }
 
     {
@@ -994,7 +1036,7 @@ int main(int argc, char* argv[]) {
         check(sdec2, sdec);
     }
 
-    print("\nall tests passed!\n");
+    print("\nall tests passed in "+time_str(now() - start)+"!\n");
 
     return 0;
 }

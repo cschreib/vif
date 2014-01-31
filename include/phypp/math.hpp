@@ -1,8 +1,8 @@
 #ifndef MATH_HPP
 #define MATH_HPP
 
-#include "vec.hpp"
-#include "string.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/string.hpp"
 #include <random>
 #include <cmath>
 
@@ -954,32 +954,29 @@ void mprint(const vec_t<2,Type>& m) {
     std::cout << std::flush;
 }
 
-template<std::size_t Dim, typename Type, typename ... Args>
-void transpose_(vec_t<Dim,rtype_t<Type>>& r, const vec_t<Dim,Type>& v, cte_t<Dim>, Args ... args) {
-    auto t = std::make_tuple(args...);
-    r[tuple_reverse(t)] = v[t];
-}
+template<typename Type>
+vec_t<2,rtype_t<Type>> transpose(vec_t<2,Type> v) {
+    vec_t<2,rtype_t<Type>> r(v.dims);
+    std::swap(r.dims[0], r.dims[1]);
 
-template<std::size_t Dim, typename Type, std::size_t I, typename ... Args>
-void transpose_(vec_t<Dim,rtype_t<Type>>& r, const vec_t<Dim,Type>& v, cte_t<I>, Args ... args) {
-    for (uint_t i = 0; i < v.dims[I]; ++i) {
-        transpose_(r, v, cte_t<I+1>(), args..., i);
+    for (uint_t i : range(r.size())) {
+        r[i] = v[(i%r.dims[1])*v.dims[1] + i/r.dims[1]];
     }
-}
 
-template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<(Dim>1)>::type>
-vec_t<Dim,rtype_t<Type>> transpose(const vec_t<Dim,Type>& v) {
-    auto d = v.dims;
-    std::reverse(d.begin(), d.end());
-    vec_t<Dim,rtype_t<Type>> r(d);
-    transpose_(r, v, cte_t<0>());
+    // TODO: see who's faster
+    // for (uint_t i : range(r.dims[0]))
+    // for (uint_t j : range(r.dims[1])) {
+    //     r[j+i*r.dims[1]] = v[i+j*v.dims[1]];
+    //     // r(i,j) = v(j,i);
+    // }
+
     return r;
 }
 
 template<typename Type>
 auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     assert(v.dims[0] == v.dims[1]);
-    decltype(v(_,0)) d(get_parent(v));
+    decltype(v(_,0)) d(vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
@@ -992,7 +989,7 @@ auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
 template<typename Type>
 auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     assert(v.dims[0] == v.dims[1]);
-    decltype(v(_,0)) d(get_parent(v));
+    decltype(v(_,0)) d(vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {

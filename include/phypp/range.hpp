@@ -1,7 +1,7 @@
 #ifndef RANGE_HPP
 #define RANGE_HPP
 
-#include <vec.hpp>
+#include "phypp/vec.hpp"
 
 template<typename T>
 struct range_t;

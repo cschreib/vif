@@ -4,11 +4,11 @@
 #include <CCfits/CCfits>
 #include <wcslib/wcshdr.h>
 #include <string>
-#include "vec.hpp"
-#include "reflex.hpp"
-#include "file.hpp"
-#include "print.hpp"
-#include "math.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/reflex.hpp"
+#include "phypp/file.hpp"
+#include "phypp/print.hpp"
+#include "phypp/math.hpp"
 
 namespace fits {
     using namespace CCfits;
@@ -1119,6 +1119,8 @@ namespace fits {
 
     namespace impl {
         struct do_write_struct {
+            do_write_struct(fitsfile* p, int i = 1) : fptr(p), id(i) {}
+
             fitsfile* fptr;
             int id = 1;
 
@@ -1139,7 +1141,7 @@ namespace fits {
             phypp_check_cfitsio(status, "cannot open file");
             fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
-            reflex::foreach_member(reflex::wrap(t), impl::do_write_struct{fptr});
+            reflex::foreach_member(reflex::wrap(t), impl::do_write_struct(fptr, 1));
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {

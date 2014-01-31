@@ -1,8 +1,8 @@
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 
-#include "vec.hpp"
-#include "math.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/math.hpp"
 
 template<typename Type>
 typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix,

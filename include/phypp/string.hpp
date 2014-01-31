@@ -1,8 +1,8 @@
 #ifndef STRING_HPP
 #define STRING_HPP
 
-#include "vec.hpp"
-#include "reflex.hpp"
+#include "phypp/vec.hpp"
+#include "phypp/reflex.hpp"
 #include <string>
 #include <iostream>
 #include <sstream>

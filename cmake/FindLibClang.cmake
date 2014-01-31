@@ -12,7 +12,6 @@ find_path(CLANG_INCLUDE clang-c/Index.h
           /opt/local/libexec/llvm-3.3/include
           /opt/local/libexec/llvm-3.2/include
           /opt/local/libexec/llvm-3.1/include
-          /usr/lib/llvm-3.4/include
           NO_DEFAULT_PATH)
 if (NOT EXISTS ${CLANG_INCLUDE})
   find_path(CLANG_INCLUDE clang-c/Index.h)
@@ -73,7 +72,7 @@ if ("${CLANG_VERSION}" STREQUAL "")
   message(FATAL_ERROR "Unable to parse ClangVersion from ${CLANG_INCLUDE}/clang/Basic/Version.inc")
 endif ()
 
-message("Using Clang version ${CLANG_VERSION} from ${CLANG_INCLUDE}/clang-c/")
+message(STATUS "Using libclang version ${CLANG_VERSION} from ${CLANG_INCLUDE}/clang-c/")
 
 if (EXISTS "${CLANG_INCLUDE}/clang/${CLANG_VERSION}/include/limits.h")
   set(CLANG_SYSTEM_INCLUDE "${CLANG_INCLUDE}/clang/${CLANG_VERSION}/include/")

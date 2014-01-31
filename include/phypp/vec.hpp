@@ -1,17 +1,14 @@
 #ifndef VEC_HPP
 #define VEC_HPP
 
-#include <tuple>
 #include <vector>
-#include <bitset>
 #include <string>
 #include <cmath>
 #include <algorithm>
 #include <initializer_list>
-#include "color.hpp"
-#include "variadic.hpp"
-#include "print.hpp"
-#include "iterator.hpp"
+#include "phypp/variadic.hpp"
+#include "phypp/print.hpp"
+#include "phypp/iterator.hpp"
 
 using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;
@@ -83,17 +80,13 @@ T* ref(T* t) {
 
 // Helper to check if a given type is a generic vector.
 template<typename T>
-struct is_vec : public std::false_type {};
+struct is_vec_ : public std::false_type {};
 
 template<std::size_t Dim, typename Type>
-struct is_vec<vec_t<Dim,Type>> : public std::true_type {};
+struct is_vec_<vec_t<Dim,Type>> : public std::true_type {};
 
-template<std::size_t Dim, typename Type>
-struct is_vec<vec_t<Dim,Type>&> : public std::true_type {};
-
-template<std::size_t Dim, typename Type>
-struct is_vec<const vec_t<Dim,Type>&> : public std::true_type {};
-
+template<typename T>
+using is_vec = is_vec_<typename std::decay<T>::type>;
 
 // Return the data type of the provided type
 template<typename T>
@@ -129,215 +122,302 @@ struct make_vtype {
     >::type;
 };
 
-// Helper to build the result of v[ix(1,2,3)], i.e. when all indices are scalars.
-// The result is a scalar.
-template<std::size_t Dim, typename Type, typename ... Args>
-struct make_vrtype_i {
-    using rptype = typename std::remove_pointer<Type>::type;
-    using type = dtype_t<rptype>&;
-
-    template<typename vtype>
-    static uint_t make_(vtype& vi, uint_t idx) {
-        return idx;
-    }
-
-    template<typename vtype, typename T, typename ... Args2>
-    static uint_t make_(vtype& v, uint_t idx, const T& ix, const Args2& ... i) {
-        uint_t pitch = 1;
-        for (uint_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
-            pitch *= v.dims[j];
-        }
-
-        idx += v.template to_idx<Dim-1-sizeof...(Args2)>(ix)*pitch;
-
-        return make_(v, idx, i...);
-    }
-
-    template<typename vtype>
-    static type make(vtype& v, const Args& ... i) {
-        return reinterpret_cast<type>(dref(v.data[make_(v, 0, i...)]));
-    }
-
-    template<typename vtype>
-    static type make(vtype& v, const std::tuple<Args...>& i) {
-        return make_tuple_1(v, i, gen_seq_t<sizeof...(Args)>());
-    }
-
-    template<typename vtype, std::size_t ... S>
-    static type make_tuple_1(vtype& v, const std::tuple<Args...>& i, seq_t<S...>) {
-        return make(v, std::get<S>(i)...);
-    }
+// Helper to match a type to the corresponding vector internal type.
+template<typename T>
+struct vec_type_ {
+    using type = T;
 };
 
-template<typename Type, typename ... Args>
-struct make_vrtype_i<1, Type, Args...> {
-    using rptype = typename std::remove_pointer<Type>::type;
-    using type = dtype_t<rptype>&;
-
-    template<typename vtype>
-    static type make(vtype& v, const std::tuple<Args...>& i) {
-        return dref(v.data[v.to_idx(std::get<0>(i))]);
-    }
-
-    template<typename vtype, typename T>
-    static type make(vtype& v, const T& i) {
-        return dref(v.data[v.to_idx(i)]);
-    }
+template<>
+struct vec_type_<char*> {
+    using type = std::string;
 };
 
-template<std::size_t Dim, typename Type>
-const vec_t<Dim,Type>& get_parent(const vec_t<Dim,Type>& v) {
-    return v;
-}
+template<>
+struct vec_type_<const char*> {
+    using type = std::string;
+};
 
-template<std::size_t Dim, typename Type>
-void* get_parent(const vec_t<Dim,Type*>& v) {
-    return v.parent;
-}
+template<std::size_t N>
+struct vec_type_<char[N]> {
+    using type = std::string;
+};
 
-// Helper to build the result of v[ix(_, rx(1,2), 5)], i.e. when at least one index is not scalar.
-// The result is another array.
-template<std::size_t Dim, typename Type, typename ... Args>
-struct make_vrtype_v {
-    static const std::size_t ODim = count_vec<decay_t<Args>...>::value +
-        count_same<placeholder_t, decay_t<Args>...>::value;
-    using rptype = typename std::remove_pointer<Type>::type;
-    using type = vec_t<ODim, rptype*>;
+template<typename T>
+using vec_type = typename vec_type_<typename std::decay<T>::type>::type;
 
-    template<typename vtype, typename T, typename enable =
-        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
-    static void resize_(vtype& v, type& t, cte_t<ODim>, const T& ix) {
-        t.resize();
+namespace vec_access {
+    template<std::size_t Dim, typename Type>
+    const vec_t<Dim,Type>& get_parent(const vec_t<Dim,Type>& v) {
+        return v;
     }
 
-    template<typename vtype>
-    static void resize_(vtype& v, type& t, cte_t<ODim-1>, placeholder_t) {
-        t.dims[ODim-1] = v.dims[Dim-1];
-        t.resize();
+    template<std::size_t Dim, typename Type>
+    void* get_parent(const vec_t<Dim,Type*>& v) {
+        return v.parent;
     }
 
-    template<typename vtype, typename T>
-    static void resize_(vtype& v, type& t, cte_t<ODim-1>, const vec_t<1,T>& r) {
-        t.dims[ODim-1] = r.data.size();
-        t.resize();
-    }
+    // Generated vector dimension given index type
+    template<typename T>
+    struct output_dim_ :
+        std::integral_constant<std::size_t, 0> {};
 
-    template<typename vtype, std::size_t M, typename T, typename ... Args2, typename enable =
-        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
-    static void resize_(vtype& v, type& t, cte_t<M>, const T& ix, const Args2&... i) {
-        resize_(v, t, cte_t<M>(), i...);
-    }
+    template<std::size_t N, typename T>
+    struct output_dim_<vec_t<N,T>> :
+        std::integral_constant<std::size_t, N> {};
 
-    template<typename vtype, std::size_t M, typename ... Args2>
-    static void resize_(vtype& v, type& t, cte_t<M>, placeholder_t, const Args2&... i) {
-        t.dims[M] = v.dims[Dim-1-sizeof...(Args2)];
-        resize_(v, t, cte_t<M+1>(), i...);
-    }
+    template<>
+    struct output_dim_<placeholder_t> :
+        std::integral_constant<std::size_t, 1> {};
 
-    template<typename vtype, std::size_t M, typename T, typename ... Args2>
-    static void resize_(vtype& v, type& t, cte_t<M>, const vec_t<1,T>& r, const Args2&... i) {
-        t.dims[M] = r.data.size();
-        resize_(v, t, cte_t<M+1>(), i...);
-    }
+    template<std::size_t N, typename T>
+    struct output_dim_<repeated_value<N,T>> :
+        std::integral_constant<std::size_t, N*output_dim_<T>::value> {};
 
+    template<typename T>
+    using output_dim = output_dim_<typename std::decay<T>::type>;
 
-    template<typename vtype, typename T, typename enable =
-        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
-        uint_t& itx, const T& ix) {
+    template<typename T, typename ... Args>
+    struct result_dim : std::integral_constant<std::size_t,
+        output_dim<T>::value + result_dim<Args...>::value> {};
 
-        t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
-        ++itx;
-    }
+    template<typename T>
+    struct result_dim<T> : std::integral_constant<std::size_t,
+        output_dim<T>::value> {};
 
-    template<typename vtype>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
-        uint_t& itx, placeholder_t) {
+    // Needed vector dimension given index type
+    template<typename T>
+    struct input_dim_ :
+        std::integral_constant<std::size_t, 1> {};
 
-        for (uint_t j = 0; j < v.dims[Dim-1]; ++j) {
-            t.data[itx] = ref(v.data[ivx+j]);
+    template<std::size_t N, typename T>
+    struct input_dim_<vec_t<N,T>> :
+        std::integral_constant<std::size_t, N> {};
+
+    template<>
+    struct input_dim_<placeholder_t> :
+        std::integral_constant<std::size_t, 1> {};
+
+    template<std::size_t N, typename T>
+    struct input_dim_<repeated_value<N,T>> :
+        std::integral_constant<std::size_t, N*input_dim_<T>::value> {};
+
+    template<typename T>
+    using input_dim = input_dim_<typename std::decay<T>::type>;
+
+    template<typename T, typename ... Args>
+    struct accessed_dim : std::integral_constant<std::size_t,
+        input_dim<T>::value + accessed_dim<Args...>::value> {};
+
+    template<typename T>
+    struct accessed_dim<T> : std::integral_constant<std::size_t,
+        input_dim<T>::value> {};
+
+    // Helper to build the result of v(_, rgen(1,2), 5), i.e. when at least one index is not scalar.
+    // The result is another array.
+    template<bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,
+        typename ... Args>
+    struct helper_ {
+        using rptype = typename std::remove_pointer<Type>::type;
+        using itype = typename std::conditional<IsConst,
+            const vec_t<Dim,Type>, vec_t<Dim,Type>>::type;
+        using type = typename std::conditional<IsConst,
+            vec_t<ODim, const rptype*>, vec_t<ODim, rptype*>>::type;
+
+        // Functions to build the dimension of the resulting vector
+        template<std::size_t IT, std::size_t IV, typename T>
+        static void do_resize_(type&, itype&, cte_t<IT>, cte_t<IV>, const T&) {}
+
+        template<std::size_t IT, std::size_t IV>
+        static void do_resize_(type& t, itype& v, cte_t<IT>, cte_t<IV>, placeholder_t) {
+            t.dims[IT] = v.dims[IV];
+        }
+
+        template<std::size_t IT, std::size_t IV, typename T>
+        static void do_resize_(type& t, itype&, cte_t<IT>, cte_t<IV>, const vec_t<1,T>& r) {
+            t.dims[IT] = r.data.size();
+        }
+
+        template<std::size_t IT, std::size_t IV, typename T, typename ... Args2>
+        static void resize_(type& t, itype& v, cte_t<IT> it, cte_t<IV> iv, const T& i,
+            const Args2& ... args) {
+            do_resize_(t, v, it, iv, i);
+            resize_(t, v, cte_t<IT+output_dim<T>::value>(), cte_t<IV+input_dim<T>::value>(), args...);
+        }
+
+        static void resize_(type& t, itype& v, cte_t<ODim>, cte_t<Dim>) {
+            t.resize();
+        }
+
+        // Functions to populate the resulting vector
+        template<typename T>
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
+            const std::array<uint_t, Dim>& pitch, const T& ix) {
+
+            t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
             ++itx;
         }
-    }
 
-    template<typename vtype, typename T>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
-        uint_t& itx, const vec_t<1,T>& r) {
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
+            const std::array<uint_t, Dim>& pitch, placeholder_t) {
 
-        for (uint_t j = 0; j < r.data.size(); ++j) {
-            t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(dref(r.data[j]))]);
-            ++itx;
-        }
-    }
-
-    template<typename vtype, typename T, typename ... Args2, typename enable =
-        typename std::enable_if<!is_vec<T>::value && !std::is_same<placeholder_t,T>::value>::type>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
-        uint_t& itx, const T& ix, const Args2&... i) {
-
-        make_(v, ivx +
-            v.template to_idx<Dim-1-sizeof...(Args2)>(ix)*pitch[Dim-1-sizeof...(Args2)],
-            pitch, t, itx, i...
-        );
-    }
-
-    template<typename vtype, typename ... Args2>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
-        uint_t& itx, placeholder_t, const Args2&... i) {
-
-        for (uint_t j = 0; j < v.dims[Dim-1-sizeof...(Args2)]; ++j) {
-            make_(v, ivx + j*pitch[Dim-1-sizeof...(Args2)], pitch, t, itx, i...);
-        }
-    }
-
-    template<typename vtype, typename T, typename ... Args2>
-    static void make_(vtype& v, uint_t ivx, const std::array<uint_t, Dim>& pitch, type& t,
-        uint_t& itx, const vec_t<1,T>& r, const Args2&... i) {
-
-        for (uint_t j = 0; j < r.data.size(); ++j) {
-            make_(v, ivx +
-                v.template to_idx<Dim-1-sizeof...(Args2)>(dref(r.data[j]))*
-                pitch[Dim-1-sizeof...(Args2)], pitch, t, itx, i...
-            );
-        }
-    }
-
-    template<typename vtype>
-    static type make(vtype& v, const Args&... i) {
-        type t(get_parent(v));
-        resize_(v, t, cte_t<0>(), i...);
-        t.resize();
-
-        std::array<uint_t, Dim> pitch;
-        for (uint_t j = 0; j < Dim; ++j) {
-            pitch[j] = 1;
-            for (uint_t k = j+1; k < Dim; ++k) {
-                pitch[j] *= v.dims[k];
+            for (uint_t j = 0; j < v.dims[Dim-1]; ++j) {
+                t.data[itx] = ref(v.data[ivx+j]);
+                ++itx;
             }
         }
 
-        uint_t idx = 0;
-        make_(v, 0, pitch, t, idx, i...);
-        return t;
-    }
+        template<typename T>
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
+            const std::array<uint_t, Dim>& pitch, const vec_t<1,T>& r) {
 
-    template<typename vtype>
-    static type make(vtype& v, const std::tuple<Args...>& i) {
-        return make_tuple_(v, i, gen_seq_t<sizeof...(Args)>());
-    }
+            for (uint_t j = 0; j < r.data.size(); ++j) {
+                t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(dref(r.data[j]))]);
+                ++itx;
+            }
+        }
 
-    template<typename vtype, std::size_t ... S>
-    static type make_tuple_(vtype& v, const std::tuple<Args...>& i, seq_t<S...>) {
-        return make(v, std::get<S>(i)...);
-    }
-};
+        template<std::size_t IV, typename T, typename ... Args2>
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV>,
+            const std::array<uint_t, Dim>& pitch, const T& ix, const Args2& ... i) {
 
-template<std::size_t Dim, typename Type, typename ... Args>
-using make_vrtype = typename std::conditional<
-    (count_vec<decay_t<Args>...>::value + count_same<placeholder_t, decay_t<Args>...>::value) == 0,
-    make_vrtype_i<Dim, Type, Args...>,
-    make_vrtype_v<Dim, Type, Args...>
->::type;
+            make_indices_(t, itx, v, ivx +
+                v.template to_idx<IV>(ix)*pitch[IV], cte_t<IV+1>(), pitch, i...
+            );
+        }
+
+        template<std::size_t IV, typename ... Args2>
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV>,
+            const std::array<uint_t, Dim>& pitch, const placeholder_t&, const Args2& ... i) {
+
+            for (uint_t j = 0; j < v.dims[IV]; ++j) {
+                make_indices_(t, itx, v, ivx + j*pitch[IV], cte_t<IV+1>(), pitch, i...);
+            }
+        }
+
+        template<std::size_t IV, typename T, typename ... Args2>
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV>,
+            const std::array<uint_t, Dim>& pitch, const vec_t<1,T>& r, const Args2& ... i) {
+
+            for (uint_t j = 0; j < r.data.size(); ++j) {
+                make_indices_(t, itx, v, ivx +
+                    v.template to_idx<IV>(dref(r.data[j]))*pitch[IV], cte_t<IV+1>(), pitch, i...
+                );
+            }
+        }
+
+        template<typename ... UArgs>
+        static type access_(itype& v, const UArgs& ... i) {
+            type t(get_parent(v));
+            resize_(t, v, cte_t<0>(), cte_t<0>(), i...);
+
+            // TODO: cache this on construction
+            std::array<uint_t, Dim> pitch;
+            for (uint_t j = 0; j < Dim; ++j) {
+                pitch[j] = 1;
+                for (uint_t k = j+1; k < Dim; ++k) {
+                    pitch[j] *= v.dims[k];
+                }
+            }
+
+            uint_t itx = 0;
+            make_indices_(t, itx, v, 0, cte_t<0>(), pitch, i...);
+            return t;
+        }
+
+        template<typename ... UArgs>
+        type operator() (itype& v, const UArgs& ... i) const {
+            return access_(v, i...);
+        }
+
+        static type access(itype& v, const Args& ... i) {
+            return unfold(helper_(), v, i...);
+        }
+    };
+
+    template<bool IsConst, typename Type, typename Arg>
+    struct helper_<IsConst, 1, 1, Type, Arg> {
+        using rptype = typename std::remove_pointer<Type>::type;
+        using itype = typename std::conditional<IsConst,
+            const vec_t<1,Type>, vec_t<1,Type>>::type;
+        using type = typename std::conditional<IsConst,
+            vec_t<1, const rptype*>, vec_t<1, rptype*>>::type;
+
+        static type access(itype& v, placeholder_t) {
+            type t(get_parent(v));
+            t.dims[0] = v.dims[0];
+            t.resize();
+
+            for (uint_t i = 0; i < v.dims[0]; ++i) {
+                t.data[i] = ref(v.data[i]);
+            }
+
+            return t;
+        }
+
+        template<typename T>
+        static type access(itype& v, const vec_t<1,T>& r) {
+            type t(get_parent(v));
+            t.dims[0] = r.data.size();
+            t.resize();
+
+            for (uint_t i = 0; i < r.data.size(); ++i) {
+                t.data[i] = ref(v.data[v.to_idx(dref(r.data[i]))]);
+            }
+
+            return t;
+        }
+    };
+
+    // Helper to build the result of v(1,2,3), i.e. when all indices are scalars.
+    // The result is a scalar.
+    template<bool IsConst, std::size_t Dim, typename Type, typename ... Args>
+    struct helper_<IsConst, Dim, 0, Type, Args...>  {
+        using rptype = typename std::remove_pointer<Type>::type;
+        using itype = typename std::conditional<IsConst,
+            const vec_t<Dim,Type>, vec_t<Dim,Type>>::type;
+        using type = typename std::conditional<IsConst,
+            const dtype_t<rptype>&, dtype_t<rptype>&>::type;
+
+        template<typename V>
+        static uint_t get_index_(V& vi, uint_t idx) {
+            return idx;
+        }
+
+        template<typename V, typename T, typename ... Args2>
+        static uint_t get_index_(V& v, uint_t idx, const T& ix, const Args2& ... i) {
+            uint_t pitch = 1;
+            // TODO: cache this on construction
+            for (uint_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
+                pitch *= v.dims[j];
+            }
+
+            idx += v.template to_idx<Dim-1-sizeof...(Args2)>(ix)*pitch;
+
+            return get_index_(v, idx, i...);
+        }
+
+        static type access(itype& v, const Args& ... i) {
+            return reinterpret_cast<type>(dref(v.data[get_index_(v, 0, i...)]));
+        }
+    };
+
+    template<bool IsConst, typename Type, typename T>
+    struct helper_<IsConst, 1, 0, Type, T> {
+        using rptype = typename std::remove_pointer<Type>::type;
+        using itype = typename std::conditional<IsConst,
+            const vec_t<1,Type>, vec_t<1,Type>>::type;
+        using type = typename std::conditional<IsConst,
+            const dtype_t<rptype>&, dtype_t<rptype>&>::type;
+
+        static type access(itype& v, const T& i) {
+            return dref(v.data[v.to_idx(i)]);
+        }
+    };
+
+    template<bool IsConst, std::size_t Dim, typename Type, typename ... Args>
+    using helper = helper_<IsConst, Dim, result_dim<Args...>::value, Type, Args...>;
+}
 
 // Helper to intialize a generic vector from an initializer_list.
 template<std::size_t N, std::size_t Dim, typename Type>
@@ -416,6 +496,23 @@ struct ilist_t<Dim, Type*> {
     }
 };
 
+template<typename T>
+struct is_dim_elem : std::is_arithmetic<T> {};
+
+
+template<typename T, std::size_t N>
+struct is_dim_elem<std::array<T,N>> : std::true_type {};
+
+template<typename ... Args>
+struct is_dim_list;
+
+template<>
+struct is_dim_list<> : std::true_type {};
+
+template<typename T, typename ... Args>
+struct is_dim_list<T, Args...> : std::integral_constant<bool,
+    is_dim_elem<typename std::decay<T>::type>::value && is_dim_list<Args...>::value> {};
+
 // The generic vector itself.
 template<std::size_t Dim, typename Type>
 struct vec_t;
@@ -439,13 +536,10 @@ struct vec_t {
     vec_t(const vec_t&) = default;
     vec_t(vec_t&&) = default;
 
-    template<typename ... T>
-    explicit vec_t(T ... d) {
-        set_array(dims, d...);
-        resize();
-    }
-
-    explicit vec_t(const std::array<std::size_t, Dim> d) : dims(d) {
+    template<typename T, typename ... Args, typename enable =
+        typename std::enable_if<is_dim_list<T,Args...>::value>::type>
+    explicit vec_t(T&& t, Args&& ... d) {
+        set_array(dims, std::forward<T>(t), std::forward<Args>(d)...);
         resize();
     }
 
@@ -747,27 +841,19 @@ struct vec_t {
     }
 
     template<typename ... Args>
-    auto operator [] (const std::tuple<Args...>& i) -> typename make_vrtype<Dim, Type, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, Type, Args...>::make(*this, i);
+    auto operator () (const Args& ... i) ->
+        typename vec_access::helper<false, Dim, Type, Args...>::type {
+        static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+            "wrong number of indices for this vector");
+        return vec_access::helper<false, Dim, Type, Args...>::access(*this, i...);
     }
 
     template<typename ... Args>
-    auto operator [] (const std::tuple<Args...>& i) const -> typename make_vrtype<Dim, const Type, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, const Type, Args...>::make(*this, i);
-    }
-
-    template<typename ... Args>
-    auto operator () (const Args& ... i) -> typename make_vrtype<Dim, Type, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, Type, Args...>::make(*this, i...);
-    }
-
-    template<typename ... Args>
-    auto operator () (const Args& ... i) const -> typename make_vrtype<Dim, const Type, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, const Type, Args...>::make(*this, i...);
+    auto operator () (const Args& ... i) const ->
+        typename vec_access::helper<true, Dim, Type, Args...>::type {
+        static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+            "wrong number of indices for this vector");
+        return vec_access::helper<true, Dim, Type, Args...>::access(*this, i...);
     }
 
     vec_t operator + () const {
@@ -1061,27 +1147,19 @@ struct vec_t<Dim,Type*> {
     }
 
     template<typename ... Args>
-    auto operator [] (const std::tuple<Args...>& i) -> typename make_vrtype<Dim, Type*, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, Type*, Args...>::make(*this, i);
+    auto operator () (const Args& ... i) ->
+        typename vec_access::helper<false, Dim, Type*, Args...>::type {
+        static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+            "wrong number of indices for this vector");
+        return vec_access::helper<false, Dim, Type*, Args...>::access(*this, i...);
     }
 
     template<typename ... Args>
-    auto operator [] (const std::tuple<Args...>& i) const -> typename make_vrtype<Dim, const Type*, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, const Type*, Args...>::make(*this, i);
-    }
-
-    template<typename ... Args>
-    auto operator () (const Args& ... i) -> typename make_vrtype<Dim, Type*, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, Type*, Args...>::make(*this, i...);
-    }
-
-    template<typename ... Args>
-    auto operator () (const Args& ... i) const -> typename make_vrtype<Dim, const Type*, Args...>::type {
-        static_assert(sizeof...(Args) == Dim, "wrong number of indices for this vector");
-        return make_vrtype<Dim, const Type*, Args...>::make(*this, i...);
+    auto operator () (const Args& ... i) const ->
+        typename vec_access::helper<true, Dim, Type*, Args...>::type {
+        static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+            "wrong number of indices for this vector");
+        return vec_access::helper<true, Dim, Type*, Args...>::access(*this, i...);
     }
 
     effective_type operator + () const {
@@ -1165,8 +1243,7 @@ struct vec_t<Dim,Type*> {
     using vec##N##u = vec_t<N, std::size_t>; \
     using vec##N##s = vec_t<N, std::string>; \
     using vec##N##c = vec_t<N, char>; \
-    using vec##N##b = vec_t<N, bool>; \
-    using vec##N##rgb = vec_t<N, rgb>;
+    using vec##N##b = vec_t<N, bool>;
 
 MAKE_TYPEDEFS(1)
 MAKE_TYPEDEFS(2)
@@ -1179,31 +1256,18 @@ MAKE_TYPEDEFS(6)
 
 // A few traits
 template<typename T>
-struct vec_dim {
-    static const std::size_t value = 0;
-};
+struct vec_dim_ : std::integral_constant<std::size_t, 0> {};
 
 template<std::size_t Dim, typename Type>
-struct vec_dim<vec_t<Dim,Type>> {
-    static const std::size_t value = Dim;
-};
+struct vec_dim_<vec_t<Dim,Type>> : std::integral_constant<std::size_t, Dim> {};
+
+template<typename T>
+using vec_dim = vec_dim_<typename std::decay<T>::type>;
 
 // Create vectors a la IDL.
-template<typename T, typename I1, typename ... Dims,
-    typename enable = typename std::enable_if<std::is_arithmetic<I1>::value>::type>
-vec_t<sizeof...(Dims)+1, T> arr(I1 i1, Dims ... ds) {
-    vec_t<sizeof...(Dims)+1, T> v;
-    set_array(v.dims, i1, ds...);
-    v.resize();
-    return v;
-}
-
-template<typename T, typename U, std::size_t N>
-vec_t<N,T> arr(const std::array<U,N>& ds) {
-    vec_t<N,T> v;
-    v.dims = ds;
-    v.resize();
-    return v;
+template<typename T, typename ... Dims>
+vec_t<dim_total<Dims...>::value, T> arr(Dims&& ... ds) {
+    return vec_t<dim_total<Dims...>::value, T>(std::forward<Dims>(ds)...);
 }
 
 template<typename ... Dims>
@@ -1532,39 +1596,33 @@ vec_t<Dim,bool> operator ! (vec_t<Dim,bool>&& v) {
 }
 
 // Generate linearly increasing values.
-template<typename T, typename A>
-void indgen_vec_(std::vector<T,A>& v) {
+template<typename T, typename ... Dims>
+auto indgen_(Dims&& ... ds) -> decltype(arr<T>(std::forward<Dims>(ds)...)) {
+    auto v = arr<T>(std::forward<Dims>(ds)...);
     for (uint_t i = 0; i < v.size(); ++i) {
         v[i] = i;
     }
-}
-
-template<typename ... Dims>
-auto findgen(Dims ... ds) -> vec_t<sizeof...(Dims), float> {
-    auto v = fltarr(ds...);
-    indgen_vec_(v.data);
     return v;
 }
 
 template<typename ... Dims>
-auto dindgen(Dims ... ds) -> vec_t<sizeof...(Dims), double> {
-    auto v = dblarr(ds...);
-    indgen_vec_(v.data);
-    return v;
+auto findgen(Dims&& ... ds) -> decltype(indgen_<float>(std::forward<Dims>(ds)...)) {
+    return indgen_<float>(std::forward<Dims>(ds)...);
 }
 
 template<typename ... Dims>
-auto indgen(Dims ... ds) -> vec_t<sizeof...(Dims), int_t> {
-    auto v = intarr(ds...);
-    indgen_vec_(v.data);
-    return v;
+auto dindgen(Dims&& ... ds) -> decltype(indgen_<double>(std::forward<Dims>(ds)...)) {
+    return indgen_<double>(std::forward<Dims>(ds)...);
 }
 
 template<typename ... Dims>
-auto uindgen(Dims ... ds) -> vec_t<sizeof...(Dims), uint_t> {
-    auto v = uintarr(ds...);
-    indgen_vec_(v.data);
-    return v;
+auto indgen(Dims&& ... ds) -> decltype(indgen_<int_t>(std::forward<Dims>(ds)...)) {
+    return indgen_<int_t>(std::forward<Dims>(ds)...);
+}
+
+template<typename ... Dims>
+auto uindgen(Dims&& ... ds) -> decltype(indgen_<uint_t>(std::forward<Dims>(ds)...)) {
+    return indgen_<uint_t>(std::forward<Dims>(ds)...);
 }
 
 // Count the total number of elements in a vector.
@@ -1606,71 +1664,6 @@ auto element(const vec_t<Dim,T>& v) -> decltype(v[0]) {
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 T& element(T& v) {
     return v;
-}
-
-template<std::size_t N, typename T>
-std::array<T,N> rep(T t) {
-    std::array<T,N> a;
-    a.fill(t);
-    return a;
-}
-
-// Create an single variable index from multiple indices to allow usage of operator[].
-template<typename TP, typename T, typename ... Args>
-auto ix__(TP&& tp, const T& t, cte_t<0>, Args&& ... args) {
-    return ix_(std::move(tp), std::forward<Args>(args)...);
-}
-
-template<typename TP, typename T, std::size_t N, typename ... Args>
-auto ix__(TP&& tp, const T& t, cte_t<N>, Args&& ... args) {
-    return ix__(std::tuple_cat(std::move(tp), std::make_tuple(t)), t, cte_t<N-1>(), std::forward<Args>(args)...);
-}
-
-template<typename TP>
-auto ix_(TP&& tp) {
-    return std::move(tp);
-}
-
-template<typename TP, typename T, std::size_t N, typename ... Args>
-auto ix_(TP&& tp, std::array<T,N>&& t, Args&& ... args) {
-    return ix__(std::move(tp), t[0], cte_t<N>(), std::forward<Args>(args)...);
-}
-
-template<typename TP, typename T, typename ... Args>
-auto ix_(TP&& tp, std::array<T,0>&& t, Args&& ... args) {
-    return ix_(std::move(tp), std::forward<Args>(args)...);
-}
-
-template<typename TP, typename T, typename ... Args>
-auto ix_(TP&& tp, T&& t, Args&& ... args) {
-    return ix_(std::tuple_cat(std::move(tp), std::make_tuple(std::forward<T>(t))), std::forward<Args>(args)...);
-}
-
-template<typename ... Args>
-auto ix(Args&& ... args) {
-    return ix_(std::tuple<>(), std::forward<Args>(args)...);
-}
-
-// Create a range from a pair of indices.
-template<typename T, typename U>
-vec1u rx(T i, U j) {
-    phypp_check(i >= 0 && j >= 0, "'rx' needs a positive or null values as arguments (got ", i, " and ", j, ")");
-
-    if (i < T(j)) {
-        uint_t n = j-i+1;
-        vec1u v = uintarr(n);
-        for (uint_t k = 0; k < n; ++k) {
-            v[k] = i+k;
-        }
-        return v;
-    } else {
-        uint_t n = i-j+1;
-        vec1u v = uintarr(n);
-        for (uint_t k = 0; k < n; ++k) {
-            v[k] = i-k;
-        }
-        return v;
-    }
 }
 
 // Return the indices of the vector where the value is 1.
@@ -1817,13 +1810,6 @@ vec_t<1,Type*> flatten(vec_t<Dim,Type*>&& v) {
     return r;
 }
 
-template<typename Type>
-vec_t<1,rtype_t<Type>> reverse(const vec_t<1,Type>& v) {
-    vec_t<1,rtype_t<Type>> r = v;
-    std::reverse(r.data.begin(), r.data.end());
-    return r;
-}
-
 template<std::size_t Dim, typename Type, typename ... Args>
 vec_t<sizeof...(Args), Type> reform(const vec_t<Dim,Type>& v, Args&& ... args) {
     auto r = arr<rtype_t<Type>>(std::forward<Args>(args)...);
@@ -1885,82 +1871,39 @@ vec_t<sizeof...(Args), Type*> reform(vec_t<Dim,Type*>&& v, Args&& ... args) {
     return r;
 }
 
-template<std::size_t Dim, typename Type, typename T>
-vec_t<Dim+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const T& n) {
-    vec_t<Dim+1,rtype_t<Type>> r;
-    r.dims[0] = n;
-    std::size_t pitch = 1;
-    for (uint_t i = 0; i < Dim; ++i) {
-        pitch *= v.dims[i];
-        r.dims[i+1] = v.dims[i];
-    }
-
-    r.resize();
-
-    for (uint_t i = 0; i < std::size_t(n); ++i) {
-        std::copy(v.begin(), v.end(), r.begin() + i*pitch);
-    }
-
-    return r;
+template<typename Type>
+vec_t<1,Type> reverse(vec_t<1,Type> v) {
+    std::reverse(v.data.begin(), v.data.end());
+    return v;
 }
 
-template<std::size_t Dim, typename Type, typename T, typename ... Args>
-vec_t<Dim+sizeof...(Args)+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const Args& ... args, const T& n) {
-    return replicate(replicate(v, args ...), n);
+template<std::size_t Dim, typename Type, typename ... Args>
+vec_t<Dim+dim_total<Args...>::value, rtype_t<Type>>
+    replicate(const vec_t<Dim,Type>& t, Args&& ... args) {
+    static const std::size_t FDim = Dim+dim_total<Args...>::value;
+    vec_t<FDim, rtype_t<Type>> vec(std::forward<Args>(args)..., t.dims);
+
+    std::size_t pitch = t.size();
+    std::size_t n = vec.size()/pitch;
+    for (uint_t i = 0; i < n; ++i) {
+        for (uint_t j = 0; j < pitch; ++j) {
+            vec.data[i*pitch + j] = t[j];
+        }
+    }
+
+    return vec;
 }
 
-template<typename Type, typename ... Args, typename enable = typename std::enable_if<!is_vec<Type>::value && !is_string<Type>::value>::type>
-vec_t<sizeof...(Args),Type> replicate(const Type& v, const Args& ... args) {
-    auto r = arr<Type>(args...);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
+template<typename Type, typename ... Args>
+vec_t<dim_total<Args...>::value, vec_type<Type>> replicate(const Type& t, Args&& ... args) {
+    static const std::size_t FDim = dim_total<Args...>::value;
+    vec_t<FDim, vec_type<Type>> vec(std::forward<Args>(args)...);
 
-template<typename ... Args>
-vec_t<sizeof...(Args),std::string> replicate(const char* v, const Args& ... args) {
-    auto r = strarr(args...);
-    for (auto& t : r) {
-        t = v;
+    for (auto& e : vec) {
+        e = t;
     }
-    return r;
-}
 
-template<std::size_t N, typename ... Args>
-vec_t<sizeof...(Args),std::string> replicate(const char v[N], const Args& ... args) {
-    auto r = strarr(args...);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<typename Type, std::size_t Dim>
-vec_t<Dim,Type> replicate(const Type& v, const std::array<uint_t,Dim>& dims) {
-    auto r = arr<Type>(dims);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<std::size_t Dim>
-vec_t<Dim,std::string> replicate(const char* v, const std::array<uint_t,Dim>& dims) {
-    auto r = strarr(dims);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
-}
-
-template<std::size_t N, std::size_t Dim>
-vec_t<Dim,std::string> replicate(const char v[N], const std::array<uint_t,Dim>& dims) {
-    auto r = strarr(dims);
-    for (auto& t : r) {
-        t = v;
-    }
-    return r;
+    return vec;
 }
 
 template<std::size_t Dim, typename Type>
@@ -1993,8 +1936,8 @@ void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
         t1.dims[N] += n2;
         t1.resize();
 
-        t1[ix(rep<N>(_),uindgen(n1),rep<Dim-N-1>(_))] = tmp;
-        t1[ix(rep<N>(_),n1+uindgen(n2),rep<Dim-N-1>(_))] = t2;
+        t1(repeat<N>(_), uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
+        t1(repeat<N>(_), n1+uindgen(n2), repeat<Dim-N-1>(_)) = t2;
     }
 }
 
@@ -2013,8 +1956,8 @@ void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
         t1.dims[N] += n2;
         t1.resize();
 
-        t1[ix(rep<N>(_),uindgen(n2),rep<Dim-N-1>(_))] = t2;
-        t1[ix(rep<N>(_),n2+uindgen(n1),rep<Dim-N-1>(_))] = tmp;
+        t1(repeat<N>(_), uindgen(n2), repeat<Dim-N-1>(_)) = t2;
+        t1(repeat<N>(_), n2+uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
     }
 }
 

@@ -2,7 +2,7 @@
 #define TIME_HPP
 
 #include <chrono>
-#include "string.hpp"
+#include "phypp/string.hpp"
 
 // Return the current time [seconds]
 double now() {

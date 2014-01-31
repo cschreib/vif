@@ -1,4 +1,6 @@
 #include <clang-c/Index.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/FormattedStream.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -6,28 +8,19 @@
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <unistd.h>
+#include <sys/ioctl.h>
 
-std::string location_str(CXSourceLocation s) {
-    std::ostringstream ss;
-    CXFile f;
-    unsigned int line;
-    unsigned int column;
-    unsigned int offset;
-    clang_getSpellingLocation(s, &f, &line, &column, &offset);
-    ss << line << ":" << column << ":" << offset;
-
-    return ss.str();
-}
+llvm::raw_fd_ostream out(STDERR_FILENO, false, true);
 
 template<typename T>
 void get_location(T& t, CXSourceRange s) {
-    std::ostringstream ss;
     CXFile f;
     unsigned int offset;
     clang_getSpellingLocation(clang_getRangeStart(s), &f, &t.lstart, &t.cend, &offset);
     clang_getSpellingLocation(clang_getRangeEnd(s), &f, &t.lend, &t.cstart, &offset);
 
-    // For some reason, onle line declarations have start after end...
+    // For some reason, one line declarations have start after end...
     if (t.lstart >= t.lend && t.cstart > t.cend) {
         std::swap(t.lstart, t.lend);
         std::swap(t.cstart, t.cend);
@@ -60,6 +53,18 @@ std::string get_file_name(CXCursor c) {
     }
 
     return sf;
+}
+
+bool file_is_same(CXFile f1, CXFile f2) {
+    CXFileUniqueID id1, id2;
+    clang_getFileUniqueID(f1, &id1);
+    clang_getFileUniqueID(f2, &id2);
+
+    for (std::size_t i = 0; i < 3; ++i) {
+        if (id1.data[i] != id2.data[i]) return false;
+    }
+
+    return true;
 }
 
 bool is_in_parent(CXCursor child, CXCursor parent) {
@@ -112,6 +117,7 @@ std::string cpp;
 CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
     CXCursorKind cKind = clang_getCursorKind(cursor);
     if (cKind == CXCursor_StructDecl || cKind == CXCursor_ClassDecl) {
+        // TODO: optimize v with clang_Location_isFromMainFile (CXSourceLocation location)
         if (get_file_name(cursor) == cpp) {
             while (!cstack.empty() && !is_in_parent(cursor, cstack.back().cur)) {
                 cstack.pop_back();
@@ -169,19 +175,290 @@ CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client
     return CXChildVisit_Recurse;
 }
 
+std::string location_str(CXSourceLocation s) {
+    std::ostringstream ss;
+    CXFile f;
+    unsigned int line;
+    unsigned int column;
+    unsigned int offset;
+    clang_getSpellingLocation(s, &f, &line, &column, &offset);
+    CXString fname = clang_getFileName(f);
+    ss << clang_getCString(fname) << ":" << line << ":" << column;
+    clang_disposeString(fname);
+
+    return ss.str();
+}
+
+std::size_t terminal_width() {
+    struct winsize w;
+    ioctl(STDERR_FILENO, TIOCGWINSZ, &w);
+    return w.ws_col;
+}
+
+template<typename CharType>
+bool is_any_of(CharType c, std::basic_string<CharType> chars) {
+    return chars.find(c) != std::basic_string<CharType>::npos;
+}
+
+template<typename CharType>
+std::basic_string<CharType> string_range(std::basic_string<CharType> str, std::size_t b, std::size_t e) {
+    using string = std::basic_string<CharType>;
+    if (e == string::npos) {
+        return str.substr(b);
+    } else {
+        return str.substr(b, e-b);
+    }
+}
+
+template<typename CharType>
+std::basic_string<CharType> wrap(std::basic_string<CharType> msg,
+    std::size_t head, std::size_t indent, std::size_t maxwidth) {
+    using string = std::basic_string<CharType>;
+
+    if (indent >= maxwidth) return "...";
+
+    string res;
+    bool first = true;
+
+    if (head >= maxwidth) {
+        // The header is too large already, no text will be written on the first line.
+        first = false;
+    }
+
+    const string spaces = " \t";
+
+    std::size_t line_begin = msg.find_first_not_of(spaces);
+    std::size_t line_end = line_begin;
+
+    while (line_begin + maxwidth - (first ? head : indent) < msg.size()) {
+        std::size_t pos = line_begin + maxwidth - (first ? head : indent);
+        auto c = msg[pos];
+        std::size_t new_begin;
+        if (is_any_of(c, spaces)) {
+            // Clipping occurs in the middle of a empty region.
+            // Look for the end of the previous word.
+            line_end = msg.find_last_not_of(spaces, pos);
+            if (line_end == string::npos) {
+                // No word found, discard this line.
+                line_begin = line_end;
+            } else {
+                // Word found, keep it on this line.
+                ++line_end;
+            }
+
+            // Set the begining of the new line to the next word.
+            new_begin = msg.find_first_not_of(spaces, pos);
+        } else {
+            // Clipping occurs in the middle of a word.
+            // Look for the begining of this word.
+            line_end = msg.find_last_of(spaces, pos);
+            if (line_end == string::npos) {
+                if (first) {
+                    // The header is too large, just start the message on the next line
+                    new_begin = line_begin;
+                    line_begin = string::npos;
+                } else {
+                    // This is the only word for this line, we have no choice but to keep it,
+                    // even if it is too long.
+                    line_end = msg.find_first_of(spaces, pos);
+                    new_begin = msg.find_first_not_of(spaces, line_end);
+                }
+            } else {
+                // Keep this word as the beginning of the next line.
+                ++line_end;
+                new_begin = line_end;
+            }
+        }
+
+        if (line_begin != string::npos) {
+            if (!first) res += '\n'+string(indent, ' ');
+            res += string_range(msg, line_begin, line_end);
+        }
+
+        line_begin = new_begin;
+        first = false;
+
+        if (line_begin == string::npos) {
+            // No word remaining.
+            break;
+        }
+    }
+
+    if (line_begin != string::npos) {
+        // There are some words remaining, put them on the last line.
+        line_end = msg.find_last_not_of(spaces);
+        if (line_end != string::npos) {
+            ++line_end;
+
+            if (!first) res += '\n'+string(indent, ' ');
+            res += string_range(msg, line_begin, line_end);
+        }
+    }
+
+    return res;
+}
+
+void format_diagnostic(CXDiagnostic d);
+
+void format_diagnostics(CXDiagnosticSet ds) {
+    for (std::size_t i = 0; i < clang_getNumDiagnosticsInSet(ds); ++i) {
+        CXDiagnostic d = clang_getDiagnosticInSet(ds, i);
+        format_diagnostic(d);
+        clang_disposeDiagnostic(d);
+    }
+}
+
+void format_range(CXDiagnostic d, CXSourceLocation sl) {
+    CXFile floc;
+    unsigned int lloc, cloc; {
+        unsigned int offset;
+        clang_getSpellingLocation(sl, &floc, &lloc, &cloc, &offset);
+    }
+
+    std::string filename; {
+        CXString tmp = clang_getFileName(floc);
+        filename = clang_getCString(tmp);
+        clang_disposeString(tmp);
+    }
+
+    // TODO: check that filename exists
+    std::string line;
+    std::ifstream fs(filename);
+    for (std::size_t i = 0; i < lloc; ++i) {
+        std::getline(fs, line);
+    }
+
+    std::size_t coffset = 0;
+    std::size_t width = line.size();
+    std::size_t max_width = terminal_width();
+    if (width > max_width) {
+        // The line is too long to fit on the terminal.
+        // Just truncate it for now (TODO: improve that?)
+        if (max_width >= 3) {
+            line.erase(max_width-3);
+            line += "...";
+        } else {
+            line.erase(max_width);
+        }
+
+        width = max_width;
+    }
+
+    out << line << '\n';
+    out.changeColor(llvm::raw_ostream::GREEN, true);
+
+    std::string highlight = std::string(width, ' ');
+
+    std::size_t nrange = clang_getDiagnosticNumRanges(d);
+    for (std::size_t i = 0; i < nrange; ++i) {
+        CXSourceRange r = clang_getDiagnosticRange(d, i);
+
+        CXFile fstart, fend;
+        unsigned int lstart, lend, cstart, cend; {
+            unsigned int offset;
+            clang_getSpellingLocation(clang_getRangeStart(r), &fstart, &lstart, &cstart, &offset);
+            clang_getSpellingLocation(clang_getRangeEnd(r), &fend, &lend, &cend, &offset);
+        }
+
+        if (cend < cstart) std::swap(cend, cstart);
+
+        if (file_is_same(floc, fstart) && lloc == lstart &&
+            cstart >= coffset && cend <= coffset+width) {
+            for (std::size_t j = cstart; j < cend; ++j) {
+                highlight[j-1 - coffset] = '~';
+            }
+        }
+    }
+
+    if (cloc-1 >= coffset && cloc-1 < coffset + width) {
+        highlight[cloc-1 - coffset] = '^';
+    }
+
+    out << highlight << '\n';
+    out.changeColor(llvm::raw_ostream::WHITE, false);
+}
+
+void format_diagnostic(CXDiagnostic d) {
+    auto color = llvm::raw_ostream::WHITE;
+    std::string kind = "";
+    bool bold_message = true;
+
+    switch (clang_getDiagnosticSeverity(d)) {
+    case CXDiagnostic_Note :
+        color = llvm::raw_ostream::BLACK;
+        kind = "note: ";
+        bold_message = false;
+        break;
+    case CXDiagnostic_Warning :
+        color = llvm::raw_ostream::MAGENTA;
+        kind = "warning: ";
+        break;
+    case CXDiagnostic_Error :
+    case CXDiagnostic_Fatal :
+        color = llvm::raw_ostream::RED;
+        kind = "error: ";
+        break;
+    case CXDiagnostic_Ignored :
+    default : return;
+    }
+
+    CXSourceLocation sl = clang_getDiagnosticLocation(d);
+    // TODO: check that location is not empty
+    std::string loc = location_str(sl)+": ";
+
+    std::string message; {
+        CXString tmp = clang_getDiagnosticSpelling(d);
+        message = wrap(std::string(clang_getCString(tmp)),
+            loc.size()+kind.size(), 6, terminal_width()
+        );
+        clang_disposeString(tmp);
+    }
+
+    out.changeColor(llvm::raw_ostream::WHITE, true);
+    out << loc;
+    out.changeColor(color, true);
+    out << kind;
+    out.changeColor(llvm::raw_ostream::WHITE, bold_message);
+    out << message << "\n";
+
+    out.changeColor(llvm::raw_ostream::WHITE, false);
+    format_range(d, sl);
+
+    format_diagnostics(clang_getChildDiagnostics(d));
+    out.flush();
+    out.resetColor();
+}
+
 int main(int argc, char* argv[]) {
     bool verbose = false;
 
-    // "clang file.cpp -emit-ast -o file.ast"
-    std::string ast = std::string(argv[1]) + ".ast";
     cpp = std::string(argv[1]) + ".cpp";
+    std::string rname = argv[2];
 
     // Parse the file with clang
     CXIndex cidx = clang_createIndex(0, 0);
-    CXTranslationUnit ctu = clang_createTranslationUnit(cidx, ast.c_str());
-    clang_visitChildren(clang_getTranslationUnitCursor(ctu), &visitor, nullptr);
+    CXTranslationUnit ctu = clang_parseTranslationUnit( // TODO: v optimize
+        cidx, cpp.c_str(), argv+3, argc-3, 0, 0, CXTranslationUnit_None
+    );
+
+    std::size_t ndiag = clang_getNumDiagnostics(ctu);
+    for (std::size_t i = 0; i < ndiag; ++i) {
+        CXDiagnostic d = clang_getDiagnostic(ctu, i);
+        format_diagnostic(d);
+        clang_disposeDiagnostic(d);
+    }
+
+    if (ndiag == 0) {
+        // TODO: v optimize
+        // CXFile main_file = clang_getFile(ctu, file.c_str());
+        // clang_getFileUniqueID(main_file, &data.main_file_id);
+        clang_visitChildren(clang_getTranslationUnitCursor(ctu), &visitor, nullptr);
+    }
+
     clang_disposeTranslationUnit(ctu);
     clang_disposeIndex(cidx);
+
+    if (ndiag != 0) return 1;
 
     // First sort the struct list by order of appearance in the file
     std::sort(db.begin(), db.end(), [](const struct_t& s1, const struct_t& s2) {
@@ -202,7 +479,6 @@ int main(int argc, char* argv[]) {
 
     // Create a new code with added reflexion data
     std::ifstream code(cpp);
-    std::string rname = "._reflex_"+cpp;
 
     std::ofstream enh(rname.c_str());
     std::size_t l = 1;
