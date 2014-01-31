@@ -91,6 +91,28 @@ cosmo_t cosmo_wmap() {
     return c;
 }
 
+cosmo_t cosmo_std() {
+    cosmo_t c;
+    c.H0 = 70.0;
+    c.wL = 0.7;
+    c.wm = 0.3;
+    c.wk = 0.0;
+    return c;
+}
+
+cosmo_t get_cosmo(const std::string& name) {
+    if (name == "wmap") {
+        return cosmo_wmap();
+    } else if (name == "std") {
+        return cosmo_std();
+    } else {
+        cosmo_t c;
+        warning("unknown cosmology '"+name+"', using default (H0="+strn(c.H0)+", omega_lambda="+
+            strn(c.wL)+", omega_matter="+strn(c.wm)+", omega_rad="+strn(c.wk)+")");
+        return c;
+    }
+}
+
 // Luminosity distance [Mpc] as a function of redshift 'z'.
 // Note: assumes that cosmo.wk = 0.
 // There is no analytic form for this function, hence it must be numerically integrated.
@@ -1088,7 +1110,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
     phypp_check(naxis == 2, "cannot stack on image cubes (image dimensions: "+strn(naxis)+")");
     long naxes[2];
     fits_get_img_size(fptr, naxis, naxes, &status);
-    uint_t width = naxes[0], height = naxes[1];
+    long width = naxes[0], height = naxes[1];
 
     // Convert ra/dec to x/y
     vec1d x, y;
@@ -1104,8 +1126,11 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
 
     // Loop over all sources
     for (uint_t i = 0; i < ra.size(); ++i) {
+        long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
+        long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
+
         // Discard any source that falls out of the boundaries of the image
-        if (x[i]-hsize < 1 || x[i]+hsize >= width || y[i] - hsize < 1 || y[i] + hsize >= height) {
+        if (p0[0] < 1 || p1[0] >= width || p0[1] < 1 || p1[1] >= height) {
             continue;
         }
 
@@ -1113,8 +1138,6 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& filename, uint
 
         Type null = fnan;
         int anynul = 0;
-        long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
-        long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
         long inc[2] = {1, 1};
         fits_read_subset(fptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
             cut.data.data(), &anynul, &status);
@@ -1163,7 +1186,7 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
     phypp_check(naxis == 2, "cannot stack on image cubes (image dimensions: "+strn(naxis)+")");
     long naxes[2];
     fits_get_img_size(fptr, naxis, naxes, &status);
-    uint_t width = naxes[0], height = naxes[1];
+    long width = naxes[0], height = naxes[1];
     long wnaxes[2];
     fits_get_img_size(wfptr, 2, wnaxes, &status);
     phypp_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
@@ -1186,8 +1209,11 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
 
     // Loop over all sources
     for (uint_t i = 0; i < ra.size(); ++i) {
+        long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
+        long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
+
         // Discard any source that falls out of the boundaries of the image
-        if (x[i]-hsize < 1 || x[i]+hsize >= width || y[i] - hsize < 1 || y[i] + hsize >= height) {
+        if (p0[0] < 1 || p1[0] >= width || p0[1] < 1 || p1[1] >= height) {
             continue;
         }
 
@@ -1196,8 +1222,6 @@ void qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile, const s
 
         Type null = fnan;
         int anynul = 0;
-        long p0[2] = {long(round(x[i]-hsize)), long(round(y[i]-hsize))};
-        long p1[2] = {long(round(x[i]+hsize)), long(round(y[i]+hsize))};
         long inc[2] = {1, 1};
 
         fits_read_subset(fptr,  fits::traits<Type>::ttype, p0, p1, inc, &null,
