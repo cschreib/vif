@@ -12,8 +12,10 @@ int main(int argc, char* argv[]) {
     std::string dec = "";
     vec1s show;
     uint_t nsrc = 10;
+    std::string region = "";
+    vec1s region_text;
 
-    read_args(argc-3, argv+3, arg_list(ra, dec, nsrc, show));
+    read_args(argc-3, argv+3, arg_list(ra, dec, nsrc, show, region, region_text));
 
     if (ra.empty() != dec.empty()) {
         error("you only specified 'ra' or 'dec', please provide both");
@@ -37,6 +39,7 @@ int main(int argc, char* argv[]) {
     }
 
     vec2d show_data(show.size(), cra.size());
+    vec2d region_data(region_text.size(), cra.size());
 
     for (uint_t i = 0; i < show.size(); ++i) {
         vec1d data;
@@ -44,9 +47,20 @@ int main(int argc, char* argv[]) {
         if (data.empty()) {
             warning("no column named '", show[i], "', skipping");
             show[i] = "";
+        } else {
+            show_data(i,_) = data;
         }
+    }
 
-        show_data(i,_) = data;
+    for (uint_t i = 0; i < region_text.size(); ++i) {
+        vec1d data;
+        fits::read_table_loose(argv[1], region_text[i], data);
+        if (data.empty()) {
+            warning("no column named '", region_text[i], "', skipping");
+            region_text[i] = "";
+        } else {
+            region_data(i,_) = data;
+        }
     }
 
     print("Catalog ranges:");
@@ -83,6 +97,37 @@ int main(int argc, char* argv[]) {
         print(i, ": ", res.d(i,0), "\", id=", res.id(i,0), data);
     }
 
+    if (!region.empty()) {
+        file::mkdir(file::get_directory(region));
+
+        std::ofstream out(region);
+
+        out << "# Region file format: DS9 version 4.1\n";
+        out << "global color=green dashlist=8 3 width=2 font=\"helvetica 10 normal roman\""
+            "select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n";
+        out << "fk5\n";
+
+        for (uint_t i = 0; i < nsrc; ++i) {
+            std::string rra, rdec;
+            deg2sex(cra[res.id(i,0)], cdec[res.id(i,0)], rra, rdec);
+            out << "circle(" << rra << "," << rdec << ",0.5\") # width=3";
+            if (!region_text.empty()) {
+                out << " text={";
+                bool first = true;
+                for (uint_t j = 0; j < region_text.size(); ++j) {
+                    if (region_text[j].empty()) continue;
+                    if (!first) out << ", ";
+                    out << region_data(j,res.id(i,0));
+                    first = false;
+                }
+                out << "}";
+            } else {
+                out << " text={" << res.id(i,0) << "}";
+            }
+            out << "\n";
+        }
+    }
+
     return 0;
 }
 
@@ -95,4 +140,6 @@ void print_help() {
     print(" - dec: name of the Declination variable in the catalog");
     print(" - show: array of column names to display");
     print(" - nsrc: number of nearby sources to show");
+    print(" - region: output a DS9 region file with all the sources");
+    print(" - region_text: value to display over each source in DS9");
 }
