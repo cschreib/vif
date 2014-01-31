@@ -1824,6 +1824,67 @@ vec_t<1,rtype_t<Type>> reverse(const vec_t<1,Type>& v) {
     return r;
 }
 
+template<std::size_t Dim, typename Type, typename ... Args>
+vec_t<sizeof...(Args), Type> reform(const vec_t<Dim,Type>& v, Args&& ... args) {
+    auto r = arr<rtype_t<Type>>(std::forward<Args>(args)...);
+    phypp_check(r.size() == v.size(),
+        "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+
+    for (uint_t i : range(v)) {
+        r[i] = v[i];
+    }
+
+    return r;
+}
+
+template<std::size_t Dim, typename Type, typename ... Args>
+vec_t<sizeof...(Args), Type> reform(vec_t<Dim,Type>&& v, Args&& ... args) {
+    vec_t<sizeof...(Args), Type> r;
+    set_array(r.dims, std::forward<Args>(args)...);
+    std::size_t size = 1;
+    for (uint_t i = 0; i < sizeof...(Args); ++i) {
+        size *= r.dims[i];
+    }
+
+    phypp_check(size == v.size(),
+        "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+
+    r.data = std::move(v.data);
+
+    return r;
+}
+
+template<std::size_t Dim, typename Type, typename ... Args>
+vec_t<sizeof...(Args), Type*> reform(const vec_t<Dim,Type*>& v, Args&& ... args) {
+    vec_t<sizeof...(Args), Type*> r(v.parent);
+    r.resize(std::forward<Args>(args)...);
+    phypp_check(r.size() == v.size(),
+        "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+
+    for (uint_t i : range(v)) {
+        r[i] = v[i];
+    }
+
+    return r;
+}
+
+template<std::size_t Dim, typename Type, typename ... Args>
+vec_t<sizeof...(Args), Type*> reform(vec_t<Dim,Type*>&& v, Args&& ... args) {
+    vec_t<sizeof...(Args), Type*> r(v.parent);
+    set_array(r.dims, std::forward<Args>(args)...);
+    std::size_t size = 1;
+    for (uint_t i = 0; i < sizeof...(Args); ++i) {
+        size *= r.dims[i];
+    }
+
+    phypp_check(size == v.size(),
+        "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+
+    r.data = std::move(v.data);
+
+    return r;
+}
+
 template<std::size_t Dim, typename Type, typename T>
 vec_t<Dim+1,rtype_t<Type>> replicate(const vec_t<Dim,Type>& v, const T& n) {
     vec_t<Dim+1,rtype_t<Type>> r;
