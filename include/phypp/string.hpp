@@ -307,6 +307,11 @@ uint_t length(const std::string& s) {
     return s.size();
 }
 
+template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+uint_t length(T c) {
+    return 1u;
+}
+
 std::string align_left(const std::string& s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
         return s + std::string(width-s.size(), fill);
@@ -404,7 +409,7 @@ vec1s split(const std::string& ts, const T& pattern) {
     std::size_t p = 0, op = 0;
     while ((p = ts.find(pattern, op)) != ts.npos) {
         ret.data.push_back(ts.substr(op, p - op));
-        op = p+1;
+        op = p + length(pattern);
     }
 
     ret.data.push_back(ts.substr(op));
