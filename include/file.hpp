@@ -258,7 +258,7 @@ namespace file {
         std::string tmp;
         for (auto& d : dirs) {
             if (d.empty()) continue;
-            if (!tmp.empty()) tmp += "/";
+            if (!tmp.empty() || start_with(path, "/")) tmp += "/";
             tmp += d;
             bool res = (::mkdir(tmp.c_str(), 0775) == 0) || (errno == EEXIST);
             if (!res) return false;
@@ -266,9 +266,10 @@ namespace file {
         return true;
     }
 
-    template<typename ... Args>
-    auto columns(std::size_t n, Args& ... args) -> decltype(std::tuple_cat(std::make_tuple(n), std::tie(args...))) {
-        return std::tuple_cat(std::make_tuple(n), std::tie(args...));
+    template<typename T, typename ... Args>
+    auto columns(std::size_t n, T& t, Args& ... args) ->
+        decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
+        return std::tuple_cat(std::make_tuple(n), std::tie(t, args...));
     }
 
     void read_table_resize_(std::size_t n) {}
@@ -502,16 +503,16 @@ namespace file {
 
     void write_table_phypp_check_size_(std::size_t n, std::size_t i) {}
 
-    template<typename Type, typename ... Args>
-    void write_table_phypp_check_size_(std::size_t& n, std::size_t i, const vec_t<1,Type>& v,
+    template<std::size_t Dim, typename Type, typename ... Args>
+    void write_table_phypp_check_size_(std::size_t& n, std::size_t i, const vec_t<Dim,Type>& v,
         const Args& ... args) {
 
         if (n == 0) {
-            n = v.size();
+            n = v.dims[0];
         }
 
-        phypp_check(v.size() == n, "incorrect dimension for column "+strn(i)+" ("+
-            strn(v.size())+" vs "+strn(n)+")");
+        phypp_check(v.dims[0] == n, "incorrect dimension for column "+strn(i)+" ("+
+            strn(v.dims[0])+" vs "+strn(n)+")");
 
         write_table_phypp_check_size_(n, i+1, args...);
     }
@@ -520,6 +521,10 @@ namespace file {
         std::size_t i, std::size_t j) {
         file << '\n';
     }
+
+    template<typename Type, typename ... Args>
+    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+        std::size_t i, std::size_t j, const vec_t<2,Type>& v, const Args& ... args);
 
     template<typename Type, typename ... Args>
     void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
@@ -537,6 +542,27 @@ namespace file {
         file << s;
 
         write_table_do_(file, cwidth, sep, i, j+1, args...);
+    }
+
+    template<typename Type, typename ... Args>
+    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+        std::size_t i, std::size_t j, const vec_t<2,Type>& v, const Args& ... args) {
+
+        for (uint_t k = 0; k < v.dims[1]; ++k) {
+            if (j != 0) {
+                file << sep;
+            }
+
+            std::string s = strn(v(i,k));
+            if (s.size() < cwidth) {
+                file << std::string(cwidth - s.size(), ' ');
+            }
+
+            file << s;
+            ++j;
+        }
+
+        write_table_do_(file, cwidth, sep, i, j, args...);
     }
 
     template<typename ... Args>
