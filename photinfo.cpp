@@ -3,6 +3,7 @@
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
+        print_filters();
         return 0;
     }
 
@@ -22,26 +23,26 @@ int main(int argc, char* argv[]) {
 
     fits::read_table_loose(argv[1], cat);
 
-    uint_t ngal = dim(cat.flux)[0];
+    uint_t ngal = cat.flux.dims[0];
 
-    if (n_elements(cat.lambda) == 0) {
-        cat.lambda = fltarr(n_elements(cat.bands));
-        for (uint_t i = 0; i < n_elements(cat.bands); ++i) {
+    if (cat.lambda.empty()) {
+        cat.lambda = fltarr(cat.bands.size());
+        for (uint_t i = 0; i < cat.bands.size(); ++i) {
             auto filter = get_filter(cat.bands[i]);
             cat.lambda[i] = filter.rlam;
         }
     }
 
-    if (n_elements(cat.notes) == 0) {
-        cat.notes = replicate("", n_elements(cat.bands));
+    if (cat.notes.empty()) {
+        cat.notes = replicate("", cat.bands.size());
     }
 
-    if (n_elements(cat.ra) == 0 || n_elements(cat.dec) == 0) {
+    if (cat.ra.empty() || cat.dec.empty()) {
         cat.ra = cat.pos.ra;
         cat.dec = cat.pos.dec;
     }
 
-    if (n_elements(cat.ra) == 0 || n_elements(cat.dec) == 0) {
+    if (cat.ra.empty() || cat.dec.empty()) {
         print("error: no RA/Dec positions in this file (expected RA, DEC or POS.RA, POS.DEC)");
         return 1;
     }
@@ -67,8 +68,8 @@ int main(int argc, char* argv[]) {
     cache = "."+cache+"_photinfo_cache.fits";
 
     if (!file::exists(cache) || file::is_older(cache, argv[1])) {
-        auto pg = progress_start(n_elements(cat.bands));
-        for (uint_t i = 0; i < n_elements(cat.bands); ++i) {
+        auto pg = progress_start(cat.bands.size());
+        for (uint_t i = 0; i < cat.bands.size(); ++i) {
             auto f = cat.flux(_,i);
             auto e = cat.flux_err(_,i);
 
@@ -147,7 +148,7 @@ int main(int argc, char* argv[]) {
     print(header);
     print(std::string(header.size(), '='));
 
-    for (uint_t i = 0; i < n_elements(cat.bands); ++i) {
+    for (uint_t i = 0; i < cat.bands.size(); ++i) {
         auto f = cat.flux(_,i);
         auto e = cat.flux_err(_,i);
 
