@@ -140,8 +140,7 @@ T nstr(const std::string& s) {
     return t;
 }
 
-std::string trim(const std::string& ts, const std::string& chars = " \t") {
-    std::string s = ts;
+std::string trim(std::string s, const std::string& chars = " \t") {
     std::size_t spos = s.find_first_of(chars);
     if (spos == 0) {
         std::size_t epos = s.find_first_not_of(chars);
@@ -158,42 +157,41 @@ std::string trim(const std::string& ts, const std::string& chars = " \t") {
     return s;
 }
 
-std::string toupper(const std::string& ts) {
-    std::string s = ts;
+std::string toupper(std::string s) {
     for (auto& c : s) {
         c = ::toupper(c);
     }
     return s;
 }
 
-std::string tolower(const std::string& ts) {
-    std::string s = ts;
+std::string tolower(std::string s) {
     for (auto& c : s) {
         c = ::tolower(c);
     }
     return s;
 }
 
-std::string erase_begin(const std::string& ts, uint_t n) {
-    if (n >= ts.size()) {
-        return "";
+std::string erase_begin(std::string s, uint_t n) {
+    if (n >= s.size()) {
+        s.clear();
+    } else {
+        s.erase(0, n);
     }
 
-    std::string s = ts;
-    return s.erase(0, n);
+    return s;
 }
 
-std::string erase_end(const std::string& ts, uint_t n) {
-    if (n >= ts.size()) {
-        return "";
+std::string erase_end(std::string s, uint_t n) {
+    if (n >= s.size()) {
+        s.clear();
+    } else {
+        s.erase(ts.size()-n, n);
     }
 
-    std::string s = ts;
-    return s.erase(ts.size()-n, n);
+    return s;
 }
 
-std::string replace(const std::string& ts, const std::string& pattern, const std::string& rep) {
-    std::string s = ts;
+std::string replace(std::string s, const std::string& pattern, const std::string& rep) {
     auto p = s.find(pattern);
     while (p != s.npos) {
         s.replace(p, pattern.size(), rep);
@@ -203,8 +201,8 @@ std::string replace(const std::string& ts, const std::string& pattern, const std
     return s;
 }
 
-bool empty(const std::string& ts) {
-    return ts.empty();
+bool empty(const std::string& s) {
+    return s.empty();
 }
 
 uint_t distance(const std::string& t, const std::string& u) {
@@ -312,29 +310,30 @@ uint_t length(T c) {
     return 1u;
 }
 
-std::string align_left(const std::string& s, uint_t width, char fill = ' ') {
+std::string align_left(std::string s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
-        return s + std::string(width-s.size(), fill);
-    } else {
-        return s;
+        s += std::string(width-s.size(), fill);
     }
+
+    return s;
 }
 
-std::string align_right(const std::string& s, uint_t width, char fill = ' ') {
+std::string align_right(std::string s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
-        return std::string(width-s.size(), fill) + s;
-    } else {
-        return s;
+        s.insert(0, std::string(width-s.size(), fill));
     }
+
+    return s;
 }
 
-std::string align_center(const std::string& s, uint_t width, char fill = ' ') {
+std::string align_center(std::string s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
-        return std::string((width-s.size())/2, fill) + s +
-            std::string(width-s.size() - (width-s.size())/2, fill);
-    } else {
-        return s;
+        uint_t n1 = (width-s.size())/2, n2 = width-s.size() - n1;
+        s.insert(0, std::string(n1, fill));
+        s += std::string(n2, fill);
     }
+
+    return s;
 }
 
 bool start_with(const std::string& s, const std::string& pattern) {
@@ -359,6 +358,7 @@ std::string keep_start(std::string s, uint_t n = 1) {
     if (s.size() > n) {
         s.erase(n);
     }
+
     return s;
 }
 
@@ -366,6 +366,7 @@ std::string keep_end(std::string s, uint_t n = 1) {
     if (s.size() > n) {
         s.erase(0, s.size()-n);
     }
+
     return s;
 }
 
@@ -523,6 +524,4 @@ std::string system_var(const std::string& name, const std::string& def = "") {
     return v;
 }
 
-
 #endif
-
