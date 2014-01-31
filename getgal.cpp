@@ -7,6 +7,7 @@ int main(int argc, char* argv[]) {
     std::string out = "";
     std::string nbase = "";
     std::string dir = "";
+    double radius = dnan;
     vec1s show;
     bool verbose = false;
 
@@ -18,7 +19,7 @@ int main(int argc, char* argv[]) {
     std::string clist = argv[1];
 
     read_args(argc-1, argv+1, arg_list(
-        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show
+        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, radius
     ));
 
     if (!dir.empty()) {
@@ -70,13 +71,17 @@ int main(int argc, char* argv[]) {
         if (!nbase.empty()) name[0] = nbase + "_";
         ra.resize(1);
         dec.resize(1);
-        if (!from_string(tsrc[0], ra[0])) {
-            error("could not convert '"+tsrc[0]+"' to a coordinate");
-            return 1;
-        }
-        if (!from_string(tsrc[1], dec[0])) {
-            error("could not convert '"+tsrc[1]+"' to a coordinate");
-            return 1;
+        if (find(tsrc[0], ":") == npos) {
+            if (!from_string(tsrc[0], ra[0])) {
+                error("could not convert '"+tsrc[0]+"' to a coordinate");
+                return 1;
+            }
+            if (!from_string(tsrc[1], dec[0])) {
+                error("could not convert '"+tsrc[1]+"' to a coordinate");
+                return 1;
+            }
+        } else {
+            sex2deg(tsrc[0], tsrc[1], ra[0], dec[0]);
         }
     } else {
         error("incorrect format for 'src' parameter");
@@ -147,19 +152,32 @@ int main(int argc, char* argv[]) {
         fits::getkey(hdr, "CRPIX1", rx);
         fits::getkey(hdr, "CRPIX2", ry);
 
+        int_t hsize;
+        if (finite(radius)) {
+            // Convert radius to number of pixels
+            vec1d x, y;
+            fits::ad2xy(fits::wcs(hdr),
+                {ra[0], ra[0] + radius/3600.0}, {dec[0], dec[0]}, x, y);
+            hsize = sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
+            if (hsize < 10) hsize = 10;
+        } else {
+            // Use default cutout size
+            hsize = msize[b];
+        }
+
         vec1d x, y;
         fits::ad2xy(fits::wcs(hdr), ra, dec, x, y);
         x = round(x);
         y = round(y);
-        vec1d crx = rx - x + msize[b] + 1;
-        vec1d cry = ry - y + msize[b] + 1;
+        vec1d crx = rx - x + hsize + 1;
+        vec1d cry = ry - y + hsize + 1;
 
         qstack_params p;
         p.keepnan = true;
         vec3d cube;
         vec1u ids;
 
-        qstack(ra, dec, mfile[b], msize[b], cube, ids, p);
+        qstack(ra, dec, mfile[b], hsize, cube, ids, p);
 
         for (uint_t i : range(ids)) {
             fits::header nhdr = hdr;
@@ -173,7 +191,7 @@ int main(int argc, char* argv[]) {
         ncov[ids] = false;
 
         ids = where(ncov);
-        vec2d empty(2*msize[b] + 1, 2*msize[b] + 1);
+        vec2d empty(2*hsize + 1, 2*hsize + 1);
         empty[_] = dnan;
         for (uint_t i : range(ids)) {
             fits::header nhdr = hdr;
