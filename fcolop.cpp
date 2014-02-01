@@ -2,6 +2,8 @@
 
 void print_help();
 
+bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force = false);
+
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
@@ -15,52 +17,26 @@ int main(int argc, char* argv[]) {
     }
 
     std::string op = tolower(argv[2]);
-    vec1s cols;
-    bool force = false;
-
-    read_args(argc-2, argv+2, arg_list(cols, force));
-
-    cols = toupper(cols);
 
     fitsfile* fptr;
     int status = 0;
     fits_open_table(&fptr, file.c_str(), READWRITE, &status);
     fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
-    vec1s fcols;
-    for (auto& col : cols) {
-        int id = -1;
-        fits_get_colnum(fptr, CASESEN, const_cast<char*>(col.c_str()), &id, &status);
-        if (status != 0) {
-            status = 0;
-            if (!force) {
-                std::cout << "warning: no column named '" << col << "' in this file, continue? (y/n) "
-                    << std::flush;
-
-                std::string line;
-                while (line.empty()) {
-                    std::getline(std::cin, line);
-                    line = tolower(line);
-                    if (line == "y" || line == "yes") break;
-                    if (line == "n" || line == "no") {
-                        fits_close_file(fptr, &status);
-                        return 0;
-                    }
-                    line.clear();
-                    std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
-                }
-            }
-
-            continue;
-        }
-
-        fcols.push_back(col);
-    }
-
     if (op == "remove") {
+        vec1s cols;
+        bool force = false;
+        read_args(argc-2, argv+2, arg_list(cols, force));
+
         if (cols.empty()) {
             error("missing column(s) name(s)");
             print_help();
+            return 0;
+        }
+
+        vec1s fcols;
+        cols = toupper(cols);
+        if (!get_columns(cols, fptr, fcols, force)) {
             return 0;
         }
 
@@ -94,9 +70,19 @@ int main(int argc, char* argv[]) {
             fits::phypp_check_cfitsio(status, "cannot remove column '"+col+"'");
         }
     } else if (op == "transpose") {
+        vec1s cols;
+        bool force = false;
+        read_args(argc-2, argv+2, arg_list(cols, force));
+
         if (cols.empty()) {
             error("missing column(s) name(s)");
             print_help();
+            return 0;
+        }
+
+        vec1s fcols;
+        cols = toupper(cols);
+        if (!get_columns(cols, fptr, fcols, force)) {
             return 0;
         }
 
@@ -154,6 +140,9 @@ int main(int argc, char* argv[]) {
             fits::phypp_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
         }
     } else if (op == "meta") {
+        bool force = false;
+        read_args(argc-2, argv+2, arg_list(force));
+
         vec1u dims;
         int ncols;
         fits_get_num_cols(fptr, &ncols, &status);
@@ -290,6 +279,40 @@ int main(int argc, char* argv[]) {
     fits_close_file(fptr, &status);
 
     return 0;
+}
+
+bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force) {
+    int status = 0;
+    for (auto& col : cols) {
+        int id = -1;
+        fits_get_colnum(fptr, CASESEN, const_cast<char*>(col.c_str()), &id, &status);
+        if (status != 0) {
+            status = 0;
+            if (!force) {
+                std::cout << "warning: no column named '" << col << "' in this file, continue? (y/n) "
+                    << std::flush;
+
+                std::string line;
+                while (line.empty()) {
+                    std::getline(std::cin, line);
+                    line = tolower(line);
+                    if (line == "y" || line == "yes") break;
+                    if (line == "n" || line == "no") {
+                        fits_close_file(fptr, &status);
+                        return false;
+                    }
+                    line.clear();
+                    std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
+                }
+            }
+
+            continue;
+        }
+
+        fcols.push_back(col);
+    }
+
+    return true;
 }
 
 void print_help() {
