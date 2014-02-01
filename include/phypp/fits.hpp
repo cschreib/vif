@@ -121,7 +121,7 @@ namespace fits {
         if (status != 0) {
             char txt[FLEN_STATUS];
             fits_get_errstatus(status, txt);
-            phypp_check_fits(status == 0, "error: cfitsio: "+std::string(txt)+"\n"+msg);
+            phypp_check_fits(status == 0, "error: cfitsio: "+std::string(txt)+"\nerror: "+msg);
         }
     }
 
