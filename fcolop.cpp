@@ -7,11 +7,13 @@ bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force = f
 bool remove_columns(int argc, char* argv[], const std::string& file);
 bool transpose_columns(int argc, char* argv[], const std::string& file);
 bool rows_to_columns(int argc, char* argv[], const std::string& file);
+bool copy_wcs_header(int argc, char* argv[], const std::string& file);
 bool move_meta_columns(int argc, char* argv[], const std::string& file);
 
 void print_remove_help();
 void print_transpose_help();
 void print_r2c_help();
+void print_cpwcs_help();
 void print_meta_help();
 
 int main(int argc, char* argv[]) {
@@ -31,6 +33,8 @@ int main(int argc, char* argv[]) {
             print_transpose_help();
         } else if (op == "r2c") {
             print_r2c_help();
+        } else if (op == "cpwcs") {
+            print_cpwcs_help();
         } else if (op == "meta") {
             print_meta_help();
         } else {
@@ -48,6 +52,8 @@ int main(int argc, char* argv[]) {
             transpose_columns(argc-2, argv+2, file);
         } else if (op == "r2c") {
             rows_to_columns(argc-2, argv+2, file);
+        } else if (op == "cpwcs") {
+            copy_wcs_header(argc-2, argv+2, file);
         } else if (op == "meta") {
             move_meta_columns(argc-2, argv+2, file);
         } else {
@@ -406,6 +412,104 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
         if (ifptr) fits_close_file(ifptr, &status);
         if (ofptr) fits_close_file(ofptr, &status);
         error(e.msg);
+        return false;
+    }
+
+    return true;
+}
+
+void print_cpwcs_help() {
+    using namespace format;
+
+    paragraph("The program will copy all the WCS related header keywords from the provided file to "
+        "another file. Previous WCS data in the other file will be lost.");
+
+    header("List of available command line options:");
+    bullet("out", "[string] path to the file to copy the keywords to");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool copy_wcs_header(int argc, char* argv[], const std::string& file) {
+    std::string out;
+    bool help = false;
+    read_args(argc, argv, arg_list(out, help));
+
+    if (help) {
+        print_cpwcs_help();
+        return true;
+    }
+
+    if (out.empty()) {
+        error("missing output file, please provide 'out=...'");
+        return false;
+    }
+
+    // List of keywords taken from 'cphead' (WCSTools)
+    vec1s keywords = {"RA", "DEC", "EPOCH", "EQUINOX", "RADECSYS", "SECPIX", "SECPIX1",
+        "SECPIX2", "CTYPE1", "CTYPE2", "CRVAL1", "CRVAL2", "CDELT1", "CDELT2", "CRPIX1",
+        "CRPIX2", "CROTA1", "CROTA2", "IMWCS", "CD1_1", "CD1_2", "CD2_1", "CD2_2", "PC1_1",
+        "PC1_2", "PC2_1", "PC2_2", "PC001001", "PC001002", "PC002001", "PC002002",
+        "LATPOLE", "LONPOLE"};
+
+    for (uint_t i = 1; i < 13; ++i) {
+        keywords.push_back("CO1_"+strn(i));
+    }
+    for (uint_t i = 1; i < 13; ++i) {
+        keywords.push_back("CO2_"+strn(i));
+    }
+    for (uint_t i = 0; i < 10; ++i) {
+        keywords.push_back("PROJP"+strn(i));
+    }
+    for (uint_t i = 0; i < 10; ++i) {
+        keywords.push_back("PV1_"+strn(i));
+    }
+    for (uint_t i = 0; i < 10; ++i) {
+        keywords.push_back("PV2_"+strn(i));
+    }
+
+    fitsfile* fptr1;
+    fitsfile* fptr2;
+    int status = 0;
+
+    try {
+        fits_open_image(&fptr1, file.c_str(), READONLY, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits_open_image(&fptr2, out.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+out+"'");
+
+        for (auto& k : keywords) {
+            char value[80] = {0};
+            char comment[80] = {0};
+            fits_read_keyword(fptr1, const_cast<char*>(k.c_str()), value, comment, &status);
+            if (status != 0) {
+                status = 0;
+                continue;
+            }
+
+            if (value[0] == '\'') {
+                for (uint_t i = 79; i != npos; --i) {
+                    if (value[i] == '\'') {
+                        value[i] = '\0';
+                        break;
+                    }
+                }
+
+                fits_update_key(fptr2, TSTRING, const_cast<char*>(k.c_str()), value+1, comment,
+                    &status);
+            } else {
+                double d;
+                from_string(value, d);
+                fits_update_key(fptr2, TDOUBLE, const_cast<char*>(k.c_str()), &d, comment, &status);
+            }
+        }
+
+        fits_close_file(fptr1, &status);
+        fits_close_file(fptr2, &status);
+    } catch (fits::exception& e) {
+        error(e.msg);
+        if (fptr1) fits_close_file(fptr1, &status);
+        if (fptr2) fits_close_file(fptr2, &status);
         return false;
     }
 
