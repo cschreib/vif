@@ -1764,4 +1764,81 @@ bool make_psf(vec1u dims, double x0, double y0, const std::string& psf_model, ve
     return true;
 }
 
+using filter_bank_t = vec_t<1, filter_t>;
+using filter_db_t = std::map<std::string, std::string>;
+
+filter_db_t read_filter_db(const std::string& filename) {
+    std::ifstream file(filename);
+
+    filter_db_t db;
+    if (!file.is_open()) {
+        error("read_filter_db: cannot find '"+filename+"'");
+        return db;
+    }
+
+    std::string db_dir = file::get_directory(filename);
+
+    while (!file.eof()) {
+        std::string line;
+        std::getline(file, line);
+        vec1s slice = split(line, "=");
+        if (slice.size() != 2) continue;
+
+        db.insert(std::make_pair(slice[0], db_dir+slice[1]));
+    }
+
+    return db;
+}
+
+filter_t get_filter(const filter_db_t& db, const std::string& str) {
+    auto iter = db.find(str);
+    if (iter == db.end()) {
+        warning("get_filter: unknown filter '", str,"'");
+        uint_t best_d = -1;
+        vec1s candidates;
+        for (auto& i : db) {
+            uint_t d = distance(str, i.first);
+            if (d < best_d) {
+                best_d = d;
+                candidates.data.clear();
+                candidates.data.push_back(i.first);
+            } else if (d == best_d) {
+                candidates.data.push_back(i.first);
+            }
+        }
+
+        if (candidates.size() == 1) {
+            note("get_filter: did you mean '", candidates[0], "'? ");
+        } else if (!candidates.empty()) {
+            note("get_filter: did you mean one of ", candidates, "?");
+        }
+
+        return filter_t();
+    } else {
+        filter_t f;
+        fits::read_table(iter->second, ftable(f.lam, f.res));
+        f.rlam = integrate(f.lam, f.res*f.lam);
+        return f;
+    }
+}
+
+template<typename Type = std::string>
+filter_bank_t get_filters(const filter_db_t& db, const vec_t<1,Type>& str) {
+    filter_bank_t fils;
+    for (auto& s : str) {
+        fils.push_back(get_filter(db, s));
+    }
+
+    return fils;
+}
+
+void print_filters(const filter_db_t& db) {
+    for (auto& sf : db) {
+        filter_t f;
+        fits::read_table(sf.second, ftable(f.lam, f.res));
+        f.rlam = integrate(f.lam, f.res*f.lam);
+        print(sf.first, ": ", f.rlam);
+    }
+}
+
 #endif

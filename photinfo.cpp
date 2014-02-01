@@ -1,13 +1,18 @@
 #include <phypp.hpp>
-#include <filters.hpp>
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        print_filters();
         return 0;
     }
 
     read_args(argc-1, argv+1, arg_list(data_dir));
+
+    auto fdb = read_filter_db(data_dir+"/fits/filters/db.dat");
+
+    if (std::string(argv[1]) == "list") {
+        print_filters(fdb);
+        return 0;
+    }
 
     struct {
         vec1d ra, dec;
@@ -28,7 +33,7 @@ int main(int argc, char* argv[]) {
     if (cat.lambda.empty()) {
         cat.lambda = fltarr(cat.bands.size());
         for (uint_t i = 0; i < cat.bands.size(); ++i) {
-            auto filter = get_filter(cat.bands[i]);
+            auto filter = get_filter(fdb, cat.bands[i]);
             cat.lambda[i] = filter.rlam;
         }
     }
@@ -90,9 +95,8 @@ int main(int argc, char* argv[]) {
 
                 vec1u central = idg3s[where(in_convex_hull(cat.ra[idg3s], cat.dec[idg3s], hull, hx, hy))];
                 if (!central.empty()) {
-                    auto res = qxmatch(cat.ra[central], cat.dec[central], cat.ra[central], cat.dec[central],
-                        keywords(_self(true), _thread(central.size() > 800 ? 22 : 1)));
-
+                    qxmatch_params p; p.thread = central.size() > 800 ? 2 : 1;
+                    auto res = qxmatch(cat.ra[central], cat.dec[central], p);
                     mindist[i] = min(res.d);
                 }
             }
