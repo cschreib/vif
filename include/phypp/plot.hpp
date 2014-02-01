@@ -762,6 +762,8 @@ namespace plot {
         e.stroke();
     }
 
+    // TODO: WIP
+    /*
     void draw_axis(eps& e, declare_keywords(_ltit(""), _btit(""), _rtit(""), _ttit(""))) {
         bool inset = false;
         float ix0 = 0.0f, iy0 = 0.0f, ix1 = 0.0f, iy1 = 0.0f;
@@ -804,6 +806,7 @@ namespace plot {
             e.view_pop();
         }
     }
+    */
 }
 
 #endif

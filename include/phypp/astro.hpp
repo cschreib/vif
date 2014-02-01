@@ -378,16 +378,36 @@ qxmatch_res qxmatch_restore(const std::string& file) {
     return r;
 }
 
-template<typename C1, typename C2, typename ... Args,
+struct qxmatch_params {
+    uint_t thread = 1u;
+    uint_t nth = 1u;
+    bool verbose = false;
+    bool self = false;
+};
+
+template<typename C1, typename C2,
     typename enable = typename std::enable_if<!is_vec<C1>::value>::type>
-qxmatch_res qxmatch(const C1& cat1, const C2& cat2, Args&& ... args) {
-    return qxmatch(cat1.ra, cat1.dec, cat2.ra, cat2.dec, std::forward<Args>(args)...);
+qxmatch_res qxmatch(const C1& cat1, const C2& cat2, qxmatch_params params = qxmatch_params{}) {
+    return qxmatch(cat1.ra, cat1.dec, cat2.ra, cat2.dec, params);
+}
+
+template<typename C1, typename enable = typename std::enable_if<!is_vec<C1>::value>::type>
+qxmatch_res qxmatch(const C1& cat1, qxmatch_params params = qxmatch_params{}) {
+    return qxmatch(cat1.ra, cat1.dec, params);
+}
+
+template<typename TypeR1, typename TypeD1>
+qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
+    qxmatch_params params = qxmatch_params{}) {
+    params.self = true;
+    return qxmatch(ra1, dec1, ra1, dec1, params);
 }
 
 template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
 qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
-    declare_keywords(_thread(1u), _nth(1u), _verbose(false), _self(false))) {
+    qxmatch_params params = qxmatch_params{}) {
+
     phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
         ra1.dims, " vs ", dec1.dims, ")");
     phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
@@ -404,8 +424,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const uint_t n1 = n_elements(ra1);
     const uint_t n2 = n_elements(ra2);
 
-    const uint_t nth = clamp(get_keyword(_nth), 1u, npos);
-    const bool self = get_keyword(_self);
+    const uint_t nth = clamp(params.nth, 1u, npos);
 
     qxmatch_res res;
     res.id = replicate(npos, nth, n1);
@@ -443,17 +462,16 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         }
     };
 
-    const uint_t nthread = get_keyword(_thread);
-    if (nthread <= 1) {
+    if (params.thread <= 1) {
         // When using a single thread, all the work is done in the main thread
         auto p = progress_start(n1);
         for (uint_t i = 0; i < n1; ++i) {
             for (uint_t j = 0; j < n2; ++j) {
-                if (self && i == j) continue;
+                if (params.self && i == j) continue;
                 work(i,j,res);
             }
 
-            if (get_keyword(_verbose)) print_progress(p, i);
+            if (params.verbose) print_progress(p, i);
         }
     } else {
         // When using more than one thread, the work load is evenly separated between all the
@@ -461,30 +479,30 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         std::atomic<uint_t> iter(0);
 
         // Create the thread pool and launch the threads
-        std::vector<qxmatch_res> vres(nthread);
+        std::vector<qxmatch_res> vres(params.thread);
         for (auto& r : vres) {
             r.id = replicate(npos, nth, n1);
             r.d  = dblarr(nth, n1)+dinf;
             r.rid = replicate(npos, n2);
             r.rd  = dblarr(n2)+dinf;
         }
-        vec1u tbeg(nthread);
-        vec1u tend(nthread);
-        auto pool = thread::pool(nthread);
+        vec1u tbeg(params.thread);
+        vec1u tend(params.thread);
+        auto pool = thread::pool(params.thread);
         uint_t total = 0;
-        uint_t assigned = floor(n1/float(nthread));
-        for (uint_t t = 0; t < nthread; ++t) {
-            if (t == nthread-1) {
+        uint_t assigned = floor(n1/float(params.thread));
+        for (uint_t t = 0; t < params.thread; ++t) {
+            if (t == params.thread-1) {
                 assigned = n1 - total;
             }
 
             tbeg[t] = total;
             tend[t] = total+assigned;
 
-            pool[t].start([&iter, &work, &vres, t, total, self, assigned, n2]() {
+            pool[t].start([&iter, &work, &vres, t, total, params, assigned, n2]() {
                 for (uint_t i = total; i < total+assigned; ++i) {
                     for (uint_t j = 0; j < n2; ++j) {
-                        if (self && i == j) continue;
+                        if (params.self && i == j) continue;
                         work(i,j,vres[t]);
                     }
 
@@ -501,7 +519,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         auto p = progress_start(n1);
         while (iter < n1) {
             thread::sleep_for(0.2);
-            if (get_keyword(_verbose)) print_progress(p, iter);
+            if (params.verbose) print_progress(p, iter);
         }
 
         // By now, all threads should have ended their tasks.
@@ -511,7 +529,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         }
 
         // Merge back the results of each thread
-        for (uint_t t = 0; t < nthread; ++t) {
+        for (uint_t t = 0; t < params.thread; ++t) {
             auto ids = rgen(tend[t] - tbeg[t]) + tbeg[t];
             res.id(_,ids) = vres[t].id(_,ids);
             res.d(_,ids) = vres[t].d(_,ids);
@@ -566,12 +584,16 @@ id_pair xmatch_clean_best(const qxmatch_res& r) {
     return c;
 }
 
-void xmatch_check_lost(const id_pair& p, declare_keywords(_save(""))) {
+void xmatch_check_lost(const id_pair& p) {
     if (n_elements(p.lost) != 0) {
         warning(n_elements(p.lost), " sources failed to cross match");
-        if (!get_keyword(_save).empty()) {
-            fits::write_table(get_keyword(_save), ftable(p.lost));
-        }
+    }
+}
+
+void xmatch_save_lost(const id_pair& p, const std::string& save) {
+    if (n_elements(p.lost) != 0) {
+        warning(n_elements(p.lost), " sources failed to cross match");
+        fits::write_table(save, ftable(p.lost));
     }
 }
 
@@ -817,9 +839,8 @@ private :
             qxmatch_res xm;
 
             if (rematch) {
-                xm = qxmatch(cra[sel], cdec[sel], ra, dec,
-                    keywords(_nth(2), _thread(4), _verbose(true))
-                );
+                qxmatch_params p; p.nth = 2; p.thread = 4; p.verbose = true;
+                xm = qxmatch(cra[sel], cdec[sel], ra, dec, p);
 
                 fits::write_table(file, ftable(
                     sel, ngal, xm.id, xm.d, xm.rid, xm.rd

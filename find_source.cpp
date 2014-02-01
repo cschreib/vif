@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    auto res = qxmatch(tra, tdec, cra, cdec, keywords(_nth(nsrc)));
+    qxmatch_params p; p.nth = nsrc;
+    auto res = qxmatch(tra, tdec, cra, cdec, p);
 
     for (uint_t i = 0; i < nsrc; ++i) {
         std::string data;
