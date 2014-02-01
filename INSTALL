@@ -1,20 +1,34 @@
 Pre-requisites
 ==============
+
 1) You must have a recent compiler to compile C++ code. Either 'clang' (>= 3.3)
    or 'gcc' (>= 4.8) will do.
-2) Installing 'gdb' is recommended but not mandatory.
-3) You must have the following libraries installed: 'gsl', 'cfitsio', 'CCfits',
-   'wcslib', 'lapack', 'libclang', 'llvm' and 'tcmalloc'.
+
+2) You must have the following libraries installed: 'cfitsio', 'CCfits',
+   'wcslib', 'lapack', 'libclang'. See "Appendix: installing dependencies"
+   below for instructions on how to install these libraries for different
+   operating systems.
+
+3) Installing also the 'gsl' and 'tcmalloc' libraries is recommended but not
+   mandatory.
+
+4) Installing the GNU debugger 'gdb' is recommended but not mandatory.
 
 
 Install the 'phy++' library with CMake
 ======================================
-1) Make a new directory called 'build' and navigate to it using a terminal.
+
+1) Make a new directory called 'build' inside the main phy++ directory and
+   navigate to it using a terminal.
+
 2) In this directory, call 'cmake ../'. If you have properly installed all the
    required libraries, CMake will find them and configure the project
    accordingly.
+
 3) Build the library by calling 'make'.
+
 4) Install the library by calling 'sudo make install'.
+
 5) As the install script suggests, you should then source the ".phypprc" file
    that was just created in your home directory so that the phy++ configuration
    is loaded in all your terminals. This can be done by adding a line in your
@@ -23,9 +37,76 @@ Install the 'phy++' library with CMake
 
 Veryfing installation
 =====================
+
 1) Open a new terminal so that the phy++ configuration is loaded.
+
 2) Go to the 'test' subfolder.
-3) Yype 'phy++ unit_test'.
+
+3) Type 'phy++ unit_test'.
+
 4) This should print a series of tests, eventually saying that all tests were
    passed. If this is not the case, then either the library has not been
    properly installed, or your compiler is either old or broken.
+
+
+Appendix: installing dependencies (ubuntu and derivatives)
+==========================================================
+
+Installing the required libraries in ubuntu-based systems is easy. You first
+need to run the following command:
+  sudo apt-get install wcslib-dev libcfitsio3-dev libccfits-dev liblapack-dev
+
+If you want, you can also install the GSL by adding 'libgsl-dev' to the above
+command, tcmalloc by addind 'google-perftools', and the GNU debugger with
+'gdb'.
+
+Lastly, you will need to get a recent version of libclang.
+
+If running ubuntu Trusty Tarh (14.04) and above:
+  sudo apt-get install libclang-dev
+
+If running ubuntu Saucy Salamander (13.10):
+  sudo apt-get install libclang-3.3-dev
+
+If running any other ubuntu distribution, the packages available in the
+official repositories of ubuntu are too old. But you can still get the latest
+versions from unofficial repositories. To do so, add the following two lines in
+/etc/apt/sources.list:
+  deb http://ppa.launchpad.net/h-rayflood/llvm/ubuntu precise main
+  deb-src http://ppa.launchpad.net/h-rayflood/llvm/ubuntu precise main
+Then run:
+  sudo apt-get update
+  sudo apt-get install libclang-3.3-dev
+You may install any other version provided it is > 3.3.
+
+
+Appendix: installing dependencies (from source)
+===============================================
+
+Alternatively, you may also build all the dependencies from source. This will
+take longer, and may require that you install sub-dependencies, but should work
+if everything else fails.
+
+Since the build system of all these libraries can vary, please refer to each
+libraries' documentation for precise build instructions.
+
+cfitsio:
+http://heasarc.nasa.gov/fitsio/fitsio.html
+
+CCfits:
+http://heasarc.gsfc.nasa.gov/fitsio/CCfits/
+
+wcslib:
+http://www.atnf.csiro.au/people/mcalabre/WCS/
+
+lapack:
+http://www.netlib.org/lapack/
+
+libclang (llvm toolchain):
+http://llvm.org/releases/download.html
+
+gsl:
+http://www.gnu.org/software/gsl/
+
+tcmalloc (google perf tools):
+http://code.google.com/p/gperftools/
