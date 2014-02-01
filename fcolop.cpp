@@ -8,12 +8,16 @@ bool remove_columns(int argc, char* argv[], const std::string& file);
 bool transpose_columns(int argc, char* argv[], const std::string& file);
 bool rows_to_columns(int argc, char* argv[], const std::string& file);
 bool copy_wcs_header(int argc, char* argv[], const std::string& file);
+bool show_header(int argc, char* argv[], const std::string& file);
+bool edit_keyword(int argc, char* argv[], const std::string& file);
 bool move_meta_columns(int argc, char* argv[], const std::string& file);
 
 void print_remove_help();
 void print_transpose_help();
 void print_r2c_help();
 void print_cpwcs_help();
+void print_hdr_help();
+void print_editkwd_help();
 void print_meta_help();
 
 int main(int argc, char* argv[]) {
@@ -35,6 +39,10 @@ int main(int argc, char* argv[]) {
             print_r2c_help();
         } else if (op == "cpwcs") {
             print_cpwcs_help();
+        } else if (op == "hdr") {
+            print_hdr_help();
+        } else if (op == "editkwd") {
+            print_editkwd_help();
         } else if (op == "meta") {
             print_meta_help();
         } else {
@@ -54,6 +62,10 @@ int main(int argc, char* argv[]) {
             rows_to_columns(argc-2, argv+2, file);
         } else if (op == "cpwcs") {
             copy_wcs_header(argc-2, argv+2, file);
+        } else if (op == "hdr") {
+            show_header(argc-2, argv+2, file);
+        } else if (op == "editkwd") {
+            edit_keyword(argc-2, argv+2, file);
         } else if (op == "meta") {
             move_meta_columns(argc-2, argv+2, file);
         } else {
@@ -139,7 +151,7 @@ bool remove_columns(int argc, char* argv[], const std::string& file) {
 
         fits_close_file(fptr, &status);
     } catch (fits::exception& e) {
-        error(e.msg);
+        print(e.msg);
         if (fptr) fits_close_file(fptr, &status);
         return false;
     }
@@ -246,7 +258,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
 
         fits_close_file(fptr, &status);
     } catch (fits::exception& e) {
-        error(e.msg);
+        print(e.msg);
         if (fptr) fits_close_file(fptr, &status);
         return false;
     }
@@ -411,7 +423,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
     } catch (fits::exception& e) {
         if (ifptr) fits_close_file(ifptr, &status);
         if (ofptr) fits_close_file(ofptr, &status);
-        error(e.msg);
+        print(e.msg);
         return false;
     }
 
@@ -507,9 +519,227 @@ bool copy_wcs_header(int argc, char* argv[], const std::string& file) {
         fits_close_file(fptr1, &status);
         fits_close_file(fptr2, &status);
     } catch (fits::exception& e) {
-        error(e.msg);
+        print(e.msg);
         if (fptr1) fits_close_file(fptr1, &status);
         if (fptr2) fits_close_file(fptr2, &status);
+        return false;
+    }
+
+    return true;
+}
+
+void print_hdr_help() {
+    using namespace format;
+
+    paragraph("The program will just display the content of the provided FITS file's header.");
+
+    header("List of available command line options:");
+    bullet("raw", "[flag] do not attempt to pretty print the header, just dump it as it is");
+    bullet("verbose", "[flag] print additional information");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool show_header(int argc, char* argv[], const std::string& file) {
+    bool raw = false;
+    bool help = false;
+    bool verbose = false;
+    read_args(argc, argv, arg_list(raw, help, verbose));
+
+    if (help) {
+        print_remove_help();
+        return true;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_image(&fptr, file.c_str(), READONLY, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+
+        bool table = false;
+        int naxis = 0;
+        fits_get_img_dim(fptr, &naxis, &status);
+        if (naxis == 0) {
+            fits_close_file(fptr, &status);
+            fits_open_table(&fptr, file.c_str(), READONLY, &status);
+            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            if (verbose) print("loaded table file");
+            table = true;
+        } else {
+            if (verbose) print("loaded image file");
+        }
+
+        if (raw) {
+            // Read the header as a string
+            char* hstr = nullptr;
+            int nkeys  = 0;
+            fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+            std::string header = hstr;
+            free(hstr);
+
+            for (uint_t i = 0; i < header.size(); i += 80) {
+                print(header.substr(i, std::min(header.size()-i, std::size_t(80))));
+            }
+        } else {
+            if (table) {
+                // Print column names, types and dimensions 'phy++' style, then other keywords
+                print("WIP");
+            } else {
+                // Print image dimensions and type, plus other keywords
+                print("WIP");
+            }
+        }
+
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        print(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
+void print_editkwd_help() {
+    using namespace format;
+
+    paragraph("The program will allow you to edit manually any keyword within this FITS file. It "
+        "is an interactive tool, that first asks your for the name of the keyword, then for the "
+        "new value");
+
+    header("List of available command line options:");
+    bullet("verbose", "[flag] print additional information");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool edit_keyword(int argc, char* argv[], const std::string& file) {
+    bool help = false;
+    bool verbose = false;
+    read_args(argc, argv, arg_list(help, verbose));
+
+    if (help) {
+        print_remove_help();
+        return true;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_image(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+
+        bool table = false;
+        int naxis = 0;
+        fits_get_img_dim(fptr, &naxis, &status);
+        if (naxis == 0) {
+            fits_close_file(fptr, &status);
+            fits_open_table(&fptr, file.c_str(), READWRITE, &status);
+            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            if (verbose) print("loaded table file");
+            table = true;
+        } else {
+            if (verbose) print("loaded image file");
+        }
+
+        while (true) {
+            print("please type the name of the keyword you want to edit (empty to exit):");
+            std::string name;
+            std::cout << "> ";
+            std::getline(std::cin, name);
+            name = toupper(trim(name));
+            if (name.empty()) break;
+
+            char value[80];
+            char comment[80];
+            bool newk = false;
+            fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
+            if (status != 0) {
+                status = 0;
+                newk = true;
+                std::cout << "note: this keyword does not exist, do you want to create it? (y/n) "
+                    << std::flush;
+
+                std::string line;
+                bool stop = false;
+                while (line.empty()) {
+                    std::getline(std::cin, line);
+                    line = tolower(line);
+                    if (line == "y" || line == "yes") break;
+                    if (line == "n" || line == "no") {
+                        stop = true;
+                        break;
+                    }
+
+                    line.clear();
+                    std::cout << "error: please answer either 'yes' (y) or 'no' (n): "
+                        << std::flush;
+                }
+
+                if (stop) {
+                    continue;
+                }
+
+                print("");
+            }
+
+            if (!newk) {
+                print(name, " = ", value, " (", comment, ")");
+            }
+
+            print("please type the new value for this keyword (empty to abort):");
+            std::string new_value;
+            std::cout << "> ";
+            std::getline(std::cin, new_value);
+            new_value = trim(new_value);
+            if (new_value.empty()) break;
+
+            double d;
+            bool is_number = from_string(new_value, d);
+
+            if (!is_number) {
+                if (new_value[0] == '\'') {
+                    new_value.erase(0,1);
+                    for (uint_t i = new_value.size()-1; i != npos; --i) {
+                        if (new_value[i] == '\'') {
+                            new_value.resize(i);
+                            break;
+                        }
+                    }
+                }
+
+                if (newk) {
+                    fits_write_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
+                        const_cast<char*>(new_value.c_str()), comment, &status);
+                    fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                } else {
+                    fits_update_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
+                        const_cast<char*>(new_value.c_str()), comment, &status);
+                    fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                }
+            } else {
+                if (newk) {
+                    fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                        &status);
+                    fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                } else {
+                    fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                        &status);
+                    fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                }
+            }
+
+            fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
+            print(name, " = ", value, " (", comment, ")");
+        }
+
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        print(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
         return false;
     }
 
@@ -680,7 +910,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
         fits_close_file(fptr, &status);
         fits_close_file(ofptr, &status);
     } catch (fits::exception& e) {
-        error(e.msg);
+        print(e.msg);
         if (fptr) fits_close_file(fptr, &status);
         if (ofptr) fits_close_file(ofptr, &status);
         return false;
@@ -732,6 +962,9 @@ void print_help() {
     bullet("remove", "remove the specified columns from this FITS file");
     bullet("transpose", "transpose the specified columns within this FITS file");
     bullet("r2c", "convert a row oriented FITS table to a column oriented one");
+    bullet("cpwcs", "copy the WCS keywords from this FIST file into another");
+    bullet("hdr", "print the header of the provided FITS file");
+    bullet("editkwd", "edit keywords of the provided FIST file manually");
     bullet("meta", "shift all 'meta' columns into a new extension so that the file can be read in "
         "programs like TOPCAT that expect a single invariant dimension for all columns");
     print("");
