@@ -185,7 +185,7 @@ std::string erase_end(std::string s, uint_t n) {
     if (n >= s.size()) {
         s.clear();
     } else {
-        s.erase(ts.size()-n, n);
+        s.erase(s.size()-n, n);
     }
 
     return s;
