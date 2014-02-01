@@ -1,2 +1,2 @@
-ophy++ fcolop
-mv fcolop bin
+ophy++ fitstool
+mv fitstool bin
