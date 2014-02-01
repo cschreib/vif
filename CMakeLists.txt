@@ -65,7 +65,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 # find required libraries
 find_package(LibClang 3)
-find_package(LLVM 3)
 find_package(CFITSIO)
 find_package(CCFITS)
 find_package(WCSLib)
@@ -94,7 +93,7 @@ endif()
 if (NOT TCMALLOC_LIBRARY)
     message("note: could not find Google's tcmalloc library: installing this library will make phy++ programs slightly faster")
 else()
-    set(PHYPP_ADD_OPT_COMPILER_FLAGS ${PHYPP_ADD_OPT_COMPILER_FLAGS} " -l${TCMALLOC_LIBRARY}")
+    set(PHYPP_ADD_OPT_COMPILER_FLAGS ${PHYPP_ADD_OPT_COMPILER_FLAGS} " -ltcmalloc")
 endif()
 
 if (NOT PROFILER_LIBRARY)
@@ -112,6 +111,8 @@ add_subdirectory(tools/qxmatch)
 set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
 set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
 file(WRITE ${PHYPP_OUTPUT_CONFIG} "# phy++ configuration file\n\n")
+
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_INCLUDE_DIR=-I\"${CMAKE_INSTALL_PREFIX}/include\"\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=${PROJECT_SOURCE_DIR}/\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}data/\n\n")
@@ -134,7 +135,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
     if (PROFILER_LIBRARY)
-        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-l${PROFILER_LIBRARY}\n")
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
     endif()
 endif()
 
@@ -153,4 +154,4 @@ endif()
 
 # install config
 install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION $ENV{HOME} COMPONENT config)
-install(CODE "message(\"NOTE: to finalize the installation, please source $ENV{HOME}/${PHYPP_OUTPUT_CONFIG_FILE} in your startup script (~/.bashrc).\")")
+install(CODE "message(\"note: to finalize the installation, please source $ENV{HOME}/${PHYPP_OUTPUT_CONFIG_FILE} in your startup script (~/.bashrc).\")")
