@@ -1,6 +1,4 @@
 #include <clang-c/Index.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/FormattedStream.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -11,7 +9,59 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
-llvm::raw_fd_ostream out(STDERR_FILENO, false, true);
+std::ostream& out = std::cerr;
+
+// Note: code for coloring the terminal is inspired from LLVM
+#define COLOR(FGBG, CODE, BOLD) "\033[0;" BOLD FGBG CODE "m"
+
+#define ALLCOLORS(FGBG,BOLD) {\
+    COLOR(FGBG, "0", BOLD),\
+    COLOR(FGBG, "1", BOLD),\
+    COLOR(FGBG, "2", BOLD),\
+    COLOR(FGBG, "3", BOLD),\
+    COLOR(FGBG, "4", BOLD),\
+    COLOR(FGBG, "5", BOLD),\
+    COLOR(FGBG, "6", BOLD),\
+    COLOR(FGBG, "7", BOLD)\
+  }
+
+static const char color_codes[2][8][10] = {
+    ALLCOLORS("3",""), ALLCOLORS("3","1;")
+};
+
+#undef COLOR
+#undef ALLCOLORS
+
+namespace color {
+    enum color_value : char {
+        black = 0, red, green, yellow, blue, magenta, cyan, white, normal = -1
+    };
+
+    std::ostream& reset(std::ostream& o) {
+        return o << "\033[0m";
+    }
+
+    std::ostream& bold(std::ostream& o) {
+        return o << "\033[1m";
+    }
+
+    struct set {
+        color_value col_;
+        bool bold_;
+
+        explicit set(color_value col, bool bold = false) : col_(col), bold_(bold) {}
+    };
+
+    std::ostream& operator << (std::ostream& o, set s) {
+        if (s.col_ == color::normal) {
+            reset(o);
+            if (s.bold_) bold(o);
+            return o;
+        } else {
+            return o << color_codes[s.bold_ ? 1 : 0][(char)s.col_ & 7];
+        }
+    }
+}
 
 template<typename T>
 void get_location(T& t, CXSourceRange s) {
@@ -345,7 +395,6 @@ void format_range(CXDiagnostic d, CXSourceLocation sl) {
     }
 
     out << line << '\n';
-    out.changeColor(llvm::raw_ostream::GREEN, true);
 
     std::string highlight = std::string(width, ' ');
 
@@ -374,28 +423,27 @@ void format_range(CXDiagnostic d, CXSourceLocation sl) {
         highlight[cloc-1 - coffset] = '^';
     }
 
-    out << highlight << '\n';
-    out.changeColor(llvm::raw_ostream::WHITE, false);
+    out << color::set(color::green, true) << highlight << color::reset << '\n';
 }
 
 void format_diagnostic(CXDiagnostic d) {
-    auto color = llvm::raw_ostream::WHITE;
+    auto col = color::normal;
     std::string kind = "";
     bool bold_message = true;
 
     switch (clang_getDiagnosticSeverity(d)) {
     case CXDiagnostic_Note :
-        color = llvm::raw_ostream::BLACK;
+        col = color::black;
         kind = "note: ";
         bold_message = false;
         break;
     case CXDiagnostic_Warning :
-        color = llvm::raw_ostream::MAGENTA;
+        col = color::magenta;
         kind = "warning: ";
         break;
     case CXDiagnostic_Error :
     case CXDiagnostic_Fatal :
-        color = llvm::raw_ostream::RED;
+        col = color::red;
         kind = "error: ";
         break;
     case CXDiagnostic_Ignored :
@@ -414,25 +462,33 @@ void format_diagnostic(CXDiagnostic d) {
         clang_disposeString(tmp);
     }
 
-    out.changeColor(llvm::raw_ostream::WHITE, true);
-    out << loc;
-    out.changeColor(color, true);
-    out << kind;
-    out.changeColor(llvm::raw_ostream::WHITE, bold_message);
-    out << message << "\n";
+    out << color::set(color::normal, true) << loc
+        << color::set(col, true) << kind
+        << color::set(color::normal, bold_message) << message
+        << color::reset << "\n";
 
-    out.changeColor(llvm::raw_ostream::WHITE, false);
     format_range(d, sl);
 
     format_diagnostics(clang_getChildDiagnostics(d));
-    out.flush();
-    out.resetColor();
+    out << std::flush;
+}
+
+bool file_exist(const std::string& file) {
+    std::fstream f(file);
+    return f.is_open();
 }
 
 int main(int argc, char* argv[]) {
     bool verbose = false;
 
     cpp = std::string(argv[1]) + ".cpp";
+
+    if (!file_exist(cpp)) {
+        std::cout << color::set(color::red, true) << "error: " << color::reset <<
+            "cannot find '" << cpp << "'" << std::endl;
+        return 1;
+    }
+
     std::string rname = argv[2];
 
     // Parse the file with clang
