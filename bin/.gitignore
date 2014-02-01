@@ -1,13 +1,10 @@
 phy++-refgen
 qxmatch*
 qstack*
-fitsh
+fitstool
 catinfo
 photinfo
-cpwcs
-fcolop
 find_source
 psffit
 getgal
 subsrc
-fitsr2c

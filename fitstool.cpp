@@ -956,8 +956,8 @@ bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force) {
 void print_help() {
     using namespace format;
 
-    print("fcolop v1.0");
-    header("Usage: fcolop operation [options]");
+    print("fitstool v1.0");
+    header("Usage: fitstool operation [options]");
     header("Available operations:");
     bullet("remove", "remove the specified columns from this FITS file");
     bullet("transpose", "transpose the specified columns within this FITS file");
@@ -969,7 +969,7 @@ void print_help() {
         "programs like TOPCAT that expect a single invariant dimension for all columns");
     print("");
     header("To learn more about each operations and see the list of avilable options, run "
-        "'fcolop operation help'.");
+        "'fitstool operation help'.");
 
     print("");
     paragraph("Copyright (c) 2014 C. Schreiber (corentin.schreiber@cea.fr)");
