@@ -63,13 +63,43 @@ file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
+# find required libraries
 find_package(LibClang 3)
 find_package(LLVM 3)
 find_package(CFITSIO)
 find_package(CCFITS)
 find_package(WCSLib)
 find_package(LAPACK)
+
+# find optional libraries
 find_package(GSL)
+find_package(GooglePerfTools)
+
+set(PHYPP_ADD_COMPILER_FLAGS "")
+set(PHYPP_ADD_OPT_COMPILER_FLAGS "")
+
+# handle conditional GSL support
+if (NOT GSL_FOUND)
+    message("note: the GSL library could not be found: certain mathematical functions will not be available, but apart from that the library will function properly")
+endif()
+if (NO_GSL)
+    message("note: the GSL library has been disabled: certain mathematical functions will not be available, but apart from that the library will function properly")
+endif()
+if (NOT GSL_FOUND OR NO_GSL)
+    add_definitions(-DNO_GSL)
+    set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -DNO_GSL")
+endif()
+
+# handle conditional Google perftools support
+if (NOT TCMALLOC_LIBRARY)
+    message("note: could not find Google's tcmalloc library: installing this library will make phy++ programs slightly faster")
+else()
+    set(PHYPP_ADD_OPT_COMPILER_FLAGS ${PHYPP_ADD_OPT_COMPILER_FLAGS} " -l${TCMALLOC_LIBRARY}")
+endif()
+
+if (NOT PROFILER_LIBRARY)
+    message("note: could not find Google's profiler library: will not be able to profile phy++ programs, but apart from that the library will function properly")
+endif()
 
 # build the refgen tool
 add_subdirectory(tools/refgen)
@@ -83,8 +113,8 @@ set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
 set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
 file(WRITE ${PHYPP_OUTPUT_CONFIG} "# phy++ configuration file\n\n")
 
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=${PROJECT_SOURCE_DIR}\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}/data\n\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=${PROJECT_SOURCE_DIR}/\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}data/\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
@@ -93,25 +123,33 @@ file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DREFLECTION_STA
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 -ltcmalloc\"\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
+    if (PROFILER_LIBRARY)
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-l${PROFILER_LIBRARY}\n")
+    endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Wall\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Wall ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 -ltcmalloc\"\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
+    if (PROFILER_LIBRARY)
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-l${PROFILER_LIBRARY}\n")
+    endif()
 endif()
 
 # install headers
 file(GLOB files ${PROJECT_SOURCE_DIR}/include/phypp/*.hpp)
-install(FILES ${PROJECT_SOURCE_DIR}/include/phypp.hpp DESTINATION include)
 install(FILES ${files} DESTINATION include/phypp)
+install(FILES ${PROJECT_SOURCE_DIR}/include/phypp.hpp DESTINATION include)
 
 # install build scripts
-install(PROGRAMS bin/phy++ bin/ophy++ bin/gphy++ bin/gophy++ bin/prophy++
+install(PROGRAMS ${PROJECT_SOURCE_DIR}/bin/phy++ ${PROJECT_SOURCE_DIR}/bin/ophy++
+    ${PROJECT_SOURCE_DIR}/bin/gphy++ ${PROJECT_SOURCE_DIR}/bin/gophy++
     DESTINATION bin COMPONENT scripts)
+if (PROFILER_LIBRARIES)
+    install(PROGRAMS ${PROJECT_SOURCE_DIR}/bin/prophy++ DESTINATION bin COMPONENT scripts)
+endif()
 
 # install config
 install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION $ENV{HOME} COMPONENT config)

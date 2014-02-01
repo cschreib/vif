@@ -8,3 +8,6 @@ add_executable(qxmatch qxmatch.cpp)
 
 target_link_libraries(qxmatch ${CCFITS_LIBRARIES})
 target_link_libraries(qxmatch ${CFITSIO_LIBRARIES})
+if (TCMALLOC_LIBRARY)
+    target_link_libraries(qxmatch ${TCMALLOC_LIBRARIES})
+endif()

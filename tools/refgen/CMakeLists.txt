@@ -12,5 +12,8 @@ add_executable(phy++-refgen refgen.cpp)
 
 target_link_libraries(phy++-refgen ${CLANG_LIBS})
 target_link_libraries(phy++-refgen ${LLVM_MODULE_LIBS})
+if (TCMALLOC_LIBRARY)
+    target_link_libraries(phy++-refgen ${TCMALLOC_LIBRARIES})
+endif()
 
 install(TARGETS phy++-refgen RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
