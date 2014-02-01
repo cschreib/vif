@@ -4,6 +4,16 @@ void print_help();
 
 bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force = false);
 
+bool remove_columns(int argc, char* argv[], const std::string& file);
+bool transpose_columns(int argc, char* argv[], const std::string& file);
+bool rows_to_columns(int argc, char* argv[], const std::string& file);
+bool move_meta_columns(int argc, char* argv[], const std::string& file);
+
+void print_remove_help();
+void print_transpose_help();
+void print_r2c_help();
+void print_meta_help();
+
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
@@ -11,33 +21,84 @@ int main(int argc, char* argv[]) {
     }
 
     std::string file = argv[1];
-    if (!file::exists(file)) {
-        error("cannot open file '"+file+"'");
-        return 1;
-    }
-
     std::string op = tolower(argv[2]);
 
-    fitsfile* fptr;
-    int status = 0;
-    fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-    fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
-
-    if (op == "remove") {
-        vec1s cols;
-        bool force = false;
-        read_args(argc-2, argv+2, arg_list(cols, force));
-
-        if (cols.empty()) {
-            error("missing column(s) name(s)");
-            print_help();
-            return 0;
+    if (op == "help") {
+        op = file;
+        if (op == "remove") {
+            print_remove_help();
+        } else if (op == "transpose") {
+            print_transpose_help();
+        } else if (op == "r2c") {
+            print_r2c_help();
+        } else if (op == "meta") {
+            print_meta_help();
+        } else {
+            error("unknown operation '", op, "'");
         }
+    } else {
+        if (!file::exists(file)) {
+            error("cannot open file '"+file+"'");
+            return 1;
+        }
+
+        if (op == "remove") {
+            remove_columns(argc-2, argv+2, file);
+        } else if (op == "transpose") {
+            transpose_columns(argc-2, argv+2, file);
+        } else if (op == "r2c") {
+            rows_to_columns(argc-2, argv+2, file);
+        } else if (op == "meta") {
+            move_meta_columns(argc-2, argv+2, file);
+        } else {
+            error("unknown operation '", op, "'");
+        }
+    }
+
+    return 0;
+}
+
+void print_remove_help() {
+    using namespace format;
+
+    paragraph("The program will remove the provided columns from this FITS file. Be warned that "
+        "the contained data is permantently lost.");
+
+    header("List of available command line options:");
+    bullet("cols", "[strings] list of columns to remove");
+    bullet("force", "[flag] do not ask for confirmation at each step");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool remove_columns(int argc, char* argv[], const std::string& file) {
+    vec1s cols;
+    bool force = false;
+    bool help = false;
+    read_args(argc, argv, arg_list(cols, force, help));
+
+    if (help) {
+        print_remove_help();
+        return true;
+    }
+
+    if (cols.empty()) {
+        error("missing column(s) name(s)");
+        print_remove_help();
+        return false;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_table(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1s fcols;
         cols = toupper(cols);
         if (!get_columns(cols, fptr, fcols, force)) {
-            return 0;
+            return true;
         }
 
         if (!force) {
@@ -50,7 +111,7 @@ int main(int argc, char* argv[]) {
                 if (line == "y" || line == "yes") break;
                 if (line == "n" || line == "no") {
                     fits_close_file(fptr, &status);
-                    return 0;
+                    return true;
                 }
                 line.clear();
                 std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
@@ -69,21 +130,58 @@ int main(int argc, char* argv[]) {
             fits_delete_col(fptr, id, &status);
             fits::phypp_check_cfitsio(status, "cannot remove column '"+col+"'");
         }
-    } else if (op == "transpose") {
-        vec1s cols;
-        bool force = false;
-        read_args(argc-2, argv+2, arg_list(cols, force));
 
-        if (cols.empty()) {
-            error("missing column(s) name(s)");
-            print_help();
-            return 0;
-        }
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        error(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
+void print_transpose_help() {
+    using namespace format;
+
+    paragraph("The program will transpose the provided 2D columns, effectively transforming a NxM "
+        "column into an MxN one. No data is lost in the process.");
+
+    header("List of available command line options:");
+    bullet("cols", "[strings] list of columns to transpose");
+    bullet("force", "[flag] do not ask for confirmation at each step");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool transpose_columns(int argc, char* argv[], const std::string& file) {
+    vec1s cols;
+    bool force = false;
+    bool help = false;
+    read_args(argc, argv, arg_list(cols, force, help));
+
+    if (help) {
+        print_transpose_help();
+        return true;
+    }
+
+    if (cols.empty()) {
+        error("missing column(s) name(s)");
+        print_transpose_help();
+        return false;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_table(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1s fcols;
         cols = toupper(cols);
         if (!get_columns(cols, fptr, fcols, force)) {
-            return 0;
+            return true;
         }
 
         for (auto& col : fcols) {
@@ -139,9 +237,212 @@ int main(int argc, char* argv[]) {
             );
             fits::phypp_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
         }
-    } else if (op == "meta") {
-        bool force = false;
-        read_args(argc-2, argv+2, arg_list(force));
+
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        error(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
+void print_r2c_help() {
+    using namespace format;
+
+    paragraph("The program will convert a row-oriented FITS file to a column-oriented FITS file. "
+        "No data is lost in the process.");
+
+    header("List of available command line options:");
+    bullet("out", "[string] path to the output file (has to be different than the input file)");
+    bullet("silent", "[flag] do not print information on the conversion process");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool rows_to_columns(int argc, char* argv[], const std::string& file) {
+    std::string out;
+    bool silent = false;
+    bool help = false;
+    read_args(argc, argv, arg_list(out, silent, help));
+
+    if (help) {
+        print_r2c_help();
+        return true;
+    }
+
+    if (out == file) {
+        error("output file cannot be equal to input file");
+        return false;
+    }
+
+    file::mkdir(file::get_directory(out));
+
+    if (!start_with(out, "!")) {
+        out = "!"+out;
+    }
+
+    fitsfile* ifptr = nullptr;
+    fitsfile* ofptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_table(&ifptr, file.c_str(), READONLY, &status);
+        fits::phypp_check_cfitsio(status, "cannot open '"+file+"'");
+
+        long nrow;
+        fits_get_num_rows(ifptr, &nrow, &status);
+        if (nrow == 1) {
+            error("this FITS file is already column-oriented");
+            fits_close_file(ifptr, &status);
+            return 1;
+        }
+
+        int ncol;
+        fits_get_num_cols(ifptr, &ncol, &status);
+        if (!silent) print("col=", ncol, ", row=", nrow);
+
+        fits_create_file(&ofptr, out.c_str(), &status);
+        fits::phypp_check_cfitsio(status, "cannot open '"+out+"'");
+        fits_create_tbl(ofptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
+
+        int oc = 1;
+        for (int c = 1; c <= ncol; ++c) {
+            // Read column info
+            int type;
+            long repeat, width;
+            fits_get_coltype(ifptr, c, &type, &repeat, &width, &status);
+            char name[80] = {0};
+            char comment[80];
+            fits_read_key(ifptr, TSTRING, const_cast<char*>(("TTYPE"+strn(c)).c_str()),
+                name, comment, &status);
+            char ittform[80] = {0};
+            fits_read_key(ifptr, TSTRING, const_cast<char*>(("TFORM"+strn(c)).c_str()),
+                ittform, comment, &status);
+            std::string itform = ittform;
+            itform = trim(ittform);
+
+            if (!silent) print(name);
+
+            // Convert it to a column oriented format
+            std::string tform, tdim;
+            long nelem = 1;
+            bool string = false;
+            if (itform.size() == 1) {
+                tform = strn(nrow)+itform;
+                tdim = "("+strn(nrow)+")";
+            } else {
+                {
+                    std::string tmp = itform; erase_end(tmp, 1);
+                    from_string(tmp, nelem);
+                }
+
+                if (itform.back() == 'A') {
+                    tform = strn(nrow*nelem)+'B';
+                    string = true;
+                } else {
+                    tform = strn(nrow*nelem)+itform.back();
+                }
+
+                tdim = "("+strn(nelem)+","+strn(nrow)+")";
+            }
+
+            if (string) {
+                // Read the input data
+                char nul[] = "?";
+                int nnul = 0;
+
+                std::vector<char> tdata(nrow*(nelem+1));
+                char** idata = new char*[nrow];
+                for (long i = 0; i < nrow; ++i) {
+                    idata[i] = tdata.data() + i*(nelem+1);
+                }
+
+                fits_read_col_str(ifptr, c, 1, 1, nrow, nul, idata, &nnul, &status);
+                fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
+
+                delete[] idata;
+
+                std::vector<char> data(nrow*nelem);
+                for (long i = 0; i < nrow; ++i) {
+                    for (long j = 0; j < nelem; ++j) {
+                        data[i*nelem+j] = tdata[i*(nelem+1)+j];
+                    }
+                }
+
+                // Write the output data
+                fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
+                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+                char tdim_com[] = "size of the multidimensional array";
+                fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+strn(c)).c_str()),
+                    const_cast<char*>(tdim.c_str()), tdim_com, &status);
+                fits_write_col(ofptr, TBYTE, oc, 1, 1, nelem*nrow, data.data(), &status);
+                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+            } else {
+                // Read the input data
+                long nul = 0;
+                int nnul = 0;
+                std::vector<char> data(width*nelem*nrow);
+                fits_read_col(ifptr, type, c, 1, 1, nelem*nrow, &nul, data.data(), &nnul, &status);
+                fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
+
+                // Write the output data
+                fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
+                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+                char tdim_com[] = "size of the multidimensional array";
+                fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+strn(c)).c_str()),
+                    const_cast<char*>(tdim.c_str()), tdim_com, &status);
+                fits_write_col(ofptr, type, oc, 1, 1, nelem*nrow, data.data(), &status);
+                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+            }
+
+            ++oc;
+        }
+
+        fits_close_file(ifptr, &status);
+        fits_close_file(ofptr, &status);
+    } catch (fits::exception& e) {
+        if (ifptr) fits_close_file(ifptr, &status);
+        if (ofptr) fits_close_file(ofptr, &status);
+        error(e.msg);
+        return false;
+    }
+
+    return true;
+}
+
+void print_meta_help() {
+    using namespace format;
+
+    paragraph("The program will identify 'meta' columns in a column oriented FITS table. It will "
+        "then move these columns to a new table within the FITS file, so that the file can be "
+        "open in programs that do not support meta columns (such as Topcat). No data is lost in "
+        "the process.");
+
+    header("List of available command line options:");
+    bullet("force", "[flag] do not ask for confirmation at each step");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool move_meta_columns(int argc, char* argv[], const std::string& file) {
+    bool force = false;
+    bool help = false;
+    read_args(argc, argv, arg_list(force, help));
+
+    if (help) {
+        print_meta_help();
+        return true;
+    }
+
+    fitsfile* fptr = nullptr;
+    fitsfile* ofptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_table(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1u dims;
         int ncols;
@@ -229,7 +530,7 @@ int main(int argc, char* argv[]) {
         if (mcols.empty()) {
             print("no meta data column");
             fits_close_file(fptr, &status);
-            return 0;
+            return true;
         }
 
         if (!force) {
@@ -252,14 +553,13 @@ int main(int argc, char* argv[]) {
                 if (line == "y" || line == "yes") break;
                 if (line == "n" || line == "no") {
                     fits_close_file(fptr, &status);
-                    return 0;
+                    return true;
                 }
                 line.clear();
                 std::cout << "error: please answer either 'yes' (y) or 'no' (n): " << std::flush;
             }
         }
 
-        fitsfile* ofptr;
         fits_open_table(&ofptr, file.c_str(), READWRITE, &status);
 
         fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
@@ -272,13 +572,17 @@ int main(int argc, char* argv[]) {
         for (auto i : reverse(mcols)) {
             fits_delete_col(ofptr, i, &status);
         }
-    } else {
-        error("unknown operation '", op, "'");
+
+        fits_close_file(fptr, &status);
+        fits_close_file(ofptr, &status);
+    } catch (fits::exception& e) {
+        error(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        if (ofptr) fits_close_file(ofptr, &status);
+        return false;
     }
 
-    fits_close_file(fptr, &status);
-
-    return 0;
+    return true;
 }
 
 bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force) {
@@ -319,10 +623,34 @@ void print_help() {
     using namespace format;
 
     print("fcolop v1.0");
-    header("Usage: fcolop op cols=[...] [force]");
-    header("Available commands:");
+    header("Usage: fcolop operation [options]");
+    header("Available operations:");
     bullet("remove", "remove the specified columns from this FITS file");
     bullet("transpose", "transpose the specified columns within this FITS file");
+    bullet("r2c", "convert a row oriented FITS table to a column oriented one");
     bullet("meta", "shift all 'meta' columns into a new extension so that the file can be read in "
         "programs like TOPCAT that expect a single invariant dimension for all columns");
+    print("");
+    header("To learn more about each operations and see the list of avilable options, run "
+        "'fcolop operation help'.");
+
+    print("");
+    paragraph("Copyright (c) 2014 C. Schreiber (corentin.schreiber@cea.fr)");
+
+    paragraph("This software is provided 'as-is', without any express or implied warranty. In no "
+        "event will the authors be held liable for any damages arising from the use of this "
+        "software.");
+
+    paragraph("Permission is granted to anyone to use this software for any purpose, including "
+        "commercial applications, and to alter it and redistribute it freely, subject to the "
+        "following restrictions:");
+
+    bullet("1", "The origin of this software must not be misrepresented; you must not claim that "
+        "you wrote the original software. If you use this software in a product, an acknowledgment "
+        "in the product documentation would be appreciated but is not required.");
+    bullet("2", "Altered source versions must be plainly marked as such, and must not be "
+        "misrepresented as being the original software.");
+    bullet("3", "This notice may not be removed or altered from any source distribution.");
+
+    print("");
 }
