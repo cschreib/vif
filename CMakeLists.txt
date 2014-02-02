@@ -58,10 +58,7 @@ endif()
 
 set(PHYPP_INCLUDES "${PROJECT_SOURCE_DIR}/include")
 
-file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 # find required libraries
 find_package(LibClang 3)
@@ -103,10 +100,6 @@ endif()
 # build the refgen tool
 add_subdirectory(tools/refgen)
 
-# build pre-phy++ tools (on demand)
-add_subdirectory(tools/qstack)
-add_subdirectory(tools/qxmatch)
-
 # build configuration
 set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
 set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
@@ -140,8 +133,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 # install headers
-file(GLOB files ${PROJECT_SOURCE_DIR}/include/phypp/*.hpp)
-install(FILES ${files} DESTINATION include/phypp)
+file(GLOB PHYPP_INCLUDES ${PROJECT_SOURCE_DIR}/include/phypp/*.hpp)
+install(FILES ${PHYPP_INCLUDES} DESTINATION include/phypp)
 install(FILES ${PROJECT_SOURCE_DIR}/include/phypp.hpp DESTINATION include)
 
 # install build scripts

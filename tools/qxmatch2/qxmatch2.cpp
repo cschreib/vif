@@ -111,7 +111,8 @@ int main(int argc, char* argv[]) {
                 "' with ", n_elements(cat2.ra), " sources from '", cats[1], "'...");
         }
 
-        res = qxmatch(cat1, cat2, keywords(_nth(nth), _thread(thread), _verbose(verbose)));
+        qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose;
+        res = qxmatch(cat1, cat2, p);
     } else if (cats.size() == 1) {
         if (pos.empty()) pos = {""};
         if (!pos[0].empty()) pos += ".";
@@ -127,7 +128,8 @@ int main(int argc, char* argv[]) {
             print("qxmatch: self matching ", n_elements(cat.ra), " sources from '", cats[0], "'...");
         }
 
-        res = qxmatch(cat, cat, keywords(_nth(nth), _thread(thread), _verbose(verbose), _self(true)));
+        qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose;
+        res = qxmatch(cat, p);
     } else {
         if (!quiet) print_help();
         return 0;

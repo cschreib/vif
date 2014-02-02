@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     fits::read_table_loose(fcat, cat);
 
     print(fcat+"\n");
-    
+
     if (version) {
         if (!cat.version.empty()) {
             print("version: "+cat.version);
