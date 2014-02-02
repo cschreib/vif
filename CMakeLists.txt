@@ -147,6 +147,7 @@ install(FILES ${PROJECT_SOURCE_DIR}/include/phypp.hpp DESTINATION include)
 # install build scripts
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/bin/phy++ ${PROJECT_SOURCE_DIR}/bin/ophy++
     ${PROJECT_SOURCE_DIR}/bin/gphy++ ${PROJECT_SOURCE_DIR}/bin/gophy++
+    ${PROJECT_SOURCE_DIR}/bin/cphy++
     DESTINATION bin COMPONENT scripts)
 if (PROFILER_LIBRARIES)
     install(PROGRAMS ${PROJECT_SOURCE_DIR}/bin/prophy++ DESTINATION bin COMPONENT scripts)

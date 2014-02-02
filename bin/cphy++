@@ -1,0 +1,62 @@
+#! /bin/bash
+
+T="$(date +%s%N)"
+
+DEBUG=0
+OPTIMIZE=0
+FILE=''
+
+for arg in "$@"; do
+    if [ $arg = "debug" ]; then
+        DEBUG=1
+    elif [ $arg = "optimize" ]; then
+        OPTIMIZE=1
+    else
+        if [ -n "$FILE" ]; then
+            echo error: cannot compile multiple files at the same time
+            exit
+        fi
+        FILE=$arg
+    fi
+done
+
+OUTPUT=$(basename $FILE .cpp)
+
+OPTIONS="$PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS"
+if [ $DEBUG -eq 1 ]; then
+    OPTIONS="$OPTIONS $PHYPP_COMPILER_DEBUG_FLAGS"
+fi
+if [ $OPTIMIZE -eq 1 ]; then
+    OPTIONS="$OPTIONS $PHYPP_COMPILER_OPT_FLAGS"
+fi
+
+# Parse file and generate reflection data
+$PHYPP_REFGEN $FILE ${PHYPP_TEMP_DIR}/._reflex_$FILE \
+    $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+
+if [ $? -ne 0 ]; then
+    echo phy++: program \'$FILE\' FAILED to compile
+    exit
+fi
+
+TT="$(($(date +%s%N)-T))"
+S="$((TT/1000000000))"
+M="$((TT/1000000))"
+
+printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
+    "$((S/60%60))" "$((S%60))" "${M}"
+
+# Compile the generated file to build the final executable
+$PHYPP_COMPILER ${PHYPP_TEMP_DIR}/._reflex_$FILE $OPTIONS -o $OUTPUT
+
+if [ $? -ne 0 ]; then
+    echo phy++: program \'$FILE\' FAILED to compile
+    exit
+fi
+
+TT="$(($(date +%s%N)-T))"
+S="$((TT/1000000000))"
+M="$((TT/1000000))"
+
+printf "phy++: program \'$FILE\' successfully compiled (%02d:%02d.%03d)\n" \
+    "$((S/60%60))" "$((S%60))" "${M}"
