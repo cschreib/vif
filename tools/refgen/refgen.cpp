@@ -526,9 +526,6 @@ int main(int argc, char* argv[]) {
     }
 
     if (ndiag == 0) {
-        // TODO: v optimize
-        // CXFile main_file = clang_getFile(ctu, file.c_str());
-        // clang_getFileUniqueID(main_file, &data.main_file_id);
         clang_visitChildren(clang_getTranslationUnitCursor(ctu), &visitor, nullptr);
     }
 
