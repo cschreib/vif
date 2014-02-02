@@ -5,22 +5,37 @@ T="$(date +%s%N)"
 DEBUG=0
 OPTIMIZE=0
 FILE=''
+NEXT_IS_OUTPUT=0
 
 for arg in "$@"; do
-    if [ $arg = "debug" ]; then
-        DEBUG=1
-    elif [ $arg = "optimize" ]; then
-        OPTIMIZE=1
+    if [ $NEXT_IS_OUTPUT -eq 1 ]; then
+        OUTPUT=$arg
+        NEXT_IS_OUTPUT=0
     else
-        if [ -n "$FILE" ]; then
-            echo error: cannot compile multiple files at the same time
-            exit
+        if [ $arg = "debug" ]; then
+            DEBUG=1
+        elif [ $arg = "optimize" ]; then
+            OPTIMIZE=1
+        elif [ $arg = "-o" ]; then
+            NEXT_IS_OUTPUT=1
+        else
+            if [ -n "$FILE" ]; then
+                echo error: cannot compile multiple files at the same time
+                exit
+            fi
+            FILE=$arg
         fi
-        FILE=$arg
     fi
 done
 
-OUTPUT=$(basename $FILE .cpp)
+if [ $NEXT_IS_OUTPUT -eq 1 ]; then
+    echo error: missing output file name after '-o'
+    exit
+fi
+
+if [ -n "$OUTPUT" ]; then
+    OUTPUT=$(dirname $FILE)/$(basename $FILE .cpp)
+fi
 
 OPTIONS="$PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS"
 if [ $DEBUG -eq 1 ]; then
@@ -30,9 +45,10 @@ if [ $OPTIMIZE -eq 1 ]; then
     OPTIONS="$OPTIONS $PHYPP_COMPILER_OPT_FLAGS"
 fi
 
+TMP_OUTPUT=${PHYPP_TEMP_DIR}/._reflex_$(basename $FILE)
+
 # Parse file and generate reflection data
-$PHYPP_REFGEN $FILE ${PHYPP_TEMP_DIR}/._reflex_$FILE \
-    $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+$PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
 
 if [ $? -ne 0 ]; then
     echo phy++: program \'$FILE\' FAILED to compile
@@ -47,7 +63,7 @@ printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
     "$((S/60%60))" "$((S%60))" "${M}"
 
 # Compile the generated file to build the final executable
-$PHYPP_COMPILER ${PHYPP_TEMP_DIR}/._reflex_$FILE $OPTIONS -o $OUTPUT
+$PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
 
 if [ $? -ne 0 ]; then
     echo phy++: program \'$FILE\' FAILED to compile
