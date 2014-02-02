@@ -481,7 +481,7 @@ bool file_exist(const std::string& file) {
 int main(int argc, char* argv[]) {
     bool verbose = false;
 
-    cpp = std::string(argv[1]) + ".cpp";
+    cpp = std::string(argv[1]);
 
     if (!file_exist(cpp)) {
         std::cout << color::set(color::red, true) << "error: " << color::reset <<

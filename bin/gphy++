@@ -34,8 +34,8 @@ if [ $RECOMPILE -eq 1 ]; then
     T="$(date +%s%N)"
 
     # Parse file and generate reflection data
-    $PHYPP_REFGEN $1 ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
-        -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" $PHYPP_REFGEN_FLAGS
+    $PHYPP_REFGEN $1.cpp ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
+        $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
 
     if [ $? -ne 0 ]; then
         echo phy++: program \'$1\' FAILED to compile
@@ -51,8 +51,7 @@ if [ $RECOMPILE -eq 1 ]; then
 
     # Compile the generated file to build the final executable
     $PHYPP_COMPILER ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
-        $PHYPP_COMPILER_DEBUG_FLAGS \
-        -I "$PHYPP_PATH/include" -I "$PHYPP_PATH/lib" $PHYPP_COMPILER_FLAGS -o $1
+        $PHYPP_COMPILER_DEBUG_FLAGS $PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS -o $1
 
     if [ $? -ne 0 ]; then
         echo phy++: program \'$1\' FAILED to compile

@@ -34,7 +34,7 @@ if [ $RECOMPILE -eq 1 ]; then
     T="$(date +%s%N)"
 
     # Parse file and generate reflection data
-    $PHYPP_REFGEN $1 ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
+    $PHYPP_REFGEN $1.cpp ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
         $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
 
     if [ $? -ne 0 ]; then
