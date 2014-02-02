@@ -531,9 +531,9 @@ table {
 body {
   padding: 0px 0 20px 0px;
   margin: 0px;
-  font: 14px/1.5 "OpenSansRegular", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font: 14px/1.5 "OpenSansBold", "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #f0e7d5;
-  font-weight: normal;
+  font-weight: bold;
   background: #252525;
   background-attachment: fixed !important;
   background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #2a2a29), color-stop(100%, #1c1c1c));
@@ -546,7 +546,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   color: #e8e8e8;
-  margin: 0 0 10px;
+  margin: 0 20px 0px;
   font-family: 'OpenSansRegular', "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: normal;
 }
@@ -556,7 +556,7 @@ p, ul, ol, table, pre, dl {
 }
 
 h1, h2, h3 {
-  line-height: 1.1;
+  line-height: 2;
 }
 
 h1 {
@@ -717,7 +717,7 @@ dt {
 }
 #header nav li {
   font-family: 'OpenSansBold', "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-weight: normal;
+  font-weight: bold;
   list-style: none;
   display: inline;
   color: white;
@@ -775,6 +775,8 @@ dt {
   margin-left: 6px;
 }
 #header nav li.title {
+  font-family: 'OpenSansRegular', "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: normal;
   float: right;
   margin-right: 10px;
   font-size: 11px;
@@ -798,6 +800,7 @@ section #title h1 {
   font-size: 40px;
   text-align: center;
   line-height: 36px;
+  margin: 0 0 10px;
 }
 section #title p {
   color: #d7cfbe;
