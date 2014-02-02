@@ -117,6 +117,25 @@ bool file_is_same(CXFile f1, CXFile f2) {
     return true;
 }
 
+bool is_in_file(CXCursor c, CXFileUniqueID id) {
+    CXSourceRange r = clang_getCursorExtent(c);
+
+    CXFile cf;
+    unsigned int line;
+    unsigned int column;
+    unsigned int offset;
+    clang_getSpellingLocation(clang_getRangeStart(r), &cf, &line, &column, &offset);
+
+    CXFileUniqueID idc;
+    clang_getFileUniqueID(cf, &idc);
+
+    for (std::size_t i = 0; i < 3; ++i) {
+        if (id.data[i] != idc.data[i]) return false;
+    }
+
+    return true;
+}
+
 bool is_in_parent(CXCursor child, CXCursor parent) {
     CXSourceRange r1 = clang_getCursorExtent(parent);
     CXSourceRange r2 = clang_getCursorExtent(child);
@@ -162,13 +181,12 @@ struct cpos_t {
 
 std::deque<struct_t> db;
 std::vector<cpos_t> cstack;
-std::string cpp;
+CXFileUniqueID cpp;
 
 CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
     CXCursorKind cKind = clang_getCursorKind(cursor);
     if (cKind == CXCursor_StructDecl || cKind == CXCursor_ClassDecl) {
-        // TODO: optimize v with clang_Location_isFromMainFile (CXSourceLocation location)
-        if (get_file_name(cursor) == cpp) {
+        if (is_in_file(cursor, cpp)) {
             while (!cstack.empty() && !is_in_parent(cursor, cstack.back().cur)) {
                 cstack.pop_back();
             }
@@ -196,7 +214,7 @@ CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client
             return CXChildVisit_Continue;
         }
     } else if (cKind == CXCursor_FieldDecl) {
-        if (get_file_name(cursor) == cpp) {
+        if (is_in_file(cursor, cpp)) {
             while (!cstack.empty() && !is_in_parent(cursor, cstack.back().cur)) {
                 cstack.pop_back();
             }
@@ -208,7 +226,7 @@ CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData client
             }
         }
     } else if (cKind == CXCursor_VarDecl) {
-        if (!db.empty() && get_file_name(cursor) == cpp) {
+        if (!db.empty() && is_in_file(cursor, cpp)) {
             struct_t s;
             get_location(s, clang_getCursorExtent(cursor));
             for (auto& st : db) {
@@ -481,11 +499,11 @@ bool file_exist(const std::string& file) {
 int main(int argc, char* argv[]) {
     bool verbose = false;
 
-    cpp = std::string(argv[1]);
+    std::string file = std::string(argv[1]);
 
-    if (!file_exist(cpp)) {
+    if (!file_exist(file)) {
         std::cout << color::set(color::red, true) << "error: " << color::reset <<
-            "cannot find '" << cpp << "'" << std::endl;
+            "cannot find '" << file << "'" << std::endl;
         return 1;
     }
 
@@ -494,8 +512,11 @@ int main(int argc, char* argv[]) {
     // Parse the file with clang
     CXIndex cidx = clang_createIndex(0, 0);
     CXTranslationUnit ctu = clang_parseTranslationUnit( // TODO: v optimize
-        cidx, cpp.c_str(), argv+3, argc-3, 0, 0, CXTranslationUnit_None
+        cidx, file.c_str(), argv+3, argc-3, 0, 0, CXTranslationUnit_None
     );
+
+    CXFile main_file = clang_getFile(ctu, file.c_str());
+    clang_getFileUniqueID(main_file, &cpp);
 
     std::size_t ndiag = clang_getNumDiagnostics(ctu);
     for (std::size_t i = 0; i < ndiag; ++i) {
@@ -534,7 +555,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Create a new code with added reflexion data
-    std::ifstream code(cpp);
+    std::ifstream code(file);
 
     std::ofstream enh(rname.c_str());
     std::size_t l = 1;
