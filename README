@@ -1,5 +1,6 @@
 What is phy++ ?
 ===============
+
 phy++ is a set of library and tools built to provide user friendly data
 manipulation as offered in interpreted languages like IDL [1] or its open source
 clone GDL [2], but with the added benefit of C++, i.e. increased robustness and
@@ -31,7 +32,8 @@ the C++ standard).
 
 
 Using the 'phypp' library
-========================
+=========================
+
  - create a new C++ file (foobar.cpp for example)
  - include the phy++ header:
 
@@ -48,35 +50,56 @@ Using the 'phypp' library
    located: phy++ foobar
  - the program will compile and run automatically (if no compiler error
    occurred)
+ - alternatively, you may also just compile the program using the cphy++
+   compiler: cphy++ foobar
+   and run the program yourself afterwards: ./foobar
 
 
 The different phy++ compilers
 =============================
-Internally, the "phy++ compilers" use clang to compile C++ files into binary
-executables. The various compilers listed below are merely scripts built around
-clang to simplify the compilation process. In particular:
+
+Internally, the "phy++ compilers" use your favorite C++ compiler to compile C++
+files into binary executables. The various compilers listed below are merely
+scripts built around the real C++ compiler to simplify the compilation process.
+In particular:
  - they take care of setting all the necessary compiler flags, include
    directories, linked libraries, enabling useful warnings, etc.,
- - they automatically generate the reflection data using 'refgen',
+ - they automatically generate the reflection data using the 'refgen' tool,
  - like 'make', they only recompile the code when a change has been made (either
    to the code itself or to any file of the phy++ library)
 
 It is of course possible to compile your code with any other C++ compiler,
-provided that you set it up properly, and that it supports all the language
-features that this library depends on.
+provided that you set it up properly and that it supports all the language
+features that this library depends on. Just look at the code for the phy++
+scripts to know what options, libraries and includes are needed.
 
 List of compilers:
- - phy++: standard compiler. Should compile fast but will not fully optimize the
-          executable.
- - ophy++: optimized compiler. Can take twice more time to compile, but will
-           generate faster code.
- - gphy++: debug compiler. As with 'phy++', but compiles with debug information
-           and fires 'gdb'.
- - gophy++: debug compiler. As with 'ophy++', but compiles with debug
-            information and fires 'gdb'. Note that, since optimizations can
-            remove intermediary steps/variables, debugging an optimized program
-            can be troublesome (some variables or functions do disappear). Only
-            use this option when needed.
+ - phy++:
+    Standard compiler. Should compile fast but will not fully optimize the
+    executable.
+ - ophy++:
+    Optimized compiler. Can take twice more time to compile, but will generate
+    faster code.
+ - gphy++:
+    Debug compiler. As with 'phy++', but compiles with debug information and
+    and fires 'gdb'.
+ - gophy++:
+    Optimized debug compiler. As with 'ophy++', but compiles with debug
+    information and fires 'gdb'. Note that, since optimizations can remove
+    intermediary steps/variables, debugging an optimized program can be
+    troublesome (some variables or functions do disappear). Only use this option
+    when non optimized binaries are too slow.
+ - prophy++: (only if you have installed Google perftools)
+    Profiling compiler. As with 'ophy++', but generates profiling data during
+    execution. When the program ends, it parses these date to generate a
+    graphical visualization of the time spent in the various functions, to help
+    you identify the origin of performance issues.
+ - cphy++:
+    General purpose compiler. Contrary to all the compilers listed above, this
+    one will not execute the program after compilation. Nor will it check for
+    changes in the code or its dependencies: the program is always compiled.
+    You can set some options, like enabling optimizations, debug information,
+    and specifying the output file name.
 
 As a rule of thumb, prefer using 'phy++' for testing purposes (when you compile
 often). Then, if the execution time gets larger, try with 'ophy++'. In any case,
