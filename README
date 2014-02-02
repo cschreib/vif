@@ -35,24 +35,30 @@ Using the 'phypp' library
 =========================
 
  - create a new C++ file (foobar.cpp for example)
- - include the phy++ header:
+ - write some code:
 
+    // Include the phy++ headers
     #include <phypp.hpp>
 
- - write some code in the main function:
-
+    // Declare the main function, entry point of the program
     int main(int argc, char* argv[]) {
-        // ...
+        // Read some arguments from the command line
+        uint_t n = 10;
+        read_args(argc, argv, arg_list(n));
+        // Create a vector containing 1, 2, ..., n-1
+        vec1d v = dindgen(n);
+        // Print the square root of each element
+        print(sqrt(v));
         return 0;
     }
 
  - invoke the phy++ compiler from the directory where the source code is
-   located: phy++ foobar
+   located: phy++ foobar n=20
  - the program will compile and run automatically (if no compiler error
    occurred)
  - alternatively, you may also just compile the program using the cphy++
-   compiler: cphy++ foobar
-   and run the program yourself afterwards: ./foobar
+   compiler: cphy++ foobar.cpp
+   and run the program yourself afterwards: ./foobar n=20
 
 
 The different phy++ compilers
