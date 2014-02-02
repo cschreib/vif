@@ -34,6 +34,17 @@ Install the 'phy++' library with CMake
    is loaded in all your terminals. This can be done by adding a line in your
    ".bashrc" file containing "source /path/to/your/home/dir/.phypprc".
 
+6) You may then build the phy++ tools. Inside the 'build' directory, create a
+   new directory called 'tools' and navigate to it.
+   Note: if you are still in the same terminal session, you will need to either
+   close it and open a new one, or source the phy++ configuration:
+   'source /path/to/your/home/dir/.phypprc'
+
+7) Invoque cmake again, this time pointing to the tools directory:
+   'cmake ../tools/'.
+
+8) Build and install, using 'make' then 'sudo make install'.
+
 
 Veryfing installation
 =====================
