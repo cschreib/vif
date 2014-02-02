@@ -5,6 +5,7 @@ T="$(date +%s%N)"
 DEBUG=0
 OPTIMIZE=0
 FILE=''
+OUTPUT=''
 NEXT_IS_OUTPUT=0
 
 for arg in "$@"; do
@@ -33,7 +34,7 @@ if [ $NEXT_IS_OUTPUT -eq 1 ]; then
     exit
 fi
 
-if [ -n "$OUTPUT" ]; then
+if [ -z "$OUTPUT" ]; then
     OUTPUT=$(dirname $FILE)/$(basename $FILE .cpp)
 fi
 
@@ -55,13 +56,6 @@ if [ $? -ne 0 ]; then
     exit
 fi
 
-TT="$(($(date +%s%N)-T))"
-S="$((TT/1000000000))"
-M="$((TT/1000000))"
-
-printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
-    "$((S/60%60))" "$((S%60))" "${M}"
-
 # Compile the generated file to build the final executable
 $PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
 
@@ -69,10 +63,3 @@ if [ $? -ne 0 ]; then
     echo phy++: program \'$FILE\' FAILED to compile
     exit
 fi
-
-TT="$(($(date +%s%N)-T))"
-S="$((TT/1000000000))"
-M="$((TT/1000000))"
-
-printf "phy++: program \'$FILE\' successfully compiled (%02d:%02d.%03d)\n" \
-    "$((S/60%60))" "$((S%60))" "${M}"
