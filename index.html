@@ -65,14 +65,14 @@ whenever a change is made. This issue can be partly solved by making use of comm
 <span class="cp"> #include &lt;phypp.hpp&gt;</span>
 
  <span class="c1">// Declare the main function, entry point of the program</span>
- <span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+ <span class="kt">int</span> <span class="nfc">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
      <span class="c1">// Read some arguments from the command line</span>
      <span class="kt">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-     <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+     <span class="nf">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="nf">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
      <span class="c1">// Create a vector containing 1, 2, ..., n-1</span>
-     <span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
+     <span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="nf">dindgen</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
      <span class="c1">// Print the square root of each element</span>
-     <span class="n">print</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">));</span>
+     <span class="nf">print</span><span class="p">(</span><span class="nf">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">));</span>
      <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
  <span class="p">}</span>
 </pre></div>
