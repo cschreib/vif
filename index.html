@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ by cschreib</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/cschreib/phypp">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/cschreib/phypp/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/cschreib/phypp/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>phy++</h1>
+          <p>Library and tools designed for easy, robust and fast numerical astrophysics in modern C++. Inspired by the expressiveness of IDL.</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/cschreib">cschreib</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a name="what-is-phy" class="anchor" href="#what-is-phy"><span class="octicon octicon-link"></span></a>What is phy++?</h1>
+
+<p>phy++ is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like IDL <a href="http://www.exelisvis.com/ProductsServices/IDL.aspx">1</a> or its open source clone GDL <a href="http://gnudatalanguage.sourceforge.net/">2</a>, but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:</p>
+
+<ul>
+<li>multidimensional arrays with overloaded mathematical operators and mathematical functions, providing easy manipulation of tabulated data</li>
+<li>a whole library of general purpose functions to modify and analyze these data</li>
+<li>a FITS module allowing read/write operations on FITS images and tables</li>
+<li>an ASCII module allowing read/write operations on ASCII tables</li>
+<li>an astrophysics module providing tools such as cosmological calculations, PSF fitting, unit conversions, catalog cross-matching, ...</li>
+<li>a full featured plot module to output graphs in EPS format (WIP)</li>
+</ul><p>Currently, the only drawback of using this library instead of IDL/GDL is that, at the time of writing, there is no stable and full featured C++ interpreter (although cling <a href="http://root.cern.ch/drupal/content/cling">3</a> is a promising candidate). This means that it is impossible to do "real-time" testing of code, and that any program must be recompiled
+whenever a change is made. This issue can be partly solved by making use of command line arguments to quickly modify the behavior of a program.</p>
+
+<p>The library itself relies on standard C++11 (using a few features from the upcoming C++14), and a small tool (<em>refgen</em>) is used to parse the source code to generate necessary data for compile-time reflection (which is not -- yet <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">4</a> -- part of the C++ standard).</p>
+
+<h1>
+<a name="how-to-use-it" class="anchor" href="#how-to-use-it"><span class="octicon octicon-link"></span></a>How to use it?</h1>
+
+<ul>
+<li>create a new C++ file (foobar.cpp for example)</li>
+<li>write some code:</li>
+</ul><div class="highlight highlight-cpp"><pre> <span class="c1">// Include the phy++ headers</span>
+<span class="cp"> #include &lt;phypp.hpp&gt;</span>
+
+ <span class="c1">// Declare the main function, entry point of the program</span>
+ <span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+     <span class="c1">// Read some arguments from the command line</span>
+     <span class="kt">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+     <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+     <span class="c1">// Create a vector containing 1, 2, ..., n-1</span>
+     <span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
+     <span class="c1">// Print the square root of each element</span>
+     <span class="n">print</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">));</span>
+     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+ <span class="p">}</span>
+</pre></div>
+
+<ul>
+<li>invoke the phy++ compiler from the directory where the source code is located: </li>
+</ul><div class="highlight highlight-bash"><pre>phy++ foobar <span class="nv">n</span><span class="o">=</span>20
+</pre></div>
+
+<ul>
+<li>the program will compile and run automatically (if no compiler error occurred)</li>
+<li>alternatively, you may also just compile the program using the cphy++ compiler:</li>
+</ul><div class="highlight highlight-bash"><pre>cphy++ foobar.cpp
+</pre></div>
+
+<ul>
+<li>... then run the program yourself afterwards:</li>
+</ul><div class="highlight highlight-bash"><pre>./foobar <span class="nv">n</span><span class="o">=</span>20
+</pre></div>
+
+<h1>
+<a name="how-to-get-it" class="anchor" href="#how-to-get-it"><span class="octicon octicon-link"></span></a>How to get it?</h1>
+
+<p>Simply download the code, either by cloning the git repository:</p>
+
+<div class="highlight highlight-bash"><pre>git clone git@github.com:cschreib/phypp.git
+</pre></div>
+
+<p>or by downloading .tgz or .zip archives from this page. The library itself depends on several other libraries, all of which are fairly common and should be provided in your distribution's repositories (or in MacPorts if you are a MacOS user). Please refer to the <code>INSTALL</code> file in the main directory for detailed instructions on how to install the dependencies and the <em>phypp</em> library.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
