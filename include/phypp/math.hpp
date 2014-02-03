@@ -395,6 +395,16 @@ vec_t<Dim-1,double> total(const vec_t<Dim,Type>& v, uint_t dim) {
 }
 
 template<std::size_t Dim>
+uint_t count(const vec_t<Dim,bool>& b) {
+    uint_t n = 0u;
+    for (uint_t i : range(b)) {
+        if (b[i]) ++n;
+    }
+
+    return n;
+}
+
+template<std::size_t Dim>
 double fraction(const vec_t<Dim,bool>& b) {
     return total(b)/b.size();
 }
@@ -498,23 +508,45 @@ rtype_t<Type> max(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-uint_t min_id(const vec_t<Dim,Type>& v) {
-    vec1u tmp = uindgen(v.size());
-    return *std::min_element(tmp.begin(), tmp.end(), [&](uint_t i1, uint_t i2){
-        if (nan(v[i1])) return false;
-        if (nan(v[i2])) return true;
-        return v[i1] < v[i2];
+rtype_t<Type> min(const vec_t<Dim,Type>& v, uint_t& id) {
+    auto iter = std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
+        if (nan(dref(t1))) return false;
+        if (nan(dref(t2))) return true;
+        return dref(t1) < dref(t2);
     });
+
+    id = iter - v.data.begin();
+    return dref(*iter);
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> max(const vec_t<Dim,Type>& v, uint_t& id) {
+    auto iter = std::max_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
+        if (nan(dref(t1))) return true;
+        if (nan(dref(t2))) return false;
+        return dref(t1) < dref(t2);
+    });
+
+    id = iter - v.data.begin();
+    return dref(*iter);
+}
+
+template<std::size_t Dim, typename Type>
+uint_t min_id(const vec_t<Dim,Type>& v) {
+    return std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
+        if (nan(dref(t1))) return false;
+        if (nan(dref(t2))) return true;
+        return dref(t1) < dref(t2);
+    }) - v.data.begin();
 }
 
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec_t<Dim,Type>& v) {
-    vec1u tmp = uindgen(v.size());
-    return *std::max_element(tmp.begin(), tmp.end(), [&](uint_t i1, uint_t i2){
-        if (nan(v[i1])) return true;
-        if (nan(v[i2])) return false;
-        return v[i1] < v[i2];
-    });
+    return std::max_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
+        if (nan(dref(t1))) return true;
+        if (nan(dref(t2))) return false;
+        return dref(t1) < dref(t2);
+    }) - v.data.begin();
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
