@@ -356,7 +356,7 @@ int main(int argc, char* argv[]) {
 
     {
         print("'histogram' function");
-        vec1i t = {1,2,3,4,5,5,8,9,6,5,7,4};
+        vec1d t = {1,2,3,4,5,5,8,9,6,fnan,5,7,4};
         vec2i bins = {{0,2,5,8,10}, {2,5,8,10,12}};
         vec1u counts = histogram(t, bins);
         check(counts, "1, 4, 5, 2, 0");
