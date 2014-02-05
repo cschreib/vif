@@ -131,7 +131,12 @@ vec_t<2,T> make_bins(const vec_t<1,T>& v) {
 
 template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
-    return v >= b[0] && v < b[1];
+    vec_t<Dim,bool> res(v.dims);
+    for (uint_t i : range(v)) {
+        res[i] = v[i] >= b[0] && v[i] < b[1];
+    }
+
+    return res;
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
@@ -645,11 +650,29 @@ vec_t<Dim-1,double> mad(const vec_t<Dim,Type>& v, uint_t dim) {
 
 template<std::size_t Dim, typename Type, typename TypeB>
 vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
+    using rtype = rtype_t<Type>;
+    vec_t<Dim,rtype> tmp = data;
+
     uint_t nbin = bins.dims[1];
     vec1u counts(nbin);
-    for (uint_t i = 0; i < nbin; ++i) {
-        counts[i] = total(in_bin(data, bins(_,i)));
+
+    auto first = tmp.data.begin();
+    for (uint_t i : range(nbin)) {
+        auto last = std::partition(first, tmp.data.end(), [&bins,i](rtype t) {
+            return t >= bins(0,i) && t < bins(1,i);
+        });
+
+        if (last == tmp.data.end()) break;
+
+        counts[i] = last - first;
+        first = last;
     }
+
+    // uint_t nbin = bins.dims[1];
+    // vec1u counts(nbin);
+    // for (uint_t i = 0; i < nbin; ++i) {
+    //     counts[i] = total(in_bin(data, bins(_,i)));
+    // }
 
     return counts;
 }
