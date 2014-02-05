@@ -534,7 +534,12 @@ struct vec_t {
 
     vec_t() = default;
     vec_t(const vec_t&) = default;
-    vec_t(vec_t&&) = default;
+
+    vec_t(vec_t&& v) : data(std::move(v.data)), dims(v.dims) {
+        for (uint_t i = 0; i < Dim; ++i) {
+            v.dims[i] = 0;
+        }
+    }
 
     template<typename T, typename ... Args, typename enable =
         typename std::enable_if<is_dim_list<T,Args...>::value>::type>
