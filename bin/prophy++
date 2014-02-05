@@ -68,9 +68,9 @@ if [ $RECOMPILE -eq 1 ]; then
 fi
 
 # Run the program
-a=./$1
+a=$1
 shift
-env CPUPROFILE=${PHYPP_TEMP_DIR}/._prof_$a.prof $a "$@"
+env CPUPROFILE=${PHYPP_TEMP_DIR}/._prof_$a.prof ./$a "$@"
 
 # Feed profiling data to the renderer
-pprof --gv $a ${PHYPP_TEMP_DIR}/._prof_$a.prof
+pprof --gv ./$a ${PHYPP_TEMP_DIR}/._prof_$a.prof
