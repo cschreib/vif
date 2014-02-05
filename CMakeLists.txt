@@ -112,16 +112,16 @@ file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}data/\n\
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DREFLECTION_STAGE -ferror-limit=5 -std=c++1y -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors\"\n\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DREFLECTION_STAGE -ferror-limit=5 -std=c++1y -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations\"\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
     if (PROFILER_LIBRARY)
-        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-l${PROFILER_LIBRARY}\n")
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++1y -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Wall ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
