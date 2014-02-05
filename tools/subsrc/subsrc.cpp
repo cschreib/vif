@@ -48,19 +48,26 @@ int main(int argc, char* argv[]) {
 
     vec1b bm, nm;
     if (bands_notes.empty()) {
-        if (bands.empty()) {
-            bm = replicate(true, cat.bands.size());
+        if (bands.empty() || cat.bands.empty()) {
+            bm = replicate(true, cat.flux.dims[1]);
         } else {
             bm = match(cat.bands, bands);
         }
-        if (notes.empty()) {
-            nm = replicate(true, cat.notes.size());
+        if (notes.empty() || cat.notes.empty()) {
+            nm = replicate(true, cat.flux.dims[1]);
         } else {
             nm = match(cat.notes, notes);
         }
     } else {
-        bm = match(cat.bands+" "+cat.notes, bands_notes);
-        nm = replicate(true, cat.bands.size());
+        if (cat.bands.empty()) {
+            bm = replicate(true, cat.flux.dims[1]);
+        } else if (cat.notes.empty()) {
+            bm = match(cat.bands, bands_notes);
+        } else {
+            bm = match(cat.bands+" "+cat.notes, bands_notes);
+        }
+
+        nm = replicate(true, cat.flux.dims[1]);
     }
 
     vec1u ib = where(nm && bm);
