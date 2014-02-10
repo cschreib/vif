@@ -224,6 +224,29 @@ auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) {
     return vec_t<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
 }
 
+template<typename T, typename TypeX, typename TypeY, typename ... Args>
+auto random_pdf(T& seed, const vec_t<1,TypeX>& px, const vec_t<1,TypeY>& py, Args&& ... args) {
+    // Build cumulative distribution
+    vec1d cpdf(py.size());
+    for (uint_t i : range(py)) {
+        cpdf[i] = 0.0;
+        for (uint_t j = 0; j < i; ++j) {
+            cpdf[i] += py[j];
+        }
+    }
+
+    // Normalize it to unity
+    cpdf /= cpdf[cpdf.size()-1];
+
+    // Generate random values
+    auto gen = randomu(seed, std::forward<Args>(args)...);
+    vec_t<dim_total<Args...>::value, rtype_t<TypeX>> res;
+    res.dims = gen.dims;
+    auto tmp = interpolate(px, cpdf, flatten(gen));
+    res.data = std::move(tmp.data);
+    return res;
+}
+
 template<std::size_t Dim, typename Type, typename T>
 auto shuffle(vec_t<Dim,Type> v, T& seed) {
     std::shuffle(v.begin(), v.end(), seed);
@@ -439,6 +462,13 @@ rtype_t<Type> median(const vec_t<Dim,Type>& v) {
     std::ptrdiff_t offset = t.size()/2;
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     return *(t.begin() + offset);
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> fast_median(vec_t<Dim,Type>& v) {
+    std::ptrdiff_t offset = v.size()/2;
+    std::nth_element(v.begin(), v.begin() + offset, v.end());
+    return *(v.begin() + offset);
 }
 
 template<std::size_t Dim, typename Type>
