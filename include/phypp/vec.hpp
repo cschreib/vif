@@ -1695,6 +1695,8 @@ vec1u where(const vec_t<Dim,Type>& v) {
 template<std::size_t Dim, typename Type>
 vec1u complement(const vec_t<Dim,Type>& v, const vec1u& ids) {
     if (ids.size() == v.size()) return vec1u();
+    phypp_check(ids.size() < v.size(), "incompatible size of ids (", ids.size(),
+        " vs. ", v.size(), ")");
 
     vec1b sel(v.size());
     for (uint_t i : ids) {
