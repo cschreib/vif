@@ -176,7 +176,12 @@ int main(int argc, char* argv[]) {
         check(!b, "1, 0, 1, 0, 1");
 
         print("'where' function");
-        check(where(b), "1, 3");
+        vec1u id = where(b);
+        check(id, "1, 3");
+
+        print("'complement' function");
+        vec1u cid = complement(b, id);
+        check(cid, "0, 2, 4");
 
         print("'equal' function");
         check(where(equal(i, {3, 1})), "1, 3");

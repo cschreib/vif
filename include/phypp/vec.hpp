@@ -1690,6 +1690,27 @@ vec1u where(const vec_t<Dim,Type>& v) {
     return ids;
 }
 
+// Build the complement of a set of indices, i.e. return the indices that are not part of the
+// provided set.
+template<std::size_t Dim, typename Type>
+vec1u complement(const vec_t<Dim,Type>& v, const vec1u& ids) {
+    if (ids.size() == v.size()) return vec1u();
+
+    vec1b sel(v.size());
+    for (uint_t i : ids) {
+        sel[i] = true;
+    }
+
+    vec1u res; res.reserve(v.size() - ids.size());
+    for (uint_t i = 0; i < v.size(); ++i) {
+        if (!sel[i]) {
+            res.push_back(i);
+        }
+    }
+
+    return res;
+}
+
 // In a sorted vector, return the first indices of each non unique sequence, effectively returning
 // indices to all values that are different in the vector.
 // By construction, the returned indices point to sorted values in the original vector.
