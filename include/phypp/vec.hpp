@@ -1671,7 +1671,7 @@ T& element(T& v) {
     return v;
 }
 
-// Return the indices of the vector where the value is 1.
+// Return the indices of the vector where the value is 'true'.
 template<std::size_t Dim, typename Type>
 vec1u where(const vec_t<Dim,Type>& v) {
     vec1u ids;
@@ -1775,6 +1775,7 @@ vec1b equal(const vec_t<Dim1,Type1>& v1, const vec_t<Dim2,Type2>& v2) {
     return r;
 }
 
+// Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
 template<std::size_t Dim, typename Type1, typename Type2>
 void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1u& id1, vec1u& id2) {
     uint_t n1 = v1.size();
@@ -1784,8 +1785,8 @@ void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1u& id1, v
         return;
     }
 
-    id1.data.reserve(n1);
-    id2.data.reserve(n1);
+    id1.data.reserve(n1 + id1.size());
+    id2.data.reserve(n1 + id2.size());
 
     for (uint_t i = 0; i < n1; ++i) {
         vec1u r = where(v2 == v1[i]);
