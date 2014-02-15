@@ -9,6 +9,7 @@ int main(int argc, char* argv[]) {
     std::string dir = "";
     double radius = dnan;
     vec1s show;
+    bool show_rgb = false;
     bool verbose = false;
 
     if (argc < 3) {
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
     std::string clist = argv[1];
 
     read_args(argc-1, argv+1, arg_list(
-        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, radius
+        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, show_rgb, radius
     ));
 
     if (!dir.empty()) {
@@ -205,17 +206,25 @@ int main(int argc, char* argv[]) {
         if (ra.size() != 1) {
             warning("can only display sources with DS9 for single objects, not catalogs");
         } else {
-            if (show.size() > 3) {
-                warning("cannot display more than 3 images at the same time, ignoring");
-                show.resize(3);
+            if (show.size() == 1 && show[0] == "1") {
+                // No name specified: show all
+                show = mname;
             }
 
-            vec1s chanels = {"red", "green", "blue"};
-            chanels = chanels[uindgen(show.size())];
+            if (show_rgb) {
+                if (show.size() > 3 && show_rgb) {
+                    warning("cannot display more than 3 images at the same time in RGB mode, only "
+                        "displaying the first 3");
+                    show.resize(3);
+                }
 
-            spawn("ds9 -rgb "+
-                collapse("-"+chanels+" "+out+name[0]+show+".fits ")
-            );
+                vec1s chanels = {"red", "green", "blue"};
+                chanels = chanels[uindgen(show.size())];
+
+                spawn("ds9 -rgb "+collapse("-"+chanels+" "+out+name[0]+show+".fits "));
+            } else {
+                spawn("ds9 -tile "+collapse(out+name[0]+show+".fits "));
+            }
         }
     }
 
