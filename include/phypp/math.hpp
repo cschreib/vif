@@ -432,33 +432,50 @@ vec_t<Dim-1,double> mean(const vec_t<Dim,Type>& v, uint_t dim) {
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> median(const vec_t<Dim,Type>& v) {
-    vec1u ok = where(finite(v));
-    if (ok.empty()) return 0;
+rtype_t<Type> median(vec_t<Dim,Type> v) {
+    uint_t nwrong = 0;
+    for (uint_t i : range(v)) {
+        nwrong += nan(v[i]);
+    }
 
-    typename vec_t<1,Type>::effective_type t = v[ok];
-    std::ptrdiff_t offset = t.size()/2;
-    std::nth_element(t.begin(), t.begin() + offset, t.end());
-    return *(t.begin() + offset);
-}
+    if (nwrong == v.size()) return dnan;
 
-template<std::size_t Dim, typename Type>
-rtype_t<Type> fast_median(vec_t<Dim,Type>&& v) {
-    std::ptrdiff_t offset = v.size()/2;
-    std::nth_element(v.begin(), v.begin() + offset, v.end());
+    std::ptrdiff_t offset = (v.size()-nwrong)/2;
+    std::nth_element(v.begin(), v.begin() + offset, v.end(),
+        [&v](rtype_t<Type> i, rtype_t<Type> j) {
+            if (nan(i)) return false;
+            if (nan(j)) return true;
+            return i < j;
+        }
+    );
+
     return *(v.begin() + offset);
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> fast_median(vec_t<Dim,Type>& v) {
-    std::ptrdiff_t offset = v.size()/2;
-    std::nth_element(v.begin(), v.begin() + offset, v.end());
+rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
+    uint_t nwrong = 0;
+    for (uint_t i : range(v)) {
+        nwrong += nan(v[i]);
+    }
+
+    if (nwrong == v.size()) return dnan;
+
+    std::ptrdiff_t offset = (v.size()-nwrong)/2;
+    std::nth_element(v.begin(), v.begin() + offset, v.end(),
+        [&v](rtype_t<Type> i, rtype_t<Type> j) {
+            if (nan(i)) return false;
+            if (nan(j)) return true;
+            return i < j;
+        }
+    );
+
     return *(v.begin() + offset);
 }
 
 template<std::size_t Dim, typename Type>
 vec_t<Dim-1,rtype_t<Type>> median(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = rtype_t<Type> (*)(const vec_t<1,rtype_t<Type>>&);
+    using fptr = rtype_t<Type> (*)(vec_t<1,rtype_t<Type>>);
     return run_index_<fptr, &median<1,rtype_t<Type>>>(v, dim);
 }
 
