@@ -305,6 +305,9 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
     return r;
 }
 
+// Iterate over one dimension of the provided vector and call a function for each slice.
+// Note: the slice provided to the function is mutable. It is allowed to modify its elements or
+// swap them, but the slice should never be resized. No check will be performed.
 template<typename F, std::size_t Dim, typename Type>
 void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
     uint_t nint = v.dims[dim];
@@ -360,7 +363,9 @@ void run_dim_idx(uint_t dim, F&& func, const Args& ... vs) {
 }
 
 template<typename F, std::size_t Dim, typename Type>
-auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) -> vec_t<Dim-1,typename return_type<F>::type> {
+auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) ->
+    vec_t<Dim-1,typename return_type<F>::type> {
+
     vec_t<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
         r.dims[i] = v.dims[i];
@@ -368,42 +373,15 @@ auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) -> vec_t<Dim-1,type
     for (uint_t i = dim+1; i < Dim; ++i) {
         r.dims[i-1] = v.dims[i];
     }
+
     r.resize();
 
-    run_dim_idx(v, dim, [&](uint_t i, const vec_t<1, rtype_t<Type>>& tv) {
+    run_dim_idx(v, dim, [&](uint_t i, vec_t<1, rtype_t<Type>>& tv) {
         r[i] = func(tv);
     });
 
     return r;
 }
-
-// template<typename F, std::size_t Dim, typename Type>
-// auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& f) -> vec_t<Dim-1,typename return_type<F>::type> {
-//     vec_t<Dim-1,typename return_type<F>::type> r;
-//     for (uint_t i = 0; i < dim; ++i) {
-//         r.dims[i] = v.dims[i];
-//     }
-//     for (uint_t i = dim+1; i < Dim; ++i) {
-//         r.dims[i-1] = v.dims[i];
-//     }
-//     r.resize();
-
-//     uint_t mpitch = 1;
-//     for (uint_t i = dim+1; i < Dim; ++i) {
-//         mpitch *= v.dims[i];
-//     }
-
-//     typename vec_t<1,Type>::effective_type tmp = arr<rtype_t<Type>>(v.dims[dim]);
-//     for (uint_t i = 0; i < r.size(); ++i) {
-//         for (uint_t j = 0; j < v.dims[dim]; ++j) {
-//             tmp[j] = dref(v.data[(i%mpitch) + ((i/mpitch)*v.dims[dim] + j)*mpitch]);
-//         }
-
-//         r[i] = f(tmp);
-//     }
-
-//     return r;
-// }
 
 template<std::size_t Dim, typename Type>
 double total(const vec_t<Dim,Type>& v) {
@@ -462,6 +440,13 @@ rtype_t<Type> median(const vec_t<Dim,Type>& v) {
     std::ptrdiff_t offset = t.size()/2;
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     return *(t.begin() + offset);
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> fast_median(vec_t<Dim,Type>&& v) {
+    std::ptrdiff_t offset = v.size()/2;
+    std::nth_element(v.begin(), v.begin() + offset, v.end());
+    return *(v.begin() + offset);
 }
 
 template<std::size_t Dim, typename Type>
@@ -697,12 +682,6 @@ vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
         counts[i] = last - first;
         first = last;
     }
-
-    // uint_t nbin = bins.dims[1];
-    // vec1u counts(nbin);
-    // for (uint_t i = 0; i < nbin; ++i) {
-    //     counts[i] = total(in_bin(data, bins(_,i)));
-    // }
 
     return counts;
 }
