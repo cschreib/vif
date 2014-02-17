@@ -1686,7 +1686,6 @@ vec1u where(const vec_t<Dim,Type>& v) {
     }
 
     ids.dims[0] = ids.data.size();
-    ids.data.shrink_to_fit();
     return ids;
 }
 
