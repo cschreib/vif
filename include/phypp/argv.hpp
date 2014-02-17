@@ -175,11 +175,23 @@ struct program_arguments {
         valid_ = !read_;
     }
 
+    explicit program_arguments(const vec1s& args) {
+        argv_ = args;
+        read_.resize(args.size());
+        valid_ = !read_;
+    }
+
     ~program_arguments() {
         vec1u idm = where(!read_);
         for (auto& i : idm) {
             warning("unrecognized program argument '", argv_[i],"'");
         }
+    }
+
+    void merge(const program_arguments& pa) {
+        append(argv_, pa.argv_);
+        append(read_, pa.read_);
+        append(valid_, pa.valid_);
     }
 
     template<typename ... Args>
