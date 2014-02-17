@@ -161,24 +161,42 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
     }
 }
 
+struct program_arguments {
+    program_arguments(int argc, char* argv[]) {
+        if (argc <= 1) return;
+
+        uint_t narg = argc;
+        argv_ = strarr(narg-1);
+        for (uint_t i = 1; i < narg; ++i) {
+            argv_[i-1] = trim(argv[i]);
+        }
+
+        read_.resize(narg-1);
+        valid_ = !read_;
+    }
+
+    ~program_arguments() {
+        vec1u idm = where(!read_);
+        for (auto& i : idm) {
+            warning("unrecognized program argument '", argv_[i],"'");
+        }
+    }
+
+    template<typename ... Args>
+    void read(const std::string& names, Args&& ... args) {
+        read_args_(argv_, read_, valid_, names, std::forward<Args>(args)...);
+    }
+
+private :
+    vec1s argv_;
+    vec1b read_;
+    vec1b valid_;
+};
+
 template<typename ... Args>
 void read_args(uint_t argc, char* argv[], const std::string& names, Args&& ... args) {
-    if (argc <= 1) return;
-
-    vec1s sargv = strarr(argc-1);
-    for (uint_t i = 1; i < argc; ++i) {
-        sargv[i-1] = trim(argv[i]);
-    }
-
-    vec1b read  = boolarr(argc-1);
-    vec1b valid = !read;
-
-    read_args_(sargv, read, valid, names, std::forward<Args>(args)...);
-
-    vec1u idm = where(!read);
-    for (auto& i : idm) {
-        warning("unrecognized program argument '", sargv[i],"'");
-    }
+    program_arguments pa(argc, argv);
+    pa.read(names, std::forward<Args>(args)...);
 }
 
 void save_args(const std::string& file, const std::string& pname, int argc, char* argv[]) {
