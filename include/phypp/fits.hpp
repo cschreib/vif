@@ -471,7 +471,7 @@ namespace fits {
 
         std::valarray<rtype_t<Type>> tv(v.size());
         for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = dref(v.data[i]);
+            tv[i] = dref<Type>(v.data[i]);
         }
 
         try {
@@ -553,7 +553,7 @@ namespace fits {
 
         std::valarray<rtype_t<Type>> tv(v.size());
         for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = dref(v.data[i]);
+            tv[i] = dref<Type>(v.data[i]);
         }
 
         try {

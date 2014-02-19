@@ -39,41 +39,47 @@ template<typename T>
 struct vb_ref {
     static T& get(T& t) { return t; }
     static const T& get(const T& t) { return t; }
+    static T* ref(T& t) { return &t; }
+    static const T* ref(const T& t) { return &t; }
 };
 template<typename T>
 struct vb_ref<const T> {
     static const T& get(const T& t) { return t; }
+    static const T* ref(const T& t) { return &t; }
 };
 template<>
 struct vb_ref<bool> {
     static bool& get(dtype_t<bool>& t) { return *(bool*)&t; }
     static const bool& get(const dtype_t<bool>& t) { return *(const bool*)&t; }
+    static dtype_t<bool>* ref(bool& t) { return (dtype_t<bool>*)&t; }
+    static const dtype_t<bool>* ref(const bool& t) { return (const dtype_t<bool>*)&t; }
 };
 template<>
 struct vb_ref<const bool> {
     static const bool& get(const dtype_t<bool>& t) { return *(const bool*)&t; }
+    static const dtype_t<bool>* ref(const bool& t) { return (const dtype_t<bool>*)&t; }
 };
 
 template<typename T>
 using rtype_t = typename std::remove_cv<typename std::remove_pointer<T>::type>::type;
 
 // Helpers to reference/dereference variables only when necessary.
-template<typename T>
+template<typename Type, typename T>
 T& dref(T& t) {
     return t;
 }
 
-template<typename T>
-T& dref(T* t) {
-    return *t;
+template<typename Type, typename T>
+auto dref(T* t) -> decltype(vb_ref<rtype_t<Type>>::get(*t)) {
+    return vb_ref<rtype_t<Type>>::get(*t);
 }
 
-template<typename T>
-T* ref(T& t) {
-    return &t;
+template<typename Type, typename T>
+auto ref(T& t) -> decltype(vb_ref<rtype_t<Type>>::ref(t)) {
+    return vb_ref<rtype_t<Type>>::ref(t);
 }
 
-template<typename T>
+template<typename Type, typename T>
 T* ref(T* t) {
     return t;
 }
@@ -254,7 +260,7 @@ namespace vec_access {
         static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
             const std::array<uint_t, Dim>& pitch, const T& ix) {
 
-            t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
+            t.data[itx] = ref<Type>(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
             ++itx;
         }
 
@@ -262,7 +268,7 @@ namespace vec_access {
             const std::array<uint_t, Dim>& pitch, placeholder_t) {
 
             for (uint_t j = 0; j < v.dims[Dim-1]; ++j) {
-                t.data[itx] = ref(v.data[ivx+j]);
+                t.data[itx] = ref<Type>(v.data[ivx+j]);
                 ++itx;
             }
         }
@@ -272,7 +278,7 @@ namespace vec_access {
             const std::array<uint_t, Dim>& pitch, const vec_t<1,T>& r) {
 
             for (uint_t j = 0; j < r.data.size(); ++j) {
-                t.data[itx] = ref(v.data[ivx+v.template to_idx<Dim-1>(dref(r.data[j]))]);
+                t.data[itx] = ref<Type>(v.data[ivx+v.template to_idx<Dim-1>(dref<Type>(r.data[j]))]);
                 ++itx;
             }
         }
@@ -301,7 +307,8 @@ namespace vec_access {
 
             for (uint_t j = 0; j < r.data.size(); ++j) {
                 make_indices_(t, itx, v, ivx +
-                    v.template to_idx<IV>(dref(r.data[j]))*pitch[IV], cte_t<IV+1>(), pitch, i...
+                    v.template to_idx<IV>(dref<Type>(r.data[j]))*pitch[IV], cte_t<IV+1>(),
+                    pitch, i...
                 );
             }
         }
@@ -349,7 +356,7 @@ namespace vec_access {
             t.resize();
 
             for (uint_t i = 0; i < v.dims[0]; ++i) {
-                t.data[i] = ref(v.data[i]);
+                t.data[i] = ref<Type>(v.data[i]);
             }
 
             return t;
@@ -362,7 +369,7 @@ namespace vec_access {
             t.resize();
 
             for (uint_t i = 0; i < r.data.size(); ++i) {
-                t.data[i] = ref(v.data[v.to_idx(dref(r.data[i]))]);
+                t.data[i] = ref<Type>(v.data[v.to_idx(dref<Type>(r.data[i]))]);
             }
 
             return t;
@@ -398,7 +405,7 @@ namespace vec_access {
         }
 
         static type access(itype& v, const Args& ... i) {
-            return reinterpret_cast<type>(dref(v.data[get_index_(v, 0, i...)]));
+            return reinterpret_cast<type>(dref<Type>(v.data[get_index_(v, 0, i...)]));
         }
     };
 
@@ -411,7 +418,7 @@ namespace vec_access {
             const dtype_t<rptype>&, dtype_t<rptype>&>::type;
 
         static type access(itype& v, const T& i) {
-            return dref(v.data[v.to_idx(i)]);
+            return dref<Type>(v.data[v.to_idx(i)]);
         }
     };
 
@@ -577,7 +584,7 @@ struct vec_t {
     vec_t(const vec_t<Dim,T>& v) : dims(v.dims) {
         data.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
-            data[i] = dref(v.data[i]);
+            data[i] = dref<T>(v.data[i]);
         }
     }
 
@@ -882,14 +889,14 @@ struct vec_t {
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    t[i] = dref(u.data[i]); \
+                    t[i] = dref<U>(u.data[i]); \
                 } \
                 for (uint_t i = 0; i < data.size(); ++i) { \
                     data[i] op t[i]; \
                 } \
             } else { \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    data[i] op dref(u.data[i]); \
+                    data[i] op dref<U>(u.data[i]); \
                 } \
             } \
             return *this; \
@@ -998,7 +1005,7 @@ struct vec_t<Dim,Type*> {
     vec_t& operator = (const vec_t<Dim,T>& v) {
         assert(data.size() == v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
-            *data[i] = dref(v.data[i]);
+            *data[i] = dref<T>(v.data[i]);
         }
         return *this;
     }
@@ -1188,14 +1195,14 @@ struct vec_t<Dim,Type*> {
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    t[i] = dref(u.data[i]); \
+                    t[i] = dref<U>(u.data[i]); \
                 } \
                 for (uint_t i = 0; i < data.size(); ++i) { \
                     *data[i] op t[i]; \
                 } \
             } else { \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    *data[i] op dref(u.data[i]); \
+                    *data[i] op dref<U>(u.data[i]); \
                 } \
             } \
             return *this; \
@@ -1372,7 +1379,7 @@ const T& get_element_(const T& t, uint_t i) {
 
 template<std::size_t Dim, typename T>
 auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
-    return dref(t.data[i]);
+    return dref<T>(t.data[i]);
 }
 
 #define VECTORIZE(op, sop) \
@@ -1464,7 +1471,7 @@ VECTORIZE(-, -=)
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v, const U& u) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.data.size(); ++i) { \
-            tv.data[i] = (dref(v.data[i]) op u); \
+            tv.data[i] = (dref<T>(v.data[i]) op u); \
         } \
         return tv; \
     } \
@@ -1473,7 +1480,7 @@ VECTORIZE(-, -=)
     vec_t<Dim,bool> operator op (const U& u, const vec_t<Dim,T>& v) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
-            tv.data[i] = (u op dref(v.data[i])); \
+            tv.data[i] = (u op dref<T>(v.data[i])); \
         } \
         return tv; \
     } \
@@ -1484,7 +1491,7 @@ VECTORIZE(-, -=)
             "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
-            tv.data[i] = (dref(v.data[i]) op dref(u.data[i])); \
+            tv.data[i] = (dref<T>(v.data[i]) op dref<U>(u.data[i])); \
         } \
         return tv; \
     }
@@ -1509,7 +1516,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         vec_t<Dim,bool> tv = v1; \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            tv.data[i] = tv.data[i] op dref(v2.data[i]); \
+            tv.data[i] = tv.data[i] op dref<U>(v2.data[i]); \
         } \
         return tv; \
     } \
@@ -1519,7 +1526,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
         phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            v1.data[i] = v1.data[i] op dref(v2.data[i]); \
+            v1.data[i] = v1.data[i] op dref<U>(v2.data[i]); \
         } \
         return std::move(v1); \
     } \
@@ -1529,7 +1536,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
         phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v2.size(); ++i) { \
-            v2.data[i] = dref(v1.data[i]) op v2.data[i]; \
+            v2.data[i] = dref<T>(v1.data[i]) op v2.data[i]; \
         } \
         return std::move(v2); \
     } \
@@ -1538,7 +1545,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
         phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            v1.data[i] = v1.data[i] op dref(v2.data[i]); \
+            v1.data[i] = v1.data[i] op v2.data[i]; \
         } \
         return std::move(v1); \
     } \
@@ -1662,8 +1669,8 @@ bool same_size(const T& v1, const U& v2, const Args& ... args) {
 }
 
 template<std::size_t Dim, typename T>
-auto element(const vec_t<Dim,T>& v) -> decltype(v[0]) {
-    return dref(v.data[0]);
+auto element(const vec_t<Dim,T>& v) -> decltype(dref<T>(v.data[0])) {
+    return dref<T>(v.data[0]);
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>

@@ -296,7 +296,7 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
     for (uint_t i = 0; i < r.size(); ++i) {
         uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
         for (uint_t j = 0; j < v.dims[dim]; ++j) {
-            tmp[j] = dref(v.data[base + j*mpitch]);
+            tmp[j] = dref<Type>(v.data[base + j*mpitch]);
         }
 
         r[i] = (*f)(tmp);
@@ -321,7 +321,7 @@ void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
     for (uint_t i = 0; i < np; ++i) {
         uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
         for (uint_t j = 0; j < nint; ++j) {
-            tmp[j] = dref(v.data[base + j*mpitch]);
+            tmp[j] = dref<Type>(v.data[base + j*mpitch]);
         }
 
         func(i, tmp);
@@ -484,6 +484,7 @@ rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
     vec1u ok = where(finite(v));
     if (ok.empty()) return 0;
 
+    // TODO: use same algorithm than median
     typename vec_t<1,Type>::effective_type t = v[ok];
     std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
@@ -528,61 +529,61 @@ vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec_t<Dim,Type>& v) {
-    return dref(*std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
-        if (nan(dref(t1))) return false;
-        if (nan(dref(t2))) return true;
-        return dref(t1) < dref(t2);
-    }));
+    return *std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
+        if (nan(t1)) return false;
+        if (nan(t2)) return true;
+        return t1 < t2;
+    });
 }
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> max(const vec_t<Dim,Type>& v) {
-    return dref(*std::max_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
-        if (nan(dref(t1))) return true;
-        if (nan(dref(t2))) return false;
-        return dref(t1) < dref(t2);
-    }));
+    return *std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
+        if (nan(t1)) return true;
+        if (nan(t2)) return false;
+        return t1 < t2;
+    });
 }
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec_t<Dim,Type>& v, uint_t& id) {
-    auto iter = std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
-        if (nan(dref(t1))) return false;
-        if (nan(dref(t2))) return true;
-        return dref(t1) < dref(t2);
+    auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
+        if (nan(t1)) return false;
+        if (nan(t2)) return true;
+        return t1 < t2;
     });
 
     id = iter - v.data.begin();
-    return dref(*iter);
+    return *iter;
 }
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> max(const vec_t<Dim,Type>& v, uint_t& id) {
-    auto iter = std::max_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
-        if (nan(dref(t1))) return true;
-        if (nan(dref(t2))) return false;
-        return dref(t1) < dref(t2);
+    auto iter = std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
+        if (nan(t1)) return true;
+        if (nan(t2)) return false;
+        return t1 < t2;
     });
 
     id = iter - v.data.begin();
-    return dref(*iter);
+    return *iter;
 }
 
 template<std::size_t Dim, typename Type>
 uint_t min_id(const vec_t<Dim,Type>& v) {
-    return std::min_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
-        if (nan(dref(t1))) return false;
-        if (nan(dref(t2))) return true;
-        return dref(t1) < dref(t2);
+    return std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
+        if (nan(t1)) return false;
+        if (nan(t2)) return true;
+        return t1 < t2;
     }) - v.data.begin();
 }
 
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec_t<Dim,Type>& v) {
-    return std::max_element(v.data.begin(), v.data.end(), [](Type t1, Type t2){
-        if (nan(dref(t1))) return true;
-        if (nan(dref(t2))) return false;
-        return dref(t1) < dref(t2);
+    return std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
+        if (nan(t1)) return true;
+        if (nan(t2)) return false;
+        return t1 < t2;
     }) - v.data.begin();
 }
 
@@ -794,7 +795,7 @@ auto invsqr(vec_t<Dim,Type>&& v) {
         using ntype = decltype(name(v[0], args...)); \
         vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
         for (auto& t : v.data) { \
-            r.data.push_back(name(dref(t), args...)); \
+            r.data.push_back(name(dref<Type>(t), args...)); \
         } \
         return r; \
     } \
@@ -814,7 +815,7 @@ auto invsqr(vec_t<Dim,Type>&& v) {
         using ntype = decltype(orig(v[0], args...)); \
         vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
         for (auto& t : v.data) { \
-            r.data.push_back(orig(dref(t), args...)); \
+            r.data.push_back(orig(dref<Type>(t), args...)); \
         } \
         return r; \
     } \
@@ -1061,7 +1062,7 @@ auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
-        d.data[i] = &v(i,i);
+        d.data[i] = ref<Type>(v(i,i));
     }
 
     return d;
@@ -1074,7 +1075,7 @@ auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
-        d.data[i] = &v(i,i);
+        d.data[i] = ref<Type>(v(i,i));
     }
 
     return d;
@@ -1631,15 +1632,15 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
         rtypex xlow, xup;
         if (low != npos) {
             if (low != nmax-1) {
-                ylow = dref(y.data[low]); yup = dref(y.data[low+1]);
-                xlow = dref(x.data[low]); xup = dref(x.data[low+1]);
+                ylow = dref<TypeY>(y.data[low]); yup = dref<TypeY>(y.data[low+1]);
+                xlow = dref<TypeX1>(x.data[low]); xup = dref<TypeX1>(x.data[low+1]);
             } else {
-                ylow = dref(y.data[low-1]); yup = dref(y.data[low]);
-                xlow = dref(x.data[low-1]); xup = dref(x.data[low]);
+                ylow = dref<TypeY>(y.data[low-1]); yup = dref<TypeY>(y.data[low]);
+                xlow = dref<TypeX1>(x.data[low-1]); xup = dref<TypeX1>(x.data[low]);
             }
         } else {
-            ylow = dref(y.data[0]); yup = dref(y.data[1]);
-            xlow = dref(x.data[0]); xup = dref(x.data[1]);
+            ylow = dref<TypeY>(y.data[0]); yup = dref<TypeY>(y.data[1]);
+            xlow = dref<TypeX1>(x.data[0]); xup = dref<TypeX1>(x.data[1]);
         }
 
         r.push_back(ylow + (yup - ylow)*(tx - xlow)/(xup - xlow));
@@ -1670,15 +1671,15 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) 
     rtypex xlow, xup;
     if (low != npos) {
         if (low != nmax-1) {
-            ylow = dref(y.data[low]); yup = dref(y.data[low+1]);
-            xlow = dref(x.data[low]); xup = dref(x.data[low+1]);
+            ylow = dref<TypeY>(y.data[low]); yup = dref<TypeY>(y.data[low+1]);
+            xlow = dref<TypeX>(x.data[low]); xup = dref<TypeX>(x.data[low+1]);
         } else {
-            ylow = dref(y.data[low-1]); yup = dref(y.data[low]);
-            xlow = dref(x.data[low-1]); xup = dref(x.data[low]);
+            ylow = dref<TypeY>(y.data[low-1]); yup = dref<TypeY>(y.data[low]);
+            xlow = dref<TypeX>(x.data[low-1]); xup = dref<TypeX>(x.data[low]);
         }
     } else {
-        ylow = dref(y.data[0]); yup = dref(y.data[1]);
-        xlow = dref(x.data[0]); xup = dref(x.data[1]);
+        ylow = dref<TypeY>(y.data[0]); yup = dref<TypeY>(y.data[1]);
+        xlow = dref<TypeX>(x.data[0]); xup = dref<TypeX>(x.data[1]);
     }
 
     return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);

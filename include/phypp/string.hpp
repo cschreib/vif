@@ -70,7 +70,7 @@ template<std::size_t Dim, typename Type>
 vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v) {
     vec_t<Dim,std::string> s = strarr(v.dims);
     for (std::size_t i = 0; i < v.data.size(); ++i) {
-        s.data[i] = strn(dref(v.data[i]));
+        s.data[i] = strn(dref<Type>(v.data[i]));
     }
 
     return s;
@@ -80,7 +80,7 @@ template<std::size_t Dim, typename Type>
 vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v, std::size_t n, char fill = '0') {
     vec_t<Dim,std::string> s = strarr(v.dims);
     for (std::size_t i = 0; i < v.data.size(); ++i) {
-        s.data[i] = strn(dref(v.data[i]), n, fill);
+        s.data[i] = strn(dref<Type>(v.data[i]), n, fill);
     }
 
     return s;
@@ -98,7 +98,7 @@ template<std::size_t Dim, typename Type>
 vec_t<Dim,std::string> strna_sci(const vec_t<Dim,Type>& v) {
     vec_t<Dim,std::string> s = strarr(v.dims);
     for (std::size_t i = 0; i < v.data.size(); ++i) {
-        s.data[i] = strn_sci(dref(v.data[i]));
+        s.data[i] = strn_sci(dref<Type>(v.data[i]));
     }
 
     return s;
@@ -294,7 +294,7 @@ vec_t<Dim,bool> match(const vec_t<Dim,Type>& v, const std::string& regex) {
     build_regex_(regex, re);
     vec_t<Dim,bool> r = boolarr(v.dims);
     for (uint_t i = 0; i < v.size(); ++i) {
-        r.data[i] = match_(dref(v.data[i]), regex, re);
+        r.data[i] = match_(dref<Type>(v.data[i]), regex, re);
     }
     regfree(&re);
     return r;
@@ -379,7 +379,7 @@ std::string keep_end(std::string s, uint_t n = 1) {
         using ntype = decltype(name(v[0], args...)); \
         vec_t<Dim,ntype> r = arr<ntype>(v.dims); \
         for (std::size_t i = 0; i < v.data.size(); ++i) { \
-            r.data[i] = name(dref(v.data[i]), args...); \
+            r.data[i] = name(dref<Type>(v.data[i]), args...); \
         } \
         return r; \
     }
