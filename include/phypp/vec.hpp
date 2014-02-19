@@ -51,13 +51,16 @@ template<>
 struct vb_ref<bool> {
     static bool& get(dtype_t<bool>& t) { return *(bool*)&t; }
     static const bool& get(const dtype_t<bool>& t) { return *(const bool*)&t; }
-    static dtype_t<bool>* ref(bool& t) { return (dtype_t<bool>*)&t; }
-    static const dtype_t<bool>* ref(const bool& t) { return (const dtype_t<bool>*)&t; }
+    static bool* ref(bool& t) { return &t; }
+    static bool* ref(dtype_t<bool>& t) { return (bool*)&t; }
+    static const bool* ref(const bool& t) { return &t; }
+    static const bool* ref(const dtype_t<bool>& t) { return (const bool*)&t; }
 };
 template<>
 struct vb_ref<const bool> {
     static const bool& get(const dtype_t<bool>& t) { return *(const bool*)&t; }
-    static const dtype_t<bool>* ref(const bool& t) { return (const dtype_t<bool>*)&t; }
+    static const bool* ref(const bool& t) { return &t; }
+    static const bool* ref(const dtype_t<bool>& t) { return (const bool*)&t; }
 };
 
 template<typename T>
