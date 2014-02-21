@@ -4,6 +4,7 @@ void print_help();
 
 bool get_flux(int argc, char* argv[], const vec3d& cube);
 bool get_logdisp(int argc, char* argv[], const vec3d& cube);
+bool run_batch(int argc, char* argv[], const std::string& file);
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -41,7 +42,7 @@ struct flux_extractor {
     vec2d psf;
     vec2b ipsf;
 
-    bool config(program_arguments& pa) {
+    bool config(program_arguments& pa, bool init = false) {
         std::string tpsf;
         bool med = false;
         bool norm = false;
@@ -54,22 +55,24 @@ struct flux_extractor {
 
         if (med) mea = false;
 
-        if (tpsf.empty()) {
+        if (!init && psf.empty() && tpsf.empty()) {
             error("missing PSF file: psf=...");
             return false;
         }
 
-        fits::read(tpsf, psf);
+        if (!tpsf.empty()) {
+            fits::read(tpsf, psf);
 
-        if (norm) {
-            psf /= max(fabs(psf));
-        }
+            if (norm) {
+                psf /= max(fabs(psf));
+            }
 
-        ipsf = fabs(psf) > frac*max(fabs(psf));
-        vec1u id = where(ipsf);
-        if (id.empty()) {
-            error("no pixel to fit (frac=", frac,")");
-            return false;
+            ipsf = fabs(psf) >= frac*max(fabs(psf));
+            vec1u id = where(ipsf);
+            if (id.empty()) {
+                error("no pixel to fit (frac=", frac,")");
+                return false;
+            }
         }
 
         return true;
@@ -123,7 +126,7 @@ struct logdisp_extractor {
     vec2d psf;
     vec2b ipsf, ifpsf;
 
-    bool config(program_arguments& pa) {
+    bool config(program_arguments& pa, bool init = false) {
         std::string tpsf;
         bool norm = false;
         double frac = 0.5;
@@ -133,29 +136,31 @@ struct logdisp_extractor {
             name(tpsf, "psf"), frac, ffrac, norm, nbstrap, name(tseed, "seed")
         ));
 
-        if (tpsf.empty()) {
+        if (!init && psf.empty() && tpsf.empty()) {
             error("missing PSF file: psf=...");
             return false;
         }
 
-        fits::read(tpsf, psf);
+        if (!tpsf.empty()) {
+            fits::read(tpsf, psf);
 
-        if (norm) {
-            psf /= max(fabs(psf));
-        }
+            if (norm) {
+                psf /= max(fabs(psf));
+            }
 
-        ipsf = fabs(psf) > frac*max(fabs(psf));
-        vec1u id = where(ipsf);
-        if (id.empty()) {
-            error("no pixel to fit (frac=", frac,")");
-            return false;
-        }
+            ipsf = fabs(psf) >= frac*max(fabs(psf));
+            vec1u id = where(ipsf);
+            if (id.empty()) {
+                error("no pixel to fit (frac=", frac,")");
+                return false;
+            }
 
-        ifpsf = fabs(psf) > ffrac*max(fabs(psf));
-        id = where(ifpsf);
-        if (id.empty()) {
-            error("no pixel to fit (frac=", ffrac,")");
-            return false;
+            ifpsf = fabs(psf) >= ffrac*max(fabs(psf));
+            id = where(ifpsf);
+            if (id.empty()) {
+                error("no pixel to fit (frac=", ffrac,")");
+                return false;
+            }
         }
 
         return true;
@@ -168,11 +173,11 @@ struct logdisp_extractor {
         dsp.resize(cube.dims[1], cube.dims[2]);
 
         run_dim_idx(cube, 0, [&](uint_t i, vec1d& d) {
-            med[i] = fast_median(d);
+            med[i] = inplace_median(d);
             for (uint_t j : range(d)) {
                 d[j] = fabs(d[j] - med[i]);
             }
-            dsp[i] = fast_median(d);
+            dsp[i] = inplace_median(d);
         });
 
         vec1u idd = where(ipsf && finite(dsp));
@@ -285,6 +290,133 @@ bool get_logdisp(int argc, char* argv[], const vec3d& cube) {
     return true;
 }
 
+bool run_batch(int argc, char* argv[], const std::string& file) {
+    std::string op = argv[1];
+
+    if (op == "flux") {
+        bool bstrap = false;
+        std::string out = "";
+
+        flux_extractor ex;
+
+        {
+            program_arguments pa(argc-1, argv+1);
+            pa.read(arg_list(bstrap, out));
+            if (!ex.config(pa, true)) return false;
+        }
+
+        vec1s cfile;
+        vec1d flux, bg, flux_err, bg_err;
+
+        vec1s lines; {
+            std::ifstream bfile(file);
+            while (!bfile.eof()) {
+                std::string line;
+                std::getline(bfile, line);
+                line = trim(line);
+
+                if (line.empty()) continue;
+                lines.push_back(line);
+            }
+        }
+
+        auto pg = progress_start(lines.size());
+        for (auto& line : lines) {
+            vec1s args = trim(split(line, " "));
+            cfile.push_back(args[0]);
+            if (args.size() > 1) {
+                args = args[uindgen(args.size()-1)+1];
+                program_arguments tmp(args);
+                ex.config(tmp);
+            }
+
+            vec3d cube; fits::read(cfile.data.back(), cube);
+            flux.push_back(0.0); bg.push_back(0.0);
+            ex.extract(cube, flux.data.back(), bg.data.back());
+
+            if (bstrap) {
+                flux_err.push_back(0.0); bg_err.push_back(0.0);
+                ex.bootstrap(cube, flux_err.data.back(), bg_err.data.back());
+            }
+
+            progress(pg);
+        }
+
+        if (out.empty()) {
+            out = "fluxcube.fits";
+            warning("output file not set (out=...), using 'fluxcube.fits'");
+        } else {
+            file::mkdir(file::get_directory(out));
+        }
+
+        fits::write_table(out, ftable(cfile, flux, bg, flux_err, bg_err));
+
+        return true;
+    } else if (op == "logdisp") {
+        bool bstrap = false;
+        std::string out = "";
+
+        logdisp_extractor ex;
+
+        {
+            program_arguments pa(argc-1, argv+1);
+            pa.read(arg_list(bstrap, out));
+            if (!ex.config(pa, true)) return false;
+        }
+
+        vec1s cfile;
+        vec1d disp, bg, disp_err, bg_err;
+
+        vec1s lines; {
+            std::ifstream bfile(file);
+            while (!bfile.eof()) {
+                std::string line;
+                std::getline(bfile, line);
+                line = trim(line);
+
+                if (line.empty()) continue;
+                lines.push_back(line);
+            }
+        }
+
+        auto pg = progress_start(lines.size());
+        for (auto& line : lines) {
+            vec1s args = trim(split(line, " "));
+            cfile.push_back(args[0]);
+            if (args.size() > 1) {
+                args = args[uindgen(args.size()-1)+1];
+                program_arguments tmp(args);
+                ex.config(tmp);
+            }
+
+            vec3d cube; fits::read(cfile.data.back(), cube);
+            disp.push_back(0.0); bg.push_back(0.0);
+            ex.extract(cube, disp.data.back(), bg.data.back());
+
+            if (bstrap) {
+                disp_err.push_back(0.0); bg_err.push_back(0.0);
+                ex.bootstrap(cube, disp_err.data.back(), bg_err.data.back());
+            }
+
+            progress(pg);
+        }
+
+        if (out.empty()) {
+            out = "fluxcube.fits";
+            warning("output file not set (out=...), using 'fluxcube.fits'");
+        } else {
+            file::mkdir(file::get_directory(out));
+        }
+
+        fits::write_table(out, ftable(cfile, disp, bg, disp_err, bg_err));
+
+        return true;
+    } else {
+        error("unknown operation '"+op+"'");
+        return false;
+    }
+}
+
 void print_help() {
     using namespace format;
 
@@ -293,6 +425,7 @@ void print_help() {
     header("Available operations:");
     bullet("flux", "perform mean or median stacking then PSF fitting to get the flux");
     bullet("logdisp", "perform MAD stacking then PSF fitting to get the lognormal dispersion");
+    bullet("batch", "run an operation on a list of cubes provided in a batch file");
 
     print("");
     paragraph("Copyright (c) 2014 C. Schreiber (corentin.schreiber@cea.fr)");
