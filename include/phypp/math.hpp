@@ -433,6 +433,9 @@ vec_t<Dim-1,double> mean(const vec_t<Dim,Type>& v, uint_t dim) {
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> median(vec_t<Dim,Type> v) {
+    using vtype = typename vec_t<Dim,Type>::vtype;
+    using dtype = typename vtype::value_type;
+
     uint_t nwrong = 0;
     for (uint_t i : range(v)) {
         nwrong += nan(v[i]);
@@ -441,11 +444,11 @@ rtype_t<Type> median(vec_t<Dim,Type> v) {
     if (nwrong == v.size()) return dnan;
 
     std::ptrdiff_t offset = (v.size()-nwrong)/2;
-    std::nth_element(v.begin(), v.begin() + offset, v.end(),
-        [&v](rtype_t<Type> i, rtype_t<Type> j) {
-            if (nan(i)) return false;
-            if (nan(j)) return true;
-            return i < j;
+    std::nth_element(v.data.begin(), v.data.begin() + offset, v.data.end(),
+        [](dtype i, dtype j) {
+            if (nan(dref<Type>(i))) return false;
+            if (nan(dref<Type>(j))) return true;
+            return dref<Type>(i) < dref<Type>(j);
         }
     );
 
@@ -454,6 +457,9 @@ rtype_t<Type> median(vec_t<Dim,Type> v) {
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
+    using vtype = typename vec_t<Dim,Type>::vtype;
+    using dtype = typename vtype::value_type;
+
     uint_t nwrong = 0;
     for (uint_t i : range(v)) {
         nwrong += nan(v[i]);
@@ -462,11 +468,11 @@ rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
     if (nwrong == v.size()) return dnan;
 
     std::ptrdiff_t offset = (v.size()-nwrong)/2;
-    std::nth_element(v.begin(), v.begin() + offset, v.end(),
-        [&v](rtype_t<Type> i, rtype_t<Type> j) {
-            if (nan(i)) return false;
-            if (nan(j)) return true;
-            return i < j;
+    std::nth_element(v.data.begin(), v.data.begin() + offset, v.data.end(),
+        [](dtype i, dtype j) {
+            if (nan(dref<Type>(i))) return false;
+            if (nan(dref<Type>(j))) return true;
+            return dref<Type>(i) < dref<Type>(j);
         }
     );
 
