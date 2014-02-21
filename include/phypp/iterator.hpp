@@ -27,7 +27,19 @@ public :
     }
 
     const_ptr_iterator_base operator ++ () {
-        ++i; return *this;
+        const_ptr_iterator_base iter = *this;
+        ++i;
+        return iter;
+    }
+
+    const_ptr_iterator_base& operator -- (int) {
+        --i; return *this;
+    }
+
+    const_ptr_iterator_base operator -- () {
+        const_ptr_iterator_base iter = *this;
+        --i;
+        return iter;
     }
 
     void operator += (int_t n) {
@@ -38,6 +50,22 @@ public :
         i -= n;
     }
 
+    const_ptr_iterator_base operator + (int_t n) const {
+        const_ptr_iterator_base iter = *this;
+        iter.i += n;
+        return iter;
+    }
+
+    const_ptr_iterator_base operator - (int_t n) const {
+        const_ptr_iterator_base iter = *this;
+        iter.i -= n;
+        return iter;
+    }
+
+    std::ptrdiff_t operator - (const const_ptr_iterator_base& iter) const {
+        return iter.i - i;
+    }
+
     bool operator == (const const_ptr_iterator_base& iter) const {
         return i == iter.i;
     }
@@ -46,8 +74,20 @@ public :
         return i != iter.i;
     }
 
-    auto operator - (const const_ptr_iterator_base& iter) const -> decltype(i - iter.i) {
-        return i - iter.i;
+    bool operator < (const const_ptr_iterator_base& iter) const {
+        return i < iter.i;
+    }
+
+    bool operator <= (const const_ptr_iterator_base& iter) const {
+        return i <= iter.i;
+    }
+
+    bool operator > (const const_ptr_iterator_base& iter) const {
+        return i > iter.i;
+    }
+
+    bool operator >= (const const_ptr_iterator_base& iter) const {
+        return i >= iter.i;
     }
 
     auto operator * () -> decltype(**i) {
@@ -83,7 +123,19 @@ public :
     }
 
     ptr_iterator_base operator ++ () {
-        ++i; return *this;
+        ptr_iterator_base iter = *this;
+        ++i;
+        return iter;
+    }
+
+    ptr_iterator_base& operator -- (int) {
+        --i; return *this;
+    }
+
+    ptr_iterator_base operator -- () {
+        ptr_iterator_base iter = *this;
+        --i;
+        return iter;
     }
 
     void operator += (int_t n) {
@@ -94,6 +146,22 @@ public :
         i -= n;
     }
 
+    ptr_iterator_base operator + (int_t n) const {
+        ptr_iterator_base iter = *this;
+        iter.i += n;
+        return iter;
+    }
+
+    ptr_iterator_base operator - (int_t n) const {
+        ptr_iterator_base iter = *this;
+        iter.i -= n;
+        return iter;
+    }
+
+    std::ptrdiff_t operator - (const ptr_iterator_base& iter) const {
+        return iter.i - i;
+    }
+
     bool operator == (const ptr_iterator_base& iter) const {
         return i == iter.i;
     }
@@ -102,8 +170,20 @@ public :
         return i != iter.i;
     }
 
-    auto operator - (const ptr_iterator_base& iter) const -> decltype(i - iter.i) {
-        return i - iter.i;
+    bool operator < (const ptr_iterator_base& iter) const {
+        return i < iter.i;
+    }
+
+    bool operator <= (const ptr_iterator_base& iter) const {
+        return i <= iter.i;
+    }
+
+    bool operator > (const ptr_iterator_base& iter) const {
+        return i > iter.i;
+    }
+
+    bool operator >= (const ptr_iterator_base& iter) const {
+        return i >= iter.i;
     }
 
     auto operator * () -> decltype(**i) {
@@ -139,7 +219,19 @@ public :
     }
 
     const_reverse_ptr_iterator_base operator ++ () {
-        ++i; return *this;
+        const_reverse_ptr_iterator_base iter = *this;
+        ++i;
+        return iter;
+    }
+
+    const_reverse_ptr_iterator_base& operator -- (int) {
+        --i; return *this;
+    }
+
+    const_reverse_ptr_iterator_base operator -- () {
+        const_reverse_ptr_iterator_base iter = *this;
+        --i;
+        return iter;
     }
 
     void operator += (int_t n) {
@@ -150,6 +242,22 @@ public :
         i -= n;
     }
 
+    const_reverse_ptr_iterator_base operator + (int_t n) const {
+        const_reverse_ptr_iterator_base iter = *this;
+        iter.i += n;
+        return iter;
+    }
+
+    const_reverse_ptr_iterator_base operator - (int_t n) const {
+        const_reverse_ptr_iterator_base iter = *this;
+        iter.i -= n;
+        return iter;
+    }
+
+    std::ptrdiff_t operator - (const const_reverse_ptr_iterator_base& iter) const {
+        return iter.i - i;
+    }
+
     bool operator == (const const_reverse_ptr_iterator_base& iter) const {
         return i == iter.i;
     }
@@ -158,8 +266,20 @@ public :
         return i != iter.i;
     }
 
-    auto operator - (const const_reverse_ptr_iterator_base& iter) const -> decltype(i - iter.i) {
-        return i - iter.i;
+    bool operator < (const const_reverse_ptr_iterator_base& iter) const {
+        return i < iter.i;
+    }
+
+    bool operator <= (const const_reverse_ptr_iterator_base& iter) const {
+        return i <= iter.i;
+    }
+
+    bool operator > (const const_reverse_ptr_iterator_base& iter) const {
+        return i > iter.i;
+    }
+
+    bool operator >= (const const_reverse_ptr_iterator_base& iter) const {
+        return i >= iter.i;
     }
 
     auto operator * () -> decltype(**i) {
@@ -197,7 +317,19 @@ public :
     }
 
     reverse_ptr_iterator_base operator ++ () {
-        ++i; return *this;
+        reverse_ptr_iterator_base iter = *this;
+        ++i;
+        return iter;
+    }
+
+    reverse_ptr_iterator_base& operator -- (int) {
+        --i; return *this;
+    }
+
+    reverse_ptr_iterator_base operator -- () {
+        reverse_ptr_iterator_base iter = *this;
+        --i;
+        return iter;
     }
 
     void operator += (int_t n) {
@@ -208,6 +340,22 @@ public :
         i -= n;
     }
 
+    reverse_ptr_iterator_base operator + (int_t n) const {
+        reverse_ptr_iterator_base iter = *this;
+        iter.i += n;
+        return iter;
+    }
+
+    reverse_ptr_iterator_base operator - (int_t n) const {
+        reverse_ptr_iterator_base iter = *this;
+        iter.i -= n;
+        return iter;
+    }
+
+    std::ptrdiff_t operator - (const reverse_ptr_iterator_base& iter) const {
+        return iter.i - i;
+    }
+
     bool operator == (const reverse_ptr_iterator_base& iter) const {
         return i == iter.i;
     }
@@ -216,8 +364,20 @@ public :
         return i != iter.i;
     }
 
-    auto operator - (const reverse_ptr_iterator_base& iter) const -> decltype(i - iter.i) {
-        return i - iter.i;
+    bool operator < (const reverse_ptr_iterator_base& iter) const {
+        return i < iter.i;
+    }
+
+    bool operator <= (const reverse_ptr_iterator_base& iter) const {
+        return i <= iter.i;
+    }
+
+    bool operator > (const reverse_ptr_iterator_base& iter) const {
+        return i > iter.i;
+    }
+
+    bool operator >= (const reverse_ptr_iterator_base& iter) const {
+        return i >= iter.i;
     }
 
     auto operator * () -> decltype(**i) {
