@@ -1033,7 +1033,6 @@ void catalog_t::merge(T& in, const U& out, const V& def) {
     reflex::foreach_member(reflex::wrap(out), run);
 }
 
-
 template<typename T, typename U, typename V>
 void catalog_t::merge(T& in, const U& out, const V& def, const std::string& com) {
     merge(in, out, def);
