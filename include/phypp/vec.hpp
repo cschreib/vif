@@ -36,55 +36,49 @@ template<typename T>
 using dtype_t = typename dtype_<T>::type;
 
 template<typename T>
-struct vb_ref {
-    static T& get(T& t) { return t; }
-    static const T& get(const T& t) { return t; }
-    static T* ref(T& t) { return &t; }
-    static const T* ref(const T& t) { return &t; }
-};
-template<typename T>
-struct vb_ref<const T> {
-    static const T& get(const T& t) { return t; }
-    static const T* ref(const T& t) { return &t; }
-};
-template<>
-struct vb_ref<bool> {
-    static bool& get(dtype_t<bool>& t) { return *(bool*)&t; }
-    static const bool& get(const dtype_t<bool>& t) { return *(const bool*)&t; }
-    static bool* ref(bool& t) { return &t; }
-    static bool* ref(dtype_t<bool>& t) { return (bool*)&t; }
-    static const bool* ref(const bool& t) { return &t; }
-    static const bool* ref(const dtype_t<bool>& t) { return (const bool*)&t; }
-};
-template<>
-struct vb_ref<const bool> {
-    static const bool& get(const dtype_t<bool>& t) { return *(const bool*)&t; }
-    static const bool* ref(const bool& t) { return &t; }
-    static const bool* ref(const dtype_t<bool>& t) { return (const bool*)&t; }
-};
-
-template<typename T>
-using rtype_t = typename std::remove_cv<typename std::remove_pointer<T>::type>::type;
+using rtype_t = typename std::remove_cv<
+    typename std::remove_pointer<
+        typename std::remove_cv<T>::type
+    >::type
+>::type;
 
 // Helpers to reference/dereference variables only when necessary.
+// 'Type' must be the second template argument of the vector from which this
+// value comes, i.e. vec_t<Dim,Type>.
 template<typename Type, typename T>
-T& dref(T& t) {
+rtype_t<Type>& dref(T& t) {
+    return t;
+}
+template<typename Type, typename T>
+const rtype_t<Type>& dref(const T& t) {
     return t;
 }
 
 template<typename Type, typename T>
-auto dref(T* t) -> decltype(vb_ref<rtype_t<Type>>::get(*t)) {
-    return vb_ref<rtype_t<Type>>::get(*t);
+rtype_t<Type>& dref(T* t) {
+    return reinterpret_cast<rtype_t<Type>&>(*t);
+}
+template<typename Type, typename T>
+const rtype_t<Type>& dref(const T* t) {
+    return reinterpret_cast<const rtype_t<Type>&>(*t);
 }
 
 template<typename Type, typename T>
-auto ref(T& t) -> decltype(vb_ref<rtype_t<Type>>::ref(t)) {
-    return vb_ref<rtype_t<Type>>::ref(t);
-}
-
-template<typename Type, typename T>
-T* ref(T* t) {
+rtype_t<Type>* ptr(T* t) {
     return t;
+}
+template<typename Type, typename T>
+const rtype_t<Type>* ptr(const T* t) {
+    return t;
+}
+
+template<typename Type, typename T>
+rtype_t<Type>* ptr(T& t) {
+    return reinterpret_cast<rtype_t<Type>*>(&t);
+}
+template<typename Type, typename T>
+const rtype_t<Type>* ptr(const T& t) {
+    return reinterpret_cast<const rtype_t<Type>*>(&t);
 }
 
 // Helper to check if a given type is a generic vector.
@@ -263,7 +257,7 @@ namespace vec_access {
         static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
             const std::array<uint_t, Dim>& pitch, const T& ix) {
 
-            t.data[itx] = ref<Type>(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
+            t.data[itx] = ptr<Type>(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
             ++itx;
         }
 
@@ -271,7 +265,7 @@ namespace vec_access {
             const std::array<uint_t, Dim>& pitch, placeholder_t) {
 
             for (uint_t j = 0; j < v.dims[Dim-1]; ++j) {
-                t.data[itx] = ref<Type>(v.data[ivx+j]);
+                t.data[itx] = ptr<Type>(v.data[ivx+j]);
                 ++itx;
             }
         }
@@ -281,7 +275,7 @@ namespace vec_access {
             const std::array<uint_t, Dim>& pitch, const vec_t<1,T>& r) {
 
             for (uint_t j = 0; j < r.data.size(); ++j) {
-                t.data[itx] = ref<Type>(v.data[ivx+v.template to_idx<Dim-1>(dref<Type>(r.data[j]))]);
+                t.data[itx] = ptr<Type>(v.data[ivx+v.template to_idx<Dim-1>(dref<T>(r.data[j]))]);
                 ++itx;
             }
         }
@@ -310,7 +304,7 @@ namespace vec_access {
 
             for (uint_t j = 0; j < r.data.size(); ++j) {
                 make_indices_(t, itx, v, ivx +
-                    v.template to_idx<IV>(dref<Type>(r.data[j]))*pitch[IV], cte_t<IV+1>(),
+                    v.template to_idx<IV>(dref<T>(r.data[j]))*pitch[IV], cte_t<IV+1>(),
                     pitch, i...
                 );
             }
@@ -359,7 +353,7 @@ namespace vec_access {
             t.resize();
 
             for (uint_t i = 0; i < v.dims[0]; ++i) {
-                t.data[i] = ref<Type>(v.data[i]);
+                t.data[i] = ptr<Type>(v.data[i]);
             }
 
             return t;
@@ -372,7 +366,7 @@ namespace vec_access {
             t.resize();
 
             for (uint_t i = 0; i < r.data.size(); ++i) {
-                t.data[i] = ref<Type>(v.data[v.to_idx(dref<Type>(r.data[i]))]);
+                t.data[i] = ptr<Type>(v.data[v.to_idx(dref<T>(r.data[i]))]);
             }
 
             return t;
@@ -788,7 +782,7 @@ struct vec_t {
 
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     const Type& operator [] (T i) const {
-        return vb_ref<Type>::get(data[to_idx(i)]);
+        return reinterpret_cast<const Type&>(data[to_idx(i)]);
     }
 
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
@@ -797,7 +791,7 @@ struct vec_t {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = &vb_ref<Type>::get(data[to_idx(i[j])]);
+            v.data[j] = ptr<Type>(data[to_idx(i[j])]);
         }
         return v;
     }
@@ -808,7 +802,7 @@ struct vec_t {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = &vb_ref<Type>::get(data[to_idx(i[j])]);
+            v.data[j] = ptr<Type>(data[to_idx(i[j])]);
         }
         return v;
     }
@@ -819,7 +813,7 @@ struct vec_t {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = &vb_ref<Type>::get(data[to_idx(i[j])]);
+            v.data[j] = ptr<Type>(data[to_idx(i[j])]);
         }
         return v;
     }
@@ -830,7 +824,7 @@ struct vec_t {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = &vb_ref<Type>::get(data[to_idx(i[j])]);
+            v.data[j] = ptr<Type>(data[to_idx(i[j])]);
         }
         return v;
     }
@@ -840,7 +834,7 @@ struct vec_t {
         v.data.resize(data.size());
         v.dims[0] = data.size();
         for (uint_t i = 0; i < data.size(); ++i) {
-            v.data[i] = &vb_ref<Type>::get(data[i]);
+            v.data[i] = ptr<Type>(data[i]);
         }
         return v;
     }
@@ -850,7 +844,7 @@ struct vec_t {
         v.data.resize(data.size());
         v.dims[0] = data.size();
         for (uint_t i = 0; i < data.size(); ++i) {
-            v.data[i] = &vb_ref<Type>::get(data[i]);
+            v.data[i] = ptr<Type>(data[i]);
         }
         return v;
     }

@@ -727,19 +727,22 @@ vec1d histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
 template<std::size_t Dim, typename Type>
 void data_info_(const vec_t<Dim,Type>& v) {
     vec1u idok = where(finite(v));
-    print(n_elements(idok), "/", n_elements(v), " valid values (dims: ", dim(v), ")");
-    if (n_elements(idok) == 0) return;
-    print(" min : ", min(v[idok]));
-    print(" 15% : ", percentile(v[idok], 0.15));
-    print(" 50% : ", median(v[idok]));
-    print(" mean: ", mean(v[idok]));
-    print(" 85% : ", percentile(v[idok], 0.85));
-    print(" max : ", max(v[idok]));
-    print(" rms : ", stddev(v[idok] - median(v[idok])));
+    print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
+    if (idok.size() == 0) return;
+
+    vec_t<Dim,rtype_t<Type>> tv = v[idok];
+
+    print(" min : ", min(tv));
+    print(" 15% : ", percentile(tv, 0.15));
+    print(" 50% : ", median(tv));
+    print(" mean: ", mean(tv));
+    print(" 85% : ", percentile(tv, 0.85));
+    print(" max : ", max(tv));
+    print(" rms : ", stddev(tv - median(tv)));
 }
 
 #define data_info(x) \
-    print("data info: ", #x); \
+    print("data info: ", #x, " (", typeid(x).name(), ")"); \
     data_info_(x);
 
 template<typename T>
@@ -1068,7 +1071,7 @@ auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
-        d.data[i] = ref<Type>(v(i,i));
+        d.data[i] = ptr<Type>(v(i,i));
     }
 
     return d;
@@ -1081,7 +1084,7 @@ auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
-        d.data[i] = ref<Type>(v(i,i));
+        d.data[i] = ptr<Type>(v(i,i));
     }
 
     return d;
