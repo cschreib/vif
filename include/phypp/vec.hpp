@@ -17,6 +17,61 @@ static const uint_t npos = uint_t(-1);
 template<typename T>
 std::string strn(const T&);
 
+template<typename T>
+std::string pretty_type_(type_list<T>) {
+    return typeid(T).name();
+};
+
+template<typename T>
+std::string pretty_type_(type_list<T&>) {
+    return pretty_type_(type_list<T>{})+"&";
+};
+
+template<typename T>
+std::string pretty_type_(type_list<T*>) {
+    return pretty_type_(type_list<T>{})+"*";
+};
+
+template<typename T>
+std::string pretty_type_(type_list<const T>) {
+    return "const "+pretty_type_(type_list<T>{});
+};
+
+std::string pretty_type_(type_list<int_t>) {
+    return "int";
+};
+
+std::string pretty_type_(type_list<uint_t>) {
+    return "uint";
+};
+
+std::string pretty_type_(type_list<char>) {
+    return "char";
+};
+
+std::string pretty_type_(type_list<bool>) {
+    return "bool";
+};
+
+std::string pretty_type_(type_list<double>) {
+    return "double";
+};
+
+std::string pretty_type_(type_list<float>) {
+    return "float";
+};
+
+std::string pretty_type_(type_list<std::string>) {
+    return "string";
+};
+
+template<std::size_t Dim, typename T>
+std::string pretty_type_(type_list<vec_t<Dim,T>>) {
+    return "vec<"+strn(Dim)+","+pretty_type_(type_list<T>{})+">";
+};
+
+#define pretty_type(x) pretty_type_(type_list<decltype(x)>{})
+
 // Generic vector type
 template<std::size_t Dim, typename Type>
 struct vec_t;
