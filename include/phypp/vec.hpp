@@ -102,11 +102,11 @@ using rtype_t = typename std::remove_cv<
 // value comes, i.e. vec_t<Dim,Type>.
 template<typename Type, typename T>
 rtype_t<Type>& dref(T& t) {
-    return t;
+    return reinterpret_cast<rtype_t<Type>&>(t);
 }
 template<typename Type, typename T>
 const rtype_t<Type>& dref(const T& t) {
-    return t;
+    return reinterpret_cast<const rtype_t<Type>&>(t);
 }
 
 template<typename Type, typename T>
@@ -120,11 +120,11 @@ const rtype_t<Type>& dref(const T* t) {
 
 template<typename Type, typename T>
 rtype_t<Type>* ptr(T* t) {
-    return t;
+    return reinterpret_cast<rtype_t<Type>*>(t);
 }
 template<typename Type, typename T>
 const rtype_t<Type>* ptr(const T* t) {
-    return t;
+    return reinterpret_cast<const rtype_t<Type>*>(t);
 }
 
 template<typename Type, typename T>
