@@ -638,7 +638,7 @@ int main(int argc, char* argv[]) {
         check(rms(tid - id) < 1e-10, "1");
 
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
-        diag(sq) *= 5;
+        diagonal(sq) *= 5;
         check(sq, "5, 1, 1, 1, 5, 1, 1, 1, 5");
 
         tid = id;

@@ -1065,7 +1065,7 @@ vec_t<2,rtype_t<Type>> transpose(vec_t<2,Type> v) {
 }
 
 template<typename Type>
-auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
+auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     assert(v.dims[0] == v.dims[1]);
     decltype(v(_,0)) d(vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
@@ -1078,7 +1078,7 @@ auto diag(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
 }
 
 template<typename Type>
-auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
+auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     assert(v.dims[0] == v.dims[1]);
     decltype(v(_,0)) d(vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
@@ -1093,7 +1093,7 @@ auto diag(vec_t<2,Type>& v) -> decltype(v(_,0)) {
 template<typename Type = double>
 auto identity_matrix(uint_t dim) {
     auto m = arr<Type>(dim, dim);
-    diag(m) = 1;
+    diagonal(m) = 1;
     return m;
 }
 
@@ -1118,7 +1118,7 @@ auto scale_matrix(const T& s) {
 template<typename TX, typename TY>
 auto translation_matrix(const TX& tx, const TY& ty) {
     auto m = arr<decltype(tx*ty)>(3, 3);
-    diag(m) = 1;
+    diagonal(m) = 1;
     m(0,2) = tx;
     m(1,2) = ty;
     return m;
@@ -1338,7 +1338,7 @@ nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double
             best_alpha = alpha;
         }
 
-        auto d = diag(best_alpha);
+        vec1d d = diagonal(best_alpha);
         d /= (1.0 + lambda);
 
         fr.cov     = best_alpha;
@@ -1354,7 +1354,7 @@ nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double
             best_alpha = alpha;
         }
 
-        auto d = diag(best_alpha);
+        vec1d d = diagonal(best_alpha);
         d /= (1.0 + lambda);
 
         fr.cov     = best_alpha;
@@ -1479,7 +1479,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     symmetrize(alpha);
     fr.success = true;
     fr.params = mmul(alpha, beta);
-    fr.errors = sqrt(diag(alpha));
+    fr.errors = sqrt(diagonal(alpha));
 
     vec1d model(nm);
     for (uint_t m = 0; m < nm; ++m) {
