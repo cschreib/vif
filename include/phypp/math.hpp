@@ -559,7 +559,7 @@ rtype_t<Type> min(const vec_t<Dim,Type>& v, uint_t& id) {
         return t1 < t2;
     });
 
-    id = iter - v.data.begin();
+    id = iter - v.begin();
     return *iter;
 }
 
@@ -571,7 +571,7 @@ rtype_t<Type> max(const vec_t<Dim,Type>& v, uint_t& id) {
         return t1 < t2;
     });
 
-    id = iter - v.data.begin();
+    id = iter - v.begin();
     return *iter;
 }
 
@@ -581,7 +581,7 @@ uint_t min_id(const vec_t<Dim,Type>& v) {
         if (nan(t1)) return false;
         if (nan(t2)) return true;
         return t1 < t2;
-    }) - v.data.begin();
+    }) - v.begin();
 }
 
 template<std::size_t Dim, typename Type>
@@ -590,7 +590,7 @@ uint_t max_id(const vec_t<Dim,Type>& v) {
         if (nan(t1)) return true;
         if (nan(t2)) return false;
         return t1 < t2;
-    }) - v.data.begin();
+    }) - v.begin();
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
