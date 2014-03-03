@@ -63,7 +63,7 @@ public :
     }
 
     std::ptrdiff_t operator - (const const_ptr_iterator_base& iter) const {
-        return iter.i - i;
+        return i - iter.i;
     }
 
     bool operator == (const const_ptr_iterator_base& iter) const {
@@ -159,7 +159,7 @@ public :
     }
 
     std::ptrdiff_t operator - (const ptr_iterator_base& iter) const {
-        return iter.i - i;
+        return i - iter.i;
     }
 
     bool operator == (const ptr_iterator_base& iter) const {
@@ -255,7 +255,7 @@ public :
     }
 
     std::ptrdiff_t operator - (const const_reverse_ptr_iterator_base& iter) const {
-        return iter.i - i;
+        return i - iter.i;
     }
 
     bool operator == (const const_reverse_ptr_iterator_base& iter) const {
@@ -353,7 +353,7 @@ public :
     }
 
     std::ptrdiff_t operator - (const reverse_ptr_iterator_base& iter) const {
-        return iter.i - i;
+        return i - iter.i;
     }
 
     bool operator == (const reverse_ptr_iterator_base& iter) const {
