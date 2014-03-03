@@ -162,7 +162,7 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
 }
 
 struct program_arguments {
-    program_arguments(int argc, char* argv[]) {
+    program_arguments(int argc, char* argv[]) {
         if (argc <= 1) return;
 
         uint_t narg = argc;
@@ -175,7 +175,7 @@ struct program_arguments {
         valid_ = !read_;
     }
 
-    explicit program_arguments(const vec1s& args) {
+    explicit program_arguments(const vec1s& args) {
         argv_ = args;
         read_.resize(args.size());
         valid_ = !read_;
