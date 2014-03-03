@@ -534,63 +534,61 @@ vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> min(const vec_t<Dim,Type>& v) {
-    return *std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
-        if (nan(t1)) return false;
-        if (nan(t2)) return true;
-        return t1 < t2;
-    });
-}
-
-template<std::size_t Dim, typename Type>
-rtype_t<Type> max(const vec_t<Dim,Type>& v) {
-    return *std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
-        if (nan(t1)) return true;
-        if (nan(t2)) return false;
-        return t1 < t2;
-    });
-}
-
-template<std::size_t Dim, typename Type>
-rtype_t<Type> min(const vec_t<Dim,Type>& v, uint_t& id) {
+typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
     auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return false;
         if (nan(t2)) return true;
         return t1 < t2;
     });
 
-    id = iter - v.begin();
-    return *iter;
+    if (iter == v.end()) iter = v.begin();
+    return iter;
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> max(const vec_t<Dim,Type>& v, uint_t& id) {
+typename vec_t<Dim,Type>::const_iterator max_(const vec_t<Dim,Type>& v) {
     auto iter = std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return true;
         if (nan(t2)) return false;
         return t1 < t2;
     });
 
+    if (iter == v.end()) iter = v.begin();
+    return iter;
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> min(const vec_t<Dim,Type>& v) {
+    return *min_(v);
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> max(const vec_t<Dim,Type>& v) {
+    return *max_(v);
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> min(const vec_t<Dim,Type>& v, uint_t& id) {
+    auto iter = min_(v);
+    id = iter - v.begin();
+    return *iter;
+}
+
+template<std::size_t Dim, typename Type>
+rtype_t<Type> max(const vec_t<Dim,Type>& v, uint_t& id) {
+    auto iter = max_(v);
     id = iter - v.begin();
     return *iter;
 }
 
 template<std::size_t Dim, typename Type>
 uint_t min_id(const vec_t<Dim,Type>& v) {
-    return std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
-        if (nan(t1)) return false;
-        if (nan(t2)) return true;
-        return t1 < t2;
-    }) - v.begin();
+    return min_(v) - v.begin();
 }
 
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec_t<Dim,Type>& v) {
-    return std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
-        if (nan(t1)) return true;
-        if (nan(t2)) return false;
-        return t1 < t2;
-    }) - v.begin();
+    return max_(v) - v.begin();
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
