@@ -22,24 +22,24 @@ public :
     const_ptr_iterator_base() {}
     const_ptr_iterator_base(const ptr_iterator_base<T,C>& iter) : i(iter.i) {}
 
-    const_ptr_iterator_base& operator ++ (int) {
-        ++i; return *this;
-    }
-
-    const_ptr_iterator_base operator ++ () {
+    const_ptr_iterator_base operator ++ (int) {
         const_ptr_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    const_ptr_iterator_base& operator -- (int) {
-        --i; return *this;
+    const_ptr_iterator_base& operator ++ () {
+        ++i; return *this;
     }
 
-    const_ptr_iterator_base operator -- () {
+    const_ptr_iterator_base operator -- (int) {
         const_ptr_iterator_base iter = *this;
         --i;
         return iter;
+    }
+
+    const_ptr_iterator_base& operator -- () {
+        --i; return *this;
     }
 
     void operator += (int_t n) {
@@ -118,24 +118,24 @@ class ptr_iterator_base {
 public :
     ptr_iterator_base() {}
 
-    ptr_iterator_base& operator ++ (int) {
-        ++i; return *this;
-    }
-
-    ptr_iterator_base operator ++ () {
+    ptr_iterator_base operator ++ (int) {
         ptr_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    ptr_iterator_base& operator -- (int) {
-        --i; return *this;
+    ptr_iterator_base& operator ++ () {
+        ++i; return *this;
     }
 
-    ptr_iterator_base operator -- () {
+    ptr_iterator_base operator -- (int) {
         ptr_iterator_base iter = *this;
         --i;
         return iter;
+    }
+
+    ptr_iterator_base& operator -- () {
+        --i; return *this;
     }
 
     void operator += (int_t n) {
@@ -214,24 +214,24 @@ public :
     const_reverse_ptr_iterator_base() {}
     const_reverse_ptr_iterator_base(const reverse_ptr_iterator_base<T,C>& iter) : i(iter.i) {}
 
-    const_reverse_ptr_iterator_base& operator ++ (int) {
-        ++i; return *this;
-    }
-
-    const_reverse_ptr_iterator_base operator ++ () {
+    const_reverse_ptr_iterator_base operator ++ (int) {
         const_reverse_ptr_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    const_reverse_ptr_iterator_base& operator -- (int) {
-        --i; return *this;
+    const_reverse_ptr_iterator_base& operator ++ () {
+        ++i; return *this;
     }
 
-    const_reverse_ptr_iterator_base operator -- () {
+    const_reverse_ptr_iterator_base operator -- (int) {
         const_reverse_ptr_iterator_base iter = *this;
         --i;
         return iter;
+    }
+
+    const_reverse_ptr_iterator_base& operator -- () {
+        --i; return *this;
     }
 
     void operator += (int_t n) {
@@ -312,24 +312,24 @@ class reverse_ptr_iterator_base {
 public :
     reverse_ptr_iterator_base() {}
 
-    reverse_ptr_iterator_base& operator ++ (int) {
-        ++i; return *this;
-    }
-
-    reverse_ptr_iterator_base operator ++ () {
+    reverse_ptr_iterator_base operator ++ (int) {
         reverse_ptr_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    reverse_ptr_iterator_base& operator -- (int) {
-        --i; return *this;
+    reverse_ptr_iterator_base& operator ++ () {
+        ++i; return *this;
     }
 
-    reverse_ptr_iterator_base operator -- () {
+    reverse_ptr_iterator_base operator -- (int) {
         reverse_ptr_iterator_base iter = *this;
         --i;
         return iter;
+    }
+
+    reverse_ptr_iterator_base& operator -- () {
+        --i; return *this;
     }
 
     void operator += (int_t n) {
