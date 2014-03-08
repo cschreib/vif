@@ -15,17 +15,18 @@ struct cte_t {};
 
 // Return a particular element of a variadic list
 template<std::size_t N, typename T, typename ... Args>
-T get_(cte_t<N>, cte_t<N>, T&& t, Args&& ... args) {
-    return t;
+auto get_(cte_t<N>, cte_t<N>, T&& t, Args&& ... args) -> decltype(std::forward<T>(t)) {
+    return std::forward<T>(t);
 }
 
 template<std::size_t I, std::size_t N, typename T, typename ... Args>
-auto get_(cte_t<I>, cte_t<N>, T&& t, Args&& ... args) -> decltype(get_(cte_t<I+1>(), cte_t<N>(), std::forward<Args>(args)...)) {
+auto get_(cte_t<I>, cte_t<N>, T&& t, Args&& ... args) ->
+    decltype(get_(cte_t<I+1>(), cte_t<N>(), std::forward<Args>(args)...)) {
     return get_(cte_t<I+1>(), cte_t<N>(), std::forward<Args>(args)...);
 }
 
 template<std::size_t N, typename ... Args>
-auto get(Args&& ... args) -> decltype(get_(cte_t<1>(), cte_t<N>(), std::forward<Args>(args)...)) {
+auto get(Args&& ... args) -> decltype(get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...)) {
     return get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...);
 }
 
