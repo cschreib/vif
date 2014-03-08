@@ -149,9 +149,8 @@ auto unfold(F&& func, Args& ... args) {
 
 // Check if all the types in a variadic list are of the same given type.
 template<typename U, typename T, typename ... Args>
-struct are_same {
-    static const bool value = std::is_same<U,T>::value ? are_same<U,Args...>::value : false;
-};
+struct are_same :
+    std::integral_constant<bool, std::is_same<U,T>::value ? are_same<U,Args...>::value : false> {};
 
 template<typename U, typename T>
 struct are_same<U, T> : public std::is_same<U,T> {};
@@ -275,14 +274,11 @@ struct return_type<R (T::*)(Args...) const> {
 
 // Check if the provided type T matches any type in the list
 template<typename T, typename U, typename ... Args>
-struct is_any_of {
-    static const bool value = std::is_same<T,U>::value || is_any_of<T,Args...>::value;
-};
+struct is_any_of :
+    std::integral_constant<bool, std::is_same<T,U>::value || is_any_of<T,Args...>::value> {};
 
 template<typename T, typename U>
-struct is_any_of<T,U> {
-    static const bool value = std::is_same<T,U>::value;
-};
+struct is_any_of<T,U> : std::is_same<T,U> {};
 
 #endif
 
