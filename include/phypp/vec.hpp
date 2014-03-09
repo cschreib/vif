@@ -607,27 +607,6 @@ struct vec_t {
         resize();
     }
 
-    template<std::size_t N>
-    vec_t(const char t[N]) {
-        static_assert(std::is_same<Type, std::string>::value,
-            "character array constructor is only available for std::string vectors");
-        for (uint_t i = 0; i < Dim; ++i) {
-            dims[i] = 1;
-        }
-        resize();
-        data[0] = t;
-    }
-
-    vec_t(const char* t) {
-        static_assert(std::is_same<Type, std::string>::value,
-            "character array constructor is only available for std::string vectors");
-        for (uint_t i = 0; i < Dim; ++i) {
-            dims[i] = 1;
-        }
-        resize();
-        data[0] = t;
-    }
-
     vec_t(typename ilist_t<Dim, Type>::type t) {
         ilist_t<Dim, Type>::fill(*this, t);
     }
