@@ -5,12 +5,13 @@
     assert(t == s); \
 }
 
-// #define check_float_eps(t, s, e) { \
-//     if (fabs(t - s) > e) print("  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s)); \
-//     assert(fabs(t - s) <= e); \
-// }
+#define check_float_eps(t, s, e) { \
+    if (fabs(t - s) > e && (!nan(t) || !nan(s))) \
+        print("  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s)); \
+    assert(fabs(t - s) <= e || (nan(t) && nan(s))); \
+}
 
-// #define check_float(t, s) check_float_eps(t, s, std::numeric_limits<decltype(fabs(t - s))>::epsilon())
+#define check_float(t, s) check_float_eps(t, s, std::numeric_limits<decltype(fabs(t - s))>::epsilon())
 
 template<typename T>
 void assert_is_vec() {
@@ -268,7 +269,40 @@ void test_vec_constructor() {
 
     {
         // Initializer list constructor
-        // TODO
+        vec1d v1({0.0, 1.0, 2.0, 5.0, 50.0});
+        check(v1.dims[0], 5);
+        check(v1.size(), 5);
+        check(v1.empty(), false);
+        check_float(v1[0], 0.0);
+        check_float(v1[1], 1.0);
+        check_float(v1[2], 2.0);
+        check_float(v1[3], 5.0);
+        check_float(v1[4], 50.0);
+
+        vec2b v2({{true, false}, {false, true}, {true, true}});
+        check(v2.dims[0], 3);
+        check(v2.dims[1], 2);
+        check(v2.size(), 6);
+        check(v2.empty(), false);
+        check_float(v2[0], true);
+        check_float(v2(0,0), true);
+        check_float(v2[1], false);
+        check_float(v2(0,1), false);
+        check_float(v2[2], false);
+        check_float(v2(1,0), false);
+        check_float(v2[3], true);
+        check_float(v2(1,1), true);
+        check_float(v2[4], true);
+        check_float(v2(2,0), true);
+        check_float(v2[5], true);
+        check_float(v2(2,1), true);
+
+        vec3s v3({});
+        check(v3.dims[0], 0);
+        check(v3.dims[1], 0);
+        check(v3.dims[2], 0);
+        check(v3.size(), 0);
+        check(v3.empty(), true);
     }
 
     {
@@ -284,9 +318,9 @@ void test_vec_constructor() {
         vec2s v2(d21,d22);
         vec3b v3(d31,d32,d33);
 
-        vec1d nv1 = std::move(v1);
-        vec2s nv2 = std::move(v2);
-        vec3b nv3 = std::move(v3);
+        vec1d nv1(std::move(v1));
+        vec2s nv2(std::move(v2));
+        vec3b nv3(std::move(v3));
 
         check(nv1.dims[0], d1);
         check(v1.dims[0], 0);
@@ -318,7 +352,30 @@ void test_vec_constructor() {
             check(v, false);
         }
 
-        // TODO: check with non zero values
+        vec1d w1({0.0, 5.0, -2.0, dnan});
+        vec2s w2({{"foo", "bar", "goo"}, {"blop", "plop", "flop"}});
+        vec3b w3({{{true}, {false}}, {{false}, {true}}, {{true}, {true}}});
+
+        vec1d nw1(std::move(w1));
+        vec2s nw2(std::move(w2));
+        vec3d nw3(std::move(w3));
+
+        check_float(nw1[0], 0.0);
+        check_float(nw1[1], 5.0);
+        check_float(nw1[2], -2.0);
+        check_float(nw1[3], dnan);
+        check(nw2[0], "foo");
+        check(nw2[1], "bar");
+        check(nw2[2], "goo");
+        check(nw2[3], "blop");
+        check(nw2[4], "plop");
+        check(nw2[5], "flop");
+        check(nw3[0], true);
+        check(nw3[1], false);
+        check(nw3[2], false);
+        check(nw3[3], true);
+        check(nw3[4], true);
+        check(nw3[5], true);
     }
 
     {
@@ -334,9 +391,9 @@ void test_vec_constructor() {
         vec2s v2(d21,d22);
         vec3b v3(d31,d32,d33);
 
-        vec1d nv1 = v1;
-        vec2s nv2 = v2;
-        vec3b nv3 = v3;
+        vec1d nv1(v1);
+        vec2s nv2(v2);
+        vec3b nv3(v3);
 
         check(nv1.dims[0], d1);
         check(v1.dims[0], d1);
@@ -368,7 +425,23 @@ void test_vec_constructor() {
             check(v, false);
         }
 
-        // TODO: check with non zero values
+        vec1d w1({0.0, 5.0, -2.0, dnan});
+        vec2s w2({{"foo", "bar", "goo"}, {"blop", "plop", "flop"}});
+        vec3b w3({{{true}, {false}}, {{false}, {true}}, {{true}, {true}}});
+
+        vec1d nw1(w1);
+        vec2s nw2(w2);
+        vec3d nw3(w3);
+
+        for (uint_t i : range(w1)) {
+            check_float(nw1[i], w1[i]);
+        }
+        for (uint_t i : range(w2)) {
+            check(nw2[i], w2[i]);
+        }
+        for (uint_t i : range(w3)) {
+            check(nw3[i], w3[i]);
+        }
     }
 
     print("> passed");
