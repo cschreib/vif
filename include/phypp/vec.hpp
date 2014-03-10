@@ -559,22 +559,22 @@ namespace vec_access {
 }
 
 // Helper to intialize a generic vector from an initializer_list.
-template<std::size_t N, std::size_t Dim, typename Type>
-struct make_ilist_type {
-    using type = std::initializer_list<typename make_ilist_type<N-1, Dim, Type>::type>;
+template<std::size_t D, typename T>
+struct make_nested_initializer_list {
+    using type = typename make_nested_initializer_list<D-1,std::initializer_list<T>>::type;
 };
 
-template<std::size_t Dim, typename Type>
-struct make_ilist_type<0, Dim, Type> {
-    using type = std::initializer_list<Type>;
+template<typename T>
+struct make_nested_initializer_list<0,T> {
+    using type = T;
 };
+
+template<std::size_t D, typename T>
+using nested_initializer_list = typename make_nested_initializer_list<D,dtype_t<T>>::type;
 
 template<std::size_t Dim, typename Type>
 struct ilist_t {
-    using dtype = dtype_t<Type>;
-    using type = typename make_ilist_type<Dim-1, Dim, dtype>::type;
-
-    static void resize_(vec_t<Dim,Type>& v, const std::initializer_list<dtype>& il, cte_t<Dim-1>) {
+    static void resize_(vec_t<Dim,Type>& v, nested_initializer_list<1,Type> il, cte_t<Dim-1>) {
         if (il.size() == 0) {
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = 0;
@@ -586,9 +586,7 @@ struct ilist_t {
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void resize_(vec_t<Dim,Type>& v,
-        const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, cte_t<N>) {
-
+    static void resize_(vec_t<Dim,Type>& v, nested_initializer_list<Dim-N,Type> il, cte_t<N>) {
         if (il.size() == 0) {
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = 0;
@@ -599,9 +597,7 @@ struct ilist_t {
         }
     }
 
-    static void fill_(vec_t<Dim,Type>& v, const std::initializer_list<dtype>& il,
-        uint_t& idx, cte_t<Dim-1>) {
-
+    static void fill_(vec_t<Dim,Type>& v, nested_initializer_list<1,Type> il, uint_t& idx, cte_t<Dim-1>) {
         phypp_check(il.size() == v.dims[Dim-1], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             v.data[idx] = t;
@@ -610,16 +606,14 @@ struct ilist_t {
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void fill_(vec_t<Dim,Type>& v,
-        const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, uint_t& idx, cte_t<N>) {
-
+    static void fill_(vec_t<Dim,Type>& v, nested_initializer_list<Dim-N,Type> il, uint_t& idx, cte_t<N>) {
         phypp_check(il.size() == v.dims[N], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             fill_(v, t, idx, cte_t<N+1>());
         }
     }
 
-    static void fill(vec_t<Dim,Type>& v, const type& il) {
+    static void fill(vec_t<Dim,Type>& v, nested_initializer_list<Dim,Type> il) {
         resize_(v, il, cte_t<0>());
         if (!v.empty()) {
             uint_t idx = 0;
@@ -630,12 +624,7 @@ struct ilist_t {
 
 template<std::size_t Dim, typename Type>
 struct ilist_t<Dim, Type*> {
-    using dtype = dtype_t<typename std::remove_cv<Type>::type>;
-    using type = typename make_ilist_type<Dim-1, Dim, dtype>::type;
-
-    static void fill_(vec_t<Dim,Type*>& v, const std::initializer_list<dtype>& il,
-        uint_t& idx, cte_t<Dim-1>) {
-
+    static void fill_(vec_t<Dim,Type*>& v, nested_initializer_list<1,Type> il, uint_t& idx, cte_t<Dim-1>) {
         phypp_check(il.size() == v.dims[Dim-1], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             *v.data[idx] = t;
@@ -644,16 +633,14 @@ struct ilist_t<Dim, Type*> {
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void fill_(vec_t<Dim,Type*>& v,
-        const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, uint_t& idx, cte_t<N>) {
-
+    static void fill_(vec_t<Dim,Type*>& v, nested_initializer_list<Dim-N,Type> il, uint_t& idx, cte_t<N>) {
         phypp_check(il.size() == v.dims[N], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             fill_(v, t, idx, cte_t<N+1>());
         }
     }
 
-    static void fill(vec_t<Dim,Type*>& v, const type& il) {
+    static void fill(vec_t<Dim,Type*>& v, nested_initializer_list<Dim,Type> il) {
         uint_t idx = 0;
         fill_(v, il, idx, cte_t<0>());
     }
@@ -710,8 +697,8 @@ struct vec_t {
         resize();
     }
 
-    vec_t(typename ilist_t<Dim, Type>::type t) {
-        ilist_t<Dim, Type>::fill(*this, t);
+    vec_t(nested_initializer_list<Dim,Type> il) {
+        ilist_t<Dim, Type>::fill(*this, il);
     }
 
     template<typename T>
@@ -731,8 +718,8 @@ struct vec_t {
         return *this;
     }
 
-    vec_t& operator = (typename ilist_t<Dim, Type>::type t) {
-        ilist_t<Dim, Type>::fill(*this, t);
+    vec_t& operator = (nested_initializer_list<Dim,Type> il) {
+        ilist_t<Dim, Type>::fill(*this, il);
         return *this;
     }
 
@@ -1175,8 +1162,8 @@ struct vec_t<Dim,Type*> {
         return *this;
     }
 
-    vec_t& operator = (typename ilist_t<Dim, Type*>::type t) {
-        ilist_t<Dim, Type*>::fill(*this, t);
+    vec_t& operator = (nested_initializer_list<Dim,Type> il) {
+        ilist_t<Dim, Type*>::fill(*this, il);
         return *this;
     }
 
