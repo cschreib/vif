@@ -1,14 +1,14 @@
 #ifndef ITERATOR_HPP
 #define ITERATOR_HPP
 
-template<typename T, typename C>
-class ptr_iterator_base;
+template<typename T, typename C, typename P>
+class iterator_base;
 
-template<typename T, typename C>
-class const_ptr_iterator_base {
+template<typename T, typename C, typename P>
+class const_iterator_base {
     friend C;
-    template<typename N, typename K>
-    friend class const_reverse_ptr_iterator_base;
+    template<typename N, typename K, typename V>
+    friend class const_reverse_iterator_base;
 
     T i;
 
@@ -16,29 +16,29 @@ class const_ptr_iterator_base {
         return i;
     }
 
-    const_ptr_iterator_base(const T& j) : i(j) {}
+    const_iterator_base(const T& j) : i(j) {}
 
 public :
-    const_ptr_iterator_base() {}
-    const_ptr_iterator_base(const ptr_iterator_base<T,C>& iter) : i(iter.i) {}
+    const_iterator_base() {}
+    const_iterator_base(const iterator_base<T,C,P>& iter) : i(iter.i) {}
 
-    const_ptr_iterator_base operator ++ (int) {
-        const_ptr_iterator_base iter = *this;
+    const_iterator_base operator ++ (int) {
+        const_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    const_ptr_iterator_base& operator ++ () {
+    const_iterator_base& operator ++ () {
         ++i; return *this;
     }
 
-    const_ptr_iterator_base operator -- (int) {
-        const_ptr_iterator_base iter = *this;
+    const_iterator_base operator -- (int) {
+        const_iterator_base iter = *this;
         --i;
         return iter;
     }
 
-    const_ptr_iterator_base& operator -- () {
+    const_iterator_base& operator -- () {
         --i; return *this;
     }
 
@@ -50,62 +50,62 @@ public :
         i -= n;
     }
 
-    const_ptr_iterator_base operator + (int_t n) const {
-        const_ptr_iterator_base iter = *this;
+    const_iterator_base operator + (int_t n) const {
+        const_iterator_base iter = *this;
         iter.i += n;
         return iter;
     }
 
-    const_ptr_iterator_base operator - (int_t n) const {
-        const_ptr_iterator_base iter = *this;
+    const_iterator_base operator - (int_t n) const {
+        const_iterator_base iter = *this;
         iter.i -= n;
         return iter;
     }
 
-    std::ptrdiff_t operator - (const const_ptr_iterator_base& iter) const {
+    std::ptrdiff_t operator - (const const_iterator_base& iter) const {
         return i - iter.i;
     }
 
-    bool operator == (const const_ptr_iterator_base& iter) const {
+    bool operator == (const const_iterator_base& iter) const {
         return i == iter.i;
     }
 
-    bool operator != (const const_ptr_iterator_base& iter) const {
+    bool operator != (const const_iterator_base& iter) const {
         return i != iter.i;
     }
 
-    bool operator < (const const_ptr_iterator_base& iter) const {
+    bool operator < (const const_iterator_base& iter) const {
         return i < iter.i;
     }
 
-    bool operator <= (const const_ptr_iterator_base& iter) const {
+    bool operator <= (const const_iterator_base& iter) const {
         return i <= iter.i;
     }
 
-    bool operator > (const const_ptr_iterator_base& iter) const {
+    bool operator > (const const_iterator_base& iter) const {
         return i > iter.i;
     }
 
-    bool operator >= (const const_ptr_iterator_base& iter) const {
+    bool operator >= (const const_iterator_base& iter) const {
         return i >= iter.i;
     }
 
-    auto operator * () -> decltype(**i) {
-        return **i;
+    auto operator * () -> decltype(P::get_obj(i)) {
+        return P::get_obj(i);
     }
 
-    auto operator -> () -> decltype(*i) {
-        return *i;
+    auto operator -> () -> decltype(P::get_ptr(i)) {
+        return P::get_ptr(i);
     }
 };
 
-template<typename T, typename C>
-class ptr_iterator_base {
+template<typename T, typename C, typename P>
+class iterator_base {
     friend C;
-    template<typename N, typename K>
-    friend class const_ptr_iterator_base;
-    template<typename N, typename K>
-    friend class reverse_ptr_iterator_base;
+    template<typename N, typename K, typename V>
+    friend class const_iterator_base;
+    template<typename N, typename K, typename V>
+    friend class reverse_iterator_base;
 
     T i;
 
@@ -113,28 +113,28 @@ class ptr_iterator_base {
         return i;
     }
 
-    ptr_iterator_base(const T& j) : i(j) {}
+    iterator_base(const T& j) : i(j) {}
 
 public :
-    ptr_iterator_base() {}
+    iterator_base() {}
 
-    ptr_iterator_base operator ++ (int) {
-        ptr_iterator_base iter = *this;
+    iterator_base operator ++ (int) {
+        iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    ptr_iterator_base& operator ++ () {
+    iterator_base& operator ++ () {
         ++i; return *this;
     }
 
-    ptr_iterator_base operator -- (int) {
-        ptr_iterator_base iter = *this;
+    iterator_base operator -- (int) {
+        iterator_base iter = *this;
         --i;
         return iter;
     }
 
-    ptr_iterator_base& operator -- () {
+    iterator_base& operator -- () {
         --i; return *this;
     }
 
@@ -146,60 +146,60 @@ public :
         i -= n;
     }
 
-    ptr_iterator_base operator + (int_t n) const {
-        ptr_iterator_base iter = *this;
+    iterator_base operator + (int_t n) const {
+        iterator_base iter = *this;
         iter.i += n;
         return iter;
     }
 
-    ptr_iterator_base operator - (int_t n) const {
-        ptr_iterator_base iter = *this;
+    iterator_base operator - (int_t n) const {
+        iterator_base iter = *this;
         iter.i -= n;
         return iter;
     }
 
-    std::ptrdiff_t operator - (const ptr_iterator_base& iter) const {
+    std::ptrdiff_t operator - (const iterator_base& iter) const {
         return i - iter.i;
     }
 
-    bool operator == (const ptr_iterator_base& iter) const {
+    bool operator == (const iterator_base& iter) const {
         return i == iter.i;
     }
 
-    bool operator != (const ptr_iterator_base& iter) const {
+    bool operator != (const iterator_base& iter) const {
         return i != iter.i;
     }
 
-    bool operator < (const ptr_iterator_base& iter) const {
+    bool operator < (const iterator_base& iter) const {
         return i < iter.i;
     }
 
-    bool operator <= (const ptr_iterator_base& iter) const {
+    bool operator <= (const iterator_base& iter) const {
         return i <= iter.i;
     }
 
-    bool operator > (const ptr_iterator_base& iter) const {
+    bool operator > (const iterator_base& iter) const {
         return i > iter.i;
     }
 
-    bool operator >= (const ptr_iterator_base& iter) const {
+    bool operator >= (const iterator_base& iter) const {
         return i >= iter.i;
     }
 
-    auto operator * () -> decltype(**i) {
-        return **i;
+    auto operator * () -> decltype(P::get_obj(i)) {
+        return P::get_obj(i);
     }
 
-    auto operator -> () -> decltype(*i) {
-        return *i;
+    auto operator -> () -> decltype(P::get_ptr(i)) {
+        return P::get_ptr(i);
     }
 };
 
-template<typename T, typename C>
-class reverse_ptr_iterator_base;
+template<typename T, typename C, typename P>
+class reverse_iterator_base;
 
-template<typename T, typename C>
-class const_reverse_ptr_iterator_base {
+template<typename T, typename C, typename P>
+class const_reverse_iterator_base {
     friend C;
 
     T i;
@@ -208,29 +208,29 @@ class const_reverse_ptr_iterator_base {
         return i;
     }
 
-    const_reverse_ptr_iterator_base(const T& j) : i(j) {}
+    const_reverse_iterator_base(const T& j) : i(j) {}
 
 public :
-    const_reverse_ptr_iterator_base() {}
-    const_reverse_ptr_iterator_base(const reverse_ptr_iterator_base<T,C>& iter) : i(iter.i) {}
+    const_reverse_iterator_base() {}
+    const_reverse_iterator_base(const reverse_iterator_base<T,C,P>& iter) : i(iter.i) {}
 
-    const_reverse_ptr_iterator_base operator ++ (int) {
-        const_reverse_ptr_iterator_base iter = *this;
+    const_reverse_iterator_base operator ++ (int) {
+        const_reverse_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    const_reverse_ptr_iterator_base& operator ++ () {
+    const_reverse_iterator_base& operator ++ () {
         ++i; return *this;
     }
 
-    const_reverse_ptr_iterator_base operator -- (int) {
-        const_reverse_ptr_iterator_base iter = *this;
+    const_reverse_iterator_base operator -- (int) {
+        const_reverse_iterator_base iter = *this;
         --i;
         return iter;
     }
 
-    const_reverse_ptr_iterator_base& operator -- () {
+    const_reverse_iterator_base& operator -- () {
         --i; return *this;
     }
 
@@ -242,64 +242,64 @@ public :
         i -= n;
     }
 
-    const_reverse_ptr_iterator_base operator + (int_t n) const {
-        const_reverse_ptr_iterator_base iter = *this;
+    const_reverse_iterator_base operator + (int_t n) const {
+        const_reverse_iterator_base iter = *this;
         iter.i += n;
         return iter;
     }
 
-    const_reverse_ptr_iterator_base operator - (int_t n) const {
-        const_reverse_ptr_iterator_base iter = *this;
+    const_reverse_iterator_base operator - (int_t n) const {
+        const_reverse_iterator_base iter = *this;
         iter.i -= n;
         return iter;
     }
 
-    std::ptrdiff_t operator - (const const_reverse_ptr_iterator_base& iter) const {
+    std::ptrdiff_t operator - (const const_reverse_iterator_base& iter) const {
         return i - iter.i;
     }
 
-    bool operator == (const const_reverse_ptr_iterator_base& iter) const {
+    bool operator == (const const_reverse_iterator_base& iter) const {
         return i == iter.i;
     }
 
-    bool operator != (const const_reverse_ptr_iterator_base& iter) const {
+    bool operator != (const const_reverse_iterator_base& iter) const {
         return i != iter.i;
     }
 
-    bool operator < (const const_reverse_ptr_iterator_base& iter) const {
+    bool operator < (const const_reverse_iterator_base& iter) const {
         return i < iter.i;
     }
 
-    bool operator <= (const const_reverse_ptr_iterator_base& iter) const {
+    bool operator <= (const const_reverse_iterator_base& iter) const {
         return i <= iter.i;
     }
 
-    bool operator > (const const_reverse_ptr_iterator_base& iter) const {
+    bool operator > (const const_reverse_iterator_base& iter) const {
         return i > iter.i;
     }
 
-    bool operator >= (const const_reverse_ptr_iterator_base& iter) const {
+    bool operator >= (const const_reverse_iterator_base& iter) const {
         return i >= iter.i;
     }
 
-    auto operator * () -> decltype(**i) {
-        return **i;
+    auto operator * () -> decltype(P::get_obj(i)) {
+        return P::get_obj(i);
     }
 
-    auto operator -> () -> decltype(*i) {
-        return *i;
+    auto operator -> () -> decltype(P::get_ptr(i)) {
+        return P::get_ptr(i);
     }
 
-    const_ptr_iterator_base<T,C> base() {
-        return const_ptr_iterator_base<T,C>(i.base());
+    const_iterator_base<T,C,P> base() {
+        return const_iterator_base<T,C,P>(i.base());
     }
 };
 
-template<typename T, typename C>
-class reverse_ptr_iterator_base {
+template<typename T, typename C, typename P>
+class reverse_iterator_base {
     friend C;
-    template<typename N, typename K>
-    friend class const_reverse_ptr_iterator_base;
+    template<typename N, typename K, typename V>
+    friend class const_reverse_iterator_base;
 
     T i;
 
@@ -307,28 +307,28 @@ class reverse_ptr_iterator_base {
         return i;
     }
 
-    reverse_ptr_iterator_base(const T& j) : i(j) {}
+    reverse_iterator_base(const T& j) : i(j) {}
 
 public :
-    reverse_ptr_iterator_base() {}
+    reverse_iterator_base() {}
 
-    reverse_ptr_iterator_base operator ++ (int) {
-        reverse_ptr_iterator_base iter = *this;
+    reverse_iterator_base operator ++ (int) {
+        reverse_iterator_base iter = *this;
         ++i;
         return iter;
     }
 
-    reverse_ptr_iterator_base& operator ++ () {
+    reverse_iterator_base& operator ++ () {
         ++i; return *this;
     }
 
-    reverse_ptr_iterator_base operator -- (int) {
-        reverse_ptr_iterator_base iter = *this;
+    reverse_iterator_base operator -- (int) {
+        reverse_iterator_base iter = *this;
         --i;
         return iter;
     }
 
-    reverse_ptr_iterator_base& operator -- () {
+    reverse_iterator_base& operator -- () {
         --i; return *this;
     }
 
@@ -340,95 +340,57 @@ public :
         i -= n;
     }
 
-    reverse_ptr_iterator_base operator + (int_t n) const {
-        reverse_ptr_iterator_base iter = *this;
+    reverse_iterator_base operator + (int_t n) const {
+        reverse_iterator_base iter = *this;
         iter.i += n;
         return iter;
     }
 
-    reverse_ptr_iterator_base operator - (int_t n) const {
-        reverse_ptr_iterator_base iter = *this;
+    reverse_iterator_base operator - (int_t n) const {
+        reverse_iterator_base iter = *this;
         iter.i -= n;
         return iter;
     }
 
-    std::ptrdiff_t operator - (const reverse_ptr_iterator_base& iter) const {
+    std::ptrdiff_t operator - (const reverse_iterator_base& iter) const {
         return i - iter.i;
     }
 
-    bool operator == (const reverse_ptr_iterator_base& iter) const {
+    bool operator == (const reverse_iterator_base& iter) const {
         return i == iter.i;
     }
 
-    bool operator != (const reverse_ptr_iterator_base& iter) const {
+    bool operator != (const reverse_iterator_base& iter) const {
         return i != iter.i;
     }
 
-    bool operator < (const reverse_ptr_iterator_base& iter) const {
+    bool operator < (const reverse_iterator_base& iter) const {
         return i < iter.i;
     }
 
-    bool operator <= (const reverse_ptr_iterator_base& iter) const {
+    bool operator <= (const reverse_iterator_base& iter) const {
         return i <= iter.i;
     }
 
-    bool operator > (const reverse_ptr_iterator_base& iter) const {
+    bool operator > (const reverse_iterator_base& iter) const {
         return i > iter.i;
     }
 
-    bool operator >= (const reverse_ptr_iterator_base& iter) const {
+    bool operator >= (const reverse_iterator_base& iter) const {
         return i >= iter.i;
     }
 
-    auto operator * () -> decltype(**i) {
-        return **i;
+    auto operator * () -> decltype(P::get_obj(i)) {
+        return P::get_obj(i);
     }
 
-    auto operator -> () -> decltype(*i) {
-        return *i;
+    auto operator -> () -> decltype(P::get_ptr(i)) {
+        return P::get_ptr(i);
     }
 
-    ptr_iterator_base<T,C> base() {
-        return ptr_iterator_base<T,C>(i.base());
+    iterator_base<T,C,P> base() {
+        return iterator_base<T,C,P>(i.base());
     }
 };
-
-namespace std {
-    template<typename T, typename C>
-    struct iterator_traits<ptr_iterator_base<T,C>> {
-        using difference_type = typename iterator_traits<T>::difference_type;
-        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
-        using pointer = value_type*;
-        using reference = value_type&;
-        using iterator_category = typename iterator_traits<T>::iterator_category;
-    };
-
-    template<typename T, typename C>
-    struct iterator_traits<const_ptr_iterator_base<T,C>> {
-        using difference_type = typename iterator_traits<T>::difference_type;
-        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
-        using pointer = value_type*;
-        using reference = value_type&;
-        using iterator_category = typename iterator_traits<T>::iterator_category;
-    };
-
-    template<typename T, typename C>
-    struct iterator_traits<reverse_ptr_iterator_base<T,C>> {
-        using difference_type = typename iterator_traits<T>::difference_type;
-        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
-        using pointer = value_type*;
-        using reference = value_type&;
-        using iterator_category = typename iterator_traits<T>::iterator_category;
-    };
-
-    template<typename T, typename C>
-    struct iterator_traits<const_reverse_ptr_iterator_base<T,C>> {
-        using difference_type = typename iterator_traits<T>::difference_type;
-        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
-        using pointer = value_type*;
-        using reference = value_type&;
-        using iterator_category = typename iterator_traits<T>::iterator_category;
-    };
-}
 
 #endif

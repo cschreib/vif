@@ -136,6 +136,86 @@ const rtype_t<Type>* ptr(const T& t) {
     return reinterpret_cast<const rtype_t<Type>*>(&t);
 }
 
+// Iterator for bool vectors (necessary to avoid std::vector<bool>)
+template<typename I>
+struct bool_iterator_policy {
+    static auto get_obj(I& i) -> decltype(dref<bool>(*i)) {
+        return dref<bool>(*i);
+    }
+    static auto get_ptr(I& i) -> decltype(ptr<bool>(*i)) {
+        return ptr<bool>(*i);
+    }
+};
+
+template<typename T, typename C>
+using bool_iterator_base = iterator_base<T,C,bool_iterator_policy<T>>;
+template<typename T, typename C>
+using const_bool_iterator_base = const_iterator_base<T,C,bool_iterator_policy<T>>;
+template<typename T, typename C>
+using reverse_bool_iterator_base = reverse_iterator_base<T,C,bool_iterator_policy<T>>;
+template<typename T, typename C>
+using const_reverse_bool_iterator_base = const_reverse_iterator_base<T,C,bool_iterator_policy<T>>;
+
+namespace std {
+    template<typename T, typename C>
+    struct iterator_traits<bool_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = bool;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+
+    template<typename T, typename C>
+    struct iterator_traits<const_bool_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = const bool;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+
+    template<typename T, typename C>
+    struct iterator_traits<reverse_bool_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = bool;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+
+    template<typename T, typename C>
+    struct iterator_traits<const_reverse_bool_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = const bool;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+}
+
+// Helper to define the vector iterator types.
+// Necessary because of tricks to avoid std::vector<bool>.
+template<typename T>
+struct vec_iterator_type {
+    using vtype = typename T::vtype;
+    using iterator = typename vtype::iterator;
+    using const_iterator = typename vtype::const_iterator;
+    using reverse_iterator = typename vtype::reverse_iterator;
+    using const_reverse_iterator = typename vtype::const_reverse_iterator;
+};
+
+template<std::size_t Dim>
+struct vec_iterator_type<vec_t<Dim,bool>> {
+    using vtype = typename vec_t<Dim,bool>::vtype;
+    using iterator = bool_iterator_base<typename vtype::iterator,vec_t<Dim,bool>>;
+    using const_iterator = const_bool_iterator_base<typename vtype::const_iterator,vec_t<Dim,bool>>;
+    using reverse_iterator = reverse_bool_iterator_base<
+        typename vtype::reverse_iterator,vec_t<Dim,bool>>;
+    using const_reverse_iterator = const_reverse_bool_iterator_base<
+        typename vtype::const_reverse_iterator,vec_t<Dim,bool>>;
+};
+
 // Helper to check if a given type is a generic vector.
 template<typename T>
 struct is_vec_ : public std::false_type {};
@@ -558,7 +638,6 @@ struct ilist_t<Dim, Type*> {
 template<typename T>
 struct is_dim_elem : std::is_arithmetic<T> {};
 
-
 template<typename T, std::size_t N>
 struct is_dim_elem<std::array<T,N>> : std::true_type {};
 
@@ -947,8 +1026,8 @@ struct vec_t {
 
     #undef OPERATOR
 
-    using iterator = typename vtype::iterator;
-    using const_iterator = typename vtype::const_iterator;
+    using iterator = typename vec_iterator_type<vec_t>::iterator;
+    using const_iterator = typename vec_iterator_type<vec_t>::const_iterator;
 
     iterator begin() {
         return data.begin();
@@ -967,7 +1046,65 @@ struct vec_t {
     }
 };
 
-// "View" into a generic vector, allowing modification of indexed arrays: v[rx(1,3)] = indgen(3)
+// Iterators for vector view
+template<typename I>
+struct ptr_iterator_policy {
+    static auto get_obj(I& i) -> decltype(**i) {
+        return **i;
+    }
+    static auto get_ptr(I& i) -> decltype(*i) {
+        return *i;
+    }
+};
+
+template<typename T, typename C>
+using ptr_iterator_base = iterator_base<T,C,ptr_iterator_policy<T>>;
+template<typename T, typename C>
+using const_ptr_iterator_base = const_iterator_base<T,C,ptr_iterator_policy<T>>;
+template<typename T, typename C>
+using reverse_ptr_iterator_base = reverse_iterator_base<T,C,ptr_iterator_policy<T>>;
+template<typename T, typename C>
+using const_reverse_ptr_iterator_base = const_reverse_iterator_base<T,C,ptr_iterator_policy<T>>;
+
+namespace std {
+    template<typename T, typename C>
+    struct iterator_traits<ptr_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+
+    template<typename T, typename C>
+    struct iterator_traits<const_ptr_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+
+    template<typename T, typename C>
+    struct iterator_traits<reverse_ptr_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+
+    template<typename T, typename C>
+    struct iterator_traits<const_reverse_ptr_iterator_base<T,C>> {
+        using difference_type = typename iterator_traits<T>::difference_type;
+        using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = typename iterator_traits<T>::iterator_category;
+    };
+}
+
+// "View" into a generic vector, allowing modification of indexed arrays: v[rgen(1,3)] = indgen(3)
 template<std::size_t Dim, typename Type>
 struct vec_t<Dim,Type*> {
     using rtype = rtype_t<Type*>;
