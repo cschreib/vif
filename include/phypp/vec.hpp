@@ -580,13 +580,17 @@ struct ilist_t {
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void resize_(vec_t<Dim,Type>& v, const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, cte_t<N>) {
+    static void resize_(vec_t<Dim,Type>& v,
+        const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, cte_t<N>) {
+
         v.dims[N] = il.size();
         resize_(v, *il.begin(), cte_t<N+1>());
     }
 
-    static void fill_(vec_t<Dim,Type>& v, const std::initializer_list<dtype>& il, uint_t& idx, cte_t<Dim-1>) {
-        assert(il.size() == v.dims[Dim-1]);
+    static void fill_(vec_t<Dim,Type>& v, const std::initializer_list<dtype>& il,
+        uint_t& idx, cte_t<Dim-1>) {
+
+        phypp_check(il.size() == v.dims[Dim-1], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             v.data[idx] = t;
             ++idx;
@@ -594,8 +598,10 @@ struct ilist_t {
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void fill_(vec_t<Dim,Type>& v, const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, uint_t& idx, cte_t<N>) {
-        assert(il.size() == v.dims[N]);
+    static void fill_(vec_t<Dim,Type>& v,
+        const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, uint_t& idx, cte_t<N>) {
+
+        phypp_check(il.size() == v.dims[N], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             fill_(v, t, idx, cte_t<N+1>());
         }
@@ -613,8 +619,10 @@ struct ilist_t<Dim, Type*> {
     using dtype = dtype_t<typename std::remove_cv<Type>::type>;
     using type = typename make_ilist_type<Dim-1, Dim, dtype>::type;
 
-    static void fill_(vec_t<Dim,Type*>& v, const std::initializer_list<dtype>& il, uint_t& idx, cte_t<Dim-1>) {
-        assert(il.size() == v.dims[Dim-1]);
+    static void fill_(vec_t<Dim,Type*>& v, const std::initializer_list<dtype>& il,
+        uint_t& idx, cte_t<Dim-1>) {
+
+        phypp_check(il.size() == v.dims[Dim-1], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             *v.data[idx] = t;
             ++idx;
@@ -622,8 +630,10 @@ struct ilist_t<Dim, Type*> {
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void fill_(vec_t<Dim,Type*>& v, const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, uint_t& idx, cte_t<N>) {
-        assert(il.size() == v.dims[N]);
+    static void fill_(vec_t<Dim,Type*>& v,
+        const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, uint_t& idx, cte_t<N>) {
+
+        phypp_check(il.size() == v.dims[N], "heterogeneous intializer lists are not allowed");
         for (auto& t : il) {
             fill_(v, t, idx, cte_t<N+1>());
         }
