@@ -1,12 +1,25 @@
 #include <phypp.hpp>
 
+bool reduce_and(bool b) {
+    return b;
+}
+
+template<std::size_t Dim>
+bool reduce_and(const vec_t<Dim,bool>& b) {
+    bool res = true;
+    for (bool v : b) {
+        res = res && v;
+    }
+    return res;
+}
+
 #define check_base_(cond, msg, line) do { \
     print("vec.cpp:"+strn(line)); \
-    if (!(cond)) print(msg); \
+    if (!cond) print(msg); \
     assert(cond); \
 } while (false)
 
-#define check_base(cond, msg) check_base_(cond, msg, __LINE__)
+#define check_base(cond, msg) check_base_(reduce_and(cond), msg, __LINE__)
 
 #define check(t, s) \
     check_base(t == s, "  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s))
@@ -473,11 +486,165 @@ void test_vec_constructor() {
     print("> passed");
 }
 
+void test_vec_index() {
+    print("test_vec_index...");
+
+    vec2u v = {{0, 5, 3, 2}, {100, 0, 9, 7}};
+
+    {
+        vec2d v1 = v;
+
+        // Pure integer index
+        check(v1[0],   0);
+        check(v1(0,0), 0);
+        check(v1[1],   5);
+        check(v1(0,1), 5);
+        check(v1[2],   3);
+        check(v1(0,2), 3);
+        check(v1[3],   2);
+        check(v1(0,3), 2);
+        check(v1[4],   100);
+        check(v1(1,0), 100);
+        check(v1[5],   0);
+        check(v1(1,1), 0);
+        check(v1[6],   9);
+        check(v1(1,2), 9);
+        check(v1[7],   7);
+        check(v1(1,3), 7);
+
+        v1[0] = 1;
+        check(v1[0],   1);
+        check(v1(0,0), 1);
+        v1(0,0) = 2;
+        check(v1[0],   2);
+        check(v1(0,0), 2);
+        v1(1,2) = 42;
+        check(v1[6],   42);
+        check(v1(1,2), 42);
+        v1(1,3) = 512;
+        check(v1[7],   512);
+        check(v1(1,3), 512);
+
+        vec2d tv = {{2, 5, 3, 2}, {100, 0, 42, 512}};
+        check(v1, tv);
+    }
+
+    {
+        vec2d v1 = v;
+
+        // Placeholder index
+        vec1u sv0 = {0, 5, 3, 2, 100, 0, 9, 7};
+        vec1u sv1 = {0, 5, 3, 2};
+        vec1u sv2 = {100, 0, 9, 7};
+        vec1u sv3 = {0, 100};
+        vec1u sv4 = {5, 0};
+        vec1u sv5 = {3, 9};
+        vec1u sv6 = {2, 7};
+
+        check(v1[_],   sv0);
+        check(v1(0,_), sv1);
+        check(v1(1,_), sv2);
+        check(v1(_,0), sv3);
+        check(v1(_,1), sv4);
+        check(v1(_,2), sv5);
+        check(v1(_,3), sv6);
+        check(v1(_,_), v1);
+
+        v1(0,_) = sv2;
+        check(v1(0,_), sv2);
+        v1(1,_) = sv1;
+        check(v1(1,_), sv1);
+
+        vec2d tv = {{100, 0, 9, 7}, {0, 5, 3, 2}};
+        check(v1, tv);
+
+        v1(0,_) = v1(1,_);
+        tv = {{0, 5, 3, 2}, {0, 5, 3, 2}};
+        check(v1, tv);
+
+        v1(1,_) = v(1,_);
+        check(v1, v);
+
+        v1(_,0) = sv4;
+        check(v1(_,0), sv4);
+        v1(_,1) = sv5;
+        check(v1(_,1), sv5);
+        v1(_,2) = sv6;
+        check(v1(_,2), sv6);
+        v1(_,3) = sv3;
+        check(v1(_,3), sv3);
+
+        tv = {{5, 3, 2, 0}, {0, 9, 7, 100}};
+        check(v1, tv);
+    }
+
+    {
+        vec2d v1 = v;
+
+        // Vector index
+        vec1u r1 = {0,1,2,3};
+        vec1u r2 = {1,0};
+
+        vec1u sv0 = {5, 0};
+        vec1u sv1 = {0, 5, 3, 2};
+        vec1u sv2 = {0, 100};
+        vec1u sv3 = {100, 0, 9, 7};
+        vec1u sv4 = {100, 0};
+        vec1u sv5 = {0, 5};
+        vec1u sv6 = {9, 3};
+        vec1u sv7 = {7, 2};
+        vec2u sv8 = {{0, 100}, {5, 0}};
+        vec2u sv9 = {{100, 0, 9, 7}, {0, 5, 3, 2}};
+
+        check(v1(0,r2),  sv0);
+        check(v1(0,r1),  sv1);
+        check(v1(1,r2),  sv2);
+        check(v1(1,r1),  sv3);
+        check(v1(r2,0),  sv4);
+        check(v1(r2,1),  sv5);
+        check(v1(r2,2),  sv6);
+        check(v1(r2,3),  sv7);
+        check(v1(r2,r2), sv8);
+        check(v1(r2,r1), sv9);
+
+        v1(0,r1) = sv3;
+        check(v1(0,r1), sv3);
+        v1(1,r1) = sv1;
+        check(v1(1,r1), sv1);
+
+        vec2u tv = {{100, 0, 9, 7}, {0, 5, 3, 2}};
+        check(v1, tv);
+
+        vec1u tv4 = {0, 100};
+        vec1u tv5 = {5, 0};
+        vec1u tv6 = {3, 9};
+        vec1u tv7 = {2, 7};
+
+        v1(r2,0) = tv4;
+        check(v1(r2,0), tv4);
+        v1(r2,1) = tv5;
+        check(v1(r2,1), tv5);
+        v1(r2,2) = tv6;
+        check(v1(r2,2), tv6);
+        v1(r2,3) = tv7;
+        check(v1(r2,3), tv7);
+
+        check(v1, tv);
+
+        v1(vec1u{1,0},_) = v1(vec1u{0,1},_);
+        check(v1, v);
+    }
+
+    // TODO: test vec_t<bool>
+
+    print("> passed");
+}
+
 int main(int argc, char* argv[]) {
-    print("Checking template metaprogramming");
     test_is_vec();
     test_vec_dim();
     test_vec_constructor();
+    test_vec_index();
 
     return 0;
 }
