@@ -575,16 +575,28 @@ struct ilist_t {
     using type = typename make_ilist_type<Dim-1, Dim, dtype>::type;
 
     static void resize_(vec_t<Dim,Type>& v, const std::initializer_list<dtype>& il, cte_t<Dim-1>) {
-        v.dims[Dim-1] = il.size();
-        v.resize();
+        if (il.size() == 0) {
+            for (uint_t i = 0; i < Dim; ++i) {
+                v.dims[i] = 0;
+            }
+        } else {
+            v.dims[Dim-1] = il.size();
+            v.resize();
+        }
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
     static void resize_(vec_t<Dim,Type>& v,
         const typename make_ilist_type<Dim-N-1, Dim-N, dtype>::type& il, cte_t<N>) {
 
-        v.dims[N] = il.size();
-        resize_(v, *il.begin(), cte_t<N+1>());
+        if (il.size() == 0) {
+            for (uint_t i = 0; i < Dim; ++i) {
+                v.dims[i] = 0;
+            }
+        } else {
+            v.dims[N] = il.size();
+            resize_(v, *il.begin(), cte_t<N+1>());
+        }
     }
 
     static void fill_(vec_t<Dim,Type>& v, const std::initializer_list<dtype>& il,
@@ -609,8 +621,10 @@ struct ilist_t {
 
     static void fill(vec_t<Dim,Type>& v, const type& il) {
         resize_(v, il, cte_t<0>());
-        uint_t idx = 0;
-        fill_(v, il, idx, cte_t<0>());
+        if (!v.empty()) {
+            uint_t idx = 0;
+            fill_(v, il, idx, cte_t<0>());
+        }
     }
 };
 
