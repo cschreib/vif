@@ -1,17 +1,22 @@
 #include <phypp.hpp>
 
-#define check(t, s) { \
-    if (t != s) print("  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s)); \
-    assert(t == s); \
-}
+#define check_base_(cond, msg, line) do { \
+    print("vec.cpp:"+strn(line)); \
+    if (!(cond)) print(msg); \
+    assert(cond); \
+} while (false)
 
-#define check_float_eps(t, s, e) { \
-    if (fabs(t - s) > e && (!nan(t) || !nan(s))) \
-        print("  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s)); \
-    assert(fabs(t - s) <= e || (nan(t) && nan(s))); \
-}
+#define check_base(cond, msg) check_base_(cond, msg, __LINE__)
 
-#define check_float(t, s) check_float_eps(t, s, std::numeric_limits<decltype(fabs(t - s))>::epsilon())
+#define check(t, s) \
+    check_base(t == s, "  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s))
+
+#define check_float_eps(t, s, e) \
+    check_base(fabs(t - s) <= e || (nan(t) && nan(s)), \
+        "  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s))
+
+#define check_float(t, s) \
+    check_float_eps(t, s, std::numeric_limits<decltype(fabs(t - s))>::epsilon())
 
 template<typename T>
 void assert_is_vec() {
@@ -253,18 +258,27 @@ void test_vec_constructor() {
         check(v3(0,_,r).empty(), false);
         check(v3(0,r,r).empty(), false);
 
+
+        bool res = true;
         for (uint_t& v : r) {
-            check(v, 0u);
+            res = res && v == 0u;
         }
+        check(res, true);
+        res = true;
         for (double& v : v1) {
-            check(v, 0.0);
+            res = res && v == 0.0;
         }
+        check(res, true);
+        res = true;
         for (std::string& v : v2) {
-            check(v, "");
+            res = res && v == "";
         }
+        check(res, true);
+        res = true;
         for (bool& v : v3) {
-            check(v, false);
+            res = res && v == false;
         }
+        check(res, true);
     }
 
     {
@@ -342,15 +356,21 @@ void test_vec_constructor() {
         check(nv3.size(), d31*d32*d33);
         check(v3.size(), 0);
 
+        bool res = true;
         for (double& v : nv1) {
-            check(v, 0.0);
+            res = res && v == 0.0;
         }
+        check(res, true);
+        res = true;
         for (std::string& v : nv2) {
-            check(v, "");
+            res = res && v == "";
         }
+        check(res, true);
+        res = true;
         for (bool& v : nv3) {
-            check(v, false);
+            res = res && v == false;
         }
+        check(res, true);
 
         vec1d w1({0.0, 5.0, -2.0, dnan});
         vec2s w2({{"foo", "bar", "goo"}, {"blop", "plop", "flop"}});
@@ -415,15 +435,21 @@ void test_vec_constructor() {
         check(nv3.size(), d31*d32*d33);
         check(v3.size(), d31*d32*d33);
 
+        bool res = true;
         for (double& v : nv1) {
-            check(v, 0.0);
+            res = res && v == 0.0;
         }
+        check(res, true);
+        res = true;
         for (std::string& v : nv2) {
-            check(v, "");
+            res = res && v == "";
         }
+        check(res, true);
+        res = true;
         for (bool& v : nv3) {
-            check(v, false);
+            res = res && v == false;
         }
+        check(res, true);
 
         vec1d w1({0.0, 5.0, -2.0, dnan});
         vec2s w2({{"foo", "bar", "goo"}, {"blop", "plop", "flop"}});
