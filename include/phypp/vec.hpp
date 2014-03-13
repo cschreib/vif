@@ -574,26 +574,25 @@ using nested_initializer_list = typename make_nested_initializer_list<D,dtype_t<
 
 template<std::size_t Dim, typename Type>
 struct ilist_t {
-    static void resize_(vec_t<Dim,Type>& v, nested_initializer_list<1,Type> il, cte_t<Dim-1>) {
+    static void set_dim_(vec_t<Dim,Type>& v, nested_initializer_list<1,Type> il, cte_t<Dim-1>) {
         if (il.size() == 0) {
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = 0;
             }
         } else {
             v.dims[Dim-1] = il.size();
-            v.resize();
         }
     }
 
     template<std::size_t N, typename enable = typename std::enable_if<N != Dim-1>::type>
-    static void resize_(vec_t<Dim,Type>& v, nested_initializer_list<Dim-N,Type> il, cte_t<N>) {
+    static void set_dim_(vec_t<Dim,Type>& v, nested_initializer_list<Dim-N,Type> il, cte_t<N>) {
         if (il.size() == 0) {
             for (uint_t i = 0; i < Dim; ++i) {
                 v.dims[i] = 0;
             }
         } else {
             v.dims[N] = il.size();
-            resize_(v, *il.begin(), cte_t<N+1>());
+            set_dim_(v, *il.begin(), cte_t<N+1>());
         }
     }
 
@@ -614,7 +613,8 @@ struct ilist_t {
     }
 
     static void fill(vec_t<Dim,Type>& v, nested_initializer_list<Dim,Type> il) {
-        resize_(v, il, cte_t<0>());
+        set_dim_(v, il, cte_t<0>());
+        v.resize();
         if (!v.empty()) {
             uint_t idx = 0;
             fill_(v, il, idx, cte_t<0>());
@@ -690,10 +690,10 @@ struct vec_t {
         }
     }
 
-    template<typename T, typename ... Args, typename enable =
-        typename std::enable_if<is_dim_list<T,Args...>::value>::type>
-    explicit vec_t(T&& t, Args&& ... d) {
-        set_array(dims, std::forward<T>(t), std::forward<Args>(d)...);
+    template<typename ... Args, typename enable =
+        typename std::enable_if<is_dim_list<Args...>::value>::type>
+    explicit vec_t(Args&& ... d) {
+        set_array(dims, std::forward<Args>(d)...);
         resize();
     }
 
@@ -781,11 +781,6 @@ struct vec_t {
         resize();
     }
 
-    void resize(const std::array<std::size_t, Dim> d) {
-        dims = d;
-        resize();
-    }
-
     void clear() {
         data.clear();
         for (uint_t i = 0; i < Dim; ++i) {
@@ -805,7 +800,8 @@ struct vec_t {
         ++dims[0];
     }
 
-    template<typename T = Type, typename enable = typename std::enable_if<std::is_convertible<T,Type>::value>::type>
+    template<typename T = Type, typename enable =
+        typename std::enable_if<std::is_convertible<T,Type>::value>::type>
     void push_back(const vec_t<Dim-1,T>& t) {
         static_assert(Dim > 1, "cannot call push_back(vec_t<D-1>) on monodimensional vectors");
         if (empty()) {
@@ -827,7 +823,8 @@ struct vec_t {
         }
     }
 
-    template<typename T = Type, typename enable = typename std::enable_if<std::is_convertible<T,Type>::value>::type>
+    template<typename T = Type, typename enable =
+        typename std::enable_if<std::is_convertible<T,Type>::value>::type>
     void push_back(const vec_t<Dim-1,T*>& t) {
         static_assert(Dim > 1, "cannot call push_back(vec_t<D-1>) on monodimensional vectors");
         push_back(t.concretise());
@@ -881,12 +878,14 @@ struct vec_t {
         return ui;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
         return to_idx_(ix, cte_t<std::is_signed<T>::value>());
     }
 
-    template<std::size_t D, typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<std::size_t D, typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
@@ -899,17 +898,20 @@ struct vec_t {
         return p;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     const Type& operator [] (T i) const {
         return reinterpret_cast<const Type&>(data[to_idx(i)]);
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
         vec_t<1,Type*> v(*this);
         v.data.resize(i.data.size());
@@ -920,7 +922,8 @@ struct vec_t {
         return v;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
         vec_t<1,Type*> v(*this);
         v.data.resize(i.data.size());
@@ -931,7 +934,8 @@ struct vec_t {
         return v;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
         vec_t<1,const Type*> v(*this);
         v.data.resize(i.data.size());
@@ -942,7 +946,8 @@ struct vec_t {
         return v;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
         vec_t<1,const Type*> v(*this);
         v.data.resize(i.data.size());
@@ -1245,12 +1250,14 @@ struct vec_t<Dim,Type*> {
         return ui;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
         return to_idx_(ix, cte_t<std::is_signed<T>::value>());
     }
 
-    template<std::size_t D, typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<std::size_t D, typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
@@ -1263,17 +1270,20 @@ struct vec_t<Dim,Type*> {
         return p;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     const Type& operator [] (T i) const {
         return *data[to_idx(i)];
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
         vec_t<1,Type*> v(parent);
         v.data.resize(i.data.size());
@@ -1284,7 +1294,8 @@ struct vec_t<Dim,Type*> {
         return v;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
         vec_t<1,Type*> v(parent);
         v.data.resize(i.data.size());
@@ -1295,7 +1306,8 @@ struct vec_t<Dim,Type*> {
         return v;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
         vec_t<1,const Type*> v(parent);
         v.data.resize(i.data.size());
@@ -1306,7 +1318,8 @@ struct vec_t<Dim,Type*> {
         return v;
     }
 
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
         vec_t<1,const Type*> v(parent);
         v.data.resize(i.data.size());
@@ -1822,6 +1835,11 @@ uint_t n_elements(const vec_t<Dim,T>& v) {
     return v.data.size();
 }
 
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+uint_t n_elements(const T& v) {
+    return 1;
+}
+
 // Get the dimensions of a vector
 template<std::size_t Dim, typename T>
 vec1u dim(const vec_t<Dim,T>& v) {
@@ -1830,11 +1848,6 @@ vec1u dim(const vec_t<Dim,T>& v) {
         d[i] = v.dims[i];
     }
     return d;
-}
-
-template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-uint_t n_elements(const T& v) {
-    return 1;
 }
 
 template<typename T, typename U, typename ... Args>
@@ -1948,12 +1961,11 @@ vec1u uniq(const vec_t<Dim,Type>& v, const vec1u& sid) {
 template<std::size_t Dim1, typename Type1, std::size_t Dim2 = Dim1, typename Type2 = Type1>
 vec_t<Dim1,bool> equal(const vec_t<Dim1,Type1>& v1, const vec_t<Dim2,Type2>& v2) {
     vec_t<Dim1,bool> r(v1.dims);
-    for (uint_t i = 0; i < v1.size(); ++i) {
-        r[i] = false;
-        for (uint_t j = 0; j < v2.size(); ++j) {
-            if (v1[i] == v2[j]) {
-                r[i] = true;
-            }
+    for (uint_t i = 0; i < v1.size(); ++i)
+    for (uint_t j = 0; j < v2.size(); ++j) {
+        if (v1[i] == v2[j]) {
+            r[i] = true;
+            break;
         }
     }
 
