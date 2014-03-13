@@ -1,5 +1,8 @@
 #include <phypp.hpp>
 
+uint_t tested = 0u;
+uint_t failed = 0u;
+
 bool reduce_and(bool b) {
     return b;
 }
@@ -48,8 +51,11 @@ auto is_same(const T1& v1, const T2& v2) -> decltype(v1 == v2) {
 
 #define check_base_(cond, msg, line) do { \
     print("vec.cpp:"+strn(line)); \
-    if (!cond) print(msg); \
-    assert(cond); \
+    if (!cond) { \
+        print(msg); \
+        ++failed; \
+    } \
+    ++tested; \
 } while (false)
 
 #define check_base(cond, msg) check_base_(reduce_and(cond), msg, __LINE__)
@@ -69,8 +75,6 @@ void assert_not_is_vec() {
 
 template<typename T>
 void test_is_vec() {
-    print("test_is_vec...");
-
     // Metaprogramming
     vec1u r;
 
@@ -110,8 +114,6 @@ void test_is_vec() {
     assert_not_is_vec<decltype(vec_t<2,T>()[0])>();
     assert_not_is_vec<decltype(vec_t<2,T>()(0,0))>();
     assert_not_is_vec<decltype(vec_t<3,T>()(0,0,0))>();
-
-    print("> passed");
 }
 
 template<typename T, std::size_t D>
@@ -121,8 +123,6 @@ void assert_vec_dim() {
 
 template<typename T>
 void test_vec_dim() {
-    print("test_vec_dim...");
-
     // Metaprogramming
     vec1u r;
 
@@ -159,8 +159,6 @@ void test_vec_dim() {
     assert_vec_dim<T,0>();
     assert_vec_dim<std::vector<T>,0>();
     assert_vec_dim<std::array<T,5>,0>();
-
-    print("> passed");
 }
 
 template<typename T>
@@ -214,6 +212,9 @@ const std::array<bool,20> generator<bool>::list = {{
 template<typename T>
 void test_vec_constructor() {
     print("test_vec_constructor...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
 
     const T def = std::vector<T>(1)[0];
     const generator<T> gen;
@@ -616,12 +617,15 @@ void test_vec_constructor() {
         }
     }
 
-    print("> passed");
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
 }
 
 template<typename T>
 void test_vec_index() {
     print("test_vec_index...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
 
     const generator<T> gen;
 
@@ -787,7 +791,100 @@ void test_vec_index() {
         check(v1, sv9);
     }
 
-    print("> passed");
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
+}
+
+template<typename T>
+void test_vec_assign() {
+    print("test_vec_assign...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
+
+    const generator<T> gen;
+
+    // TODO
+
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
+}
+
+template<typename T, typename U>
+void test_vec_convert_to() {
+    // TODO
+}
+
+template<typename T>
+struct convert_to {
+    using list = type_list<>;
+};
+
+template<>
+struct convert_to<uint_t> {
+    using list = type_list<int_t,float,double>;
+};
+
+template<>
+struct convert_to<int_t> {
+    using list = type_list<uint_t,float,double>;
+};
+
+template<>
+struct convert_to<float> {
+    using list = type_list<uint_t,int_t,double>;
+};
+
+template<>
+struct convert_to<double> {
+    using list = type_list<uint_t,int_t,float>;
+};
+
+template<typename T>
+void test_vec_convert_iter(type_list<> list) {}
+
+template<typename T, typename U, typename ... Args>
+void test_vec_convert_iter(type_list<U,Args...> list) {
+    test_vec_convert_to<T,U>();
+    test_vec_convert_iter<T>(pop_front(list));
+}
+
+template<typename T>
+void test_vec_convert() {
+    print("test_vec_convert...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
+
+    test_vec_convert_iter<T>(typename convert_to<T>::list{});
+
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
+}
+
+template<typename T>
+void test_vec_iterator() {
+    print("test_vec_iterator...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
+
+    const generator<T> gen;
+
+    // TODO
+
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
+}
+
+template<typename T>
+void test_vec_operator() {
+    print("test_vec_operator...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
+
+    const generator<T> gen;
+
+    // TODO
+
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
 }
 
 template<typename T>
@@ -796,12 +893,10 @@ void test() {
     test_vec_dim<T>();
     test_vec_constructor<T>();
     test_vec_index<T>();
-    // TODO:
-    // test_vec_assign<T>();
-    // test_vec_convert<T>();
-    // test_vec_iterator<T>();
-    // test_vec_operator<T>();
-
+    test_vec_assign<T>();
+    test_vec_convert<T>();
+    test_vec_iterator<T>();
+    test_vec_operator<T>();
 }
 
 int main(int argc, char* argv[]) {
@@ -811,5 +906,8 @@ int main(int argc, char* argv[]) {
     test<std::string>();
     test<bool>();
 
-    return 0;
+    print("total:");
+    print("> ", tested - failed, "/", tested," passed");
+
+    return failed == 0u ? 0 : 1;
 }
