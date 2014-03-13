@@ -55,6 +55,12 @@ using gen_seq_t = typename gen_seq<0, D-1>::type;
 template<typename ... Args>
 struct type_list {};
 
+template<typename T, typename ... Args>
+type_list<Args...> pop_front(type_list<T,Args...>) { return type_list<Args...>{}; }
+
+template<typename T, typename ... Args>
+type_list<Args...> pop_back(type_list<Args...,T>) { return type_list<Args...>{}; }
+
 // Generate a type indicating that its value is to be repeated N times
 template<std::size_t N, typename T>
 struct repeated_value {
