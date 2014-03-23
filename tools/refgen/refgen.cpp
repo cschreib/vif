@@ -389,9 +389,10 @@ void format_range(CXDiagnostic d, CXSourceLocation sl) {
         clang_disposeString(tmp);
     }
 
-    // TODO: check that filename exists
-    std::string line;
     std::ifstream fs(filename);
+    if (!fs.is_open()) return;
+
+    std::string line;
     for (std::size_t i = 0; i < lloc; ++i) {
         std::getline(fs, line);
     }
@@ -469,8 +470,11 @@ void format_diagnostic(CXDiagnostic d) {
     }
 
     CXSourceLocation sl = clang_getDiagnosticLocation(d);
-    // TODO: check that location is not empty
-    std::string loc = location_str(sl)+": ";
+
+    std::string loc;
+    if (clang_equalLocations(sl, clang_getNullLocation()) == 0) {
+        loc = location_str(sl)+": ";
+    }
 
     std::string message; {
         CXString tmp = clang_getDiagnosticSpelling(d);
@@ -485,7 +489,9 @@ void format_diagnostic(CXDiagnostic d) {
         << color::set(color::normal, bold_message) << message
         << color::reset << "\n";
 
-    format_range(d, sl);
+    if (!loc.empty()) {
+        format_range(d, sl);
+    }
 
     format_diagnostics(clang_getChildDiagnostics(d));
     out << std::flush;
