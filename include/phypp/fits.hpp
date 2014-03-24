@@ -491,56 +491,19 @@ namespace fits {
 
         for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
+
+            // Skip if it is an internal FITS keyword
             std::size_t eqpos = entry.find_first_of("=");
-            if (eqpos == entry.npos) continue;
-
-            std::size_t cpos = entry.find_first_of("'/", eqpos);
-            if (cpos != entry.npos) {
-                if (entry[cpos] == '\'') {
-                    cpos = entry.find_first_of("'", cpos+1);
-                    cpos = entry.find_first_of("/", cpos+1);
+            if (eqpos != entry.npos) {
+                std::string nam = trim(entry.substr(0, eqpos));
+                char* tnam = const_cast<char*>(nam.c_str());
+                if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") || nam == "EXTEND" ||
+                    nam == "XTENSION" || nam == "EXTNAME" || nam == "PCOUNT" || nam == "GCOUNT") {
+                    continue;
                 }
             }
 
-            std::string nam = trim(entry.substr(0, eqpos));
-            char* tnam = const_cast<char*>(nam.c_str());
-            if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") || nam == "EXTEND" ||
-                nam == "XTENSION" || nam == "EXTNAME" || nam == "PCOUNT" || nam == "GCOUNT") {
-                continue;
-            }
-
-            std::string comment;
-            if (cpos != entry.npos) {
-                comment = trim(entry.substr(cpos+1));
-            }
-
-            char* tcomment = const_cast<char*>(comment.c_str());
-
-            std::size_t vsize;
-            if (cpos == entry.npos) {
-                vsize = entry.size() - eqpos - 1;
-            } else {
-                vsize = cpos - eqpos - 1;
-            }
-            std::string value = trim(entry.substr(eqpos+1, vsize));
-            if (value[0] == '\'') {
-                for (uint_t j = value.size()-1; j != npos; --j) {
-                    if (value[j] == '\'') {
-                        value.resize(j);
-                        break;
-                    }
-                }
-
-                char* tvalue = const_cast<char*>(value.c_str());
-                fits_write_key_str(fptr, tnam, tvalue+1, tcomment, &status);
-            } else if (value[0] == 'F' || value[0] == 'T') {
-                int b = value[0] == 'T';
-                fits_write_key(fptr, TLOGICAL, tnam, &b, tcomment, &status);
-            } else {
-                double d;
-                from_string(value, d);
-                fits_write_key(fptr, TDOUBLE, tnam, &d, tcomment, &status);
-            }
+            fits_write_record(fptr, entry.c_str(), &status);
         }
     }
 
