@@ -150,8 +150,13 @@ int main(int argc, char* argv[]) {
 
         fits::header hdr = fits::read_header(mfile[b]);
         double rx = 0, ry = 0;
-        fits::getkey(hdr, "CRPIX1", rx);
-        fits::getkey(hdr, "CRPIX2", ry);
+        bool bad_wcs = false;
+        if (!fits::getkey(hdr, "CRPIX1", rx) || !fits::getkey(hdr, "CRPIX2", ry)) {
+            warning("could not extract WCS information (CRPIX1 & CRPIX2)");
+            note("WCS for the cutout will be wrong");
+            note("parsing '"+mname[b]+"'");
+            bad_wcs = true;
+        }
 
         int_t hsize;
         if (finite(radius)) {
@@ -182,8 +187,12 @@ int main(int argc, char* argv[]) {
 
         for (uint_t i : range(ids)) {
             fits::header nhdr = hdr;
-            fits::setkey(nhdr, "CRPIX1", crx[ids[i]]);
-            fits::setkey(nhdr, "CRPIX2", cry[ids[i]]);
+            if (!bad_wcs && (!fits::setkey(nhdr, "CRPIX1", crx[ids[i]]) ||
+                !fits::setkey(nhdr, "CRPIX2", cry[ids[i]]))) {
+                warning("could not set WCS information (CRPIX1 & CRPIX2)");
+                note("WCS for the cutout will be wrong");
+                note("parsing '"+mname[b]+"'");
+            }
             fits::write(out+name[ids[i]]+mname[b]+".fits", cube(i,_,_), nhdr);
         }
 
@@ -196,8 +205,12 @@ int main(int argc, char* argv[]) {
         empty[_] = dnan;
         for (uint_t i : range(ids)) {
             fits::header nhdr = hdr;
-            fits::setkey(nhdr, "CRPIX1", crx[ids[i]]);
-            fits::setkey(nhdr, "CRPIX2", cry[ids[i]]);
+            if (!bad_wcs && (!fits::setkey(nhdr, "CRPIX1", crx[ids[i]]) ||
+                !fits::setkey(nhdr, "CRPIX2", cry[ids[i]]))) {
+                warning("could not set WCS information (CRPIX1 & CRPIX2)");
+                note("WCS for the cutout will be wrong");
+                note("parsing '"+mname[b]+"'");
+            }
             fits::write(out+name[ids[i]]+mname[b]+".fits", empty, nhdr);
         }
     }
@@ -232,5 +245,36 @@ int main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    print("WIP");
+    using namespace format;
+
+    print("getgal v1.0");
+    paragraph("usage: getgal field.param src=[...] out=... [options=...]");
+    header("List of available command line options:");
+    bullet("name", "[string] base name to give to individual cutouts (defalt: none)");
+    bullet("dir", "[string] directory in which to look for maps (default: current)");
+    bullet("verbose", "[flag] print some information about the process");
+    bullet("show", "[string array] name of bands to show in DS9 (default: none)");
+    bullet("show_rgb", "[flag] show then bands as RGB instead of tiles");
+    bullet("radius", "[float] cutout radius in arcsec (if not provided, use the default cutout "
+        "size from the parameter file)");
+    print("");
+
+    paragraph("Copyright (c) 2013 C. Schreiber (corentin.schreiber@cea.fr)");
+
+    paragraph("This software is provided 'as-is', without any express or implied warranty. In no "
+        "event will the authors be held liable for any damages arising from the use of this "
+        "software.");
+
+    paragraph("Permission is granted to anyone to use this software for any purpose, including "
+        "commercial applications, and to alter it and redistribute it freely, subject to the "
+        "following restrictions:");
+
+    bullet("1", "The origin of this software must not be misrepresented; you must not claim that "
+        "you wrote the original software. If you use this software in a product, an acknowledgment "
+        "in the product documentation would be appreciated but is not required.");
+    bullet("2", "Altered source versions must be plainly marked as such, and must not be "
+        "misrepresented as being the original software.");
+    bullet("3", "This notice may not be removed or altered from any source distribution.");
+
+    print("");
 }
