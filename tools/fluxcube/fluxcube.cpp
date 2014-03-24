@@ -38,19 +38,33 @@ struct flux_extractor {
     bool mea = true;
     uint_t nbstrap = 200;
     uint_t tseed = 42;
+    bool large_bg = false;
+    bool residual = false;
+    double frac = 0.1;
 
+    vec2d psf_orig;
     vec2d psf;
     vec2b ipsf;
+
+    bool update_masks_() {
+        ipsf = fabs(psf) >= frac*max(fabs(psf));
+        vec1u id = where(ipsf);
+        if (id.empty()) {
+            error("no pixel to fit (frac=", frac,")");
+            return false;
+        }
+
+        return true;
+    }
 
     bool config(program_arguments& pa, bool init = false) {
         std::string tpsf;
         bool med = false;
         bool norm = false;
-        double frac = 0.1;
 
         pa.read(arg_list(
             name(tpsf, "psf"), name(mea, "mean"), name(med, "median"), frac, norm, nbstrap,
-            name(tseed, "seed")
+            name(tseed, "seed"), large_bg, residual
         ));
 
         if (med) mea = false;
@@ -67,10 +81,9 @@ struct flux_extractor {
                 psf /= max(fabs(psf));
             }
 
-            ipsf = fabs(psf) >= frac*max(fabs(psf));
-            vec1u id = where(ipsf);
-            if (id.empty()) {
-                error("no pixel to fit (frac=", frac,")");
+            psf_orig = psf;
+
+            if (!update_masks_()) {
                 return false;
             }
         }
@@ -78,25 +91,57 @@ struct flux_extractor {
         return true;
     }
 
-    vec2d img;
+    vec2d img, res;
 
     void extract(const vec3d& cube, double& flux, double& bg) {
+        if (psf.dims[0] != cube.dims[1] || psf.dims[1] != cube.dims[2]) {
+            int_t hxsize = cube.dims[1]/2;
+            int_t hysize = cube.dims[2]/2;
+            vec1i mid = psf_orig.ids(max_id(psf_orig));
+            psf = subregion(psf_orig, {mid[0]-hxsize, mid[1]-hysize, mid[0]+hxsize, mid[1]+hysize});
+
+            if (!update_masks_()) {
+                flux = dnan;
+                bg = dnan;
+                return;
+            }
+        }
+
         if (mea) {
             img = qstack_mean(cube);
         } else {
             img = qstack_median(cube);
         }
 
-        vec1u id = where(ipsf && finite(img));
-        if (id.empty()) {
-            flux = dnan;
-            bg = dnan;
-            return;
+        if (large_bg) {
+            vec1u id = where(finite(img));
+            if (id.empty()) {
+                flux = dnan;
+                bg = dnan;
+                error("no pixel to fit");
+                return;
+            }
+
+            auto r = linfit(img[id], 1.0, 1.0, psf[id]*ipsf[id]);
+            flux = r.params[1];
+            bg = r.params[0];
+        } else {
+            vec1u id = where(ipsf && finite(img));
+            if (id.empty()) {
+                flux = dnan;
+                bg = dnan;
+                error("no pixel to fit");
+                return;
+            }
+
+            auto r = linfit(img[id], 1.0, 1.0, psf[id]);
+            flux = r.params[1];
+            bg = r.params[0];
         }
 
-        auto res = linfit(img[id], 1.0, 1.0, psf[id]);
-        flux = res.params[1];
-        bg = res.params[0];
+        if (residual) {
+            res = img - psf*flux;
+        }
     }
 
     void bootstrap(const vec3d& cube, double& flux, double& bg) {
@@ -122,19 +167,92 @@ struct flux_extractor {
 struct logdisp_extractor {
     uint_t nbstrap = 200;
     uint_t tseed = 42;
+    bool central = false;
+    bool residual = false;
+    bool large_bg = false;
+    vec1d raper;
+    double raper_bg = dnan;
+    double apcor = 1.0;
+    bool auto_apcor = false;
+    bool norm = false;
+    double frac = 0.4;
+    double ffrac = 0.1;
+    double bfrac = dnan;
 
+    vec2d psf_orig;
     vec2d psf;
-    vec2b ipsf, ifpsf;
+    vec2b ipsf, ifpsf, opsf, mpsf;
+    uint_t imax;
+
+    bool update_masks_() {
+        if (raper.empty()) {
+            ipsf = fabs(psf) >= frac*max(fabs(psf));
+            vec1u id = where(ipsf);
+            if (id.empty()) {
+                error("no pixel to fit (frac=", frac,")");
+                return false;
+            }
+
+            opsf = fabs(psf) < bfrac*max(fabs(psf));
+            id = where(opsf);
+            if (id.empty()) {
+                error("no pixel in background (bfrac=", bfrac,")");
+                return false;
+            }
+
+            mpsf = (fabs(psf) > 0 && fabs(psf) < bfrac*max(fabs(psf))) || ipsf;
+            id = where(mpsf);
+            if (id.empty()) {
+                error("no pixel to fit (bfrac=", bfrac,", frac=", frac, ")");
+                return false;
+            }
+
+            imax = max_id(psf);
+        } else {
+            int_t x0 = psf.dims[0]/2, y0 = psf.dims[1]/2;
+            ipsf = generate_img({psf.dims[0], psf.dims[1]}, [&](int_t x, int_t y) {
+                return sqr(x-x0) + sqr(y-y0) < sqr(raper[0]);
+            });
+            if (raper.size() == 3) {
+                opsf = generate_img({psf.dims[0], psf.dims[1]}, [&](int_t x, int_t y) {
+                    double r = sqr(x-x0) + sqr(y-y0);
+                    return r > sqr(raper[1]) && r < sqr(raper[2]);
+                });
+            } else if (raper.size() == 2) {
+                opsf = generate_img({psf.dims[0], psf.dims[1]}, [&](int_t x, int_t y) {
+                    return sqr(x-x0) + sqr(y-y0) > sqr(raper[1]);
+                });
+            } else {
+                opsf = ipsf;
+                opsf[_] = true;
+            }
+
+            if (auto_apcor) {
+                apcor = 1.0/(total(sqr(psf[where(ipsf)]) - mean(sqr(psf[where(opsf)]))));
+            }
+        }
+
+        ifpsf = fabs(psf) >= ffrac*max(fabs(psf));
+        vec1u id = where(ifpsf);
+        if (id.empty()) {
+            error("no pixel to fit (ffrac=", ffrac,")");
+            return false;
+        }
+
+        return true;
+    }
 
     bool config(program_arguments& pa, bool init = false) {
         std::string tpsf;
-        bool norm = false;
-        double frac = 0.5;
-        double ffrac = 0.1;
 
         pa.read(arg_list(
-            name(tpsf, "psf"), frac, ffrac, norm, nbstrap, name(tseed, "seed")
+            name(tpsf, "psf"), frac, ffrac, norm, nbstrap, name(tseed, "seed"), central, large_bg,
+            residual, bfrac, name(raper, "aperture"), apcor
         ));
+
+        if (apcor == 0.0) auto_apcor = true;
+
+        if (!finite(bfrac)) bfrac = ffrac;
 
         if (!init && psf.empty() && tpsf.empty()) {
             error("missing PSF file: psf=...");
@@ -148,17 +266,9 @@ struct logdisp_extractor {
                 psf /= max(fabs(psf));
             }
 
-            ipsf = fabs(psf) >= frac*max(fabs(psf));
-            vec1u id = where(ipsf);
-            if (id.empty()) {
-                error("no pixel to fit (frac=", frac,")");
-                return false;
-            }
+            psf_orig = psf;
 
-            ifpsf = fabs(psf) >= ffrac*max(fabs(psf));
-            id = where(ifpsf);
-            if (id.empty()) {
-                error("no pixel to fit (frac=", ffrac,")");
+            if (!update_masks_()) {
                 return false;
             }
         }
@@ -166,9 +276,22 @@ struct logdisp_extractor {
         return true;
     }
 
-    vec2d med, dsp;
+    vec2d med, dsp, res;
 
     void extract(const vec3d& cube, double& disp, double& bg) {
+        if (psf.dims[0] != cube.dims[1] || psf.dims[1] != cube.dims[2]) {
+            int_t hxsize = cube.dims[1]/2;
+            int_t hysize = cube.dims[2]/2;
+            vec1i mid = psf_orig.ids(max_id(psf_orig));
+            psf = subregion(psf_orig, {mid[0]-hxsize, mid[1]-hysize, mid[0]+hxsize, mid[1]+hysize});
+
+            if (!update_masks_()) {
+                disp = dnan;
+                bg = dnan;
+                return;
+            }
+        }
+
         med.resize(cube.dims[1], cube.dims[2]);
         dsp.resize(cube.dims[1], cube.dims[2]);
 
@@ -180,27 +303,81 @@ struct logdisp_extractor {
             dsp[i] = inplace_median(d);
         });
 
-        vec1u idd = where(ipsf && finite(dsp));
-        if (idd.empty()) {
-            disp = dnan;
-            bg = dnan;
-            return;
+        if (!raper.empty()) {
+            vec1u idbg = where(opsf && finite(dsp));
+            if (idbg.empty()) {
+                disp = dnan;
+                bg = dnan;
+                error("no pixel in aperture background");
+                return;
+            }
+
+            bg = mean(sqr(dsp[idbg]));
+
+            vec1u idd = where(ipsf && finite(dsp));
+            if (idbg.empty()) {
+                disp = dnan;
+                bg = dnan;
+                error("no pixel in aperture");
+                return;
+            }
+
+            disp = sqrt(apcor*total(sqr(dsp[idd]) - bg));
+            bg = sqrt(bg);
+        } else if (central) {
+            vec1u idbg = where(opsf && finite(dsp));
+            if (idbg.empty()) {
+                disp = dnan;
+                bg = dnan;
+                error("no pixel to fit");
+                return;
+            }
+
+            bg = median(dsp[idbg]);
+            disp = sqrt(sqr(dsp[imax]) - sqr(bg))/psf[imax];
+        } else if (large_bg) {
+            vec1u idd = where(mpsf && finite(dsp));
+            if (idd.empty()) {
+                disp = dnan;
+                bg = dnan;
+                error("no pixel to fit");
+                return;
+            }
+
+            auto r = linfit(sqr(dsp[idd]), 1.0, 1.0, sqr(psf[idd])*ipsf[idd]);
+            disp = sqrt(r.params[1]);
+            bg = 1.483*sqrt(r.params[0]);
+        } else {
+            vec1u idd = where(ipsf && finite(dsp));
+            if (idd.empty()) {
+                disp = dnan;
+                bg = dnan;
+                error("no pixel to fit");
+                return;
+            }
+
+            auto r = linfit(sqr(dsp[idd]), 1.0, 1.0, sqr(psf[idd]));
+            disp = sqrt(r.params[1]);
+            bg = 1.483*sqrt(r.params[0]);
         }
 
-        auto res = linfit(sqr(dsp[idd]), 1.0, 1.0, sqr(psf[idd]));
-        disp = sqrt(res.params[1]);
-        bg = 1.483*sqrt(res.params[0]);
+        if (residual) {
+            res = sqrt(sqr(dsp) - sqr(psf*disp));
+        }
 
+        double fmed;
         vec1u idf = where(ifpsf && finite(med));
         if (idf.empty()) {
             disp = dnan;
             bg = dnan;
+            error("no pixel to fit");
             return;
         }
 
-        res = linfit(med[idf], 1.0, 1.0, psf[idf]);
-        disp /= res.params[1];
+        auto r = linfit(med[idf], 1.0, 1.0, psf[idf]);
+        fmed = r.params[1];
 
+        disp /= fmed;
         disp = (1.171/disp)*(1.0 - sqrt(1.0 - sqr(disp/0.953)));
     }
 
@@ -226,13 +403,14 @@ struct logdisp_extractor {
 
 bool get_flux(int argc, char* argv[], const vec3d& cube) {
     bool bstrap = false;
+    bool residual = false;
     std::string out = "";
 
     flux_extractor ex;
 
     {
         program_arguments pa(argc, argv);
-        pa.read(arg_list(bstrap, out));
+        pa.read(arg_list(bstrap, residual, out));
         if (!ex.config(pa)) return false;
     }
 
@@ -252,6 +430,9 @@ bool get_flux(int argc, char* argv[], const vec3d& cube) {
 
     if (!out.empty()) {
         fits::write(out+".fits", ex.img);
+        if (residual) {
+            fits::write(out+"_res.fits", ex.res);
+        }
     }
 
     return true;
@@ -259,13 +440,14 @@ bool get_flux(int argc, char* argv[], const vec3d& cube) {
 
 bool get_logdisp(int argc, char* argv[], const vec3d& cube) {
     bool bstrap = false;
+    bool residual = false;
     std::string out = "";
 
     logdisp_extractor ex;
 
     {
         program_arguments pa(argc, argv);
-        pa.read(arg_list(bstrap, out));
+        pa.read(arg_list(bstrap, residual, out));
         if (!ex.config(pa)) return false;
     }
 
@@ -285,6 +467,9 @@ bool get_logdisp(int argc, char* argv[], const vec3d& cube) {
 
     if (!out.empty()) {
         fits::write(out+".fits", ex.dsp);
+        if (residual) {
+            fits::write(out+"_res.fits", ex.res);
+        }
     }
 
     return true;
@@ -366,6 +551,7 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
 
         vec1s cfile;
         vec1d disp, bg, disp_err, bg_err;
+        vec1d apcor;
 
         vec1s lines; {
             std::ifstream bfile(file);
@@ -392,6 +578,9 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             vec3d cube; fits::read(cfile.data.back(), cube);
             disp.push_back(0.0); bg.push_back(0.0);
             ex.extract(cube, disp.data.back(), bg.data.back());
+            if (!ex.raper.empty()) {
+                apcor.push_back(ex.apcor);
+            }
 
             if (bstrap) {
                 disp_err.push_back(0.0); bg_err.push_back(0.0);
@@ -408,7 +597,7 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             file::mkdir(file::get_directory(out));
         }
 
-        fits::write_table(out, ftable(cfile, disp, bg, disp_err, bg_err));
+        fits::write_table(out, ftable(cfile, disp, bg, disp_err, bg_err, apcor));
 
         return true;
     } else {
