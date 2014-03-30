@@ -138,6 +138,17 @@ T lookback_time(const T& z, const cosmo_t& cosmo) {
     }, 0, z);
 }
 
+// Volume of the universe [Mpc^3] within a sphere of redshift 'z'.
+// Note: assumes that cosmo.wk = 0;
+// There is no analytic form for this function, hence it must be numerically integrated.
+// Note that this function is costly. If you need to compute it for many redshift values, you are
+// advised to use the interpolated version below.
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+T vuniverse(const T& z, const cosmo_t& cosmo) {
+    if (z <= 0) return 0.0;
+    return (4.0/3.0)*dpi*pow(lumdist(z, cosmo)/(1.0+z), 3);
+}
+
 // The above functions have a vectorized version that, when trying to compute lots of elements,
 // only evaluates the function on a logarithmic grid (dependent on the provided sample), and then
 // interpolates the result for the full sample, effectively reducing the number of function calls.
@@ -176,6 +187,7 @@ T lookback_time(const T& z, const cosmo_t& cosmo) {
 
 VECTORIZE_INTERPOL(lumdist, 800);
 VECTORIZE_INTERPOL(lookback_time, 800);
+VECTORIZE_INTERPOL(vuniverse, 800);
 
 #undef VECTORIZE_INTERPOL
 
