@@ -1865,6 +1865,45 @@ bool same_size(const T& v1, const U& v2, const Args& ... args) {
     return n_elements(v1) && n_elements(v2) && same_size(v1, args...);
 }
 
+bool same_dims_or_scalar_(uint_t size) {
+    return true;
+}
+
+template<std::size_t Dim, typename T, typename ... Args>
+bool same_dims_or_scalar_(uint_t size, const vec_t<Dim,T>& v1, const Args& ... args);
+
+template<typename T, typename ... Args,
+    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+bool same_dims_or_scalar_(uint_t size, const T& v1, const Args& ... args) {
+    return same_dims_or_scalar_(size, args...);
+}
+
+template<std::size_t Dim, typename T, typename ... Args>
+bool same_dims_or_scalar_(uint_t size, const vec_t<Dim,T>& v1, const Args& ... args) {
+    return v1.size() == size && same_dims_or_scalar_(size, args...);
+}
+
+uint_t same_dims_or_scalar_get_size_() {
+    return 0u;
+}
+
+template<std::size_t Dim, typename T, typename ... Args>
+uint_t same_dims_or_scalar_get_size_(const vec_t<Dim,T>& v1, const Args& ... args) {
+    return v1.size();
+}
+
+template<typename T, typename ... Args,
+    typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+uint_t same_dims_or_scalar_get_size_(const T& v1, const Args& ... args) {
+    return same_dims_or_scalar_get_size_(args...);
+}
+
+template<typename ... Args>
+bool same_dims_or_scalar(const Args& ... args) {
+    uint_t size = same_dims_or_scalar_get_size_(args...);
+    return size == 0 || same_dims_or_scalar_(size, args...);
+}
+
 template<std::size_t Dim, typename T>
 auto element(const vec_t<Dim,T>& v) -> decltype(dref<T>(v.data[0])) {
     return dref<T>(v.data[0]);
