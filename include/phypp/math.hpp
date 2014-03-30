@@ -1503,8 +1503,25 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     return fr;
 }
 
+template<typename TY>
+void linfit_error_dims_(const TY& y, uint_t i) {}
+
+template<typename TY, typename U, typename ... Args>
+void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
+    phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X"+
+        strn(i)+" ("+strn(dim(y))+" vs. "+strn(dim(t))+")");
+    linfit_error_dims_(y, i+1, args...);
+}
+
 template<typename TypeY, typename TypeE, typename ... Args>
 linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
+    bool bad = !same_dims_or_scalar(y, ye, args...);
+    if (bad) {
+        phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and YE arrays "
+            "("+strn(dim(y))+" vs. "+strn(dim(ye))+")");
+        linfit_error_dims_(y, 0, args...);
+    }
+
     uint_t np = sizeof...(Args);
     uint_t nm = n_elements(y);
 

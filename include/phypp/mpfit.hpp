@@ -877,6 +877,15 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
 template<typename F, typename TX, typename TY, typename TYE>
 mpfit_result mpfitfun(F&& model, const TX& x, const TY& y, const TYE& ye,
     const vec1d& params, const mpfit_options& options = mpfit_options()) {
+
+    bool bad = !same_dims_or_scalar(x, y, ye);
+    if (bad) {
+        phypp_check(same_dims_or_scalar(x, y), "incompatible dimensions between X and Y arrays "
+            "("+strn(dim(x))+" vs. "+strn(dim(y))+")");
+        phypp_check(same_dims_or_scalar(x, ye), "incompatible dimensions between X and YE arrays "
+            "("+strn(dim(x))+" vs. "+strn(dim(ye))+")");
+    }
+
     return mpfit([&](const vec1d& p) {
         return (y - model(x,p))/ye;
     }, params, options);
