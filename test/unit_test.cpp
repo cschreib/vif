@@ -365,6 +365,30 @@ int main(int argc, char* argv[]) {
         vec2i bins = {{0,2,5,8,10}, {2,5,8,10,12}};
         vec1u counts = histogram(t, bins);
         check(counts, "1, 4, 5, 2, 0");
+
+        vec1d w = replicate(1.0, t.size());
+        counts = histogram(t, w, bins);
+        check(counts, "1, 4, 5, 2, 0");
+
+        w[0] = 5;
+        vec1d wcounts = histogram(t, w, bins);
+        check(wcounts, "5, 4, 5, 2, 0");
+
+        w[0] = 1; w[1] = 5;
+        wcounts = histogram(t, w, bins);
+        check(wcounts, "1, 8, 5, 2, 0");
+
+        w[1] = 1; w[5] = 5;
+        wcounts = histogram(t, w, bins);
+        check(wcounts, "1, 4, 9, 2, 0");
+
+        w[5] = 1; w[7] = 5;
+        wcounts = histogram(t, w, bins);
+        check(wcounts, "1, 4, 5, 6, 0");
+
+        w[7] = 1; w[9] = 5;
+        wcounts = histogram(t, w, bins);
+        check(wcounts, "1, 4, 5, 2, 0");
     }
 
     {

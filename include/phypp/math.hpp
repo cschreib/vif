@@ -709,14 +709,25 @@ vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
 }
 
 template<std::size_t Dim, typename Type, typename TypeB, typename TypeW>
-vec1d histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
+vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
     const vec_t<2,TypeB>& bins) {
 
+    vec1u tmp = uindgen(data.size());
+
     uint_t nbin = bins.dims[1];
-    vec1d counts(nbin);
-    for (uint_t i = 0; i < nbin; ++i) {
-        vec1u ids = where(in_bin(data, bins(_,i)));
-        counts[i] = total(weight[ids]);
+    vec_t<1,rtype_t<TypeW>> counts(nbin);
+
+    auto first = tmp.data.begin();
+    for (uint_t i : range(nbin)) {
+        auto last = std::partition(first, tmp.data.end(), [&bins,&data,i](uint_t id) {
+            return data[id] >= bins(0,i) && data[id] < bins(1,i);
+        });
+
+        if (last == tmp.data.end()) break;
+
+        for (; first != last; ++first) {
+            counts[i] += weight[*first];
+        }
     }
 
     return counts;
