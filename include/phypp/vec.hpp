@@ -1850,6 +1850,11 @@ vec1u dim(const vec_t<Dim,T>& v) {
     return d;
 }
 
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+vec1u dim(const T& t) {
+    return {1u};
+}
+
 template<typename T, typename U, typename ... Args>
 bool same_size(const T& v1, const U& v2) {
     return n_elements(v1) && n_elements(v2);
