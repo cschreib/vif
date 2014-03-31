@@ -268,43 +268,51 @@ vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 }
 
 // Convert a set of sexagesimal coordinates ('hh:mm:ss.ms') into degrees
-void sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
+bool sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
     vec1s starr1 = split(sra, ":");
     vec1s starr2 = split(sdec, ":");
 
     if (starr1.size() != 3 || starr2.size() != 3) {
         ra = dnan;
         dec = dnan;
-        return;
+        return false;
     }
 
     int_t rah, ram, dech, decm;
     double ras, decs;
 
-    from_string(starr1[0], rah);
-    from_string(starr1[1], ram);
-    from_string(starr1[2], ras);
-    from_string(starr2[0], dech);
-    from_string(starr2[1], decm);
-    from_string(starr2[2], decs);
+    if (!from_string(starr1[0], rah)  || !from_string(starr1[1], ram) ||
+        !from_string(starr1[2], ras)  || !from_string(starr2[0], dech) ||
+        !from_string(starr2[1], decm) || !from_string(starr2[2], decs)) {
+        ra = dnan;
+        dec = dnan;
+        return false;
+    }
 
     double signr = sign(rah);
     double signd = sign(dech);
 
     ra = (rah + ram*signr/60.0 + ras*signr/3600.0)*15.0;
     dec = dech + decm*signd/60.0 + decs*signd/3600.0;
+
+    return true;
 }
 
 template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-void sex2deg(const vec_t<Dim,TSR>& sra, const vec_t<Dim,TSD>& sdec, vec_t<Dim,TR>& ra, vec_t<Dim,TD>& dec) {
+vec_t<Dim,bool> sex2deg(const vec_t<Dim,TSR>& sra, const vec_t<Dim,TSD>& sdec,
+    vec_t<Dim,TR>& ra, vec_t<Dim,TD>& dec) {
+
     phypp_check(sra.size() == sdec.size(), "RA and Dec dimensions do not match (",
         sra.dims, " vs ", sdec.dims, ")");
 
     ra.resize(sra.dims);
     dec.resize(sra.dims);
+    vec_t<Dim,bool> res(sra.dims);
     for (uint_t i : range(sra)) {
-        sex2deg(sra[i], sdec[i], ra[i], dec[i]);
+        res[i] = sex2deg(sra[i], sdec[i], ra[i], dec[i]);
     }
+
+    return res;
 }
 
 // Convert a set of degree coordinates into sexagesimal format ('hh:mm:ss.ms')
