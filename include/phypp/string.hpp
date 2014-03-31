@@ -370,6 +370,12 @@ std::string keep_end(std::string s, uint_t n = 1) {
     return s;
 }
 
+std::string remove_extension(std::string s) {
+    auto p = s.find_last_of('.');
+    if (p == s.npos) return s;
+    return s.substr(0u, p);
+}
+
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
