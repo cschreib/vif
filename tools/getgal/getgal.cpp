@@ -158,13 +158,14 @@ int main(int argc, char* argv[]) {
             bad_wcs = true;
         }
 
+        auto wcs = fits::wcs(hdr);
+
         int_t hsize;
         if (finite(radius)) {
             // Convert radius to number of pixels
             vec1d x, y;
-            fits::ad2xy(fits::wcs(hdr),
-                {ra[0], ra[0] + radius/3600.0}, {dec[0], dec[0]}, x, y);
-            hsize = sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
+            fits::ad2xy(wcs, {ra[0], ra[0] + radius/3600.0}, {dec[0], dec[0]}, x, y);
+            hsize = ceil(sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0])));
             if (hsize < 10) hsize = 10;
         } else {
             // Use default cutout size
@@ -172,7 +173,7 @@ int main(int argc, char* argv[]) {
         }
 
         vec1d x, y;
-        fits::ad2xy(fits::wcs(hdr), ra, dec, x, y);
+        fits::ad2xy(wcs, ra, dec, x, y);
         x = round(x);
         y = round(y);
         vec1d crx = rx - x + hsize + 1;
