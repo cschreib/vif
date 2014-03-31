@@ -38,7 +38,7 @@ if [ -z "$OUTPUT" ]; then
     OUTPUT=$(dirname $FILE)/$(basename $FILE .cpp)
 fi
 
-OPTIONS="$PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS"
+OPTIONS="-I$(dirname $FILE) $PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS"
 if [ $DEBUG -eq 1 ]; then
     OPTIONS="$OPTIONS $PHYPP_COMPILER_DEBUG_FLAGS"
 fi

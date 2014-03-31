@@ -51,7 +51,7 @@ if [ $RECOMPILE -eq 1 ]; then
 
     # Compile the generated file to build the final executable
     $PHYPP_COMPILER ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
-        $PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS -o $1
+        -I`pwd` $PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS -o $1
 
     if [ $? -ne 0 ]; then
         echo phy++: program \'$1\' FAILED to compile
