@@ -531,7 +531,9 @@ namespace file {
     void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
         std::size_t i, std::size_t j, const vec_t<1,Type>& v, const Args& ... args) {
 
-        if (j != 0) {
+        if (j == 0) {
+            file << std::string(sep.size(), ' ');
+        } else {
             file << sep;
         }
 
@@ -550,7 +552,9 @@ namespace file {
         std::size_t i, std::size_t j, const vec_t<2,Type>& v, const Args& ... args) {
 
         for (uint_t k = 0; k < v.dims[1]; ++k) {
-            if (j != 0) {
+            if (j == 0) {
+                file << std::string(sep.size(), ' ');
+            } else {
                 file << sep;
             }
 
@@ -573,7 +577,26 @@ namespace file {
 
         std::ofstream file(filename);
         for (std::size_t i = 0; i < n; ++i) {
-            write_table_do_(file, cwidth, " ", i, 0, args...);
+            write_table_do_(file, cwidth, "", i, 0, args...);
+        }
+    }
+
+    template<typename ... Args>
+    void write_table_hdr(const std::string& filename, std::size_t cwidth, const vec1s& nhdr,
+        const Args& ... args) {
+
+        std::size_t n = 0, t = 0;
+        write_table_phypp_check_size_(n, t, args...);
+
+        std::ofstream file(filename);
+
+        // Write header
+        std::string hdr = collapse(align_right(nhdr, cwidth));
+        if (hdr.size() > 1 && hdr[0] == ' ') hdr = hdr.substr(1);
+        file << "#" << hdr << "\n#\n";
+
+        for (std::size_t i = 0; i < n; ++i) {
+            write_table_do_(file, cwidth, "", i, 0, args...);
         }
     }
 
