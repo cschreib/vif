@@ -1538,17 +1538,6 @@ double sed_convert(const filter_t& from, const filter_t& to, double z, double d,
     return ref/flx;
 }
 
-struct template_fit_res_t {
-    uint_t bfit; // index of the best fit template in the library
-    vec1d chi2;  // chi^2 of each template
-    vec1d amp;   // renormalization amplitude of each template
-    vec2d flux;  // best-fit flux for each template
-
-    vec1u sed_sim;       // index of each error realization's best fit template
-    vec1d amp_bfit_sim;  // renormalization amplitude of the best fit for each error realization
-    vec1d amp_sim;       // renormalization amplitude for each error realization's best fit
-};
-
 template<typename TypeLib, typename TypeFi>
 vec2d template_observed(const TypeLib& lib, double z, double d,
     const vec_t<1,TypeFi>& filters) {
@@ -1635,13 +1624,25 @@ vec2d template_observed(const TypeLib& lib, const vec_t<2,TypeZ>& z, const vec_t
     return flux;
 }
 
+struct template_fit_res_t {
+    uint_t bfit; // index of the best fit template in the library
+    vec1d chi2;  // chi^2 of each template
+    vec1d amp;   // renormalization amplitude of each template
+    vec2d flux;  // best-fit flux for each template
+
+    vec1u sed_sim;       // index of each error realization's best fit template
+    vec1d amp_bfit_sim;  // renormalization amplitude of the best fit for each error realization
+    vec1d amp_sim;       // renormalization amplitude for each error realization's best fit
+};
+
 struct template_fit_params {
-    uint_t nsim = 200;
+    uint_t nsim = 200;   // number of random realizations to perform to estimate errors
+    bool renorm = false; // if true, allow templates to be renormalized when fitted
 };
 
 template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
     typename TypeZ, typename TypeD>
-template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const TypeZ& z,
+template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ& z,
    const TypeD& d, const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err,
    const vec_t<1,TypeFi>& filters, template_fit_params params = template_fit_params()) {
 
@@ -1654,8 +1655,7 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
 
     const uint_t nsed = res.flux.dims[0];
     const uint_t nfilter = filters.size();
-    auto tmp1 = arr<ttype>(nsed);
-    auto tmp2 = arr<ttype>(nsed);
+    vec_t<1,ttype> tmp1(nsed), tmp2(nsed);
     for (uint_t i = 0; i < nsed; ++i) {
         auto tmp = res.flux(i,_);
         tmp1[i] = total(weight*flux*tmp);
@@ -1663,9 +1663,12 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
     }
 
     res.amp = tmp1/tmp2;
-    tmp1 *= res.amp;
-
-    res.chi2 = total(weight*flux*flux) - tmp1;
+    if (params.renorm) {
+        tmp1 *= res.amp;
+        res.chi2 = total(weight*flux*flux) - tmp1;
+    } else {
+        res.chi2 = total(weight*flux*flux) - 2.0*tmp1 + tmp2;
+    }
 
     // Find the best chi2 among all the SEDs
     res.bfit = min_id(res.chi2);
@@ -1674,9 +1677,9 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
     // to the provided error. The fit is performed on each of these random realizations and the
     // error on the parameters are computed as the standard deviation of the fit results over all
     // the realizations.
-    res.amp_bfit_sim = fltarr(params.nsim);
-    res.amp_sim = fltarr(params.nsim);
-    res.sed_sim = fltarr(params.nsim);
+    res.amp_bfit_sim.resize(params.nsim);
+    res.amp_sim.resize(params.nsim);
+    res.sed_sim.resize(params.nsim);
 
     const uint_t nflux = flux.size();
     for (uint_t i = 0; i < params.nsim; ++i) {
@@ -1686,70 +1689,14 @@ template_fit_res_t template_fit_renorm(const TypeLib& lib, TypeSeed& seed, const
         }
 
         auto amp = tmp1/tmp2;
-        tmp1 *= amp;
-
-        auto chi2 = total(weight*fsim*fsim) - tmp1;
-        auto ised = min_id(chi2);
-
-        res.amp_bfit_sim[i] = amp[res.bfit];
-        res.amp_sim[i] = amp[ised];
-        res.sed_sim[i] = ised;
-    }
-
-    for (uint_t f = 0; f < nfilter; ++f) {
-        res.flux(_,f) *= res.amp;
-    }
-
-    return res;
-}
-
-template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
-    typename TypeZ, typename TypeD>
-template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ& z, const TypeD& d,
-    const vec_t<1,TypeF>& flux, const vec_t<1,TypeE>& err, const vec_t<1,TypeFi>& filters,
-    template_fit_params params = template_fit_params()) {
-
-    template_fit_res_t res;
-    res.flux = template_observed(lib, z, d, filters);
-
-    // Compute chi2 & renormalization factor
-    auto weight = invsqr(err);
-    using ttype = decltype(weight[0]*flux[0]*res.flux[0]);
-
-    uint_t nsed = res.flux.dims[0];
-    const uint_t nfilter = filters.size();
-    auto tmp1 = arr<ttype>(nsed);
-    auto tmp2 = arr<ttype>(nsed);
-    for (uint_t i = 0; i < nsed; ++i) {
-        auto tmp = res.flux(i,_);
-        tmp1[i] = total(weight*flux*tmp);
-        tmp2[i] = total(weight*tmp*tmp);
-    }
-
-    res.amp = tmp1/tmp2;
-
-    res.chi2 = total(weight*flux*flux) - 2.0*tmp1 + tmp2;
-
-    // Find the best chi2 among all the SEDs
-    res.bfit = min_id(res.chi2);
-
-    // Compute the errors on the fit by adding a random offset to the measured photometry according
-    // to the provided error. The fit is performed on each of these random realizations and the
-    // error on the parameters are computed as the standard deviation of the fit results over all
-    // the realizations.
-    res.amp_bfit_sim = fltarr(params.nsim);
-    res.amp_sim = fltarr(params.nsim);
-    res.sed_sim = fltarr(params.nsim);
-
-    const uint_t nflux = flux.size();
-    for (uint_t i = 0; i < params.nsim; ++i) {
-        auto fsim = flux + randomn(seed, nflux)*err;
-        for (uint_t t = 0; t < nsed; ++t) {
-            tmp1[t] = total(weight*fsim*res.flux(t,_));
+        vec_t<1,ttype> chi2;
+        if (params.renorm) {
+            tmp1 *= amp;
+            chi2 = total(weight*fsim*fsim) - tmp1;
+        } else {
+            chi2 = total(weight*fsim*fsim) - 2.0*tmp1 + tmp2;
         }
 
-        auto amp = tmp1/tmp2;
-        auto chi2 = total(weight*fsim*fsim) - 2.0*tmp1 + tmp2;
         auto ised = min_id(chi2);
 
         res.amp_bfit_sim[i] = amp[res.bfit];
