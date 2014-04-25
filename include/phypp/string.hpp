@@ -171,26 +171,6 @@ std::string tolower(std::string s) {
     return s;
 }
 
-std::string erase_begin(std::string s, uint_t n) {
-    if (n >= s.size()) {
-        s.clear();
-    } else {
-        s.erase(0, n);
-    }
-
-    return s;
-}
-
-std::string erase_end(std::string s, uint_t n) {
-    if (n >= s.size()) {
-        s.clear();
-    } else {
-        s.erase(s.size()-n, n);
-    }
-
-    return s;
-}
-
 std::string replace(std::string s, const std::string& pattern, const std::string& rep) {
     auto p = s.find(pattern);
     while (p != s.npos) {
@@ -352,6 +332,40 @@ bool end_with(const std::string& s, const std::string& pattern) {
     }
 
     return true;
+}
+
+std::string erase_begin(std::string s, uint_t n) {
+    if (n >= s.size()) {
+        s.clear();
+    } else {
+        s.erase(0, n);
+    }
+
+    return s;
+}
+
+std::string erase_end(std::string s, uint_t n) {
+    if (n >= s.size()) {
+        s.clear();
+    } else {
+        s.erase(s.size()-n, n);
+    }
+
+    return s;
+}
+
+std::string erase_begin(std::string s, const std::string& pattern) {
+    phypp_check(start_with(s, pattern), "unexpected string content: '"+s+"', "
+        "should start with '"+pattern+"'");
+    s.erase(0, pattern.size());
+    return s;
+}
+
+std::string erase_end(std::string s, const std::string& pattern) {
+    phypp_check(end_with(s, pattern), "unexpected string content: '"+s+"', "
+        "should end with '"+pattern+"'");
+    s.erase(s.size()-pattern.size(), pattern.size());
+    return s;
 }
 
 std::string keep_start(std::string s, uint_t n = 1) {
