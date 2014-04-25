@@ -733,6 +733,46 @@ vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,T
     return counts;
 }
 
+template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX, typename TypeBY>
+vec2u histogram2d(const vec_t<Dim,TypeX>& x, const vec_t<Dim,TypeY>& y,
+    const vec_t<2,TypeBX>& xbins, const vec_t<2,TypeBY>& ybins) {
+
+    phypp_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
+        y.dims, ")");
+
+    vec1u ids = uindgen(x.size());
+
+    uint_t nxbin = xbins.dims[1];
+    uint_t nybin = ybins.dims[1];
+    vec2u counts(nxbin, nybin);
+
+    auto firstx = ids.data.begin();
+    for (uint_t i : range(nxbin)) {
+        auto lastx = std::partition(firstx, ids.data.end(), [&xbins,&x,i](uint_t id) {
+            return x[id] >= xbins(0,i) && x[id] < xbins(1,i);
+        });
+
+        if (lastx == ids.data.end()) break;
+
+        auto firsty = firstx;
+        for (uint_t j : range(nybin)) {
+            auto lasty = std::partition(firsty, lastx, [&ybins,&y,j](uint_t id) {
+                return y[id] >= ybins(0,j) && y[id] < ybins(1,j);
+            });
+
+            if (lasty == lastx) break;
+
+            counts(i,j) = lasty - firsty;
+
+            firsty = lasty;
+        }
+
+        firstx = lastx;
+    }
+
+    return counts;
+}
+
 template<std::size_t Dim, typename Type>
 void data_info_(const vec_t<Dim,Type>& v) {
     vec1u idok = where(finite(v));
