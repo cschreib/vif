@@ -789,7 +789,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
             }
 
             // Tests for convergence
-            bool ftol = fabs(actred) <= options.ftol && prered <= options.ftol && 0.5*ratio < 1.0;
+            bool ftol = fabs(actred) <= options.ftol && prered <= options.ftol && 0.5*ratio <= 1.0;
             bool xtol = delta <= options.xtol*xnorm;
             if (ftol || xtol) {
                 res.success = true;
@@ -812,7 +812,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
                 break;
             }
 
-            if (fabs(actred) <= eps && prered >= eps && 0.5*ratio <= 1.0) {
+            if (fabs(actred) <= eps && prered <= eps && 0.5*ratio <= 1.0) {
                 res.success = false;
                 res.reason = mpfit_result::ftol;
                 stop = true;
