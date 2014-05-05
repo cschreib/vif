@@ -1376,7 +1376,7 @@ struct vec_t<Dim,Type*> {
             t = -t;
         }
 
-        return *this;
+        return v;
     }
 
     #define OPERATOR(op) \
