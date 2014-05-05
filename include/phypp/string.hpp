@@ -511,6 +511,14 @@ namespace format {
             print(s);
         }
     }
+
+    void item(const std::string& msg) {
+        std::string header = " - ";
+        vec1s w = wrap(header+msg, 80, std::string(header.size(), ' '));
+        for (auto& s : w) {
+            print(s);
+        }
+    }
 }
 
 template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
