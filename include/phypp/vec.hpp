@@ -850,31 +850,37 @@ struct vec_t {
 
     template<typename T>
     T to_idx_(T ui, cte_t<false>) const {
-        assert(ui < data.size());
+        phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
+            data.size(), ")");
         return ui;
     }
 
     template<typename T>
     uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += data.size();
-        assert(i >= 0);
+        phypp_check(i >= 0, "operator[]: index out of bounds (", i+data.size(), " vs. ",
+            data.size(), ")");
         uint_t ui(i);
-        assert(ui < data.size());
+        phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
+            data.size(), ")");
         return ui;
     }
 
     template<std::size_t D, typename T>
     T to_idx_(T ui, cte_t<false>) const {
-        assert(ui < dims[D]);
+        phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
+            dims[D], ")");
         return ui;
     }
 
     template<std::size_t D, typename T>
     uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += dims[D];
-        assert(i >= 0);
+        phypp_check(i >= 0, "operator(): index out of bounds (", i+data.size(), " vs. ",
+            dims[D], ")");
         uint_t ui(i);
-        assert(ui < dims[D]);
+        phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
+            dims[D], ")");
         return ui;
     }
 
@@ -1173,21 +1179,28 @@ struct vec_t<Dim,Type*> {
     }
 
     vec_t& operator = (const vec_t<Dim,Type*>& v) {
-        assert(data.size() == v.data.size());
+        phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
+            v.data.size(), " to ", data.size(), ")");
+
         // Make a copy to prevent aliasing
+        // TODO: can this be optimized out if v.parent != this ?
         std::vector<dtype> t; t.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
             t[i] = *v.data[i];
         }
+
+        // Actual assignment
         for (uint_t i = 0; i < v.data.size(); ++i) {
             *data[i] = t[i];
         }
+
         return *this;
     }
 
     template<typename T>
     vec_t& operator = (const vec_t<Dim,T>& v) {
-        assert(data.size() == v.data.size());
+        phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
+            v.data.size(), " to ", data.size(), ")");
         for (uint_t i = 0; i < v.data.size(); ++i) {
             *data[i] = dref<T>(v.data[i]);
         }
@@ -1222,31 +1235,37 @@ struct vec_t<Dim,Type*> {
 
     template<typename T>
     T to_idx_(T ui, cte_t<false>) const {
-        assert(ui < data.size());
+        phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
+            data.size(), ")");
         return ui;
     }
 
     template<typename T>
     uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += data.size();
-        assert(i >= 0);
+        phypp_check(i >= 0, "operator[]: index out of bounds (", i+data.size(), " vs. ",
+            data.size(), ")");
         uint_t ui(i);
-        assert(ui < data.size());
+        phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
+            data.size(), ")");
         return ui;
     }
 
     template<std::size_t D, typename T>
     T to_idx_(T ui, cte_t<false>) const {
-        assert(ui < dims[D]);
+        phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
+            dims[D], ")");
         return ui;
     }
 
     template<std::size_t D, typename T>
     uint_t to_idx_(T i, cte_t<true>) const {
         if (i < 0) i += dims[D];
-        assert(i >= 0);
+        phypp_check(i >= 0, "operator(): index out of bounds (", i+data.size(), " vs. ",
+            dims[D], ")");
         uint_t ui(i);
-        assert(ui < dims[D]);
+        phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
+            dims[D], ")");
         return ui;
     }
 
