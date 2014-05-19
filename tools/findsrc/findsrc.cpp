@@ -17,12 +17,14 @@ int main(int argc, char* argv[]) {
 
     read_args(argc-3, argv+3, arg_list(ra, dec, nsrc, show, region, region_text));
 
+    vec1u id; vec1d d;
+
+    vec1d cra, cdec;
+
     if (ra.empty() != dec.empty()) {
         error("you only specified 'ra' or 'dec', please provide both");
         return 1;
     }
-
-    vec1d cra, cdec;
 
     if (!ra.empty()) {
         fits::read_table(argv[1], ra, cra, dec, cdec);
@@ -38,8 +40,48 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    vec2d show_data(show.size(), cra.size());
-    vec2d region_data(region_text.size(), cra.size());
+    if (std::string(argv[2]) == "id") {
+        vec1s vs = split(trim(argv[3], "[]"), ",");
+        vec1b parsed = from_string(vs, id);
+        if (total(!parsed) != 0) {
+            error("could not parse source IDs: ", ("'"+vs[where(!parsed)]+"'"));
+            return 1;
+        }
+
+        d.resize(id.size());
+    } else {
+        print("Catalog ranges:");
+        print(" RA: [", min(cra), ", ", max(cra), "]");
+        print(" Dec: [", min(cdec), ", ", max(cdec), "]");
+
+        vec1d tra(1);
+        vec1d tdec(1);
+        std::string sra = argv[2];
+        std::string sdec = argv[3];
+        if (find(sra, ":") != npos) {
+            note("using sexagesimal coordinates (hh:mm:ss, deg:mm:ss)");
+            sex2deg(sra, sdec, tra[0], tdec[0]);
+        } else {
+            note("using decimal coordinates (degree)");
+            if (!from_string(sra, tra[0])) {
+                error("could not parse RA coordinate ", sra);
+                return 1;
+            }
+            if (!from_string(sdec, tdec[0])) {
+                error("could not parse Dec coordinate ", sdec);
+                return 1;
+            }
+        }
+
+        qxmatch_params p; p.nth = nsrc;
+        auto res = qxmatch(tra, tdec, cra, cdec, p);
+
+        id = res.id(_,0);
+        d = res.d(_,0);
+    }
+
+    vec2d show_data(show.size(), id.size());
+    vec2d region_data(region_text.size(), id.size());
 
     for (uint_t i = 0; i < show.size(); ++i) {
         vec1d data;
@@ -48,7 +90,7 @@ int main(int argc, char* argv[]) {
             warning("no column named '", show[i], "', skipping");
             show[i] = "";
         } else {
-            show_data(i,_) = data;
+            show_data(i,_) = data[id];
         }
     }
 
@@ -59,43 +101,17 @@ int main(int argc, char* argv[]) {
             warning("no column named '", region_text[i], "', skipping");
             region_text[i] = "";
         } else {
-            region_data(i,_) = data;
+            region_data(i,_) = data[id];
         }
     }
 
-    print("Catalog ranges:");
-    print(" RA: [", min(cra), ", ", max(cra), "]");
-    print(" Dec: [", min(cdec), ", ", max(cdec), "]");
-
-    vec1d tra(1);
-    vec1d tdec(1);
-    std::string sra = argv[2];
-    std::string sdec = argv[3];
-    if (find(sra, ":") != npos) {
-        note("using sexagesimal coordinates (hh:mm:ss, deg:mm:ss)");
-        sex2deg(sra, sdec, tra[0], tdec[0]);
-    } else {
-        note("using decimal coordinates (degree)");
-        if (!from_string(sra, tra[0])) {
-            error("could not parse RA coordinate ", sra);
-            return 1;
-        }
-        if (!from_string(sdec, tdec[0])) {
-            error("could not parse Dec coordinate ", sdec);
-            return 1;
-        }
-    }
-
-    qxmatch_params p; p.nth = nsrc;
-    auto res = qxmatch(tra, tdec, cra, cdec, p);
-
-    for (uint_t i = 0; i < nsrc; ++i) {
+    for (uint_t i : range(id)) {
         std::string data;
         for (uint_t j = 0; j < show.size(); ++j) {
             if (show[j].empty()) continue;
-            data += ", "+show[j]+"="+strn(show_data(j,res.id(i,0)));
+            data += ", "+show[j]+"="+strn(show_data(j,i));
         }
-        print(i, ": ", res.d(i,0), "\", id=", res.id(i,0), data);
+        print(i, ": ", d[i], "\", id=", id[i], data);
     }
 
     if (!region.empty()) {
@@ -108,22 +124,22 @@ int main(int argc, char* argv[]) {
             "select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n";
         out << "fk5\n";
 
-        for (uint_t i = 0; i < nsrc; ++i) {
+        for (uint_t i : range(id)) {
             std::string rra, rdec;
-            deg2sex(cra[res.id(i,0)], cdec[res.id(i,0)], rra, rdec);
+            deg2sex(cra[id[i]], cdec[id[i]], rra, rdec);
             out << "circle(" << rra << "," << rdec << ",0.5\") # width=3";
             if (!region_text.empty()) {
                 out << " text={";
                 bool first = true;
-                for (uint_t j = 0; j < region_text.size(); ++j) {
+                for (uint_t j : range(region_text)) {
                     if (region_text[j].empty()) continue;
                     if (!first) out << ", ";
-                    out << region_data(j,res.id(i,0));
+                    out << region_data(j,i);
                     first = false;
                 }
                 out << "}";
             } else {
-                out << " text={" << res.id(i,0) << "}";
+                out << " text={" << id[i] << "}";
             }
             out << "\n";
         }
