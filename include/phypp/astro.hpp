@@ -1090,6 +1090,64 @@ void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& ban
     append<1>(pool.flux_err, terr);
 }
 
+template<typename Cat>
+vec1s get_band_get_notes_(const Cat& cat, std::false_type) {
+    return replicate("?", cat.bands.size());
+}
+
+template<typename Cat>
+vec1s get_band_get_notes_(const Cat& cat, std::true_type) {
+    return cat.notes;
+}
+
+template<typename Cat>
+struct get_band_has_notes_impl_ {
+    template <typename U> static std::true_type dummy(typename std::decay<
+        decltype(std::declval<U&>().notes)>::type*);
+    template <typename U> static std::false_type dummy(...);
+    using type = decltype(dummy<Cat>(0));
+};
+
+template<typename Cat>
+using get_band_has_notes_ = typename get_band_has_notes_impl_<typename std::decay<Cat>::type>::type;
+
+template<typename Cat>
+bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
+    vec1s notes = get_band_get_notes_(cat, get_band_has_notes_<Cat>{});
+    vec1u id = where(match(cat.bands, band));
+    if (id.empty()) {
+        error("no band matching '"+band+"'");
+        return false;
+    } else if (id.size() > 1) {
+        error("multiple bands matching '"+band+"'");
+        for (uint_t b : id) {
+            note("  candidate: band='"+cat.bands[b]+"', note='"+notes[b]+"'");
+        }
+        return false;
+    }
+
+    bid = id[0];
+    return true;
+}
+
+template<typename Cat>
+bool get_band(const Cat& cat, const std::string& band, const std::string& note, uint_t& bid) {
+    vec1u id = where(match(cat.bands, band) && match(cat.notes, note));
+    if (id.empty()) {
+        error("no band matching '"+band+"' & '"+note+"'");
+        return false;
+    } else if (id.size() > 1) {
+        error("multiple bands matching '"+band+"' & '"+note+"'");
+        for (uint_t b : id) {
+            note("  candidate: band='"+cat.bands[b]+"', note='"+cat.notes[b]+"'");
+        }
+        return false;
+    }
+
+    bid = id[0];
+    return true;
+}
+
 template<typename Type>
 void pick_sources(const vec_t<2,Type>& img, const vec1d& x, const vec1d& y,
     int_t hsize, vec_t<3,rtype_t<Type>>& cube, vec1u& ids) {
