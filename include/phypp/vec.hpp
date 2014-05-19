@@ -1429,6 +1429,7 @@ struct vec_t<Dim,Type*> {
 
     OPERATOR(*=)
     OPERATOR(/=)
+    OPERATOR(%=)
     OPERATOR(+=)
     OPERATOR(-=)
 
@@ -1531,12 +1532,14 @@ auto boolarr(Dims ... ds) -> decltype(arr<bool>(ds...)) {
 // Mathematical operators
 struct op_mul_t;
 struct op_div_t;
+struct op_mod_t;
 struct op_add_t;
 struct op_sub_t;
 
 struct op_node_t {
     op_mul_t operator * (op_node_t);
     op_div_t operator / (op_node_t);
+    op_mod_t operator % (op_node_t);
     op_add_t operator + (op_node_t);
     op_sub_t operator - (op_node_t);
 };
@@ -1563,6 +1566,12 @@ struct op_res_t<op_div_t, T, U> {
 };
 
 template<typename T, typename U>
+struct op_res_t<op_mod_t, T, U> {
+    using type = typename std::decay<decltype(std::declval<math_bake_type<T>>() %
+        std::declval<math_bake_type<U>>())>::type;
+};
+
+template<typename T, typename U>
 struct op_res_t<op_add_t, T, U> {
     using type = typename std::decay<decltype(std::declval<math_bake_type<T>>() +
         std::declval<math_bake_type<U>>())>::type;
@@ -1578,6 +1587,8 @@ template<typename T, typename U>
 using res_mul_t = typename op_res_t<op_mul_t, T, U>::type;
 template<typename T, typename U>
 using res_div_t = typename op_res_t<op_div_t, T, U>::type;
+template<typename T, typename U>
+using res_mod_t = typename op_res_t<op_mod_t, T, U>::type;
 template<typename T, typename U>
 using res_add_t = typename op_res_t<op_add_t, T, U>::type;
 template<typename T, typename U>
@@ -1672,6 +1683,7 @@ auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
 VECTORIZE(*, *=)
 VECTORIZE(+, +=)
 VECTORIZE(/, /=)
+VECTORIZE(%, %=)
 VECTORIZE(-, -=)
 
 #undef VECTORIZE
