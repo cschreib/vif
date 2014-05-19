@@ -1,4 +1,4 @@
-Licence for phy++ library and tools
+License for phy++ library and tools
 ===================================
 
 Note: This covers all the files present in the 'include' and 'tools' directory
@@ -6,7 +6,8 @@ Note: This covers all the files present in the 'include' and 'tools' directory
 
 Note: If you enable the use of the Gnu Scientific Library (i.e. you have not
   defined the pre-processor variable NO_GSL), then the whole phy++ library is
-  to be considered as GPL software, as well as your code.
+  to be considered as GPL software, as well as your code. Otherwise, the 
+  following licence applies to the phy++ code.
 
 The MIT License (MIT)
 
@@ -30,14 +31,14 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-Licence for CMake scripts
+License for CMake scripts
 =========================
 
 Note: I didn't write any of those scripts myself. They were all taken from other
-  projects, each with a different licence.
+  projects, each with a different license.
 
 
-Licence for FindCCFITS.cmake:
+License for FindCCFITS.cmake:
 -----------------------------
 
 Copyright (c) 2012 Brian Kloppenborg
@@ -58,7 +59,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with CCFITS. If not, see <http://www.gnu.org/licenses/>.
 
 
-Licence for FindCFITSIO.cmake:
+License for FindCFITSIO.cmake:
 ------------------------------
 
 Copyright (C) 2011
@@ -80,7 +81,7 @@ Free Software Foundation, Inc.,
 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 
-Licence for FindWCSLib.cmake:
+License for FindWCSLib.cmake:
 -----------------------------
 
 Copyright (C) 2009
@@ -102,7 +103,7 @@ You should have received a copy of the GNU General Public License along
 with the LOFAR software suite. If not, see <http://www.gnu.org/licenses/>.
 
 
-Licence for FindLibClang.cmake:
+License for FindLibClang.cmake:
 -------------------------------
 
 Copyright (C) 2011, 2012, 2013 Jan Erik Hanssen and Anders Bakken
@@ -121,7 +122,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-Licence for FindLLVM.cmake:
+License for FindLLVM.cmake:
 ---------------------------
 
 Copyright (C) 2013 cloudera
@@ -139,14 +140,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-Licence for FindGSL.cmake:
+License for FindGSL.cmake:
 --------------------------
 
 Don't know. Present in both GNU Radio (GPL) and CERN's root (LGPL).
 
 
-Licence for FindGooglePerfTools.cmake:
---------------------------
+License for FindGooglePerfTools.cmake:
+--------------------------------------
 
 The license for the source code in this distribution should be clearly
 marked on each source file. Unless otherwise specified, the source
