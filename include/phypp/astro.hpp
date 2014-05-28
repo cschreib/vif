@@ -1607,7 +1607,9 @@ double lir_8_1000(const vec_t<1,TL>& lam, const vec_t<1,TS>& sed) {
     return integrate(lam[id], sed[id]/lam[id]);
 }
 
-bool make_psf(vec1u dims, double x0, double y0, const std::string& psf_model, vec2d& psf) {
+bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
+    const std::string& psf_model, vec2d& psf) {
+
     vec1s params = trim(split(psf_model, ","));
     if (params[0] == "gaussian") {
         uint_t narg = 2;

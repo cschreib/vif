@@ -177,20 +177,20 @@ vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
 }
 
 template<typename F>
-auto generate_img(const vec1u& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
-    phypp_check(dims.size() == 2 || dims.size() == 1,
-        "generate_img: must provide one or two numbers for image size");
-
-    vec_t<2,decltype(expr(0,0))> img;
-    if (dims.size() == 1) img.resize(dims[0], dims[0]);
-    else img.resize(dims[0], dims[1]);
-
+auto generate_img(const std::array<uint_t,2>& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
+    vec_t<2,decltype(expr(0,0))> img(dims);
     for (uint_t x : range(img.dims[0]))
     for (uint_t y : range(img.dims[1])) {
         img(x,y) = expr(x,y);
     }
 
     return img;
+}
+
+vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
+    return generate_img(dims, [&](int_t x, int_t y) {
+        return exp(-(sqr(x - int_t(dims[0]/2)) + sqr(y - int_t(dims[1]/2)))/(2.0*sqr(sigma)));
+    });
 }
 
 template<typename Type, typename KType>
