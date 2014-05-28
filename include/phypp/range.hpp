@@ -28,7 +28,7 @@ struct range_iterator_t<range_t<T>> {
     }
 
     bool operator == (const range_iterator_t& iter) const {
-        return iter.i == i && iter.range == range;
+        return iter.i == i && &iter.range == &range;
     }
 
     bool operator != (const range_iterator_t& iter) const {
