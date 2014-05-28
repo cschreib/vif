@@ -1863,6 +1863,7 @@ auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
     for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
     for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
         const auto kw = kernel(kx, ky);
+        if (kw == 0.0) continue;
 
         uint_t x0 = (kx >= hxsize ? 0 : hxsize-kx);
         uint_t xn = map.dims[0] - (kx >= hxsize ? kx-hxsize : 0);
