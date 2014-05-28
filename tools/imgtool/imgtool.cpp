@@ -3,8 +3,10 @@
 void print_help();
 
 bool convolve(int argc, char* argv[]);
+bool multiply(int argc, char* argv[]);
 
 void print_convolve_help();
+void print_multiply_help();
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -18,12 +20,16 @@ int main(int argc, char* argv[]) {
         op = tolower(argv[2]);
         if (op == "convolve") {
             print_convolve_help();
+        } else if (op == "multiply") {
+            print_multiply_help();
         } else {
             error("unknown operation '", op, "'");
         }
     } else {
         if (op == "convolve") {
             convolve(argc-1, argv+1);
+        } else if (op == "multiply") {
+            multiply(argc-1, argv+1);
         } else {
             error("unknown operation '", op, "'");
         }
@@ -65,6 +71,45 @@ bool convolve(int argc, char* argv[]) {
     }
 
     map = convolve2d(map, kernel);
+
+    file::mkdir(file::get_directory(argv[3]));
+    fits::write(argv[3], map);
+
+    return true;
+}
+
+void print_multiply_help() {
+    using namespace format;
+
+    paragraph("The program will multiply the first image by the provided value.");
+
+    header("List of available command line options:");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool multiply(int argc, char* argv[]) {
+    if (argc < 4) {
+        error("usage: imgtool multiply [img.fits] [value] [output.fits]");
+        return false;
+    }
+
+    bool help = false;
+    read_args(argc-3, argv+3, arg_list(help));
+
+    if (help) {
+        print_multiply_help();
+        return true;
+    }
+
+    vec2d map = fits::read(argv[1]);
+    double value;
+    if (!from_string(argv[2], value)) {
+        error("could not parse multiply value '", argv[2], "'");
+        return false;
+    }
+
+    map *= value;
 
     file::mkdir(file::get_directory(argv[3]));
     fits::write(argv[3], map);
