@@ -550,7 +550,7 @@ namespace fits {
 
         int id, status = 0;
         std::string colname = toupper(tcolname);
-        fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
+        fits_get_colnum(fptr, CASEINSEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
@@ -583,7 +583,7 @@ namespace fits {
     void read_table_impl_(fitsfile* fptr, const std::string& tcolname, Type& v, bool loose = false) {
         int id, status = 0;
         std::string colname = toupper(tcolname);
-        fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
+        fits_get_colnum(fptr, CASEINSEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
@@ -613,7 +613,7 @@ namespace fits {
 
         int id, status = 0;
         std::string colname = toupper(tcolname);
-        fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
+        fits_get_colnum(fptr, CASEINSEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
@@ -660,7 +660,7 @@ namespace fits {
 
         int id, status = 0;
         std::string colname = toupper(tcolname);
-        fits_get_colnum(fptr, CASESEN, const_cast<char*>(colname.c_str()), &id, &status);
+        fits_get_colnum(fptr, CASEINSEN, const_cast<char*>(colname.c_str()), &id, &status);
         if (loose) {
             if (status != 0) return;
         } else {
