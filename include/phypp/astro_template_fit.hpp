@@ -155,10 +155,10 @@ bool debug = false;
 // simulation). In this case, L should be considered as an upper limit, and the uncertainty on the
 // measurement E fed as the "error" on the limit (actually this is the error on the fact that the
 // flux is indeed below this limit, assuming gausssian statistics).
-template<typename TypeLib, typename TypeF, typename TypeE, typename TypeFi, typename TypeSeed,
+template<typename TypeLib, typename TypeFi, typename TypeSeed,
     typename TypeZ, typename TypeD>
 template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ& z,
-   const TypeD& d, vec_t<1,TypeF> flux, vec_t<1,TypeE> err,
+   const TypeD& d, vec1d flux, vec1d err,
    const vec_t<1,TypeFi>& filters, template_fit_params params = template_fit_params()) {
 
     template_fit_res_t res;
