@@ -345,7 +345,7 @@ namespace file {
             std::string s;
             in >> s;
             s = trim(toupper(s));
-            if (s == "NAN") {
+            if (s == "NAN" || s == "+NAN" || s == "-NAN") {
                 v = dnan;
                 return true;
             } else if (s == "+INF" || s == "INF+" || s == "INF") {
