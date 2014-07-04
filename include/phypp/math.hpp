@@ -534,6 +534,14 @@ vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double
 }
 
 template<std::size_t Dim, typename Type>
+vec_t<Dim,bool> mad_clip(const vec_t<Dim,Type>& tv, double sigma) {
+    auto v = tv.concretise();
+    auto med = inplace_median(v);
+    auto mad = median(fabs(v - med));
+    return fabs(tv - med) < sigma*mad;
+}
+
+template<std::size_t Dim, typename Type>
 typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
     auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return false;
