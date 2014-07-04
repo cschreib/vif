@@ -1678,6 +1678,16 @@ uint_t upper_bound(T x, const vec_t<1,Type>& v) {
     }
 }
 
+// Return the indices of all the values in the array that are equal to 'x'.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
+template<typename T, std::size_t Dim, typename Type>
+vec1u equal_range(T x, const vec_t<Dim,Type>& v) {
+    auto res = std::equal_range(v.data.begin(), v.data.end(), x,
+        typename vec_t<Dim,Type>::comparator());
+
+    return uindgen(1 + (res.second - res.first)) + (res.first - v.data.begin());
+}
+
 // Check if a given array is sorted or not
 template<typename Type>
 bool is_sorted(const vec_t<1,Type>& v) {
