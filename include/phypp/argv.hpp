@@ -137,6 +137,11 @@ void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string&
 
     if (pos != names.npos) {
         read_args_(argv, read, valid, names.substr(pos+1), std::forward<Args>(args)...);
+    } else if (sizeof...(Args) != 0) {
+        error("read_args: too few names provided");
+        note("please use the arg_list() macro and make sure that all variables are "
+            "placed there");
+        throw std::logic_error("read_args: too few names provided");
     }
 }
 
