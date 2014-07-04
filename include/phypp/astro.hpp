@@ -750,6 +750,7 @@ struct catalog_t {
 
     vec1u       idi;
     vec1u       idm;
+    vec1u       idb;
     vec2d       d;
 
     std::string name;
@@ -809,7 +810,7 @@ struct catalog_pool {
         const std::string& comment = "") {
 
         std::string ref = "["+strn(pool.size()+1)+"]";
-        pool.push_back({*this, uindgen(ngal), uindgen(ngal), {}, name, sources, files, comment, ref});
+        pool.push_back({*this, uindgen(ngal), uindgen(ngal), {}, {}, name, sources, files, comment, ref});
         return pool.back();
     }
 
@@ -831,7 +832,7 @@ private :
             dec = cdec[sel];
             vec1u idm = uindgen(ngal);
             std::string ref = "[1]";
-            pool.push_back({*this, sel, idm, {}, name, sources, files, comment, ref});
+            pool.push_back({*this, sel, idm, {}, {}, name, sources, files, comment, ref});
             return pool.back();
         } else {
             print("cross-matching "+name+"...");
@@ -910,7 +911,7 @@ private :
             }
 
             std::string ref = "["+strn(pool.size()+1)+"]";
-            pool.push_back({*this, sel, idm, std::move(td), name, sources, files, comment, ref});
+            pool.push_back({*this, sel, idm, {}, std::move(td), name, sources, files, comment, ref});
             return pool.back();
         }
     }
@@ -1084,6 +1085,8 @@ void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& ban
     merge(tflux, flux, fnan);
     merge(terr, err, fnan);
 
+    idb = uindgen(bands.size()) + pool.bands.size();
+
     append(pool.bands, bands);
     append(pool.notes, tnotes);
     append<1>(pool.flux, tflux);
@@ -1131,13 +1134,13 @@ bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
 }
 
 template<typename Cat>
-bool get_band(const Cat& cat, const std::string& band, const std::string& note, uint_t& bid) {
-    vec1u id = where(match(cat.bands, band) && match(cat.notes, note));
+bool get_band(const Cat& cat, const std::string& band, const std::string& note_, uint_t& bid) {
+    vec1u id = where(match(cat.bands, band) && match(cat.notes, note_));
     if (id.empty()) {
-        error("no band matching '"+band+"' & '"+note+"'");
+        error("no band matching '"+band+"' & '"+note_+"'");
         return false;
     } else if (id.size() > 1) {
-        error("multiple bands matching '"+band+"' & '"+note+"'");
+        error("multiple bands matching '"+band+"' & '"+note_+"'");
         for (uint_t b : id) {
             note("  candidate: band='"+cat.bands[b]+"', note='"+cat.notes[b]+"'");
         }
