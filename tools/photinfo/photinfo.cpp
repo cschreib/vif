@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
             vec1u idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3);
             if (!idg3s.empty()) {
                 vec1u hull = convex_hull(cat.ra[idg3s], cat.dec[idg3s]);
-                areas[i] = field_area(cat.ra[idg3s], cat.dec[idg3s], hull);
+                areas[i] = field_area_hull(cat.ra[idg3s], cat.dec[idg3s]);
 
                 vec1d hx = cat.ra[idg3s[hull]];
                 vec1d hy = cat.dec[idg3s[hull]];
