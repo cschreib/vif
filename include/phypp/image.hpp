@@ -13,8 +13,8 @@ typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix
 
         typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]+2*upix, v.dims[1]+2*upix) + def;
 
-        for (uint_t y : range(v.dims[0]))
-        for (uint_t x : range(v.dims[1])) {
+        for (uint_t x : range(v.dims[0]))
+        for (uint_t y : range(v.dims[1])) {
             r(x+upix,y+upix) = v(x,y);
         }
 
@@ -26,8 +26,8 @@ typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix
 
         typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]-2*upix, v.dims[1]-2*upix);
 
-        for (uint_t y : range(r.dims[0]))
-        for (uint_t x : range(r.dims[1])) {
+        for (uint_t x : range(r.dims[0]))
+        for (uint_t y : range(r.dims[1])) {
             r(x,y) = v(x+upix,y+upix);
         }
 
