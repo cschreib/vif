@@ -5,35 +5,49 @@
 #include "phypp/math.hpp"
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, int_t pix,
+vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, const std::array<uint_t,4> upix,
     const rtype_t<Type>& def = 0.0) {
 
-    if (pix >= 0) {
-        uint_t upix = pix;
+    vec_t<2,rtype_t<Type>> r = replicate(def,
+        v.dims[0]+upix[0]+upix[2], v.dims[1]+upix[1]+upix[3]);
 
-        vec_t<2,rtype_t<Type>> r = replicate(def, v.dims[0]+2*upix, v.dims[1]+2*upix);
-
-        for (uint_t x : range(v.dims[0]))
-        for (uint_t y : range(v.dims[1])) {
-            r(x+upix,y+upix) = v(x,y);
-        }
-
-        return r;
-    } else {
-        uint_t upix = -pix;
-        if (2*upix >= v.dims[0] || 2*upix >= v.dims[1]) {
-            return vec_t<2,rtype_t<Type>>();
-        }
-
-        vec_t<2,rtype_t<Type>> r(v.dims[0]-2*upix, v.dims[1]-2*upix);
-
-        for (uint_t x : range(r.dims[0]))
-        for (uint_t y : range(r.dims[1])) {
-            r(x,y) = v(x+upix,y+upix);
-        }
-
-        return r;
+    for (uint_t x : range(v.dims[0]))
+    for (uint_t y : range(v.dims[1])) {
+        r(x+upix[0],y+upix[1]) = v(x,y);
     }
+
+    return r;
+}
+
+template<typename Type>
+vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, uint_t upix,
+    const rtype_t<Type>& def = 0.0) {
+    return enlarge(v, {{upix, upix, upix, upix}}, def);
+}
+
+template<typename Type>
+vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4> upix,
+    const rtype_t<Type>& def = 0.0) {
+
+    if (upix[0]+upix[2] >= v.dims[0] || upix[1]+upix[3] >= v.dims[1]) {
+        return vec_t<2,rtype_t<Type>>();
+    }
+
+    vec_t<2,rtype_t<Type>> r(v.dims[0]-upix[0]-upix[2], v.dims[1]-upix[1]-upix[3]);
+
+    for (uint_t x : range(r.dims[0]))
+    for (uint_t y : range(r.dims[1])) {
+        r(x,y) = v(x+upix[0],y+upix[1]);
+    }
+
+    return r;
+}
+
+template<typename Type>
+vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix,
+    const rtype_t<Type>& def = 0.0) {
+
+    return shrink(v, {{upix, upix, upix, upix}}, def);
 }
 
 // Get a sub region 'reg' inside an image. reg = {x0, y0, x1, y1}.
