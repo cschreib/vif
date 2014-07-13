@@ -127,6 +127,29 @@ namespace fits {
 
     using header = std::string;
 
+    // Return the number of dimensions of a FITS file
+    uint_t file_axes(const std::string& name) {
+        try {
+            return fits::FITS(name, fits::Read).pHDU().axes();
+        } catch (fits::FitsException& e) {
+            error("reading: "+name);
+            error("FITS: "+e.message());
+            throw;
+        } catch (fits::exception& e) {
+            error("reading: "+name);
+            error(e.msg);
+            throw;
+        }
+    }
+
+    bool is_cube(const std::string& name) {
+        return file_axes(name) == 3;
+    }
+
+    bool is_image(const std::string& name) {
+        return file_axes(name) == 2;
+    }
+
     template<std::size_t Dim, typename Type>
     void read_impl_(fits::FITS& file, vec_t<Dim, Type>& v, std::string& hdr, bool gethdr) {
         fits::PHDU& phdu = file.pHDU();
