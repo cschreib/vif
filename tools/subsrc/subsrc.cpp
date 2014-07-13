@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     vec2d psf(img.dims);
     auto pg = progress_start(id.size());
     for (uint_t i : range(id)) {
-        if (!make_psf({img.dims[0], img.dims[1]}, y[i]-1, x[i]-1, psf_model, psf)) {
+        if (!make_psf({{img.dims[0], img.dims[1]}}, y[i]-1, x[i]-1, psf_model, psf)) {
             return 1;
         }
 

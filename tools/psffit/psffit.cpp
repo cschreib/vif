@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
         psf = img*0;
         psf[rr] = tpsf[rs];
     } else {
-        if (!make_psf({img.dims[0], img.dims[1]}, x0, y0, psf_model, psf)) {
+        if (!make_psf({{img.dims[0], img.dims[1]}}, x0, y0, psf_model, psf)) {
             return 1;
         }
     }
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
         idf = where(finite(img) && finite(err) && finite(psf) &&
             psf > (1.0 - psf_frac)*max(psf[where(finite(psf))]));
     } else if (radius != 0.0) {
-        vec2d rad = generate_img({img.dims[0], img.dims[1]}, [=](uint_t x, uint_t y) {
+        vec2d rad = generate_img({{img.dims[0], img.dims[1]}}, [=](uint_t x, uint_t y) {
             return sqr(double(x) - x0) + sqr(double(y) - y0);
         });
 
