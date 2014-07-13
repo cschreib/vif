@@ -536,7 +536,7 @@ int main(int argc, char* argv[]) {
 
     {
         print("'enlarge' function");
-        vec2d v = dblarr(5,5)*0 + 3.1415;
+        vec2d v = dblarr(5,3)*0 + 3.1415;
         v = enlarge(v, 5, 1.0);
         fits::write("out/enlarge.fits", v);
     }
