@@ -5,13 +5,13 @@
 #include "phypp/math.hpp"
 
 template<typename Type>
-typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix,
-    const typename vec_t<2,Type>::rtype& def = 0.0) {
+vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, int_t pix,
+    const rtype_t<Type>& def = 0.0) {
 
     if (pix >= 0) {
         uint_t upix = pix;
 
-        typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]+2*upix, v.dims[1]+2*upix) + def;
+        vec_t<2,rtype_t<Type>> r = replicate(def, v.dims[0]+2*upix, v.dims[1]+2*upix);
 
         for (uint_t x : range(v.dims[0]))
         for (uint_t y : range(v.dims[1])) {
@@ -21,10 +21,11 @@ typename vec_t<2,Type>::effective_type enlarge(const vec_t<2,Type>& v, int_t pix
         return r;
     } else {
         uint_t upix = -pix;
-        phypp_check(2*upix < v.dims[0] && 2*upix < v.dims[1],
-            "cannot shrink image to negative size (", upix, " vs [", v.dims, "]");
+        if (2*upix >= v.dims[0] || 2*upix >= v.dims[1]) {
+            return vec_t<2,rtype_t<Type>>();
+        }
 
-        typename vec_t<2,Type>::effective_type r = dblarr(v.dims[0]-2*upix, v.dims[1]-2*upix);
+        vec_t<2,rtype_t<Type>> r(v.dims[0]-2*upix, v.dims[1]-2*upix);
 
         for (uint_t x : range(r.dims[0]))
         for (uint_t y : range(r.dims[1])) {
