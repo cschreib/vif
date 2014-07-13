@@ -6,7 +6,7 @@ Note: This covers all the files present in the 'include' and 'tools' directory
 
 Note: If you enable the use of the Gnu Scientific Library (i.e. you have not
   defined the pre-processor variable NO_GSL), then the whole phy++ library is
-  to be considered as GPL software, as well as your code. Otherwise, the 
+  to be considered as GPL software, as well as your code. Otherwise, the
   following license applies to the phy++ code.
 
 The MIT License (MIT)
@@ -170,3 +170,11 @@ and agree to abide by those obligations.
 ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
 WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
 COMPLETENESS OR PERFORMANCE.
+
+Licence for FindFFTW.cmake:
+---------------------------
+
+Copyright (C) 2014 Eigen library.
+
+LGPL v2.1:
+http://code.metager.de/source/xref/lib/eigen/COPYING.LGPL

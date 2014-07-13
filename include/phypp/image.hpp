@@ -208,26 +208,77 @@ vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
     });
 }
 
-template<typename Type, typename KType>
-vec_t<2, rtype_t<Type>> convolve_img(const vec_t<2,Type>& img, const vec_t<2,KType>& kernel) {
-    phypp_check((kernel.dims[0] % 2 == 1) && (kernel.dims[1] % 2 == 1),
-        "kernel image must have odd dimensions");
+// Perform the convolution of two 2D arrays, assuming the second one is the kernel.
+// Naive loop implementation: this is slow but simple and reliable.
+template<typename TypeY1, typename TypeY2>
+auto convolve2d_naive(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
+    vec_t<2,decltype(map[0]*kernel[0])> {
+    phypp_check(kernel.dims[0]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
+    phypp_check(kernel.dims[1]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
 
-    vec_t<2, rtype_t<Type>> res(img.dims);
-    res[_] = dnan;
+    uint_t hxsize = kernel.dims[0]/2;
+    uint_t hysize = kernel.dims[1]/2;
 
-    if (kernel.dims[0]/2 < img.dims[0] && kernel.dims[1]/2 < img.dims[1]) {
-        for (uint_t x = kernel.dims[0]/2; x < img.dims[0] - kernel.dims[0]/2; ++x)
-        for (uint_t y = kernel.dims[1]/2; y < img.dims[1] - kernel.dims[1]/2; ++y) {
-            res(x,y) = 0;
-            for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
-            for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
-                res(x,y) += kernel(kx,ky)*img(x+kx-kernel.dims[0]/2, y+ky-kernel.dims[1]/2);
-            }
+    vec_t<2,decltype(map[0]*kernel[0])> r(map.dims);
+    for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
+    for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
+        const auto kw = kernel(kx, ky);
+        if (kw == 0.0) continue;
+
+        uint_t x0 = (kx >= hxsize ? 0 : hxsize-kx);
+        uint_t xn = map.dims[0] - (kx >= hxsize ? kx-hxsize : 0);
+        uint_t y0 = (ky >= hysize ? 0 : hysize-ky);
+        uint_t yn = map.dims[1] - (ky >= hysize ? ky-hysize : 0);
+
+        for (uint_t x = x0; x < xn; ++x)
+        for (uint_t y = y0; y < yn; ++y) {
+            r(x+kx-hxsize,y+ky-hysize) += map(x,y)*kw;
         }
     }
 
-    return res;
+    return r;
+}
+
+// Perform the convolution of two 2D arrays, assuming the second one is the kernel.
+// Note: If the FFTW library is not used, falls back to convolve2d_naive().
+template<typename TypeY1, typename TypeY2>
+auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
+    vec_t<2,decltype(map[0]*kernel[0])> {
+#ifdef NO_FFTW
+    return convolve2d_naive(map, kernel);
+#else
+    phypp_check(kernel.dims[0]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
+    phypp_check(kernel.dims[1]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
+
+    uint_t hsx = kernel.dims[0]/2, hsy = kernel.dims[1]/2;
+
+    // Pad image to prevent issues with cyclic borders
+    vec2d tmap = enlarge(map, {{hsx, hsy, hsx, hsy}});
+
+    // Resize kernel to map size, with kernel center at (0,0)
+    vec2d tkernel(tmap.dims);
+
+    vec1u px1 = hsx + uindgen(hsx);
+    vec1u py1 = hsy + uindgen(hsy);
+    vec1u px2 = hsx - 1 - uindgen(hsx);
+    vec1u py2 = hsy - 1 - uindgen(hsy);
+
+    vec1u ix1 = uindgen(hsx);
+    vec1u iy1 = uindgen(hsy);
+    vec1u ix2 = tmap.dims[0] - 1 - uindgen(hsx);
+    vec1u iy2 = tmap.dims[1] - 1 - uindgen(hsy);
+
+    tkernel(ix1,iy1) = kernel(px1, py1);
+    tkernel(ix2,iy1) = kernel(px2, py1);
+    tkernel(ix1,iy2) = kernel(px1, py2);
+    tkernel(ix2,iy2) = kernel(px2, py2);
+
+    // Perform the convolution in Fourrier space
+    auto cimg = fft(tmap)*fft(tkernel);
+
+    // Go back to real space and shrink map back to original dimensions
+    return shrink(ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
+#endif
 }
 
 #endif

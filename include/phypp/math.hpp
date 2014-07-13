@@ -3,11 +3,16 @@
 
 #include "phypp/vec.hpp"
 #include "phypp/string.hpp"
+#include "phypp/simple_complex.hpp"
 #include <random>
 #include <cmath>
 
 #ifndef NO_GSL
 #include <gsl/gsl_sf_bessel.h>
+#endif
+
+#ifndef NO_FFTW
+#include <fftw3.h>
 #endif
 
 static const double dnan = std::numeric_limits<double>::quiet_NaN();
@@ -1845,6 +1850,39 @@ auto integrate(F f, T x0, U x1,
     return buffer.back();
 }
 
+#ifndef NO_FFTW
+template<typename T>
+using complex_type = phypp::complex<T>;
+
+// Compute the Fast Fourrier Transform (FFT) of the provided 2d array
+vec2cd fft(const vec2d& v) {
+    vec2cd r(v.dims);
+
+    fftw_plan p;
+    p = fftw_plan_dft_r2c_2d(v.dims[0], v.dims[1],
+        const_cast<double*>(v.data.data()),
+        reinterpret_cast<fftw_complex*>(r.data.data()), FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+
+    return r;
+}
+
+// Compute the Fast Fourrier Transform (FFT) of the provided 2d array
+vec2d ifft(const vec2cd& v) {
+    vec2d r(v.dims);
+
+    fftw_plan p;
+    p = fftw_plan_dft_c2r_2d(v.dims[0], v.dims[1],
+        const_cast<fftw_complex*>(reinterpret_cast<const fftw_complex*>(v.data.data())),
+        r.data.data(), FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+
+    return r;
+}
+#endif
+
 // Perform the convolution of two 1D arrays, assuming that they are based on the same 'x' coordinate
 template<typename TypeX, typename TypeY1, typename TypeY2>
 auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,TypeY2>& y2) ->
@@ -1860,38 +1898,6 @@ auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,
 
         auto tmp = interpolate(y2, x + x[i], x);
         r += y1[i]*tmp*dx;
-    }
-
-    return r;
-}
-
-// Perform the convolution of two 2D arrays, assuming the second one is the kernel.
-// Note: naive loop implementation, could be optimized by using Fourrier transform.
-template<typename TypeY1, typename TypeY2>
-auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
-    vec_t<2,decltype(map[0]*kernel[0])> {
-
-    phypp_check(kernel.dims[0]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
-    phypp_check(kernel.dims[1]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
-
-    uint_t hxsize = kernel.dims[0]/2;
-    uint_t hysize = kernel.dims[1]/2;
-
-    vec_t<2,decltype(map[0]*kernel[0])> r(map.dims);
-    for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
-    for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
-        const auto kw = kernel(kx, ky);
-        if (kw == 0.0) continue;
-
-        uint_t x0 = (kx >= hxsize ? 0 : hxsize-kx);
-        uint_t xn = map.dims[0] - (kx >= hxsize ? kx-hxsize : 0);
-        uint_t y0 = (ky >= hysize ? 0 : hysize-ky);
-        uint_t yn = map.dims[1] - (ky >= hysize ? ky-hysize : 0);
-
-        for (uint_t x = x0; x < xn; ++x)
-        for (uint_t y = y0; y < yn; ++y) {
-            r(x+kx-hxsize,y+ky-hysize) += map(x,y)*kw;
-        }
     }
 
     return r;

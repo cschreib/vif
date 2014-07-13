@@ -70,6 +70,7 @@ find_package(LAPACK)
 
 # find optional libraries
 find_package(GSL)
+find_package(FFTW 3)
 find_package(GooglePerfTools)
 
 set(PHYPP_ADD_COMPILER_FLAGS "")
@@ -85,6 +86,21 @@ endif()
 if (NOT GSL_FOUND OR NO_GSL)
     add_definitions(-DNO_GSL)
     set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -DNO_GSL")
+endif()
+
+# handle conditional FFTW support
+
+if (NOT FFTW_FOUND)
+    message("note: the FFTW library cound not be found: certain mathematical functions will be slow, but apart from that the library will function properly")
+endif()
+if (NO_FFTW)
+    message("note: the FFTW library has been disabled: certain mathematical functions will be slow, but apart from that the library will function properly")
+endif()
+if (NOT FFTW_FOUND OR NO_FFTW)
+    add_definitions(-DNO_FFTW)
+    set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -DNO_FFTW")
+else()
+    set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -lfftw3")
 endif()
 
 # handle conditional Google perftools support
