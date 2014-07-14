@@ -1653,7 +1653,7 @@ affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
     return fr;
 }
 
-// Returns the position of the first value in the array that is less than or equal to 'x'.
+// Returns the position of the last value in the array that is less than or equal to 'x'.
 // Returns 'npos' if no value satisfy this criterium.
 // Note: assumes that 'v' is sorted and does not contain NaN values.
 template<typename T, typename Type>
