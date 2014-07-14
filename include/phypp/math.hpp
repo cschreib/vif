@@ -1683,6 +1683,36 @@ uint_t upper_bound(T x, const vec_t<1,Type>& v) {
     }
 }
 
+// Return the position of the last value in 'v' that is less than or equal to 'x1' and
+// the position of the first value in 'v' that is greater than 'x2'.
+// Note: assumes that:
+//  1) 'v' is sorted and does not contain NaN values,
+//  2) 'x2' is greater than or equal to 'x1'.
+template<typename T, typename U, typename Type>
+std::array<uint_t,2> bounds(T x1, U x2, const vec_t<1,Type>& v) {
+    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x1,
+        typename vec_t<1,Type>::comparator());
+
+    std::array<uint_t,2> res;
+    if (iter == v.data.begin()) {
+        res[0] = npos;
+    } else {
+        iter--;
+        res[0] = iter - v.data.begin();
+    }
+
+    iter = std::upper_bound(iter, v.data.end(), x2,
+        typename vec_t<1,Type>::comparator());
+
+    if (iter == v.data.end()) {
+        res[1] = npos;
+    } else {
+        res[1] = iter - v.data.begin();
+    }
+
+    return res;
+}
+
 // Return the indices of all the values in the array that are equal to 'x'.
 // Note: assumes that 'v' is sorted and does not contain NaN values.
 template<typename T, std::size_t Dim, typename Type>
