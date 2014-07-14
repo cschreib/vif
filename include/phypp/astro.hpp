@@ -1543,17 +1543,17 @@ struct filter_t {
 
 template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
-    if (!(filter.lam[0] > lam[0] && filter.lam[-1] < lam[-1])) {
+    uint_t nflam = filter.lam.size();
+
+    auto bnd = bounds(filter.lam[0], filter.lam[nflam-1], lam);
+    if (bnd[0] == npos || bnd[1] == npos) {
         return dnan;
     }
 
-    uint_t sp = lower_bound(filter.lam[0], lam);
-    uint_t ep = upper_bound(filter.lam[-1], lam);
+    vec1d nlam; nlam.reserve(nflam + bnd[1] - bnd[0] + 1);
+    vec1d nrs;  nrs.reserve( nflam + bnd[1] - bnd[0] + 1);
 
-    vec1d nlam; nlam.reserve(filter.lam.size() + ep - sp + 1);
-    vec1d nrs; nrs.reserve(filter.lam.size() + ep - sp + 1);
-
-    uint_t j = sp;
+    uint_t j = bnd[0];
     for (uint_t i : range(filter.lam)) {
         nlam.push_back(filter.lam[i]);
         nrs.push_back(filter.res[i]*interpolate(
