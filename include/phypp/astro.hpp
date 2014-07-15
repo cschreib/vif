@@ -1545,7 +1545,7 @@ template<typename TypeL, typename TypeS>
 auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
     uint_t nflam = filter.lam.size();
 
-    auto bnd = bounds(filter.lam[0], filter.lam[nflam-1], lam);
+    auto bnd = bounds(filter.lam.data[0], filter.lam.data[nflam-1], lam);
     if (bnd[0] == npos || bnd[1] == npos) {
         return dnan;
     }
@@ -1555,16 +1555,17 @@ auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,T
 
     uint_t j = bnd[0];
     for (uint_t i : range(filter.lam)) {
-        nlam.push_back(filter.lam[i]);
-        nrs.push_back(filter.res[i]*interpolate(
-            sed[j-1], sed[j], lam[j-1], lam[j], filter.lam[i]
+        nlam.push_back(filter.lam.data[i]);
+        nrs.push_back(filter.res.data[i]*interpolate(
+            sed.data[j-1], sed.data[j], lam.data[j-1], lam.data[j], filter.lam.data[i]
         ));
 
-        if (i != filter.lam.size() - 1) {
-            while (lam[j] < filter.lam[i+1]) {
-                nlam.push_back(lam[j]);
-                nrs.push_back(sed[j]*interpolate(
-                    filter.res[i], filter.res[i+1], filter.lam[i], filter.lam[i+1], lam[j]
+        if (i != nflam - 1) {
+            while (lam[j] < filter.lam.data[i+1]) {
+                nlam.push_back(lam.data[j]);
+                nrs.push_back(sed.data[j]*interpolate(
+                    filter.res.data[i], filter.res.data[i+1],
+                    filter.lam.data[i], filter.lam.data[i+1], lam.data[j]
                 ));
                 ++j;
             }
