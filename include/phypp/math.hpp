@@ -2012,4 +2012,32 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
     return res;
 }
 
+// Compute the signed distance of a set of points with respect to the provided convex
+// hull. Positive distances mean that the point lies inside the hull.
+template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
+auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
+    const THX& hx, const THY& hy) -> vec_t<Dim, decltype(x[0]*y[0])> {
+
+    phypp_check(n_elements(x) == n_elements(y),
+        "is_in_convex_hull requires same number of elements in 'x' and 'y'");
+    phypp_check(n_elements(hx) == n_elements(hy),
+        "is_in_convex_hull requires same number of elements in 'hx' and 'hy'");
+
+    vec_t<Dim,decltype(x[0]*y[0])> res = replicate(finf, x.dims);
+    for (uint_t i = 0; i < hull.size()-1; ++i) {
+        uint_t p1 = hull[i], p2 = hull[i+1];
+
+        auto nx = hx[p2] - hx[p1];
+        auto ny = hy[p2] - hy[p1];
+        auto l = sqrt(sqr(nx) + sqr(ny));
+
+        for (uint_t p = 0; p < x.size(); ++p) {
+            auto d = (ny*x[p] - nx*y[p] - hx[p1]*hy[p2] + hx[p2]*hy[p1])/l;
+            if (res[p] > d) res[p] = d;
+        }
+    }
+
+    return res;
+}
+
 #endif
