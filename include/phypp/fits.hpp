@@ -342,26 +342,41 @@ namespace fits {
 
         if (key.size() > 8) return false;
 
+        // Build new entry
         std::string entry = key+std::string(8-key.size(), ' ')+"= ";
         std::string value = strn(v);
         if (!comment.empty()) {
             value += " / "+comment;
         }
-        if (value.size() > 80) return false;
-        entry += value;
 
-        std::size_t ipos = hdr.find_last_of('E');
+        entry += value;
+        if (entry.size() > 80) return false;
+
+        // Insertion point
+        std::size_t ipos = hdr.npos;
+        if (hdr.size() >= 80) {
+            ipos = hdr.substr(hdr.size() - 80, 80).find("END");
+            if (ipos != hdr.npos) ipos += hdr.size() - 80;
+        }
+
+        // Look for existing entry in header
         std::size_t nentry = hdr.size()/80 + 1;
         for (uint_t i = 0; i < nentry; ++i) {
+            // Extract entry 'i'
             std::string tentry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = tentry.find_first_of("=");
             if (eqpos == tentry.npos) continue;
-            std::size_t cpos = tentry.find_first_of("/", eqpos);
+
+            // Extract entry's name
             std::string nam = trim(tentry.substr(0, eqpos));
+            // Look for comments
+            std::size_t cpos = tentry.find_first_of("/", eqpos);
 
             if (nam == key) {
+                // The entry already exists
                 ipos = i*80;
 
+                // Copy comments of the previous entry
                 if (comment.empty() && cpos != tentry.npos) {
                     std::string cmt = tentry.substr(cpos+1);
                     entry += " /"+cmt;
@@ -382,8 +397,12 @@ namespace fits {
         }
 
         entry += std::string(80-entry.size(), ' ');
+        if (ipos == hdr.npos) {
+            hdr += entry;
+        } else {
+            hdr.insert(ipos, entry);
+        }
 
-        hdr.insert(ipos, entry);
         return true;
     }
 
