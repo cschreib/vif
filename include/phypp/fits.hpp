@@ -448,6 +448,145 @@ namespace fits {
         return fits::wcs(hdr);
     }
 
+    bool make_wcs_header(const vec1s& params, fits::header& hdr) {
+        if (hdr.empty()) {
+            hdr = "END" + std::string(77, ' ');
+        }
+
+        for (auto& p : params) {
+            vec1s spl = split(p, ":");
+
+            if (spl.size() != 2) {
+                error("make_wcs_header: parameter '", p, "' is ill formed");
+                return false;
+            }
+
+            spl[0] = trim(tolower(spl[0]));
+
+            if (spl[0] == "pixel_scale") {
+                double scale;
+                if (!from_string(spl[1], scale)) {
+                    error("make_wcs_header: could not read pixel scale '",
+                        spl[1], "' as double");
+                    return false;
+                }
+
+                if (!setkey(hdr, "CDELT1", -scale)) {
+                    error("make_wcs_header: could not set keyword 'CDELT1' to '", -scale, "'");
+                    return false;
+                }
+                if (!setkey(hdr, "CDELT2", scale)) {
+                    error("make_wcs_header: could not set keyword 'CDELT2' to '", scale, "'");
+                    return false;
+                }
+                if (!setkey(hdr, "CTYPE1", "'RA---TAN'")) {
+                    error("make_wcs_header: could not set keyword 'CTYPE1' to 'RA---TAN'");
+                    return false;
+                }
+                if (!setkey(hdr, "CTYPE2", "'DEC--TAN'")) {
+                    error("make_wcs_header: could not set keyword 'CTYPE2' to 'DEC--TAN'");
+                    return false;
+                }
+                if (!setkey(hdr, "EQUINOX", 2000.0)) {
+                    error("make_wcs_header: could not set keyword 'EQUINOX' to '", 2000.0, "'");
+                    return false;
+                }
+            } else if (spl[0] == "pixel_ref") {
+                double x, y;
+                vec1s tspl = split(spl[1], ",");
+                if (tspl.size() != 2) {
+                    error("make_wcs_header: ill formed 'pixel_ref' parameter: '", spl[0], "'");
+                    note("make_wcs_header: expecting two comma separated coordinates of "
+                        "reference pixel");
+                    return false;
+                }
+                if (!from_string(tspl[0], x)) {
+                    error("make_wcs_header: could not read X pixel reference '",
+                        tspl[0], "' as double");
+                    return false;
+                }
+                if (!from_string(tspl[1], y)) {
+                    error("make_wcs_header: could not read Y pixel reference '",
+                        tspl[1], "' as double");
+                    return false;
+                }
+
+                if (!setkey(hdr, "CRPIX1", x)) {
+                    error("make_wcs_header: could not set keyword 'CRPIX1' to '", x, "'");
+                    return false;
+                }
+                if (!setkey(hdr, "CRPIX2", y)) {
+                    error("make_wcs_header: could not set keyword 'CRPIX2' to '", y, "'");
+                    return false;
+                }
+            } else if (spl[0] == "sky_ref") {
+                double x, y;
+                vec1s tspl = split(spl[1], ",");
+                if (tspl.size() != 2) {
+                    error("make_wcs_header: ill formed 'sky_ref' parameter: '", spl[0], "'");
+                    note("make_wcs_header: expecting two comma separated coordinates of "
+                        "reference sky position");
+                    return false;
+                }
+                if (!from_string(tspl[0], x)) {
+                    error("make_wcs_header: could not read RA sky position reference '",
+                        tspl[0], "' as double");
+                    return false;
+                }
+                if (!from_string(tspl[1], y)) {
+                    error("make_wcs_header: could not read Dec sky position reference '",
+                        tspl[1], "' as double");
+                    return false;
+                }
+
+                if (!setkey(hdr, "CRVAL1", x)) {
+                    error("make_wcs_header: could not set keyword 'CRVAL1' to '", x, "'");
+                    return false;
+                }
+                if (!setkey(hdr, "CRVAL2", y)) {
+                    error("make_wcs_header: could not set keyword 'CRVAL2' to '", y, "'");
+                    return false;
+                }
+            } else if (spl[0] == "dims") {
+                uint_t x, y;
+                vec1s tspl = split(spl[1], ",");
+                if (tspl.size() != 2) {
+                    error("make_wcs_header: ill formed 'dims' parameter: '", spl[0], "'");
+                    note("make_wcs_header: expecting two comma separated number of pixels");
+                    return false;
+                }
+                if (!from_string(tspl[0], x)) {
+                    error("make_wcs_header: could not read number of pixels in first axis '",
+                        tspl[0], "' as unsigned integer");
+                    return false;
+                }
+                if (!from_string(tspl[1], y)) {
+                    error("make_wcs_header: could not read number of pixels in second axis '",
+                        tspl[1], "' as unsigned integer");
+                    return false;
+                }
+
+                if (!setkey(hdr, "META_0", 2u)) {
+                    error("make_wcs_header: could not set keyword 'META_0' to '", 2u, "'");
+                    return false;
+                }
+                if (!setkey(hdr, "META_1", x)) {
+                    error("make_wcs_header: could not set keyword 'META_1' to '", x, "'");
+                    return false;
+                }
+                if (!setkey(hdr, "META_2", y)) {
+                    error("make_wcs_header: could not set keyword 'META_2' to '", y, "'");
+                    return false;
+                }
+            } else {
+                error("make_wcs_header: unknown parameter '", spl[0], "'");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     template<typename T = double, typename U = double, typename V, typename W>
     void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
         vec_t<1,V>& x, vec_t<1,W>& y) {
