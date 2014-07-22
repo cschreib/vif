@@ -410,6 +410,9 @@ namespace fits {
             std::swap(nwcs, tw.nwcs);
         }
         wcs& operator = (wcs&& tw) {
+            if (w) {
+                wcsvfree(&nwcs, &w);
+            }
             w = tw.w; tw.w = nullptr;
             nwcs = tw.nwcs; nwcs = 0;
             return *this;
