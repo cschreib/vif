@@ -1937,6 +1937,7 @@ bool same_dims_or_scalar(const Args& ... args) {
 
 template<std::size_t Dim, typename T>
 auto element(const vec_t<Dim,T>& v) -> decltype(dref<T>(v.data[0])) {
+    phypp_check(!v.empty(), "cannot get element of empty array");
     return dref<T>(v.data[0]);
 }
 
