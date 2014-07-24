@@ -2052,11 +2052,13 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
     for (uint_t i = 0; i < hull.size()-1; ++i) {
         uint_t p1 = hull[i], p2 = hull[i+1];
 
-        // Normalize hull segment and get unit and perpendicular vectors
+        // Get unit vector
         auto ux = hx[p2] - hx[p1];
         auto uy = hy[p2] - hy[p1];
+        // Get perpendicular vector, pointing inside the hull
         auto nx = sign ? hy[p2] - hy[p1] : hy[p1] - hy[p2];
         auto ny = sign ? hx[p1] - hx[p2] : hx[p2] - hx[p1];
+        // Normalize hull segment
         auto l = sqrt(sqr(nx) + sqr(ny));
         ux /= l; uy /= l; nx /= l; ny /= l;
 
@@ -2067,7 +2069,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
             auto d = dx*nx + dy*ny;
 
             // Check if the point is inside the hull or not
-            if ((d < 0) == sign) {
+            if (d > 0) {
                 inhull[p] = false;
             }
 
