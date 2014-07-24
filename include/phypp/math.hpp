@@ -2035,21 +2035,64 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
     const THX& hx, const THY& hy) -> vec_t<Dim, decltype(x[0]*y[0])> {
 
     phypp_check(n_elements(x) == n_elements(y),
-        "is_in_convex_hull requires same number of elements in 'x' and 'y'");
+        "convex_hull_distance requires same number of elements in 'x' and 'y'");
     phypp_check(n_elements(hx) == n_elements(hy),
-        "is_in_convex_hull requires same number of elements in 'hx' and 'hy'");
+        "convex_hull_distance requires same number of elements in 'hx' and 'hy'");
+    phypp_check(n_elements(hx) >= 3,
+        "convex_hull_distance requires at least 3 point in hull (got ", n_elements(hx), ")");
+    phypp_check(hull[0] == hull[hull.size()-1],
+        "convex_hull_distance requires that the hull is closed");
+
+    // Find out if the hull is built counter-clockwise or not
+    uint_t i0 = hull[0], i1 = hull[1], i2 = hull[2];
+    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
     vec_t<Dim,decltype(x[0]*y[0])> res = replicate(finf, x.dims);
+    vec_t<Dim,bool> inhull = replicate(true, x.dims);
     for (uint_t i = 0; i < hull.size()-1; ++i) {
         uint_t p1 = hull[i], p2 = hull[i+1];
 
-        auto nx = hx[p2] - hx[p1];
-        auto ny = hy[p2] - hy[p1];
+        // Normalize hull segment and get unit and perpendicular vectors
+        auto ux = hx[p2] - hx[p1];
+        auto uy = hy[p2] - hy[p1];
+        auto nx = sign ? hy[p2] - hy[p1] : hy[p1] - hy[p2];
+        auto ny = sign ? hx[p1] - hx[p2] : hx[p2] - hx[p1];
         auto l = sqrt(sqr(nx) + sqr(ny));
+        ux /= l; uy /= l; nx /= l; ny /= l;
 
         for (uint_t p = 0; p < x.size(); ++p) {
-            auto d = (ny*x[p] - nx*y[p] - hx[p1]*hy[p2] + hx[p2]*hy[p1])/l;
-            if (res[p] > d) res[p] = d;
+            // Comput signed distance to current hull face line
+            auto dx = x[p] - hx[p1];
+            auto dy = y[p] - hy[p1];
+            auto d = dx*nx + dy*ny;
+
+            // Check if the point is inside the hull or not
+            if ((d < 0) == sign) {
+                inhull[p] = false;
+            }
+
+            d = fabs(d);
+            if (res[p] > d) {
+                // Find if the projection of the point on the face lies on the segment
+                auto proj = dx*ux + dy*uy;
+                if (proj < 0) {
+                    // Projection lies before starting point
+                    d = sqrt(sqr(dx) + sqr(dy));
+                } else if (proj > l) {
+                    // Projection lies after ending point
+                    d = sqrt(sqr(x[p] - hx[p2]) + sqr(y[p] - hy[p2]));
+                }
+
+                // Keep this distance if it is minimal
+                if (res[p] > d) res[p] = d;
+            }
+        }
+    }
+
+    // Give negative distance to points outside the hull
+    for (uint_t i : range(inhull)) {
+        if (!inhull[i]) {
+            res[i] *= -1.0;
         }
     }
 
