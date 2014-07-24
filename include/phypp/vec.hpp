@@ -1946,6 +1946,18 @@ T& element(T& v) {
     return v;
 }
 
+template<typename T>
+auto first(const vec_t<1,T>& v) -> decltype(dref<T>(v.data[0])) {
+    phypp_check(!v.empty(), "cannot get first element of empty array");
+    return dref<T>(v.data[0]);
+}
+
+template<typename T>
+auto last(const vec_t<1,T>& v) -> decltype(dref<T>(v.data[0])) {
+    phypp_check(!v.empty(), "cannot get last element of empty array");
+    return dref<T>(v.data[v.data.size()-1]);
+}
+
 // Return the indices of the vector where the value is 'true'.
 template<std::size_t Dim, typename Type>
 vec1u where(const vec_t<Dim,Type>& v) {
