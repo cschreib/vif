@@ -675,6 +675,7 @@ namespace fits {
 
         for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
+            if (start_with(entry, "END ")) continue;
 
             // Skip if it is an internal FITS keyword
             std::size_t eqpos = entry.find_first_of("=");
