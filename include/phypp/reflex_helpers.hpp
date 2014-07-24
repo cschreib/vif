@@ -254,4 +254,11 @@ void merge_elements(T& t, const U& u, const vec1u& ids) {
     merge_elements_(reflex::wrap(t), reflex::wrap(u), ids);
 }
 
+template<typename T>
+typename std::decay<T>::type pick_elements(const T& t, const vec1u& ids) {
+    typename std::decay<T>::type n;
+    merge_elements(n, t, ids);
+    return n;
+}
+
 #endif
