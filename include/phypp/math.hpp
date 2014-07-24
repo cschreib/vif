@@ -1979,12 +1979,20 @@ vec1u convex_hull(const TX& x, const TY& y) {
 template<typename TX, typename TY, typename THX, typename THY>
 bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, const THY& hy) {
     phypp_check(n_elements(hx) == n_elements(hy),
-        "is_in_convex_hull requires same number of elements in 'hx' and 'hy'");
+        "in_convex_hull requires same number of elements in 'hx' and 'hy'");
+    phypp_check(n_elements(hx) >= 3,
+        "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
+    phypp_check(hull[0] == hull[hull.size()-1],
+        "in_convex_hull requires that the hull is closed");
+
+    // Find out if the hull is built counter-clockwise or not
+    uint_t i0 = hull[0], i1 = hull[1], i2 = hull[2];
+    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
     for (uint_t i = 0; i < hull.size()-1; ++i) {
         uint_t p1 = hull[i], p2 = hull[i+1];
         auto cross = (hx[p2] - hx[p1])*(y - hy[p1]) - (hy[p2] - hy[p1])*(x - hx[p1]);
-        if (cross < 0) return false;
+        if ((cross < 0) == sign) return false;
     }
 
     return true;
@@ -1995,9 +2003,17 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
     const THX& hx, const THY& hy) {
 
     phypp_check(n_elements(x) == n_elements(y),
-        "is_in_convex_hull requires same number of elements in 'x' and 'y'");
+        "in_convex_hull requires same number of elements in 'x' and 'y'");
     phypp_check(n_elements(hx) == n_elements(hy),
-        "is_in_convex_hull requires same number of elements in 'hx' and 'hy'");
+        "in_convex_hull requires same number of elements in 'hx' and 'hy'");
+    phypp_check(n_elements(hx) >= 3,
+        "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
+    phypp_check(hull[0] == hull[hull.size()-1],
+        "in_convex_hull requires that the hull is closed");
+
+    // Find out if the hull is built counter-clockwise or not
+    uint_t i0 = hull[0], i1 = hull[1], i2 = hull[2];
+    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
     vec_t<Dim,bool> res = replicate(true, x.dims);
     for (uint_t i = 0; i < hull.size()-1; ++i) {
@@ -2005,7 +2021,7 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
         for (uint_t p = 0; p < x.size(); ++p) {
             if (!res[p]) continue;
             auto cross = (hx[p2] - hx[p1])*(y[p] - hy[p1]) - (hy[p2] - hy[p1])*(x[p] - hx[p1]);
-            if (cross < 0) res[p] = false;
+            if ((cross < 0) == sign) res[p] = false;
         }
     }
 
