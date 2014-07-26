@@ -53,7 +53,7 @@
 </ul><p>Currently, the only drawback of using this library instead of IDL/GDL is that, at the time of writing, there is no stable and full featured C++ interpreter (although cling <a href="http://root.cern.ch/drupal/content/cling">3</a> is a promising candidate). This means that it is impossible to do "real-time" testing of code, and that any program must be recompiled
 whenever a change is made. This issue can be partly solved by making use of command line arguments to quickly modify the behavior of a program.</p>
 
-<p>The library itself relies on standard C++11 (using a few features from the upcoming C++14), and a small tool (<em>refgen</em>) is used to parse the source code to generate necessary data for compile-time reflection (which is not -- yet <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">4</a> -- part of the C++ standard).</p>
+<p>The library itself relies on standard C++11, and a small tool (<em>refgen</em>) is used to parse the source code to generate necessary data for compile-time reflection which is not yet <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">4</a> part of the C++ standard.</p>
 
 <h1>
 <a name="how-to-use-it" class="anchor" href="#how-to-use-it"><span class="octicon octicon-link"></span></a>How to use it?</h1>
