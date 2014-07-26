@@ -19,7 +19,9 @@ struct psffit_result {
 };
 
 template<typename TypeM, typename TypeE = TypeM, typename TypeP = TypeM>
-psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& terr, const vec_t<2,TypeP>& psf, const vec1i& pos) {
+psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& terr,
+    const vec_t<2,TypeP>& psf, const vec1i& pos) {
+
     using img_type = typename vec_t<2,TypeM>::effective_type;
     using err_type = typename vec_t<2,TypeE>::effective_type;
     static const auto max_error = std::numeric_limits<rtype_t<TypeE>>::max();
@@ -194,7 +196,9 @@ VECTORIZE_INTERPOL(vuniverse, 800);
 // Absolute luminosity [Lsun] to observed flux [uJy], using luminosity distance 'd' [Mpc],
 // redshift 'z' [1], and rest-frame wavelength 'lam' [um]
 template<typename T, typename U, typename V, typename W>
-auto lsun2uJy(const T& z, const U& d, const V& lam, const W& lum) {
+auto lsun2uJy(const T& z, const U& d, const V& lam, const W& lum) ->
+    decltype((1.0 + z)*lam*lum/(d*d)) {
+
     const double Mpc = 3.0856e22; // [m/Mpc]
     const double Lsol = 3.839e26; // [W/Lsol]
     const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
@@ -207,7 +211,9 @@ auto lsun2uJy(const T& z, const U& d, const V& lam, const W& lum) {
 // Observed flux 'flx' [uJy] to absolute luminosity [Lsun], using luminosity distance 'd' [Mpc],
 // redshift 'z' [1], and observed wavelength 'lam' [um]
 template<typename T, typename U, typename V, typename W>
-auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) {
+auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) ->
+    decltype(1.0*flx*d*d/lam) {
+
     const double Mpc = 3.0856e22; // [m/Mpc]
     const double Lsol = 3.839e26; // [W/Lsol]
     const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
@@ -219,13 +225,13 @@ auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) {
 
 // Flux in uJy to AB magnitude
 template<typename T>
-auto uJy2mag(const T& x, double zp = 23.9) {
+auto uJy2mag(const T& x, double zp = 23.9) -> decltype(-2.5*log10(x) + zp) {
     return -2.5*log10(x) + zp;
 }
 
 // AB magnitude to flux in uJy
 template<typename T>
-auto mag2uJy(const T& x, double zp = 23.9) {
+auto mag2uJy(const T& x, double zp = 23.9) -> decltype(e10(0.4*(zp - x))) {
     return e10(0.4*(zp - x));
 }
 
@@ -1450,7 +1456,7 @@ vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_
 // that is has no hole (masked stars, ...) and the borders are not concave (no "zigzag" shape, ...).
 // If these hypotheses do not hold, use field_area_h2d instead.
 template<typename TX, typename TY, typename TH>
-auto field_area_hull(const TX& ra, const TY& dec, const TH& hull) {
+double field_area_hull(const TX& ra, const TY& dec, const TH& hull) {
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
     decltype(1.0*ra[0]*dec[0]) area = 0;
@@ -1475,7 +1481,7 @@ auto field_area_hull(const TX& ra, const TY& dec, const TH& hull) {
 // Compute the area covered by a field given a set of source coordinates [deg^2].
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
-auto field_area_hull(const TX& ra, const TY& dec) {
+double field_area_hull(const TX& ra, const TY& dec) {
     return field_area_hull(ra, dec, convex_hull(ra, dec));
 }
 
@@ -1483,7 +1489,7 @@ auto field_area_hull(const TX& ra, const TY& dec) {
 // building a 2d histogram of point sources.
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
-auto field_area_h2d(const TX& ra, const TY& dec) {
+double field_area_h2d(const TX& ra, const TY& dec) {
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
     // Get rough extents of the field
@@ -1519,14 +1525,14 @@ auto field_area_h2d(const TX& ra, const TY& dec) {
 // Compute the area covered by a field given a set of source coordinates [deg^2].
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
-auto field_area(const TX& ra, const TY& dec) {
+double field_area(const TX& ra, const TY& dec) {
     return field_area_h2d(ra, dec);
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2].
 // Coordinates are assumed to be given in degrees.
 template<typename T>
-auto field_area(const T& t) {
+double field_area(const T& t) {
     return field_area(t.ra, t.dec);
 }
 
@@ -1542,7 +1548,7 @@ struct filter_t {
 // normalized to unit integral (i.e. integrate(lam, res) == 1).
 
 template<typename TypeL, typename TypeS>
-auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
+double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
     uint_t nflam = filter.lam.size();
 
     auto bnd = bounds(filter.lam.data[0], filter.lam.data[nflam-1], lam);
@@ -1576,7 +1582,9 @@ auto sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,T
 }
 
 template<typename TypeL, typename TypeS>
-auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) {
+auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) ->
+    vec_t<1,decltype(sed[0]*filter.res[0])> {
+
     using rtype = decltype(sed[0]*filter.res[0]);
     const uint_t nsed = sed.dims[0];
     vec_t<1,rtype> r; r.reserve(nsed);

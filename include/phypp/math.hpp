@@ -23,13 +23,13 @@ static const double dpi = 3.14159265359;
 static const float  fpi = 3.14159265359;
 
 template<typename T>
-auto e10(const T& t) {
+auto e10(const T& t) -> decltype(pow(10.0, t)) {
     return pow(10.0, t);
 }
 
 template<typename T, typename U, typename V,
     typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-auto clamp(const T& t, const U& mi, const V& ma) {
+T clamp(const T& t, const U& mi, const V& ma) {
     return (t < mi ? mi : (t > ma ? ma : t));
 }
 
@@ -149,29 +149,9 @@ bool finite(const T& t) {
     return std::isfinite(t);
 }
 
-template<std::size_t Dim, typename Type>
-vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
-    vec_t<Dim,bool> r = boolarr(v.dims);
-    for (uint_t i = 0; i < v.size(); ++i) {
-        r[i] = std::isfinite(v[i]);
-    }
-
-    return r;
-}
-
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 bool nan(const T& t) {
     return std::isnan(t);
-}
-
-template<std::size_t Dim, typename Type>
-vec_t<Dim,bool> nan(const vec_t<Dim,Type>& v) {
-    vec_t<Dim,bool> r = boolarr(v.dims);
-    for (uint_t i = 0; i < v.size(); ++i) {
-        r[i] = std::isnan(v[i]);
-    }
-
-    return r;
 }
 
 using seed_t = std::mt19937;
@@ -188,10 +168,10 @@ double randomn(T& seed) {
 }
 
 template<typename T, typename ... Args>
-auto randomn(T& seed, Args&& ... args) {
-    auto v = dblarr(std::forward<Args>(args)...);
+vec_t<dim_total<Args...>::value,double> randomn(T& seed, Args&& ... args) {
+    vec_t<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
     std::normal_distribution<double> distribution(0.0, 1.0);
-    for (uint_t i = 0; i < v.size(); ++i) {
+    for (uint_t i : range(v)) {
         v.data[i] = distribution(seed);
     }
 
@@ -205,10 +185,10 @@ double randomu(T& seed) {
 }
 
 template<typename T, typename ... Args>
-auto randomu(T& seed, Args&& ... args) {
-    auto v = dblarr(std::forward<Args>(args)...);
+vec_t<dim_total<Args...>::value,double> randomu(T& seed, Args&& ... args) {
+    vec_t<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    for (uint_t i = 0; i < v.size(); ++i) {
+    for (uint_t i : range(v)) {
         v.data[i] = distribution(seed);
     }
 
@@ -223,25 +203,28 @@ auto randomi(T& seed, TMi mi, TMa ma) -> decltype(mi + ma) {
 }
 
 template<typename T, typename TMi, typename TMa, typename ... Args>
-auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) {
+auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) ->
+    vec_t<dim_total<Args...>::value,decltype(mi+ma)> {
     auto v = randomu(seed, std::forward<Args>(args)...);
     using rtype = decltype(mi + ma);
     return vec_t<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
 }
 
 template<typename T, typename TypeX, typename TypeY, typename ... Args>
-auto random_pdf(T& seed, const vec_t<1,TypeX>& px, const vec_t<1,TypeY>& py, Args&& ... args) {
+vec_t<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec_t<1,TypeX>& px,
+    const vec_t<1,TypeY>& py, Args&& ... args) {
+
     // Build cumulative distribution
     vec1d cpdf(py.size());
     for (uint_t i : range(py)) {
-        cpdf[i] = 0.0;
-        for (uint_t j = 0; j < i; ++j) {
-            cpdf[i] += py[j];
+        cpdf.data[i] = 0.0;
+        for (uint_t j : range(i)) {
+            cpdf.data[i] += py.data[j];
         }
     }
 
     // Normalize it to unity
-    cpdf /= cpdf[cpdf.size()-1];
+    cpdf /= cpdf.data[cpdf.size()-1];
 
     // Generate random values
     auto gen = randomu(seed, std::forward<Args>(args)...);
@@ -253,7 +236,7 @@ auto random_pdf(T& seed, const vec_t<1,TypeX>& px, const vec_t<1,TypeY>& py, Arg
 }
 
 template<std::size_t Dim, typename Type, typename T>
-auto shuffle(vec_t<Dim,Type> v, T& seed) {
+vec_t<Dim,Type> shuffle(vec_t<Dim,Type> v, T& seed) {
     std::shuffle(v.begin(), v.end(), seed);
     return v;
 }
@@ -808,7 +791,7 @@ void data_info_(const vec_t<Dim,Type>& v) {
     data_info_(x);
 
 template<typename T>
-auto sign(const T& t) {
+auto sign(const T& t) -> decltype(2*(t > 0) - 1) {
     return 2*(t > 0) - 1;
 }
 
@@ -832,37 +815,20 @@ auto pow(const U& u, vec_t<Dim,Type>&& v) -> typename std::enable_if<!is_vec<U>:
     return std::move(v);
 }
 
-template<typename T>
-auto sqr(T&& t) {
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+auto sqr(T t) -> decltype(t*t) {
     return t*t;
 }
 
-template<std::size_t Dim, typename Type, typename enable =
-    typename std::enable_if<!std::is_pointer<Type>::value>::type>
-auto sqr(vec_t<Dim,Type>&& v) {
-    for (auto& t : v) {
-        t *= t;
-    }
-    return std::move(v);
-}
-
-template<typename T>
-auto invsqr(T&& t) {
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+auto invsqr(T t) -> decltype(1.0/(t*t)) {
     return 1.0/(t*t);
-}
-
-template<std::size_t Dim, typename Type, typename enable =
-    typename std::enable_if<!std::is_pointer<Type>::value>::type>
-auto invsqr(vec_t<Dim,Type>&& v) {
-    for (auto& t : v) {
-        t = 1.0/(t*t);
-    }
-    return std::move(v);
 }
 
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto name(const vec_t<Dim,Type>& v, const Args& ... args) { \
+    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
+        vec_t<Dim,decltype(name(v[0], args...))> { \
         using ntype = decltype(name(v[0], args...)); \
         vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
         for (auto& t : v.data) { \
@@ -882,7 +848,8 @@ auto invsqr(vec_t<Dim,Type>&& v) {
 
 #define VECTORIZE_REN(name, orig) \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto name(const vec_t<Dim,Type>& v, const Args& ... args) { \
+    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
+        vec_t<Dim,decltype(orig(v[0], args...))> { \
         using ntype = decltype(orig(v[0], args...)); \
         vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
         for (auto& t : v.data) { \
@@ -900,7 +867,7 @@ auto invsqr(vec_t<Dim,Type>&& v) {
         return std::move(v); \
     } \
     template<typename ... Args> \
-    auto name(Args&& ... args) { \
+    auto name(Args&& ... args) -> decltype(orig(std::forward<Args>(args)...)) { \
         return orig(std::forward<Args>(args)...); \
     }
 
@@ -932,6 +899,8 @@ VECTORIZE(floor);
 VECTORIZE(round);
 VECTORIZE(fabs);
 VECTORIZE(clamp);
+VECTORIZE(finite);
+VECTORIZE(nan);
 VECTORIZE_REN(bessel_j0, j0);
 VECTORIZE_REN(bessel_j1, j1);
 VECTORIZE_REN(bessel_y0, y0);
@@ -1153,15 +1122,15 @@ auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
 }
 
 template<typename Type = double>
-auto identity_matrix(uint_t dim) {
-    auto m = arr<Type>(dim, dim);
+vec_t<2,Type> identity_matrix(uint_t dim) {
+    vec_t<2,Type> m(dim, dim);
     diagonal(m) = 1;
     return m;
 }
 
 template<typename TX, typename TY>
-auto scale_matrix(const TX& sx, const TY& sy) {
-    auto m = arr<decltype(sx*sy)>(3, 3);
+auto scale_matrix(const TX& sx, const TY& sy) -> vec_t<2,decltype(sx*sy)> {
+    vec_t<2,decltype(sx*sy)> m(3, 3);
     m(0,0) = sx;
     m(1,1) = sy;
     m(2,2) = 1;
@@ -1169,8 +1138,8 @@ auto scale_matrix(const TX& sx, const TY& sy) {
 }
 
 template<typename T>
-auto scale_matrix(const T& s) {
-    auto m = arr<T>(3, 3);
+vec_t<2,T> scale_matrix(const T& s) {
+    vec_t<2,T> m(3, 3);
     m(0,0) = s;
     m(1,1) = s;
     m(2,2) = 1;
@@ -1178,8 +1147,8 @@ auto scale_matrix(const T& s) {
 }
 
 template<typename TX, typename TY>
-auto translation_matrix(const TX& tx, const TY& ty) {
-    auto m = arr<decltype(tx*ty)>(3, 3);
+auto translation_matrix(const TX& tx, const TY& ty) -> vec_t<2,decltype(tx*ty)> {
+    vec_t<2,decltype(tx*ty)> m(3, 3);
     diagonal(m) = 1;
     m(0,2) = tx;
     m(1,2) = ty;
@@ -1187,8 +1156,8 @@ auto translation_matrix(const TX& tx, const TY& ty) {
 }
 
 template<typename A>
-auto rotation_matrix(const A& a) {
-    auto m = arr<decltype(cos(a))>(3, 3);
+auto rotation_matrix(const A& a) -> vec_t<2,decltype(cos(a))> {
+    vec_t<2,decltype(cos(a))> m(3, 3);
     auto ca = cos(a), sa = sin(a);
     m(0,0) = m(1,1) = ca;
     m(0,1) = -sa;
@@ -1198,7 +1167,7 @@ auto rotation_matrix(const A& a) {
 }
 
 template<typename TX, typename TY>
-auto point2d(const TX& x, const TY& y) {
+auto point2d(const TX& x, const TY& y) -> vec_t<1,decltype(x*y)> {
     return vec_t<1,decltype(x*y)>{x, y, 1};
 }
 
@@ -1741,8 +1710,11 @@ double interpolate(double y1, double y2, double x1, double x2, double x) {
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<typename TypeX2 = double, typename TypeY = double, typename TypeX1 = double>
-auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<1,TypeX2>& nx) {
+template<std::size_t DI, std::size_t DX, typename TypeX2 = double, typename TypeY = double,
+    typename TypeX1 = double>
+auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_t<DX,TypeX2>& nx) ->
+    vec_t<DX,decltype(y[0]*x[0])> {
+
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
 
@@ -1752,7 +1724,7 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
         "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
     uint_t nmax = x.size();
-    vec_t<1,decltype(y[0]*x[0])> r; r.reserve(nx.size());
+    vec_t<DX,decltype(y[0]*x[0])> r; r.reserve(nx.size());
     for (auto& tx : nx) {
         uint_t low = lower_bound(tx, x);
 
@@ -1781,9 +1753,11 @@ auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX1>& x, const vec_t<
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<typename TypeY = double, typename TypeX = double, typename T = double,
+template<std::size_t DI, typename TypeY = double, typename TypeX = double, typename T = double,
     typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-auto interpolate(const vec_t<1,TypeY>& y, const vec_t<1,TypeX>& x, const T& nx) {
+auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX>& x, const T& nx) ->
+    decltype(y[0]*x[0]) {
+
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX>;
 

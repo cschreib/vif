@@ -78,10 +78,13 @@ struct unfolder;
 
 template<>
 struct unfolder<> {
+    template<typename F, typename ... OArgs>
+    using out_type = decltype(std::declval<typename std::decay<F>::type>()(std::declval<OArgs&>()...));
+
     template<typename ... OArgs>
     struct out {
         template<typename F>
-        static auto unfold(F&& func, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold(F&& func, OArgs& ... oargs) {
             return func(oargs...);
         }
     };
@@ -89,10 +92,13 @@ struct unfolder<> {
 
 template<typename T, typename ... IArgs>
 struct unfolder<T, IArgs...> {
+    template<typename F, typename ... OArgs>
+    using out_type = typename unfolder<IArgs...>::template out_type<F, OArgs..., T>;
+
     template<typename ... OArgs>
     struct out {
         template<typename F>
-        static auto unfold(F&& func, T& t, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold(F&& func, T& t, IArgs& ... iargs, OArgs& ... oargs) {
             using actor = typename unfolder<IArgs...>::template out<OArgs..., T>;
             return actor::unfold(std::forward<F>(func), iargs..., oargs..., t);
         }
@@ -101,23 +107,43 @@ struct unfolder<T, IArgs...> {
 
 template<std::size_t N, typename T, typename ... IArgs>
 struct unfolder<repeated_value<N,T>, IArgs...> {
+    template<typename F, std::size_t I, typename ... OArgs>
+    struct out_type_impl;
+
+    template<typename F, typename ... OArgs>
+    struct out_type_impl<F, 0, OArgs...> {
+        using type = typename unfolder<IArgs...>::template out_type<F, OArgs...>;
+    };
+
+    template<typename F, std::size_t I, typename ... OArgs>
+    struct out_type_impl {
+        using type = typename out_type_impl<F, I-1, OArgs..., T>::type;
+    };
+
+    template<typename F, typename ... OArgs>
+    using out_type = typename out_type_impl<F, N, OArgs...>::type;
+
     template<typename ... OArgs>
     struct out {
         template<typename F, typename U>
-        static auto unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs,
+            OArgs& ... oargs) {
+
             using actor = typename unfolder<IArgs...>::template out<OArgs...>;
             return actor::unfold(std::forward<F>(func), iargs..., oargs...);
         }
 
         template<typename F, std::size_t I, typename U>
-        static auto unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs,
+            OArgs& ... oargs) {
+
             using actor = typename unfolder::template out<OArgs..., T>;
             return actor::unfold_repeat(std::forward<F>(func), t, cte_t<I-1>(),
                 iargs..., oargs..., t.value);
         }
 
         template<typename F, typename U>
-        static auto unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
             return unfold_repeat(std::forward<F>(func), t, cte_t<N>(), iargs..., oargs...);
         }
     };
@@ -125,30 +151,50 @@ struct unfolder<repeated_value<N,T>, IArgs...> {
 
 template<std::size_t N, typename T, typename ... IArgs>
 struct unfolder<const repeated_value<N,T>, IArgs...> {
+    template<typename F, std::size_t I, typename ... OArgs>
+    struct out_type_impl;
+
+    template<typename F, typename ... OArgs>
+    struct out_type_impl<F, 0, OArgs...> {
+        using type = typename unfolder<IArgs...>::template out_type<F, OArgs...>;
+    };
+
+    template<typename F, std::size_t I, typename ... OArgs>
+    struct out_type_impl {
+        using type = typename out_type_impl<F, I-1, OArgs..., const T>::type;
+    };
+
+    template<typename F, typename ... OArgs>
+    using out_type = typename out_type_impl<F, N, OArgs...>::type;
+
     template<typename ... OArgs>
     struct out {
         template<typename F, typename U>
-        static auto unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs,
+            OArgs& ... oargs) {
+
             using actor = typename unfolder<IArgs...>::template out<OArgs...>;
             return actor::unfold(std::forward<F>(func), iargs..., oargs...);
         }
 
         template<typename F, std::size_t I, typename U>
-        static auto unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs,
+            OArgs& ... oargs) {
+
             using actor = typename unfolder::template out<OArgs..., const T>;
             return actor::unfold_repeat(std::forward<F>(func), t, cte_t<I-1>(),
                 iargs..., oargs..., t.value);
         }
 
         template<typename F, typename U>
-        static auto unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
+        static out_type<F,OArgs...> unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
             return unfold_repeat(std::forward<F>(func), t, cte_t<N>(), iargs..., oargs...);
         }
     };
 };
 
 template<typename F, typename ... Args>
-auto unfold(F&& func, Args& ... args) {
+typename unfolder<Args...>::template out_type<F> unfold(F&& func, Args& ... args) {
     using actor = typename unfolder<Args...>::template out<>;
     return actor::unfold(std::forward<F>(func), args...);
 }

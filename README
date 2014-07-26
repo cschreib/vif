@@ -21,14 +21,14 @@ to do "real-time" testing of code, and that any program must be recompiled
 whenever a change is made. This issue can be partly solved by making use of
 command line arguments to quickly modify the behavior of a program.
 
-The library itself relies on standard C++11 (using a few features from the
-upcoming C++14), and a small tool ('refgen') is used to parse the source code to
-generate necessary data for compile-time reflection (which is not (yet?) part of
-the C++ standard).
+The library itself relies on standard C++11, and a small tool ('refgen') is used
+to parse the source code to generate necessary data for compile-time reflection
+which is not (yet [4]) part of the C++ standard.
 
 [1]: http://www.exelisvis.com/ProductsServices/IDL.aspx
 [2]: http://gnudatalanguage.sourceforge.net/
 [3]: http://root.cern.ch/drupal/content/cling
+[4]: https://groups.google.com/a/isocpp.org/forum/#!forum/reflection
 
 
 Using the 'phypp' library
