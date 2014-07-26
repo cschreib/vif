@@ -149,9 +149,29 @@ bool finite(const T& t) {
     return std::isfinite(t);
 }
 
+template<std::size_t Dim, typename Type>
+vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
+    vec_t<Dim,bool> r(v.dims);
+    for (uint_t i : range(v)) {
+        r.data[i] = std::isfinite(dref<Type>(v.data[i]));
+    }
+
+    return r;
+}
+
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 bool nan(const T& t) {
     return std::isnan(t);
+}
+
+template<std::size_t Dim, typename Type>
+vec_t<Dim,bool> nan(const vec_t<Dim,Type>& v) {
+    vec_t<Dim,bool> r(v.dims);
+    for (uint_t i : range(v)) {
+        r.data[i] = std::isnan(dref<Type>(v.data[i]));
+    }
+
+    return r;
 }
 
 using seed_t = std::mt19937;
@@ -219,7 +239,7 @@ vec_t<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec_t<
     for (uint_t i : range(py)) {
         cpdf.data[i] = 0.0;
         for (uint_t j : range(i)) {
-            cpdf.data[i] += py.data[j];
+            cpdf.data[i] += dref<TypeY>(py.data[j]);
         }
     }
 
@@ -899,8 +919,6 @@ VECTORIZE(floor);
 VECTORIZE(round);
 VECTORIZE(fabs);
 VECTORIZE(clamp);
-VECTORIZE(finite);
-VECTORIZE(nan);
 VECTORIZE_REN(bessel_j0, j0);
 VECTORIZE_REN(bessel_j1, j1);
 VECTORIZE_REN(bessel_y0, y0);
