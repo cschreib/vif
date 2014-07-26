@@ -1600,7 +1600,7 @@ const T& get_element_(const T& t, uint_t i) {
 }
 
 template<std::size_t Dim, typename T>
-auto get_element_(const vec_t<Dim,T>& t, uint_t i) {
+auto get_element_(const vec_t<Dim,T>& t, uint_t i) -> decltype(dref<T>(t.data[i])) {
     return dref<T>(t.data[i]);
 }
 

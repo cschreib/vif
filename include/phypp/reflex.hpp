@@ -190,13 +190,15 @@ namespace reflex {
     void do_init_set_name_(member_t& m, T& d, data_t* parent, cte_t<false>) {}
 
     template<std::size_t N, typename ... Args>
-    auto& get_value(type_list<Args...> tl, member_t& m) {
+    auto get_value(type_list<Args...> tl, member_t& m) ->
+        typename std::add_lvalue_reference<typename type_list<Args...>::template get<N>>::type {
         using type = typename type_list<Args...>::template get<N>;
         return *(type*)m.value;
     }
 
     template<std::size_t N, typename ... Args>
-    auto& get_value(type_list<Args...> tl, const member_t& m) {
+    auto get_value(type_list<Args...> tl, const member_t& m) ->
+        const typename std::add_lvalue_reference<typename type_list<Args...>::template get<N>>::type {
         using type = typename type_list<Args...>::template get<N>;
         return *(const type*)m.value;
     }
@@ -271,13 +273,15 @@ namespace reflex {
     struct is_struct<struct_t<T>> : std::true_type {};
 
     template<std::size_t N, typename T>
-    auto& get_value(struct_t<T>& t) {
+    auto get_value(struct_t<T>& t) ->
+        typename std::add_lvalue_reference<typename struct_t<T>::member_types::template get<N>>::type {
         using type = typename struct_t<T>::member_types::template get<N>;
         return *(type*)t.data.members[N].value;
     }
 
     template<std::size_t N, typename T>
-    auto& get_value(const struct_t<T>& t) {
+    auto get_value(const struct_t<T>& t) ->
+        const typename std::add_lvalue_reference<typename struct_t<T>::member_types::template get<N>>::type {
         using type = typename struct_t<T>::member_types::template get<N>;
         return *(const type*)t.data.members[N].value;
     }
@@ -288,19 +292,23 @@ namespace reflex {
     template<>
     struct wrap_t<true> {
         #ifdef REFLECTION_STAGE
+        static empty_t empty;
         template<typename T>
-        static auto wrap(T& t) {
-            static empty_t empty;
+        static auto wrap(T& t) -> decltype(struct_t<T>{empty._reflex}) {
             return struct_t<T>{empty._reflex};
         }
 
         #else
         template<typename T>
-        static auto wrap(T& t) {
+        static auto wrap(T& t) -> decltype(struct_t<T>{t._reflex}) {
             return struct_t<T>{t._reflex};
         }
         #endif
     };
+
+    #ifdef REFLECTION_STAGE
+    empty_t wrap_t<true>::empty;
+    #endif
 
     template<>
     struct wrap_t<false> {
