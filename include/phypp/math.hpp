@@ -1968,13 +1968,23 @@ vec1u convex_hull(const TX& x, const TY& y) {
     return res;
 }
 
+template<typename THX, typename THY>
+bool is_hull_closed(const vec1u& hull, const THX& hx, const THY& hy) {
+    using rtype = typename THX::rtype;
+    const auto eps = std::numeric_limits<rtype>::epsilon();
+    const uint_t hend = hull.size()-1;
+    return hull[0] == hull[hend] ||
+        (fabs(hx[hull[0]] - hx[hull[hend]]) < eps &&
+         fabs(hy[hull[0]] - hy[hull[hend]]) < eps);
+}
+
 template<typename TX, typename TY, typename THX, typename THY>
 bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, const THY& hy) {
     phypp_check(n_elements(hx) == n_elements(hy),
         "in_convex_hull requires same number of elements in 'hx' and 'hy'");
     phypp_check(n_elements(hx) >= 3,
         "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(hull[0] == hull[hull.size()-1],
+    phypp_check(is_hull_closed(hull, hx, hy),
         "in_convex_hull requires that the hull is closed");
 
     // Find out if the hull is built counter-clockwise or not
@@ -2000,7 +2010,7 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
         "in_convex_hull requires same number of elements in 'hx' and 'hy'");
     phypp_check(n_elements(hx) >= 3,
         "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(hull[0] == hull[hull.size()-1],
+    phypp_check(is_hull_closed(hull, hx, hy),
         "in_convex_hull requires that the hull is closed");
 
     // Find out if the hull is built counter-clockwise or not
@@ -2032,7 +2042,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
         "convex_hull_distance requires same number of elements in 'hx' and 'hy'");
     phypp_check(n_elements(hx) >= 3,
         "convex_hull_distance requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(hull[0] == hull[hull.size()-1],
+    phypp_check(is_hull_closed(hull, hx, hy),
         "convex_hull_distance requires that the hull is closed");
 
     // Find out if the hull is built counter-clockwise or not
