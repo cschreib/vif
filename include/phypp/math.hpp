@@ -1728,7 +1728,7 @@ double interpolate(double y1, double y2, double x1, double x2, double x) {
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<std::size_t DI, std::size_t DX, typename TypeX2 = double, typename TypeY = double,
+template<std::size_t DI = 1, std::size_t DX = 1, typename TypeX2 = double, typename TypeY = double,
     typename TypeX1 = double>
 auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_t<DX,TypeX2>& nx) ->
     vec_t<DX,decltype(y[0]*x[0])> {
