@@ -85,7 +85,8 @@ int main(int argc, char* argv[]) {
 
                 vec1d hx = cat.ra[idg3s[hull]];
                 vec1d hy = cat.dec[idg3s[hull]];
-                hull = uindgen(hull.size());
+                hull = uindgen(hull.size()+1);
+                hull[-1] = hull[0];
 
                 if (idg3s.size() > 1000) {
                     double mx = 0.5*(max(hx) + min(hx)), my = 0.5*(max(hy) + min(hy));
