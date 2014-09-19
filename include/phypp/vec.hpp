@@ -2061,8 +2061,10 @@ vec_t<Dim1,bool> equal(const vec_t<Dim1,Type1>& v1, const vec_t<Dim2,Type2>& v2)
 }
 
 // Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
-template<std::size_t Dim, typename Type1, typename Type2>
-void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1u& id1, vec1u& id2) {
+// Each value is matched once, and cannot be used again. For example, if the content of the
+// two vectors is: [12,12,-1,-1] and [0,12,-1,5], then the function will return [0,2] and [1,2].
+template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
+void match(const vec_t<D1,Type1>& v1, const vec_t<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
     uint_t n1 = v1.size();
     uint_t n2 = v2.size();
     if (n2 < n1) {
@@ -2085,6 +2087,37 @@ void match(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2, vec1u& id1, v
     id1.data.shrink_to_fit();
     id2.dims[0] = id2.data.size();
     id2.data.shrink_to_fit();
+}
+
+// Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
+// Indices are returned for every matching pair (assuming no repetitions in 'v2'). Using
+// the sample example as 'match', with the two vectors containing [12,12,-1,-1] and
+// [0,12,-1,5], the function will return [0,1,2,3] and [1,2,1,2]. Contrary to 'match',
+// this function is not symetric, in the sense that the result will be different if the two
+// input vectors are swapped. The order of the returned indices is unspecified.
+template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
+void match_dictionary(const vec_t<D1,Type1>& v1, const vec_t<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
+    vec1u ids = sort(v1);
+    auto sv1 = v1[ids].concretise();
+    vec1u idu = uniq(sv1);
+
+    vec1u tid1, tid2;
+    match(sv1[idu], v2, tid1, tid2);
+
+    const uint_t nm = tid1.size();
+    const uint_t nplus = nm*(float(idu.size())/v1.size());
+    id1.reserve(id1.size() + nplus);
+    id2.reserve(id2.size() + nplus);
+
+    for (uint_t tu = 0; tu < nm; ++tu) {
+        uint_t iu = tid1[tu];
+        uint_t u = idu[iu];
+        uint_t n = iu == idu.size()-1 ? sv1.size() - u : idu[iu+1] - u;
+        for (uint_t i = 0; i < n; ++i) {
+            id1.push_back(ids[u+i]);
+            id2.push_back(tid2[tu]);
+        }
+    }
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
