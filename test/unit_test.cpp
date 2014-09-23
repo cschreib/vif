@@ -752,14 +752,11 @@ int main(int argc, char* argv[]) {
 
     {
         print("'eigen_symmetric' function");
-        vec2d alpha = identity_matrix(3);
-        alpha(0,1) = alpha(1,0) = -0.1;
-        alpha(0,2) = alpha(2,0) = 0.1;
-        alpha(1,2) = alpha(2,1) = 0.1;
-        alpha(1,1) = 1.3;
-        alpha(2,2) = 1.5;
-
-        mprint(alpha);
+        vec2d alpha = {
+            {1.0, -0.1, 0.1},
+            {-0.1, 1.3, 0.1},
+            {0.1,  0.1, 1.5}
+        };
 
         vec1d vals;
         vec2d vecs;
