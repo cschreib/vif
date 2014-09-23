@@ -758,13 +758,17 @@ int main(int argc, char* argv[]) {
             {0.1,  0.1, 1.5}
         };
 
+        uint_t n = alpha.dims[0];
+
         vec1d vals;
         vec2d vecs;
         check(eigen_symmetric(alpha, vals, vecs), "1");
-        for (uint_t i : range(3)) {
+        for (uint_t i : range(n)) {
             vec1d u1 = vecs(i,_);
             vec1d u2 = mmul(alpha, u1)/u1;
-            check(fabs(u2[0] - u2[1]) < 1e-6, "1");
+            for (uint_t j : range(n-1)) {
+                check(fabs(u2[j] - u2[j+1]) < 1e-6, "1");
+            }
             check(fabs(u2[0] - vals[i]) < 1e-6, "1");
         }
     }
