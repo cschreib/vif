@@ -1292,6 +1292,45 @@ bool solve_symmetric(vec2d& alpha, vec1d& beta) {
     return true;
 }
 
+extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
+    double* work, int* lwork, int* info);
+
+bool eigen_symmetric(vec2d& a, vec1d& vals) {
+    phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
+        a.dims, ")");
+
+    char jobz = 'V';
+    char uplo = 'U';
+    int n = a.dims[0];
+    int lda = n;
+    int info;
+
+    vals.resize(n);
+
+    int lw = n*64;
+    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+    // the Lapack User Guide.
+
+    vec1d work(lw);
+
+    dsyev_(&jobz, &uplo, &n, a.data.data(), &lda, vals.data.data(), work.data.data(),
+        &lw, &info);
+    if (info != 0) {
+        return false;
+    }
+
+    // Eigen vectors are now stored in 'a' with the following layout:
+    //
+
+    return true;
+}
+
+bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
+    vecs = a;
+    return eigen_symmetric(vecs, vals);
+}
+
 template<typename Type>
 void symmetrize(vec_t<2,Type>& alpha) {
     phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",

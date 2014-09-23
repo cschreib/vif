@@ -751,6 +751,23 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'eigen_symmetric' function");
+        vec2d alpha = identity_matrix(2);
+        alpha(0,1) = alpha(1,0) = -0.1;
+        alpha(1,1) += 0.3;
+
+        vec1d vals;
+        vec2d vecs;
+        check(eigen_symmetric(alpha, vals, vecs), "1");
+        vec1d u1 = vecs(0,_), v1 = vecs(1,_);
+        vec1d u2 = mmul(alpha, u1)/u1, v2 = mmul(alpha, v1)/v1;
+        check(fabs(u2[0] - u2[1]) < 1e-6, "1");
+        check(fabs(v2[0] - v2[1]) < 1e-6, "1");
+        check(fabs(u2[0] - vals[0]) < 1e-6, "1");
+        check(fabs(v2[0] - vals[1]) < 1e-6, "1");
+    }
+
+    {
         print("'linfit' function");
         vec1d x = dindgen(5);
         vec1d y = 3.1415*x*x - 12.0*x;
