@@ -25,6 +25,8 @@ int main(int argc, char* argv[]) {
 
     if (!dir.empty()) {
         dir = file::directorize(dir);
+    } else {
+        dir = file::get_directory(clist);
     }
 
     if (!out.empty()) {
