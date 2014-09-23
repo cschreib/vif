@@ -677,9 +677,10 @@ struct vec_t {
     using drtype = dtype_t<Type>;
     using vtype = std::vector<dtype>;
     using comparator = std::less<dtype>;
+    using dim_type = std::array<std::size_t, Dim>;
 
-    vtype                        data;
-    std::array<std::size_t, Dim> dims = {{0}};
+    vtype    data;
+    dim_type dims = {{0}};
 
     vec_t() = default;
     vec_t(const vec_t&) = default;
@@ -1134,6 +1135,7 @@ struct vec_t<Dim,Type*> {
     using dtype = Type;
     using drtype = rtype;
     using vtype = std::vector<dtype*>;
+    using dim_type = std::array<std::size_t, Dim>;
     struct comparator {
         bool operator() (const dtype* t1, const dtype* t2) {
             return *t1 < *t2;
@@ -1149,9 +1151,9 @@ struct vec_t<Dim,Type*> {
         }
     };
 
-    void*                       parent = nullptr;
-    vtype                       data;
-    std::array<std::size_t,Dim> dims = {{0}};
+    void*    parent = nullptr;
+    vtype    data;
+    dim_type dims = {{0}};
 
     vec_t() = delete;
     vec_t(const vec_t&) = default;
