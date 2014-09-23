@@ -1321,7 +1321,8 @@ bool eigen_symmetric(vec2d& a, vec1d& vals) {
     }
 
     // Eigen vectors are now stored in 'a' with the following layout:
-    //
+    // v0 = a(0,_), v1 = a(1,_), ...
+    // each corresponding to the eigen values given in 'vals'
 
     return true;
 }
