@@ -4,15 +4,17 @@ Pre-requisites
 1) You must have a recent compiler to compile C++ code. Either 'clang' (>= 3.3)
    or 'gcc' (>= 4.8) will do.
 
-2) You must have the following libraries installed: 'cfitsio', 'CCfits',
+2) You should have 'cmake' installed.
+
+3) You must have the following libraries installed: 'cfitsio', 'CCfits',
    'wcslib', 'lapack', 'libclang'. See "Appendix: installing dependencies"
    below for instructions on how to install these libraries for different
    operating systems.
 
-3) Installing also the 'gsl' and 'tcmalloc' libraries is recommended but not
-   mandatory.
+4) Installing also the 'gsl', 'fftw' and 'tcmalloc' libraries is recommended but
+   not mandatory.
 
-4) Installing the GNU debugger 'gdb' is recommended but not mandatory.
+5) Installing the GNU debugger 'gdb' is recommended but not mandatory.
 
 
 Install the 'phy++' library with CMake
@@ -65,11 +67,11 @@ Appendix: installing dependencies (ubuntu and derivatives)
 
 Installing the required libraries in ubuntu-based systems is easy. You first
 need to run the following command:
-  sudo apt-get install wcslib-dev libcfitsio3-dev libccfits-dev liblapack-dev
+  sudo apt-get install cmake wcslib-dev libcfitsio3-dev libccfits-dev liblapack-dev
 
-If you want, you can also install the GSL by adding 'libgsl-dev' to the above
-command, tcmalloc by addind 'google-perftools', and the GNU debugger with
-'gdb'.
+If you want, you can also install the optional (but recommanded) libraries and
+tools:
+  sudo apt-get install libgsl0-dev libgoogle-perftools-dev libfftw3-dev gdb
 
 Lastly, you will need to get a recent version of libclang.
 
@@ -121,3 +123,6 @@ http://www.gnu.org/software/gsl/
 
 tcmalloc (google perf tools):
 http://code.google.com/p/gperftools/
+
+fftw3:
+http://www.fftw.org/download.html
