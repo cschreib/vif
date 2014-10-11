@@ -1271,6 +1271,45 @@ bool solve_symmetric(vec2d& alpha, vec1d& beta) {
     return true;
 }
 
+extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
+    double* work, int* lwork, int* info);
+
+bool eigen_symmetric(vec2d& a, vec1d& vals) {
+    phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
+        a.dims, ")");
+
+    char jobz = 'V';
+    char uplo = 'U';
+    int n = a.dims[0];
+    int lda = n;
+    int info;
+
+    vals.resize(n);
+
+    int lw = n*64;
+    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+    // the Lapack User Guide.
+
+    vec1d work(lw);
+
+    dsyev_(&jobz, &uplo, &n, a.data.data(), &lda, vals.data.data(), work.data.data(),
+        &lw, &info);
+    if (info != 0) {
+        return false;
+    }
+
+    // Eigen vectors are now stored in 'a' with the following layout:
+    //
+
+    return true;
+}
+
+bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
+    vecs = a;
+    return eigen_symmetric(vecs, vals);
+}
+
 template<typename Type>
 void symmetrize(vec_t<2,Type>& alpha) {
     phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
@@ -1707,7 +1746,7 @@ double interpolate(double y1, double y2, double x1, double x2, double x) {
 // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
 // the arrays contains special values (NaN, inf, ...), all the points that would use these values
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-template<std::size_t DI, std::size_t DX, typename TypeX2 = double, typename TypeY = double,
+template<std::size_t DI = 1, std::size_t DX = 1, typename TypeX2 = double, typename TypeY = double,
     typename TypeX1 = double>
 auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_t<DX,TypeX2>& nx) ->
     vec_t<DX,decltype(y[0]*x[0])> {
@@ -1947,13 +1986,23 @@ vec1u convex_hull(const TX& x, const TY& y) {
     return res;
 }
 
+template<typename THX, typename THY>
+bool is_hull_closed(const vec1u& hull, const THX& hx, const THY& hy) {
+    using rtype = typename THX::rtype;
+    const auto eps = std::numeric_limits<rtype>::epsilon();
+    const uint_t hend = hull.size()-1;
+    return hull[0] == hull[hend] ||
+        (fabs(hx[hull[0]] - hx[hull[hend]]) < eps &&
+         fabs(hy[hull[0]] - hy[hull[hend]]) < eps);
+}
+
 template<typename TX, typename TY, typename THX, typename THY>
 bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, const THY& hy) {
     phypp_check(n_elements(hx) == n_elements(hy),
         "in_convex_hull requires same number of elements in 'hx' and 'hy'");
     phypp_check(n_elements(hx) >= 3,
         "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(hull[0] == hull[hull.size()-1],
+    phypp_check(is_hull_closed(hull, hx, hy),
         "in_convex_hull requires that the hull is closed");
 
     // Find out if the hull is built counter-clockwise or not
@@ -1979,7 +2028,7 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
         "in_convex_hull requires same number of elements in 'hx' and 'hy'");
     phypp_check(n_elements(hx) >= 3,
         "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(hull[0] == hull[hull.size()-1],
+    phypp_check(is_hull_closed(hull, hx, hy),
         "in_convex_hull requires that the hull is closed");
 
     // Find out if the hull is built counter-clockwise or not
@@ -2011,7 +2060,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
         "convex_hull_distance requires same number of elements in 'hx' and 'hy'");
     phypp_check(n_elements(hx) >= 3,
         "convex_hull_distance requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(hull[0] == hull[hull.size()-1],
+    phypp_check(is_hull_closed(hull, hx, hy),
         "convex_hull_distance requires that the hull is closed");
 
     // Find out if the hull is built counter-clockwise or not

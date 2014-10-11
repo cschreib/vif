@@ -150,7 +150,7 @@ vec2d mpfit_fdjac2(F&& deviate, const vec1d& xall, const vec1u& ifree, const vec
 
         vec1d xp = xall;
         xp[ip] += h[p];
-        vec1d fp = deviate(xp);
+        vec1d fp = flatten(deviate(xp));
 
         if (options.deriv[ip] == mpfit_options::deriv_backward ||
             options.deriv[ip] == mpfit_options::deriv_forward ||
@@ -160,7 +160,7 @@ vec2d mpfit_fdjac2(F&& deviate, const vec1d& xall, const vec1u& ifree, const vec
         } else {
             // Two sided derivative
             xp[ip] = xall[ip] - h[p];
-            vec1d fm = deviate(xp);
+            vec1d fm = flatten(deviate(xp));
             fjac(p,_) = (fp - fm)/(2.0*h[p]);
         }
     }
@@ -552,7 +552,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
 
     // Initialization
     vec1d x = xall[ifree];
-    vec1d fvec = deviate(xall);
+    vec1d fvec = flatten(deviate(xall));
     double fnorm = mpfit_enorm(fvec);
     double fnorm1 = fnorm;
     vec1d qtf(n);
@@ -726,7 +726,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
             xall[ifree] = wa2;
 
             // Evaluate the function at x+p and calculate its norm
-            wa4 = deviate(xall);
+            wa4 = flatten(deviate(xall));
             fnorm1 = mpfit_enorm(wa4);
 
             // Compute the scaled actual reduction
@@ -848,7 +848,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
     xall[ifree] = x;
 
     res.params = xall;
-    fvec = deviate(xall);
+    fvec = flatten(deviate(xall));
     fnorm = mpfit_enorm(fvec);
     res.chi2 = sqr(std::max(fnorm, fnorm1));
     res.iter = iter;

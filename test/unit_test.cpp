@@ -360,6 +360,20 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'match_dictionary' function");
+        vec1i t1 = {4,5,7,6,7,8,9};
+        vec1i t2 = {9,1,7,10,5};
+
+        vec1u id1, id2;
+        match_dictionary(t1, t2, id1, id2);
+        vec1u ids = sort(id1);
+        id1 = id1[ids]; id2 = id2[ids];
+
+        check(id1, "1, 2, 4, 6");
+        check(id2, "4, 2, 2, 0");
+    }
+
+    {
         print("'histogram' function");
         vec1d t = {1,2,3,4,5,5,8,9,6,fnan,5,7,4};
         vec2i bins = {{0,2,5,8,10}, {2,5,8,10,12}};
@@ -734,6 +748,23 @@ int main(int argc, char* argv[]) {
         invert(talpha);
         tbeta = mmul(talpha, tbeta);
         check(total(fabs(beta - tbeta)) > 1e-6, "0");
+    }
+
+    {
+        print("'eigen_symmetric' function");
+        vec2d alpha = identity_matrix(2);
+        alpha(0,1) = alpha(1,0) = -0.1;
+        alpha(1,1) += 0.3;
+
+        vec1d vals;
+        vec2d vecs;
+        check(eigen_symmetric(alpha, vals, vecs), "1");
+        vec1d u1 = vecs(0,_), v1 = vecs(1,_);
+        vec1d u2 = mmul(alpha, u1)/u1, v2 = mmul(alpha, v1)/v1;
+        check(fabs(u2[0] - u2[1]) < 1e-6, "1");
+        check(fabs(v2[0] - v2[1]) < 1e-6, "1");
+        check(fabs(u2[0] - vals[0]) < 1e-6, "1");
+        check(fabs(v2[0] - vals[1]) < 1e-6, "1");
     }
 
     {

@@ -1563,15 +1563,17 @@ double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1
     for (uint_t i : range(filter.lam)) {
         nlam.push_back(filter.lam.data[i]);
         nrs.push_back(filter.res.data[i]*interpolate(
-            sed.data[j-1], sed.data[j], lam.data[j-1], lam.data[j], filter.lam.data[i]
+            dref<TypeS>(sed.data[j-1]), dref<TypeS>(sed.data[j]),
+            dref<TypeL>(lam.data[j-1]), dref<TypeL>(lam.data[j]),
+            filter.lam.data[i]
         ));
 
         if (i != nflam - 1) {
             while (lam[j] < filter.lam.data[i+1]) {
-                nlam.push_back(lam.data[j]);
-                nrs.push_back(sed.data[j]*interpolate(
+                nlam.push_back(dref<TypeL>(lam.data[j]));
+                nrs.push_back(dref<TypeS>(sed.data[j])*interpolate(
                     filter.res.data[i], filter.res.data[i+1],
-                    filter.lam.data[i], filter.lam.data[i+1], lam.data[j]
+                    filter.lam.data[i], filter.lam.data[i+1], dref<TypeL>(lam.data[j])
                 ));
                 ++j;
             }

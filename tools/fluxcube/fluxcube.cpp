@@ -2,7 +2,7 @@
 
 void print_help();
 
-bool get_flux(int argc, char* argv[], const vec3d& cube);
+bool get_flux(int argc, char* argv[], const std::string& file);
 bool get_logdisp(int argc, char* argv[], const vec3d& cube);
 bool run_batch(int argc, char* argv[], const std::string& file);
 
@@ -21,8 +21,7 @@ int main(int argc, char* argv[]) {
     std::string op = argv[2];
 
     if (op == "flux") {
-        vec3d cube; fits::read(file, cube);
-        return get_flux(argc-2, argv+2, cube) ? 0 : 1;
+        return get_flux(argc-2, argv+2, file) ? 0 : 1;
     } else if (op == "logdisp") {
         vec3d cube; fits::read(file, cube);
         return get_logdisp(argc-2, argv+2, cube) ? 0 : 1;
@@ -32,6 +31,26 @@ int main(int argc, char* argv[]) {
         error("unknown operation '"+op+"'");
         return 1;
     }
+}
+
+template<std::size_t D, typename T>
+rtype_t<T> fstddev(const vec_t<D,T>& v) {
+    return stddev(v[where(finite(v))]);
+}
+
+template<std::size_t D, typename T>
+rtype_t<T> frms(const vec_t<D,T>& v) {
+    return rms(v[where(finite(v))]);
+}
+
+template<std::size_t D, typename T>
+rtype_t<T> fmean(const vec_t<D,T>& v) {
+    return mean(v[where(finite(v))]);
+}
+
+template<std::size_t D, typename T>
+rtype_t<T> fmedian(const vec_t<D,T>& v) {
+    return median(v[where(finite(v))]);
 }
 
 struct flux_extractor {
@@ -45,26 +64,32 @@ struct flux_extractor {
     vec2d psf_orig;
     vec2d psf;
     vec2b ipsf;
+    double psf_err_factor;
 
     bool update_masks_() {
         ipsf = fabs(psf) >= frac*max(fabs(psf));
         vec1u id = where(ipsf);
         if (id.empty()) {
+            psf_err_factor = dnan;
             error("no pixel to fit (frac=", frac,")");
             return false;
         }
+
+        psf_err_factor = 1.0/sqrt(total(sqr(psf[id])) - sqr(total(psf[id]))/id.size());
 
         return true;
     }
 
     bool config(program_arguments& pa, bool init = false) {
         std::string tpsf;
+        bool beam_smoothed = false;
+        float smooth_radius = fnan;
         bool med = false;
         bool norm = false;
 
         pa.read(arg_list(
             name(tpsf, "psf"), name(mea, "mean"), name(med, "median"), frac, norm, nbstrap,
-            name(tseed, "seed"), large_bg, residual
+            name(tseed, "seed"), large_bg, residual, beam_smoothed, smooth_radius
         ));
 
         if (med) mea = false;
@@ -81,6 +106,19 @@ struct flux_extractor {
                 psf /= max(fabs(psf));
             }
 
+            if (beam_smoothed) {
+                vec2d kernel;
+                if (finite(smooth_radius)) {
+                    kernel = gaussian_profile(psf.dims, smooth_radius);
+                } else {
+                    kernel = psf;
+                }
+                vec1u idz = where(kernel < 1e-5*max(fabs(kernel)));
+                kernel[idz] = 0.0;
+                psf = convolve2d(psf, kernel);
+                psf /= max(fabs(psf));
+            }
+
             psf_orig = psf;
 
             if (!update_masks_()) {
@@ -93,7 +131,44 @@ struct flux_extractor {
 
     vec2d img, res;
 
-    void extract(const vec3d& cube, double& flux, double& bg) {
+    const vec1s names = {"flux", "bg", "res_rms", "res_err"};
+    const uint_t nresult = names.size();
+
+    void extract(const vec2d& timg, vec1d& result) {
+        if (large_bg) {
+            vec1u id = where(finite(timg));
+            if (id.empty()) {
+                result = replicate(dnan, nresult);
+                error("no pixel to fit");
+                return;
+            }
+
+            auto r = linfit(timg[id], 1.0, 1.0, psf[id]*ipsf[id]);
+            result = replicate(dnan, nresult);
+            result[0] = r.params[1];
+            result[1] = r.params[0];
+        } else {
+            vec1u id = where(ipsf && finite(timg));
+            if (id.empty()) {
+                result = replicate(dnan, nresult);
+                error("no pixel to fit");
+                return;
+            }
+
+            auto r = linfit(timg[id], 1.0, 1.0, psf[id]);
+            result = replicate(dnan, nresult);
+            result[0] = r.params[1];
+            result[1] = r.params[0];
+        }
+
+        if (residual) {
+            res = timg - psf*result[0];
+            result[2] = stddev(res);
+            result[3] = result[2]*psf_err_factor;
+        }
+    }
+
+    void extract(const vec3d& cube, vec1d& result) {
         if (psf.dims[0] != cube.dims[1] || psf.dims[1] != cube.dims[2]) {
             int_t hxsize = cube.dims[1]/2;
             int_t hysize = cube.dims[2]/2;
@@ -101,8 +176,7 @@ struct flux_extractor {
             psf = subregion(psf_orig, {mid[0]-hxsize, mid[1]-hysize, mid[0]+hxsize, mid[1]+hysize});
 
             if (!update_masks_()) {
-                flux = dnan;
-                bg = dnan;
+                result = replicate(dnan, nresult);
                 return;
             }
         }
@@ -113,54 +187,31 @@ struct flux_extractor {
             img = qstack_median(cube);
         }
 
-        if (large_bg) {
-            vec1u id = where(finite(img));
-            if (id.empty()) {
-                flux = dnan;
-                bg = dnan;
-                error("no pixel to fit");
-                return;
-            }
-
-            auto r = linfit(img[id], 1.0, 1.0, psf[id]*ipsf[id]);
-            flux = r.params[1];
-            bg = r.params[0];
-        } else {
-            vec1u id = where(ipsf && finite(img));
-            if (id.empty()) {
-                flux = dnan;
-                bg = dnan;
-                error("no pixel to fit");
-                return;
-            }
-
-            auto r = linfit(img[id], 1.0, 1.0, psf[id]);
-            flux = r.params[1];
-            bg = r.params[0];
-        }
-
-        if (residual) {
-            res = img - psf*flux;
-        }
+        extract(img, result);
     }
 
-    void bootstrap(const vec3d& cube, double& flux, double& bg) {
+    void bootstrap(const vec3d& cube, vec1d& result, vec1d& err) {
         auto seed = make_seed(tseed);
 
-        vec1d fluxes, bgs;
+        vec2d rs; rs.reserve(nbstrap*nresult);
         uint_t nsrc = cube.dims[0];
         qstack_bootstrap(cube, nbstrap, nsrc/2, seed, [&](const vec3d& sub) {
-            double f, b;
-            extract(sub, f, b);
-            fluxes.push_back(f);
-            bgs.push_back(b);
+            vec1d tr;
+            extract(sub, tr);
+            rs.push_back(tr);
         });
 
-        fluxes = fluxes[where(finite(fluxes))];
-        bgs = bgs[where(finite(bgs))];
-
-        flux = stddev(fluxes)/sqrt(2);
-        bg = stddev(bgs)/sqrt(2);
+        result = replicate(dnan, nresult);
+        err = replicate(dnan, nresult);
+        for (uint_t i : range(nresult)) {
+            if (mea) {
+                result[i] = fmean(rs(_,i));
+            } else {
+                result[i] = fmedian(rs(_,i));
+            }
+            rs(_,i) -= result[i];
+            err[i] = frms(rs(_,i))/sqrt(2.0);
+        }
     }
 };
 
@@ -210,16 +261,16 @@ struct logdisp_extractor {
             imax = max_id(psf);
         } else {
             int_t x0 = psf.dims[0]/2, y0 = psf.dims[1]/2;
-            ipsf = generate_img({psf.dims[0], psf.dims[1]}, [&](int_t x, int_t y) {
+            ipsf = generate_img(psf.dims, [&](int_t x, int_t y) {
                 return sqr(x-x0) + sqr(y-y0) < sqr(raper[0]);
             });
             if (raper.size() == 3) {
-                opsf = generate_img({psf.dims[0], psf.dims[1]}, [&](int_t x, int_t y) {
+                opsf = generate_img(psf.dims, [&](int_t x, int_t y) {
                     double r = sqr(x-x0) + sqr(y-y0);
                     return r > sqr(raper[1]) && r < sqr(raper[2]);
                 });
             } else if (raper.size() == 2) {
-                opsf = generate_img({psf.dims[0], psf.dims[1]}, [&](int_t x, int_t y) {
+                opsf = generate_img(psf.dims, [&](int_t x, int_t y) {
                     return sqr(x-x0) + sqr(y-y0) > sqr(raper[1]);
                 });
             } else {
@@ -401,7 +452,7 @@ struct logdisp_extractor {
     }
 };
 
-bool get_flux(int argc, char* argv[], const vec3d& cube) {
+bool get_flux(int argc, char* argv[], const std::string& file) {
     bool bstrap = false;
     bool residual = false;
     std::string out = "";
@@ -414,22 +465,60 @@ bool get_flux(int argc, char* argv[], const vec3d& cube) {
         if (!ex.config(pa)) return false;
     }
 
-    print("nsrc: ", cube.dims[0]);
 
-    double flux, bg;
-    ex.extract(cube, flux, bg);
-    if (bstrap) {
-        double flux_err, bg_err;
-        ex.bootstrap(cube, flux_err, bg_err);
-        print("flux: ", flux, " +/- ", flux_err);
-        print("background: ", bg, " +/- ", bg_err);
+    vec1d res;
+    if (fits::is_cube(file)) {
+        vec3d cube; fits::read(file, cube);
+        print("nsrc: ", cube.dims[0]);
+
+        ex.extract(cube, res);
+        if (bstrap) {
+            vec1d bs, bs_err;
+            ex.bootstrap(cube, bs, bs_err);
+            auto do_print = [&](vec1u ids) {
+                for (uint_t i : ids) {
+                    print(ex.names[i]+": ", res[i], " +/- ", bs_err[i], ", sys: ", bs[i]);
+                }
+            };
+
+            do_print({0,1});
+            if (residual) {
+                do_print({2,3});
+            }
+        } else {
+            auto do_print = [&](vec1u ids) {
+                for (uint_t i : ids) {
+                    print(ex.names[i]+": ", res[i]);
+                }
+            };
+
+            do_print({0,1});
+            if (residual) {
+                do_print({2,3});
+            }
+        }
     } else {
-        print("flux: ", flux);
-        print("background: ", bg);
+        vec2d img; fits::read(file, img);
+        ex.extract(img, res);
+        print("single image");
+
+        auto do_print = [&](vec1u ids) {
+            for (uint_t i : ids) {
+                print(ex.names[i]+": ", res[i]);
+            }
+        };
+
+        do_print({0,1});
+        if (residual) {
+            do_print({2,3});
+        }
     }
 
     if (!out.empty()) {
-        fits::write(out+".fits", ex.img);
+        file::mkdir(file::get_directory(out));
+        if (fits::is_cube(file)) {
+            fits::write(out+".fits", ex.img);
+        }
         if (residual) {
             fits::write(out+"_res.fits", ex.res);
         }
@@ -466,6 +555,7 @@ bool get_logdisp(int argc, char* argv[], const vec3d& cube) {
     }
 
     if (!out.empty()) {
+        file::mkdir(file::get_directory(out));
         fits::write(out+".fits", ex.dsp);
         if (residual) {
             fits::write(out+"_res.fits", ex.res);
@@ -491,7 +581,7 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
         }
 
         vec1s cfile;
-        vec1d flux, bg, flux_err, bg_err;
+        vec2d rs, bs, bs_err;
 
         vec1s lines; {
             std::ifstream bfile(file);
@@ -505,6 +595,12 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             }
         }
 
+        rs.reserve(lines.size()*ex.nresult);
+        if (bstrap) {
+            bs.reserve(lines.size()*ex.nresult);
+            bs_err.reserve(lines.size()*ex.nresult);
+        }
+
         auto pg = progress_start(lines.size());
         for (auto& line : lines) {
             vec1s args = trim(split(line, " "));
@@ -516,12 +612,15 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             }
 
             vec3d cube; fits::read(cfile.data.back(), cube);
-            flux.push_back(0.0); bg.push_back(0.0);
-            ex.extract(cube, flux.data.back(), bg.data.back());
+            vec1d tr;
+            ex.extract(cube, tr);
+            rs.push_back(tr);
 
             if (bstrap) {
-                flux_err.push_back(0.0); bg_err.push_back(0.0);
-                ex.bootstrap(cube, flux_err.data.back(), bg_err.data.back());
+                vec1d tb, tbe;
+                ex.bootstrap(cube, tb, tbe);
+                bs.push_back(tb);
+                bs_err.push_back(tbe);
             }
 
             progress(pg);
@@ -534,7 +633,11 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             file::mkdir(file::get_directory(out));
         }
 
-        fits::write_table(out, ftable(cfile, flux, bg, flux_err, bg_err));
+        if (bstrap) {
+            fits::write_table(out, ftable(cfile, ex.names, name(rs, "result"), bs, bs_err));
+        } else {
+            fits::write_table(out, ftable(cfile, ex.names, name(rs, "result")));
+        }
 
         return true;
     } else if (op == "logdisp") {
@@ -610,7 +713,7 @@ void print_help() {
     using namespace format;
 
     print("fluxcube v1.0");
-    header("Usage: fluxcube cube.fits [options]");
+    header("Usage: fluxcube <cube>.fits <operation> [options]");
     header("Available operations:");
     bullet("flux", "perform mean or median stacking then PSF fitting to get the flux");
     bullet("logdisp", "perform MAD stacking then PSF fitting to get the lognormal dispersion");
