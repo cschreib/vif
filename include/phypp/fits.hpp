@@ -645,6 +645,52 @@ namespace fits {
         dec = world[ids2];
     }
 
+    template<typename T = double, typename U = double, typename V, typename W,
+        typename enable = typename std::enable_if<!is_vec<T>::value &&
+            !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
+    void ad2xy(const fits::wcs& w, const T& ra, const U& dec, V& x, W& y) {
+        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+
+        vec1d world(2);
+        world[0] = ra;
+        world[1] = dec;
+
+        vec1d pos(2);
+
+        double phi, theta;
+        std::vector<double> itmp(2);
+        int stat;
+
+        wcss2p(w.w, 1, 2, world.data.data(), &phi, &theta, itmp.data(),
+            pos.data.data(), &stat);
+
+        x = pos[0];
+        y = pos[1];
+    }
+
+    template<typename T = double, typename U = double, typename V, typename W,
+        typename enable = typename std::enable_if<!is_vec<T>::value &&
+            !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
+    void xy2ad(const fits::wcs& w, const T& x, const U& y, V& ra, W& dec) {
+        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+
+        vec1d map(2);
+        map[0] = x;
+        map[1] = y;
+
+        vec1d world(2);
+
+        double phi, theta;
+        std::vector<double> itmp(2);
+        int stat;
+
+        wcsp2s(w.w, 1, 2, map.data.data(), itmp.data(), &phi, &theta,
+            world.data.data(), &stat);
+
+        ra = world[0];
+        dec = world[1];
+    }
+
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v) {
