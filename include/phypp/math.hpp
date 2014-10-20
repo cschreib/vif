@@ -38,9 +38,9 @@ template<typename T>
 vec1u rgen(T n) {
     phypp_check(n >= 0, "'rgen(n)' needs a positive or null value for 'n' (got ", n, ")");
 
-    vec1u v = uintarr(n);
-    for (uint_t k = 0; k < uint_t(n); ++k) {
-        v[k] = k;
+    vec1u v(n);
+    for (uint_t k : range(uint_t(n))) {
+        v.data[k] = k;
     }
 
     return v;
@@ -51,16 +51,16 @@ template<typename T, typename U>
 vec_t<1,T> rgen(T i, U j) {
     if (i < T(j)) {
         uint_t n = j-i+1;
-        vec_t<1,T> v = arr<T>(n);
-        for (uint_t k = 0; k < n; ++k) {
-            v[k] = i+k;
+        vec_t<1,T> v(n);
+        for (uint_t k : range(n)) {
+            v.data[k] = i+k;
         }
         return v;
     } else {
         uint_t n = i-j+1;
-        vec_t<1,T> v = arr<T>(n);
-        for (uint_t k = 0; k < n; ++k) {
-            v[k] = i-k;
+        vec_t<1,T> v(n);
+        for (uint_t k : range(n)) {
+            v.data[k] = i-k;
         }
         return v;
     }
@@ -72,15 +72,12 @@ vec1d rgen(T i, U j, V n) {
     phypp_check(n >= 0, "'rgen(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
 
     if (n == 1) {
-        vec1d v = dindgen(1);
-        v[0] = i;
-        return v;
+        return {i};
     } else {
-        vec1d v = dindgen(n);
-
+        vec1d v(n);
         double dx = (j-i)/double(n-1);
-        for (uint_t k = 0; k < uint_t(n); ++k) {
-            v[k] = i + k*dx;
+        for (uint_t k : range(uint_t(n))) {
+            v.data[k] = i + k*dx;
         }
 
         return v;
@@ -92,15 +89,12 @@ vec1d rgen_log(T i, U j, V n) {
     phypp_check(n >= 0, "'rgen_log(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
 
     if (n == 1) {
-        vec1d v = dindgen(1);
-        v[0] = i;
-        return v;
+        return {i};
     } else {
-        vec1d v = dindgen(n);
-
+        vec1d v(n);
         double dx = log10(j/i)/double(n-1);
-        for (uint_t k = 0; k < uint_t(n); ++k) {
-            v[k] = i*e10(k*dx);
+        for (uint_t k : range(uint_t(n))) {
+            v.data[k] = i*e10(k*dx);
         }
 
         return v;
@@ -116,7 +110,7 @@ template<typename T>
 vec_t<2,T> make_bins(T mi, T ma, uint_t n) {
     vec_t<2,T> b(2,n);
     T d = (ma - mi)/n;
-    for (uint_t i = 0; i < n; ++i) {
+    for (uint_t i : range(n)) {
         b(0,i) = mi + i*d;
         b(1,i) = mi + (i+1)*d;
     }
@@ -128,17 +122,21 @@ template<typename T>
 vec_t<2,T> make_bins(const vec_t<1,T>& v) {
     vec_t<2,T> b(2, v.size()-1);
     vec1u ids = uindgen(v.size()-1);
-    b(0,_) = v[ids];
-    b(1,_) = v[ids+1];
+    for (uint_t i : range(b.dims[1])) {
+        b(0,i) = dref<T>(v.data[ids.data[i]]);
+        b(1,i) = dref<T>(v.data[ids.data[i]+1]);
+    }
 
     return b;
 }
 
 template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
+    auto low = b[0];
+    auto up  = b[1];
     vec_t<Dim,bool> res(v.dims);
     for (uint_t i : range(v)) {
-        res[i] = v[i] >= b[0] && v[i] < b[1];
+        res.data[i] = dref<Type>(v.data[i]) >= low && dref<Type>(v.data[i]) < up;
     }
 
     return res;
@@ -440,13 +438,13 @@ vec_t<Dim-1,double> mean(const vec_t<Dim,Type>& v, uint_t dim) {
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> median(vec_t<Dim,Type> v) {
+rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
     using vtype = typename vec_t<Dim,Type>::vtype;
     using dtype = typename vtype::value_type;
 
     uint_t nwrong = 0;
-    for (uint_t i : range(v)) {
-        nwrong += nan(v[i]);
+    for (auto& t : v) {
+        nwrong += nan(t);
     }
 
     if (nwrong == v.size()) return dnan;
@@ -464,27 +462,8 @@ rtype_t<Type> median(vec_t<Dim,Type> v) {
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
-    using vtype = typename vec_t<Dim,Type>::vtype;
-    using dtype = typename vtype::value_type;
-
-    uint_t nwrong = 0;
-    for (uint_t i : range(v)) {
-        nwrong += nan(v[i]);
-    }
-
-    if (nwrong == v.size()) return dnan;
-
-    std::ptrdiff_t offset = (v.size()-nwrong)/2;
-    std::nth_element(v.data.begin(), v.data.begin() + offset, v.data.end(),
-        [](dtype i, dtype j) {
-            if (nan(dref<Type>(i))) return false;
-            if (nan(dref<Type>(j))) return true;
-            return dref<Type>(i) < dref<Type>(j);
-        }
-    );
-
-    return *(v.begin() + offset);
+rtype_t<Type> median(vec_t<Dim,Type> v) {
+    return inplace_median(v);
 }
 
 template<std::size_t Dim, typename Type>

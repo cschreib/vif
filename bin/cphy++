@@ -49,6 +49,9 @@ fi
 TMP_OUTPUT=${PHYPP_TEMP_DIR}/._reflex_$(basename $FILE)
 
 # Parse file and generate reflection data
+if [ $PHYPP_SHOW_CMD -eq 1 ]; then
+    echo $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+fi
 $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
 
 if [ $? -ne 0 ]; then
@@ -57,6 +60,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # Compile the generated file to build the final executable
+if [ $PHYPP_SHOW_CMD -eq 1 ]; then
+    echo $PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
+fi
 $PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
 
 if [ $? -ne 0 ]; then
