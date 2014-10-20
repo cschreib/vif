@@ -2048,6 +2048,19 @@ vec1u uniq(const vec_t<Dim,Type>& v, const vec1u& sid) {
 
 // For each value of the first vector, return 'true' if it is equal to any of the values of the
 // second vector, and 'false' otherwise.
+template<typename Type1, std::size_t Dim2, typename Type2 = Type1>
+bool equal(const Type1& v1, const vec_t<Dim2,Type2>& v2) {
+    for (uint_t j = 0; j < v2.size(); ++j) {
+        if (v1 == v2[j]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// For each value of the first vector, return 'true' if it is equal to any of the values of the
+// second vector, and 'false' otherwise.
 template<std::size_t Dim1, typename Type1, std::size_t Dim2 = Dim1, typename Type2 = Type1>
 vec_t<Dim1,bool> equal(const vec_t<Dim1,Type1>& v1, const vec_t<Dim2,Type2>& v2) {
     vec_t<Dim1,bool> r(v1.dims);
