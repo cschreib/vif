@@ -29,6 +29,8 @@ void print_help() {
         "estimated 1-sigma error on the measured flux in 'img' (will be converted to a weight by "
         "inverse square root)");
     bullet("pos", "[string, optional] prefix of the RA and Dec coordinates in 'cat'");
+    bullet("ids", "[2 x integer, optional] inclusive range of IDs to stack in the catalog (or cube)");
+    bullet("   ", "note: use '*' to symbolize the beginning or the end");
     bullet("mean", "[flag] perform mean stacking (default)");
     bullet("median", "[flag] perform median stacking");
     bullet("cube", "[flag] do not stack, just ouput the cube");
@@ -61,6 +63,24 @@ void print_help() {
     print("");
 }
 
+bool read_ids(std::string sid, uint_t& id, uint_t pos, uint_t star, uint_t idmax) {
+    if (sid == "*") {
+        id = star;
+    } else {
+        if (!from_string(sid, id)) {
+            error("could not read 'ids[", pos, "]': '", sid, "'");
+            return false;
+        }
+
+        if (id >= idmax) {
+            error("'ids[", pos, "]' is too large, only ", idmax, " sources available");
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
@@ -84,10 +104,12 @@ int main(int argc, char* argv[]) {
     uint_t nbstrap = 200;
     uint_t sbstrap = 0;
     uint_t tseed = 42;
+    vec1s cids;
 
     read_args(argc, argv, arg_list(
         out, cat, img, wht, err, pos, hsize, median, mean, bstrap, nbstrap, sbstrap,
-        randomize, name(tseed, "seed"), name(tcube, "cube"), verbose, keepnan
+        randomize, name(tseed, "seed"), name(tcube, "cube"), verbose, keepnan,
+        name(cids, "ids")
     ));
 
     auto seed = make_seed(tseed);
@@ -140,6 +162,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    if (!cids.empty() && cids.size() != 2) {
+        error("'ids' option needs exactly 2 elements (min and maximum ID)");
+        return 1;
+    }
+
     struct {
         vec1d ra, dec;
     } fcat;
@@ -147,6 +174,17 @@ int main(int argc, char* argv[]) {
     if (!cat.empty()) {
         std::string posh = pos.empty() ? "" : pos+".";
         fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
+
+        if (!cids.empty()) {
+            vec1u tcids(2);
+            if (!read_ids(cids[0], tcids[0], 0, 0, fcat.ra.size())) return 1;
+            if (!read_ids(cids[1], tcids[1], 1, fcat.ra.size()-1, fcat.ra.size())) return 1;
+
+            vec1u tid = rgen(tcids[0], tcids[1]);
+            fcat.ra = fcat.ra[tid];
+            fcat.dec = fcat.dec[tid];
+        }
+
         vec1u id = where(finite(fcat.ra) && finite(fcat.dec));
         fcat.ra = fcat.ra[id];
         fcat.dec = fcat.dec[id];
@@ -181,6 +219,16 @@ int main(int argc, char* argv[]) {
     if ((wht.empty() && err.empty()) || median) {
         if (cat.empty()) {
             fits::read(img, cube);
+
+            if (!cids.empty()) {
+                vec1u tcids(2);
+                if (!read_ids(cids[0], tcids[0], 0, 0, cube.dims[0])) return 1;
+                if (!read_ids(cids[1], tcids[1], 1, cube.dims[0]-1, cube.dims[0])) return 1;
+
+                vec1u tid = rgen(tcids[0], tcids[1]);
+                cube = cube(tid, _, _);
+            }
+
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
             vec1u ids;
@@ -214,6 +262,17 @@ int main(int argc, char* argv[]) {
         if (cat.empty()) {
             fits::read(img, cube);
             fits::read(wht.empty() ? err : wht, wcube);
+
+            if (!cids.empty()) {
+                vec1u tcids(2);
+                if (!read_ids(cids[0], tcids[0], 0, 0, cube.dims[0])) return 1;
+                if (!read_ids(cids[1], tcids[1], 1, cube.dims[0]-1, cube.dims[0])) return 1;
+
+                vec1u tid = rgen(tcids[0], tcids[1]);
+                cube = cube(tid, _, _);
+                wcube = wcube(tid, _, _);
+            }
+
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
             vec1u ids;
