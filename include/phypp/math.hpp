@@ -418,9 +418,9 @@ uint_t count(const vec_t<Dim,bool>& b) {
     return n;
 }
 
-template<std::size_t Dim>
-double fraction(const vec_t<Dim,bool>& b) {
-    return total(b)/b.size();
+template<std::size_t Dim, typename T>
+double fraction_of(const vec_t<Dim,T>& b) {
+    return mean(b);
 }
 
 template<std::size_t Dim, typename Type>
