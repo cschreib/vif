@@ -8,7 +8,9 @@ int main(int argc, char* argv[]) {
     std::string nbase = "";
     std::string dir = "";
     double radius = dnan;
+    vec1u thsize;
     vec1s show;
+    vec1s bands;
     bool show_rgb = false;
     bool verbose = false;
 
@@ -20,7 +22,8 @@ int main(int argc, char* argv[]) {
     std::string clist = argv[1];
 
     read_args(argc-1, argv+1, arg_list(
-        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, show_rgb, radius
+        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, show_rgb, radius,
+        name(thsize, "hsize"), bands
     ));
 
     if (!dir.empty()) {
@@ -147,7 +150,17 @@ int main(int argc, char* argv[]) {
 
     if (verbose) print("map list loaded successfully");
 
+    if (thsize.size() > 1 && bands.size() > 1 && thsize.size() != bands.size()) {
+        error("mismatch between number of bands and cutout sizes (",
+            bands.size(), " vs. ", thsize.size(), ")");
+        return 1;
+    }
+
+    uint_t ib = 0;
     for (uint_t b : range(mname)) {
+        if (!bands.empty() && !equal(mname[b], bands)) continue;
+        ++ib;
+
         if (verbose) print(mname[b]);
 
         fits::header hdr = fits::read_header(mfile[b]);
@@ -169,6 +182,10 @@ int main(int argc, char* argv[]) {
             fits::ad2xy(wcs, {ra[0], ra[0] + radius/3600.0}, {dec[0], dec[0]}, x, y);
             hsize = ceil(sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0])));
             if (hsize < 10) hsize = 10;
+        } else if (thsize.size() > 1) {
+            hsize = thsize[ib];
+        } else if (thsize.size() == 1) {
+            hsize = thsize[0];
         } else {
             // Use default cutout size
             hsize = msize[b];
@@ -196,7 +213,10 @@ int main(int argc, char* argv[]) {
                 note("WCS for the cutout will be wrong");
                 note("parsing '"+mname[b]+"'");
             }
-            fits::write(out+name[ids[i]]+mname[b]+".fits", cube(i,_,_), nhdr);
+
+            std::string file_name = out+name[ids[i]]+mname[b]+".fits";
+            if (verbose) print("writing ", file_name);
+            fits::write(file_name, cube(i,_,_), nhdr);
         }
 
         vec1b ncov(ra.size());
@@ -214,7 +234,10 @@ int main(int argc, char* argv[]) {
                 note("WCS for the cutout will be wrong");
                 note("parsing '"+mname[b]+"'");
             }
-            fits::write(out+name[ids[i]]+mname[b]+".fits", empty, nhdr);
+
+            std::string file_name = out+name[ids[i]]+mname[b]+".fits";
+            if (verbose) print("writing ", file_name);
+            fits::write(file_name, empty, nhdr);
         }
     }
 
