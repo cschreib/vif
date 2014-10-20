@@ -8,17 +8,21 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    // Program arguments
     std::string pos = "";
     std::string out;
     uint_t tseed = 42;
     uint_t max_iter = 1000;
     uint_t nsrc = 0;
     std::string model = "uniform";
+    bool verbose = false;
 
-    read_args(argc-1, argv+1, arg_list(pos, out, nsrc, max_iter, model, name(tseed, "seed")));
+    read_args(argc-1, argv+1, arg_list(pos, out, nsrc, max_iter, model,
+        name(tseed, "seed"), verbose));
 
     auto seed = make_seed(tseed);
 
+    // Read input position list
     vec1d hra, hdec;
     if (!pos.empty() && !end_with(pos, ".")) pos = pos+".";
     fits::read_table(argv[1], pos+"ra", hra, pos+"dec", hdec);
@@ -31,8 +35,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Compute convex hull of input positions
     vec1u hull = convex_hull(hra, hdec);
 
+    // Compute bounding box of input positions
     vec1d rra = {min(hra), max(hra)};
     vec1d rdec = {min(hdec), max(hdec)};
 
@@ -85,23 +91,29 @@ int main(int argc, char* argv[]) {
         // Choose the number of objects to generate
         // If the wanted number of object is too low, the algorithm will not work
         // well, so we generate more and will randomly pick among those afterwards.
-        uint_t nsim;
-        if (nsrc > 1000) {
-            nsim = nsrc;
-        } else {
-            nsim = 1000;
-        }
+        uint_t nsim = std::max(nsrc, uint_t(1000));
 
         // Compute initial parameters for the algorithm
-        double r0 = std::max(rra[1]-rra[0], rdec[1]-rdec[0])/2.0;
+        // The initial radius is taken from the diagonals of the RA/Dec bounding box.
+        double r0 = std::max(
+            angdist(rra[0], rdec[0], rra[1], rdec[1]),
+            angdist(rra[0], rdec[1], rra[1], rdec[0])
+        )/3600.0/2.0;
+
+        // The number of object per cell
         uint_t eta = ceil(pow(nsim, 1.0/nlevel));
         if (eta <= 1) {
             eta = 2;
             nlevel = ceil(log10(nsim)/log10(eta));
         }
 
+        // The radius shrinking factor
         double lambda = pow(eta, 1.0/(2.0 - power));
-        print("power: ", power, ", nlevel: ", nlevel, ", eta: ", eta, ", lambda: ", lambda);
+
+        if (verbose) {
+            print("power: ", power, ", nlevel: ", nlevel,
+                ", eta: ", eta, ", lambda: ", lambda, ", r0=", r0);
+        }
 
         auto get_fill = [&hra, &hdec, &hull, &seed, max_iter](double ra0, double dec0,
             double r, uint_t num) mutable {
@@ -197,11 +209,7 @@ int main(int argc, char* argv[]) {
                 append(dec1, tdec1);
             }
 
-            fits::write_table("level"+strn(l+1)+".fits",
-                "ra", ra, "dec", dec,
-                "ra1", ra1, "dec1", dec1);
-
-            // Use the newly generated position as input for the next level
+            // Use the newly generated positions as input for the next level
             std::swap(ra, ra1);
             std::swap(dec, dec1);
         }
@@ -232,5 +240,5 @@ int main(int argc, char* argv[]) {
 
 void print_help() {
     print("randsrc v1.0");
-    print("usage: randsrc cat.fits [seed,out,nsrc,pos,max_iter]");
+    print("usage: randsrc cat.fits [seed,out,nsrc,pos,max_iter,model,verbose]");
 }
