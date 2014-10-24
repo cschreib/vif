@@ -79,11 +79,20 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
+        // Read the inflation amplitude
+        double inflate;
+        if (vmodel.size() <= 2) {
+            inflate = 10;
+        } else if (!from_string(vmodel[2], inflate)) {
+            error("could not read inflation amplitude from '", vmodel[2], "'");
+            return 1;
+        }
+
         // Read the number of levels to use in the generator
         uint_t nlevel;
         if (vmodel.size() <= 2) {
             nlevel = 5;
-        } else if (!from_string(vmodel[2], nlevel)) {
+        } else if (!from_string(vmodel[3], nlevel)) {
             error("could not read number of levels from '", vmodel[2], "'");
             return 1;
         }
@@ -91,11 +100,11 @@ int main(int argc, char* argv[]) {
         // Choose the number of objects to generate
         // If the wanted number of object is too low, the algorithm will not work
         // well, so we generate more and will randomly pick among those afterwards.
-        uint_t nsim = std::max(nsrc, uint_t(1000));
+        uint_t nsim = sqr(inflate)*std::max(nsrc, uint_t(1000));
 
         // Compute initial parameters for the algorithm
         // The initial radius is taken from the diagonals of the RA/Dec bounding box.
-        double r0 = std::max(
+        double r0 = inflate*std::max(
             angdist(rra[0], rdec[0], rra[1], rdec[1]),
             angdist(rra[0], rdec[1], rra[1], rdec[0])
         )/3600.0/2.0;
