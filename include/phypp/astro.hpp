@@ -312,6 +312,45 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     return res;
 }
 
+// Compute 2 point angular correlation function of a data set with positions 'ra' and 'dec'
+// against a set of random positions uniformly drawn in the same region of space 'rra' and
+// 'rdec'. For good results, there must be at least as many random positions as there are
+// input positions, and results get better the more random positions are given.
+// Compute the correlation in given bins of angular separation (in arcseconds).
+// Uses the Landy-Szalay estimator, computed with a brute force approach.
+template<std::size_t NR1, typename TR1, std::size_t ND1, typename TD1,
+    std::size_t NR2, typename TR2, std::size_t ND2, typename TD2, typename TB>
+vec1d angcorrel(const vec_t<NR1,TR1>& ra, const vec_t<ND1,TD1>& dec,
+    const vec_t<NR2,TR2>& rra, const vec_t<ND2,TD2>& rdec, const vec_t<2,TB>& bins) {
+    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match for the "
+        "input catalog (", ra.dims, " vs ", dec.dims, ")");
+    phypp_check(rra.dims == rdec.dims, "RA and Dec dimensions do not match for the "
+        "random catalog (", rra.dims, " vs ", rdec.dims, ")");
+
+    uint_t nbin = bins.dims[1];
+
+    vec1d dd(nbin);
+    vec1d dr(nbin);
+    vec1d rr(nbin);
+
+    for (uint_t i : range(ra)) {
+        vec1d d = angdist(ra, dec, ra[i], dec[i]);
+        dd += histogram(d, bins);
+
+        d = angdist(rra, rdec, ra[i], dec[i]);
+        dr += histogram(d, bins);
+    }
+
+    for (uint_t i : range(rra))
+        d = angdist(rra, rdec, rra[i], rdec[i]);
+        rr += histogram(d, bins);
+    }
+
+    vec1d dbin = bins(1,_) - bins(0,_);
+    double norm = rra.size()/double(ra.size());
+    return ((dd*sqr(norm) - dr*norm) + (rr - dr*norm))/(rr*dbin);
+}
+
 // Convert a set of sexagesimal coordinates ('hh:mm:ss.ms') into degrees
 bool sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
     vec1s starr1 = split(sra, ":");
