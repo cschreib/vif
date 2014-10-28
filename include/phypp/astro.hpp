@@ -318,10 +318,10 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 // input positions, and results get better the more random positions are given.
 // Compute the correlation in given bins of angular separation (in arcseconds).
 // Uses the Landy-Szalay estimator, computed with a brute force approach.
-template<std::size_t NR1, typename TR1, std::size_t ND1, typename TD1,
-    std::size_t NR2, typename TR2, std::size_t ND2, typename TD2, typename TB>
-vec1d angcorrel(const vec_t<NR1,TR1>& ra, const vec_t<ND1,TD1>& dec,
-    const vec_t<NR2,TR2>& rra, const vec_t<ND2,TD2>& rdec, const vec_t<2,TB>& bins) {
+template<std::size_t N1, typename TR1, typename TD1,
+    std::size_t N2, typename TR2, typename TD2, typename TB>
+vec1d angcorrel(const vec_t<N1,TR1>& ra, const vec_t<N1,TD1>& dec,
+    const vec_t<N2,TR2>& rra, const vec_t<N2,TD2>& rdec, const vec_t<2,TB>& bins) {
     phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match for the "
         "input catalog (", ra.dims, " vs ", dec.dims, ")");
     phypp_check(rra.dims == rdec.dims, "RA and Dec dimensions do not match for the "
@@ -341,8 +341,8 @@ vec1d angcorrel(const vec_t<NR1,TR1>& ra, const vec_t<ND1,TD1>& dec,
         dr += histogram(d, bins);
     }
 
-    for (uint_t i : range(rra))
-        d = angdist(rra, rdec, rra[i], rdec[i]);
+    for (uint_t i : range(rra)) {
+        vec1d d = angdist(rra, rdec, rra[i], rdec[i]);
         rr += histogram(d, bins);
     }
 
