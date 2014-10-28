@@ -1534,7 +1534,7 @@ vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_
 // that is has no hole (masked stars, ...) and the borders are not concave (no "zigzag" shape, ...).
 // If these hypotheses do not hold, use field_area_h2d instead.
 template<typename TX, typename TY, typename TH>
-double field_area_hull(const TX& ra, const TY& dec, const TH& hull) {
+double field_area_hull(const TH& hull, const TX& ra, const TY& dec) {
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
     decltype(1.0*ra[0]*dec[0]) area = 0;
@@ -1560,7 +1560,7 @@ double field_area_hull(const TX& ra, const TY& dec, const TH& hull) {
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
 double field_area_hull(const TX& ra, const TY& dec) {
-    return field_area_hull(ra, dec, convex_hull(ra, dec));
+    return field_area_hull(convex_hull(ra, dec), ra, dec);
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2] by iteratively
