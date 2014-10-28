@@ -351,6 +351,290 @@ vec1d angcorrel(const vec_t<N1,TR1>& ra, const vec_t<N1,TD1>& dec,
     return ((dd*sqr(norm) - dr*norm) + (rr - dr*norm))/(rr*dbin);
 }
 
+struct randpos_status {
+    bool success = true;
+    std::string failure;
+};
+
+struct randpos_uniform_options {
+    uint_t nsrc = 1000;
+    uint_t max_iter = 1000;
+};
+
+template<std::size_t N1, typename TR1, typename TD1, typename TSeed, typename F>
+randpos_status randpos_uniform(TSeed& seed, vec1d rra, vec1d rdec, F&& in_region,
+    vec_t<N1,TR1>& ra, vec_t<N1,TD1>& dec, randpos_uniform_options options) {
+
+    randpos_status status;
+
+    if (options.nsrc == 0) {
+        // Nothing to do...
+        ra.clear(); dec.clear();
+        return status;
+    }
+
+    ra = (randomu(seed, options.nsrc) - 0.5)*(rra[1] - rra[0]) + mean(rra);
+    dec = (randomu(seed, options.nsrc) - 0.5)*(rdec[1] - rdec[0]) + mean(rdec);
+
+    vec1u bid = where(!in_region(ra, dec));
+    uint_t iter = 0;
+    while (!bid.empty() && iter < options.max_iter) {
+        ra[bid] = (randomu(seed, bid.size()) - 0.5)*(rra[1] - rra[0]) + mean(rra);
+        dec[bid] = (randomu(seed, bid.size()) - 0.5)*(rdec[1] - rdec[0]) + mean(rdec);
+        bid = bid[where(!in_region(ra[bid], dec[bid]))];
+        ++iter;
+    }
+
+    if (iter == options.max_iter) {
+        status.success = false;
+        status.failure = "maximum number of iterations reached "
+            "("+strn(options.max_iter)+"): try increasing the max_iter value or "
+            "check that the provided ranges in RA and Dec overlap the requested region";
+        return status;
+    }
+
+    return status;
+}
+
+struct randpos_power_options {
+    double power = 1.0;
+    uint_t levels = 5;
+    double inflate = 1.0;
+    double overload = 1.0;
+    uint_t nsrc = 1000;
+    uint_t max_iter = 1000;
+};
+
+template<std::size_t N1, typename TR1, typename TD1, typename TSeed>
+randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double r0,
+    vec_t<N1,TR1>& ra, vec_t<N1,TD1>& dec, randpos_power_options options) {
+
+    randpos_status status;
+
+    if (options.nsrc == 0) {
+        // Nothing to do...
+        ra.clear(); dec.clear();
+        return status;
+    }
+
+    // If asked, inflate the initial generation radius
+    double rr0 = options.inflate*r0;
+
+    // Choose the number of objects to generate
+    uint_t nsim = options.overload*options.nsrc;
+    // Increase it to compensate area inflation
+    double inflate_fudge_factor = 1.1;
+    nsim = ceil(nsim*sqr(options.inflate)*inflate_fudge_factor);
+
+    // If the wanted number of object is too low, the algorithm will not work
+    // well, so we generate more and will randomly pick among those afterwards.
+    if (nsim < 1000) nsim = 1000;
+
+    // The number of object per cell
+    uint_t eta = ceil(pow(nsim, 1.0/options.levels));
+    if (eta <= 1) {
+        eta = 2;
+        options.levels = ceil(log10(nsim)/log10(eta));
+    }
+
+    // The radius shrinking factor
+    double lambda = pow(eta, 1.0/(2.0 - options.power));
+
+    auto in_circle = [&ra0, &dec0, rr0](vec1d ra, vec1d dec, double threshold) {
+        return angdist_less(ra, dec, ra0, dec0, (rr0+threshold)*3600.0);
+    };
+
+    auto get_fill = [&in_circle, &seed](double ra1, double dec1,
+        double r1, uint_t num, double threshold) mutable {
+
+        vec1d tdec = (randomu(seed, num) - 0.5)*2*r1 + dec1;
+        vec1d tra  = (randomu(seed, num) - 0.5)*2*r1/cos(tdec*dpi/180.0) + ra1;
+
+        vec1u id = where(angdist_less(tra, tdec, ra1, dec1, r1*3600.0));
+
+        return fraction_of(in_circle(tra[id], tdec[id], threshold));
+    };
+
+    auto gen = [&in_circle, &seed, &options](double ra1, double dec1,
+        double r1, uint_t num, double threshold, vec1d& tra, vec1d& tdec) mutable {
+
+        tdec = (randomu(seed, num) - 0.5)*2*r1 + dec1;
+        tra  = (randomu(seed, num) - 0.5)*2*r1/cos(tdec*dpi/180.0) + ra1;
+
+        vec1u bid = where(!in_circle(tra, tdec, threshold) ||
+            !angdist_less(tra, tdec, ra1, dec1, r1*3600.0));
+
+        uint_t iter = 0;
+        while (!bid.empty() && iter < options.max_iter) {
+            tdec[bid] = (randomu(seed, bid.size()) - 0.5)*2*r1 + dec1;
+            tra[bid]  = (randomu(seed, bid.size()) - 0.5)*2*r1/cos(tdec[bid]*dpi/180.0) + ra1;
+            bid = bid[where(!in_circle(tra[bid], tdec[bid], threshold) ||
+                !angdist_less(tra[bid], tdec[bid], ra1, dec1, r1*3600.0))];
+            ++iter;
+        }
+
+        return bid.size();
+    };
+
+    // Initialize the algorithm with random positions in the whole area
+    uint_t bad = gen(ra0, dec0, rr0, eta, (options.levels <= 1 ? 0.0 : rr0), ra, dec);
+    if (bad != 0) {
+        status.success = false;
+        status.failure = "could not place all random positions "
+            "("+strn(bad)+"/"+strn(eta)+") in initial radius "
+            "("+strn(rr0*3600)+"\", "+strn(ra0)+", "+strn(dec0)+")";
+        return status;
+    }
+
+    for (int_t l : range(options.levels-1)) {
+        // For each position, generate new objects within a "cell" of radius 'r1'
+        double r1 = rr0*pow(lambda, -l-1);
+        double rth = (l == options.levels-2 ? 0.0 : 0.8*r1/lambda);
+
+        // First, compute the filling factor of each cell, i.e. what fraction of the
+        // area of the cell is inside the convex hull. Each cell will then only
+        // generate this fraction of objects, in order not to introduce higher densities
+        // close to the borders of the field.
+        vec1d fill(ra.size());
+        for (uint_t i : range(ra)) {
+            fill[i] = get_fill(ra[i], dec[i], r1, 100u, rth);
+        }
+
+        // Normalize filling factors so that the total number of generated object
+        // is kept constant.
+        fill /= mean(fill);
+
+        // Assign a number of objects to each positions
+        vec1u ngal = floor(eta*fill);
+        vec1d dngal = eta*fill - ngal;
+        uint_t miss0 = pow(eta, l+2) - total(ngal);
+        uint_t miss = miss0;
+
+        // Randomly assign fractional number of objects to make sure that the total
+        // number of object is preserved.
+        uint_t iter = 0;
+        while (miss != 0 && iter < options.max_iter) {
+            for (uint_t i : range(ra)) {
+                if (dngal[i] != 0.0 && randomu(seed) < dngal[i]) {
+                    ++ngal[i];
+                    dngal[i] = 0.0;
+
+                    --miss;
+                    if (miss == 0) break;
+                }
+            }
+
+            ++iter;
+        }
+
+        if (miss != 0) {
+            status.success = false;
+            status.failure = "could not reassign some fractional random positions "
+                "("+strn(miss)+"/"+strn(miss0)+") over the available positions "
+                "("+strn(ra.size())+", level="+strn(l+1)+")";
+            return status;
+        }
+
+        // Generate new positions
+        vec1d ra1, dec1;
+        for (uint_t i : range(ra)) {
+            if (ngal[i] == 0) continue;
+
+            vec1d tra1, tdec1;
+            bad = gen(ra[i], dec[i], r1, ngal[i], rth, tra1, tdec1);
+            if (bad != 0) {
+                status.success = false;
+                status.failure = "could not place all random positions "
+                    "("+strn(bad)+"/"+strn(eta)+") in level "+strn(l+1)+" "
+                    "radius ("+strn(r1*3600)+"\", "+strn(ra[i])+", "+strn(dec[i])+") "
+                    "and requested circle ("+strn(rr0*3600)+"\", "+strn(ra0)+", "+strn(dec0)+")";
+                return status;
+            }
+
+            append(ra1, tra1);
+            append(dec1, tdec1);
+        }
+
+        // Use the newly generated positions as input for the next level
+        std::swap(ra, ra1);
+        std::swap(dec, dec1);
+    }
+
+    // Remove sources outside of asked radius
+    vec1u idi = where(angdist_less(ra, dec, ra0, dec0, r0*3600.0));
+    if (idi.size() < options.nsrc) {
+        status.success = false;
+        status.failure = "too few generated positions end up in the requested circle "
+            "("+strn(idi.size())+" vs "+strn(options.nsrc)+"): try increasing the "
+            "'overload'";
+        return status;
+    }
+
+    // Trim catalog to match the input number of sources
+    vec1u fids = shuffle(idi, seed)[uindgen(options.nsrc)];
+    ra = ra[fids];
+    dec = dec[fids];
+
+    return status;
+}
+
+template<std::size_t N1, typename TR1, typename TD1,
+    std::size_t N2, typename TR2, typename TD2, typename TSeed>
+randpos_status randpos_power(TSeed& seed,
+    const vec1u& hull, const vec_t<N2,TR2>& hra, const vec_t<N2,TD2>& hdec,
+    vec_t<N1,TR1>& ra, vec_t<N1,TD1>& dec, randpos_power_options options) {
+
+    randpos_status status;
+
+    if (options.nsrc == 0) {
+        // Nothing to do...
+        ra.clear(); dec.clear();
+        return status;
+    }
+
+    // Compute bounding box of the provided hull
+    vec1d rra = {min(hra[hull]), max(hra[hull])};
+    vec1d rdec = {min(hdec[hull]), max(hdec[hull])};
+
+    // The initial radius is taken as the maximum distance from the field center.
+    double r0 = max(angdist(hra[hull], hdec[hull], mean(rra), mean(rdec)))/3600.0;
+
+    // Compute the ratio between the area of the generation circle and the final
+    // request convex hull to keep the source density constant
+    double filling_factor = dpi*sqr(r0)/field_area_hull(hull, hra, hdec);
+
+    // Add some overload to make sure that enough objects are created
+    double circle_overload = 4.0;
+
+    auto circle_options = options;
+    circle_options.nsrc *= circle_overload*filling_factor*sqr(options.inflate);
+    if (circle_options.nsrc < 3000) circle_options.nsrc = 3000;
+    circle_options.inflate = 1.0;
+
+    status = randpos_power_circle(
+        seed, mean(rra), mean(rdec), options.inflate*r0, ra, dec, circle_options
+    );
+
+    if (!status.success) {
+        return status;
+    }
+
+    vec1u idi = where(in_convex_hull(ra, dec, hull, hra, hdec));
+    if (idi.size() < options.nsrc) {
+        status.success = false;
+        status.failure = "too few generated positions end up in the requested hull "
+            "("+strn(idi.size())+" vs "+strn(options.nsrc)+"): try increasing the "
+            "'overload'";
+        return status;
+    }
+
+    vec1u fids = shuffle(idi, seed)[uindgen(options.nsrc)];
+    ra = ra[fids];
+    dec = dec[fids];
+
+    return status;
+}
+
 // Convert a set of sexagesimal coordinates ('hh:mm:ss.ms') into degrees
 bool sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
     vec1s starr1 = split(sra, ":");
