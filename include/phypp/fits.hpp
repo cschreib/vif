@@ -13,9 +13,13 @@
 namespace fits {
     using namespace CCfits;
 
-    struct exception {
+    struct exception : std::exception {
         explicit exception(const std::string& m) : msg(m) {}
         std::string msg;
+
+        const char* what() const noexcept override {
+            return msg.c_str();
+        }
     };
 
     template<typename T>
