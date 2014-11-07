@@ -301,7 +301,7 @@ namespace fits {
 
         try {
             fits_open_image(&fptr, filename.c_str(), READONLY, &status);
-            phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+            phypp_check_cfitsio(status, "cannot open FITS file '"+filename+"'");
 
             // Read the header as a string
             char* hstr = nullptr;
@@ -317,6 +317,18 @@ namespace fits {
             error("reading: "+filename);
             error(e.msg);
             throw;
+        }
+    }
+
+    fits::header read_header(const std::string& filename, uint_t sect) {
+        if (end_with(filename, ".sectfits")) {
+            vec1s sects = read_sectfits(filename);
+            phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
+                "' (only ", sects.size()," available)");
+
+            return read_header(sects[sect]);
+        } else {
+            return read_header(filename);
         }
     }
 
