@@ -730,6 +730,32 @@ namespace fits {
         dec = world[1];
     }
 
+    // Obtain the pixel size of a given image in arsec/pixel.
+    // Will fail (return false) if no WCS information is present in the image.
+    bool get_pixel_size(const std::string& file, double& aspix) {
+        if (end_with(file, ".sectfits")) {
+            vec1s sects = fits::read_sectfits(file);
+            return get_pixel_size(sects[0], aspix);
+        } else {
+            fits::header hdr = fits::read_header(file);
+            double rx = 0, ry = 0;
+            if (!fits::getkey(hdr, "CRPIX1", rx) || !fits::getkey(hdr, "CRPIX2", ry)) {
+                warning("could not extract WCS information (CRPIX1 & CRPIX2)");
+                note("parsing '", file, "'");
+                return false;
+            }
+
+            auto wcs = fits::wcs(hdr);
+
+            // Convert radius to number of pixels
+            vec1d r, d;
+            fits::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
+            aspix = angdist(r[0], d[0], r[1], d[1]);
+
+            return true;
+        }
+    }
+
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v) {
