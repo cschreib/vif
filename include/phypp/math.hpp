@@ -2122,4 +2122,81 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
     return res;
 }
 
+// Compute the angular distance between two RA/Dec positions [radian].
+// Assumes that RA & Dec coordinates are in radian.
+double angdistr(double ra1, double dec1, double ra2, double dec2) {
+    double sra = sin(0.5*(ra2 - ra1));
+    double sde = sin(0.5*(dec2 - dec1));
+    return 2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)));
+}
+
+// Compute the angular distance between two RA/Dec positions [arcsec].
+// Assumes that RA & Dec coordinates are in degrees.
+double angdist(double tra1, double tdec1, double tra2, double tdec2) {
+    const double d2r = 3.14159265359/180.0;
+    double ra1 = d2r*tra1, ra2 = d2r*tra2, dec1 = d2r*tdec1, dec2 = d2r*tdec2;
+    double sra = sin(0.5*(ra2 - ra1));
+    double sde = sin(0.5*(dec2 - dec1));
+    return 3600.0*2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)))/d2r;
+}
+
+// Compute the angular distance between two RA/Dec positions [arcsec].
+// Assumes that RA & Dec coordinates are in degrees.
+template<std::size_t N, typename TR1, typename TD1, typename TR2, typename TD2>
+vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
+    const vec_t<N,TR2>& tra2, const vec_t<N,TD2>& tdec2) {
+    phypp_check(tra1.dims == tdec1.dims, "first RA and Dec dimensions do not match (",
+        tra1.dims, " vs ", tdec1.dims, ")");
+    phypp_check(tra2.dims == tdec2.dims, "second RA and Dec dimensions do not match (",
+        tra2.dims, " vs ", tdec2.dims, ")");
+    phypp_check(tra1.dims == tra2.dims, "position sets dimensions do not match (",
+        tra1.dims, " vs ", tra2.dims, ")");
+
+    vec_t<N,double> res(tra1.dims);
+    for (uint_t i : range(tra1)) {
+        res[i] = angdist(tra1[i], tdec1[i], tra2[i], tdec2[i]);
+    }
+
+    return res;
+}
+
+// Compute the angular distance between two RA/Dec positions [arcsec].
+// Assumes that RA & Dec coordinates are in degrees.
+template<std::size_t N, typename TR1, typename TD1>
+vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
+    double tra2, double tdec2) {
+    phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
+        tra1.dims, " vs ", tdec1.dims, ")");
+
+    vec_t<N,double> res(tra1.dims);
+    for (uint_t i : range(tra1)) {
+        res[i] = angdist(tra1[i], tdec1[i], tra2, tdec2);
+    }
+
+    return res;
+}
+
+// Compute the angular distance between two RA/Dec positions [arcsec].
+// Assumes that RA & Dec coordinates are in degrees.
+template<std::size_t N, typename TR1, typename TD1>
+vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
+    double tra2, double tdec2, double radius) {
+    phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
+        tra1.dims, " vs ", tdec1.dims, ")");
+
+    const double d2r = 3.14159265359/180.0;
+    const double rrad = d2r*radius/3600.0;
+    const double crad = sqr(sin(rrad/2.0));
+
+    vec_t<N,bool> res(tra1.dims);
+    for (uint_t i : range(tra1)) {
+        double ra1 = d2r*tra1[i], ra2 = d2r*tra2, dec1 = d2r*tdec1[i], dec2 = d2r*tdec2;
+        double sra = sin(0.5*(ra2 - ra1));
+        double sde = sin(0.5*(dec2 - dec1));
+        res[i] = sqr(sde) + sqr(sra)*cos(dec2)*cos(dec1) < crad;
+    }
+
+    return res;
+}
+
 #endif
