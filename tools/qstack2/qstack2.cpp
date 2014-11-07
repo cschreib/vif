@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
     vec3f bs;
 
     qstack_params params;
-    params.keepnan = keepnan;
+    params.keep_nan = keepnan;
 
     if ((wht.empty() && err.empty()) || median) {
         if (cat.empty()) {
