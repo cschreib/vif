@@ -143,6 +143,8 @@ int main(int argc, char* argv[]) {
         for (auto i : idnm) {
             warning("no band named '", bands[i], "', skipping");
         }
+
+        bands = where(is_any_of(bands, mname));
     }
 
     uint_t ib = 0;
@@ -199,39 +201,51 @@ int main(int argc, char* argv[]) {
             fits::write(file_name, cube(i,_,_), nhdr);
         }
 
-        vec1b ncov(ra.size());
-        ncov[_] = true;
-        ncov[ids] = false;
-
-        ids = where(ncov);
+        // Create empty cutouts for non covered sources
+        vec1u nids = complement(ra, ids);
         vec2d empty(2*hsize + 1, 2*hsize + 1);
         empty[_] = dnan;
-        for (uint_t i : range(ids)) {
-            fits::header nhdr = fits::read_header(mfile[b], qout.sect[i]);
-            if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[i]) ||
-                !fits::setkey(nhdr, "CRPIX2", hsize+1+qout.dy[i]) ||
-                !fits::setkey(nhdr, "CRVAL1", ra[ids[i]]) ||
-                !fits::setkey(nhdr, "CRVAL2", dec[ids[i]])) {
+        for (uint_t i : range(nids)) {
+            fits::header nhdr = fits::read_header(mfile[b], 0);
+            if (!fits::setkey(nhdr, "CRPIX1", hsize+1) ||
+                !fits::setkey(nhdr, "CRPIX2", hsize+1) ||
+                !fits::setkey(nhdr, "CRVAL1", ra[nids[i]]) ||
+                !fits::setkey(nhdr, "CRVAL2", dec[nids[i]])) {
                 warning("could not set WCS information (CRPIX1, CRPIX2, CRVAL1, CRVAL2)");
                 note("WCS for the cutout will be wrong");
                 note("parsing '"+mname[b]+"'");
             }
 
-            std::string file_name = out+name[ids[i]]+mname[b]+".fits";
+            std::string file_name = out+name[nids[i]]+mname[b]+".fits";
             if (verbose) print("writing ", file_name);
             fits::write(file_name, empty, nhdr);
         }
     }
 
+    if (show.size() == 1 && show[0] == "1") {
+        // No name specified: show all
+        if (bands.empty()) {
+            show = mname;
+        } else {
+            show = bands;
+        }
+    } else if (show.size() >= 1) {
+        if (bands.empty()) {
+            show = show[where(is_any_of(show, mname))];
+        } else {
+            show = show[where(is_any_of(show, bands))];
+        }
+    }
+
     if (show.size() > 0) {
         if (ra.size() != 1) {
-            warning("can only display sources with DS9 for single objects, not catalogs");
-        } else {
-            if (show.size() == 1 && show[0] == "1") {
-                // No name specified: show all
-                show = mname;
+            if (show.size() > 1) {
+                warning("cannot display multiple bands for multiple sources with DS9");
+                note("either ask for only one band to be shown, or extract sources one at a time");
+            } else {
+                spawn("ds9 -tile "+collapse(out+name[0]+show+".fits "));
             }
-
+        } else {
             if (show_rgb) {
                 if (show.size() > 3 && show_rgb) {
                     warning("cannot display more than 3 images at the same time in RGB mode, only "
