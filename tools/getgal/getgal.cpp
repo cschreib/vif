@@ -102,7 +102,6 @@ int main(int argc, char* argv[]) {
 
     vec1s mname;
     vec1s mfile;
-    vec1u msize;
 
     std::ifstream mlist(clist);
     uint_t l = 0;
@@ -117,20 +116,11 @@ int main(int argc, char* argv[]) {
         vec1s spl = trim(split(line, "="));
         if (spl.size() != 2) {
             error("wrong format for l."+strn(l)+": '"+line+"'");
-            note("expected: map_code_name = map_file, cutout_size");
+            note("expected: map_code_name = map_file");
             return 1;
         }
 
-        vec1s spl2 = trim(split(spl[1], ","));
-        if (spl2.size() != 2) {
-            error("wrong format for l."+strn(l)+": '"+line+"'");
-            note("expected: map_code_name = map_file, cutout_size");
-            return 1;
-        }
-
-        spl[1] = dir+spl2[0];
-        append(spl, spl2[rgen(1,spl2.size()-1)]);
-
+        spl[1] = dir+spl[1];
         if (!file::exists(spl[1])) {
             error("could not find '"+spl[1]+"'");
             return 1;
@@ -138,14 +128,6 @@ int main(int argc, char* argv[]) {
 
         mname.push_back(spl[0]);
         mfile.push_back(spl[1]);
-
-        uint_t hsize;
-        if (!from_string(spl[2], hsize)) {
-            error("could not convert '"+spl[2]+"' to a cutout size (in pixels)");
-            return 1;
-        }
-
-        msize.push_back(hsize);
     }
 
     if (verbose) print("map list loaded successfully");
@@ -156,11 +138,16 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    vec1u idnm = where(!is_any_of(bands, mname));
+    if (!idnm.empty()) {
+        for (auto i : idnm) {
+            warning("no band named '", bands[i], "', skipping");
+        }
+    }
+
     uint_t ib = 0;
     for (uint_t b : range(mname)) {
-        if (!bands.empty() && !equal(mname[b], bands)) {
-            warning("no band named '", mname[b], "'");
-        }
+        if (!bands.empty() && !is_any_of(mname[b], bands)) continue;
 
         ++ib;
 
@@ -175,8 +162,8 @@ int main(int argc, char* argv[]) {
                 if (hsize < 10) hsize = 10;
             } else {
                 warning("could not read WCS of '", mfile[b], "'");
-                note("cutout size has been set to 20 pixels");
-                hsize = 20;
+                note("cutout size has been set to default (50 pixels)");
+                hsize = 50;
             }
         } else if (thsize.size() > 1) {
             hsize = thsize[ib];
@@ -184,7 +171,7 @@ int main(int argc, char* argv[]) {
             hsize = thsize[0];
         } else {
             // Use default cutout size
-            hsize = msize[b];
+            hsize = 50;
         }
 
         qstack_params p;
