@@ -158,30 +158,26 @@ int main(int argc, char* argv[]) {
 
     uint_t ib = 0;
     for (uint_t b : range(mname)) {
-        if (!bands.empty() && !equal(mname[b], bands)) continue;
+        if (!bands.empty() && !equal(mname[b], bands)) {
+            warning("no band named '", mname[b], "'");
+        }
+
         ++ib;
 
         if (verbose) print(mname[b]);
 
-        fits::header hdr = fits::read_header(mfile[b]);
-        double rx = 0, ry = 0;
-        bool bad_wcs = false;
-        if (!fits::getkey(hdr, "CRPIX1", rx) || !fits::getkey(hdr, "CRPIX2", ry)) {
-            warning("could not extract WCS information (CRPIX1 & CRPIX2)");
-            note("WCS for the cutout will be wrong");
-            note("parsing '"+mname[b]+"'");
-            bad_wcs = true;
-        }
-
-        auto wcs = fits::wcs(hdr);
-
         int_t hsize;
         if (finite(radius)) {
             // Convert radius to number of pixels
-            vec1d x, y;
-            fits::ad2xy(wcs, {ra[0], ra[0] + radius/3600.0}, {dec[0], dec[0]}, x, y);
-            hsize = ceil(sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0])));
-            if (hsize < 10) hsize = 10;
+            double aspix;
+            if (fits::get_pixel_size(mfile[b], aspix)) {
+                hsize = ceil(radius/aspix);
+                if (hsize < 10) hsize = 10;
+            } else {
+                warning("could not read WCS of '", mfile[b], "'");
+                note("cutout size has been set to 20 pixels");
+                hsize = 20;
+            }
         } else if (thsize.size() > 1) {
             hsize = thsize[ib];
         } else if (thsize.size() == 1) {
@@ -191,25 +187,22 @@ int main(int argc, char* argv[]) {
             hsize = msize[b];
         }
 
-        vec1d x, y;
-        fits::ad2xy(wcs, ra, dec, x, y);
-        x = round(x);
-        y = round(y);
-        vec1d crx = rx - x + hsize + 1;
-        vec1d cry = ry - y + hsize + 1;
-
         qstack_params p;
-        p.keepnan = true;
+        p.keep_nan = true;
+        p.save_offsets = true;
+        p.save_section = true;
         vec3d cube;
         vec1u ids;
 
-        qstack(ra, dec, mfile[b], hsize, cube, ids, p);
+        qstack_output qout = qstack(ra, dec, mfile[b], hsize, cube, ids, p);
 
         for (uint_t i : range(ids)) {
-            fits::header nhdr = hdr;
-            if (!bad_wcs && (!fits::setkey(nhdr, "CRPIX1", crx[ids[i]]) ||
-                !fits::setkey(nhdr, "CRPIX2", cry[ids[i]]))) {
-                warning("could not set WCS information (CRPIX1 & CRPIX2)");
+            fits::header nhdr = fits::read_header(mfile[b], qout.sect[i]);
+            if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[i]) ||
+                !fits::setkey(nhdr, "CRPIX2", hsize+1+qout.dy[i]) ||
+                !fits::setkey(nhdr, "CRVAL1", ra[ids[i]]) ||
+                !fits::setkey(nhdr, "CRVAL2", dec[ids[i]])) {
+                warning("could not set WCS information (CRPIX1, CRPIX2, CRVAL1, CRVAL2)");
                 note("WCS for the cutout will be wrong");
                 note("parsing '"+mname[b]+"'");
             }
@@ -227,10 +220,12 @@ int main(int argc, char* argv[]) {
         vec2d empty(2*hsize + 1, 2*hsize + 1);
         empty[_] = dnan;
         for (uint_t i : range(ids)) {
-            fits::header nhdr = hdr;
-            if (!bad_wcs && (!fits::setkey(nhdr, "CRPIX1", crx[ids[i]]) ||
-                !fits::setkey(nhdr, "CRPIX2", cry[ids[i]]))) {
-                warning("could not set WCS information (CRPIX1 & CRPIX2)");
+            fits::header nhdr = fits::read_header(mfile[b], qout.sect[i]);
+            if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[i]) ||
+                !fits::setkey(nhdr, "CRPIX2", hsize+1+qout.dy[i]) ||
+                !fits::setkey(nhdr, "CRVAL1", ra[ids[i]]) ||
+                !fits::setkey(nhdr, "CRVAL2", dec[ids[i]])) {
+                warning("could not set WCS information (CRPIX1, CRPIX2, CRVAL1, CRVAL2)");
                 note("WCS for the cutout will be wrong");
                 note("parsing '"+mname[b]+"'");
             }
