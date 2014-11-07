@@ -272,6 +272,29 @@ namespace fits {
         }
     }
 
+    vec1s read_sectfits(const std::string& filename) {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            throw fits::exception("could not find file '"+filename+"'");
+        }
+
+        std::string dir = file::get_directory(filename);
+
+        vec1s files;
+        std::string line;
+        while (std::getline(file, line)) {
+            if (!line.empty() && line[0] != '#') {
+                files.push_back(dir+line);
+            }
+        }
+
+        if (files.empty()) {
+            throw fits::exception("empty sectfits '"+filename+"'");
+        }
+
+        return files;
+    }
+
     fits::header read_header(const std::string& filename) {
         fitsfile* fptr;
         int status = 0;
