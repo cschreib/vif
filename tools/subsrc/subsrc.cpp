@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     }
 
     vec1u id = where(
-        (include.empty() ? !equal(cat.id, exclude) : equal(cat.id, include)) &&
+        (include.empty() ? !is_any_of(cat.id, exclude) : is_any_of(cat.id, include)) &&
         finite(cat.flux(_,ib[0])) && cat.flux(_,ib[0]) > 0.0
     );
 

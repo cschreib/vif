@@ -183,8 +183,8 @@ int main(int argc, char* argv[]) {
         vec1u cid = complement(b, id);
         check(cid, "0, 2, 4");
 
-        print("'equal' function");
-        check(where(equal(i, {3, 1})), "1, 3");
+        print("'is_any_of' function");
+        check(where(is_any_of(i, {3, 1})), "1, 3");
     }
 
     {
