@@ -337,7 +337,8 @@ namespace file {
 
     template<typename I>
     bool read_value_(I& in, double& v, std::string& fallback) {
-        // std::istream will fail to extract a float/double value where the string is 'INF' or 'NAN'
+        // std::istream will fail to extract a float/double value where the string is
+        // 'INF', 'NAN', 'NULL', or any other text
         auto pos = in.tellg();
         if (!(in >> v)) {
             in.clear();
@@ -353,6 +354,9 @@ namespace file {
                 return true;
             } else if (s == "-INF" || s == "INF-") {
                 v = -dinf;
+                return true;
+            } else if (s == "NULL") {
+                v = dnan;
                 return true;
             }
 
