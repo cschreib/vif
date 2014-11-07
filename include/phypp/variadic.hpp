@@ -326,11 +326,11 @@ struct return_type<R (T::*)(Args...) const> {
 
 // Check if the provided type T matches any type in the list
 template<typename T, typename U, typename ... Args>
-struct is_any_of :
-    std::integral_constant<bool, std::is_same<T,U>::value || is_any_of<T,Args...>::value> {};
+struct is_any_type_of :
+    std::integral_constant<bool, std::is_same<T,U>::value || is_any_type_of<T,Args...>::value> {};
 
 template<typename T, typename U>
-struct is_any_of<T,U> : std::is_same<T,U> {};
+struct is_any_type_of<T,U> : std::is_same<T,U> {};
 
 #endif
 
