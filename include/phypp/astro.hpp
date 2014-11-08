@@ -235,6 +235,99 @@ auto mag2uJy(const T& x, double zp = 23.9) -> decltype(e10(0.4*(zp - x))) {
     return e10(0.4*(zp - x));
 }
 
+// Compute the area covered by a field given a set of source coordinates [deg^2] and pre-computed
+// convex hull (as obtained from convex_hull() with the same coordinates).
+// Coordinates are assumed to be given in degrees.
+// NOTE: this algorithm assumes that the field is well characterized by a *convex* hull, meaning
+// that is has no hole (masked stars, ...) and the borders are not concave (no "zigzag" shape, ...).
+// If these hypotheses do not hold, use field_area_h2d instead.
+template<typename TX, typename TY, typename TH>
+double field_area_hull(const TH& hull, const TX& ra, const TY& dec) {
+    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+
+    decltype(1.0*ra[0]*dec[0]) area = 0;
+
+    auto d2r = dpi/180.0;
+    typename TX::effective_type hx = ra[hull]*d2r;
+    typename TY::effective_type hy = dec[hull]*d2r;
+    uint_t nh = hull.size();
+    for (uint_t i = 2; i < nh; ++i) {
+        double e1 = angdistr(hx[0],   hy[0],   hx[i-1], hy[i-1]);
+        double e2 = angdistr(hx[i-1], hy[i-1], hx[i],   hy[i]);
+        double e3 = angdistr(hx[i],   hy[i],   hx[0],   hy[0]);
+        double p = 0.5*(e1 + e2 + e3);
+        area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
+    }
+
+    area /= d2r*d2r;
+
+    return area;
+}
+
+// Compute the area covered by a field given a set of source coordinates [deg^2].
+// Coordinates are assumed to be given in degrees.
+template<typename TX, typename TY>
+double field_area_hull(const TX& ra, const TY& dec) {
+    return field_area_hull(convex_hull(ra, dec), ra, dec);
+}
+
+// Compute the area covered by a field given a set of source coordinates [deg^2] by iteratively
+// building a 2d histogram of point sources.
+// Coordinates are assumed to be given in degrees.
+template<typename TX, typename TY>
+double field_area_h2d(const TX& ra, const TY& dec) {
+    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+
+    // Optimal bin size
+    // If field is perfectly uniform, then all cells of the field will contain 'optinum' objects
+    const uint_t optinum = 10;
+
+    if (ra.size() < 2*optinum) {
+        // Too few sources, fallback to hull based approach
+        return field_area_hull(ra, dec);
+    }
+
+    // Get rough extents of the field
+    double min_ra  = min(ra),  max_ra  = max(ra);
+    double min_dec = min(dec), max_dec = max(dec);
+    double rough_area = (angdist(min_ra, min_dec, max_ra, min_dec)/3600.0)*
+                        (angdist(min_ra, min_dec, min_ra, max_dec)/3600.0);
+
+    double dr = sqrt(optinum)*sqrt(rough_area/ra.size());
+
+    // Since the field is possibly not uniform, we have to introduce a tolerence threshold.
+    uint_t threshold = 0.5*optinum;
+
+    // Now define the grid
+    uint_t nra  = ceil((max_ra  - min_ra)/dr);
+    uint_t ndec = ceil((max_dec - min_dec)/dr);
+    vec2d rb = make_bins(min_ra,  max_ra,  nra);
+    vec2d db = make_bins(min_dec, max_dec, ndec);
+
+    // Compute the area occupied by a cell
+    double cell_area = (rb(1,0) - rb(0,0))*(db(1,0) - db(0,0));
+
+    // Build the 2d histogram
+    vec2u counts = histogram2d(ra, dec, rb, db);
+
+    // Sum up the areas of all cells with counts above the threshold
+    return cell_area*total(counts > threshold);
+}
+
+// Compute the area covered by a field given a set of source coordinates [deg^2].
+// Coordinates are assumed to be given in degrees.
+template<typename TX, typename TY>
+double field_area(const TX& ra, const TY& dec) {
+    return field_area_h2d(ra, dec);
+}
+
+// Compute the area covered by a field given a set of source coordinates [deg^2].
+// Coordinates are assumed to be given in degrees.
+template<typename T>
+double field_area(const T& t) {
+    return field_area(t.ra, t.dec);
+}
+
 // Compute 2 point angular correlation function of a data set with positions 'ra' and 'dec'
 // against a set of random positions uniformly drawn in the same region of space 'rra' and
 // 'rdec'. For good results, there must be at least as many random positions as there are
@@ -1847,93 +1940,6 @@ vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_
     }
 
     return bs;
-}
-
-// Compute the area covered by a field given a set of source coordinates [deg^2] and pre-computed
-// convex hull (as obtained from convex_hull() with the same coordinates).
-// Coordinates are assumed to be given in degrees.
-// NOTE: this algorithm assumes that the field is well characterized by a *convex* hull, meaning
-// that is has no hole (masked stars, ...) and the borders are not concave (no "zigzag" shape, ...).
-// If these hypotheses do not hold, use field_area_h2d instead.
-template<typename TX, typename TY, typename TH>
-double field_area_hull(const TH& hull, const TX& ra, const TY& dec) {
-    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
-
-    decltype(1.0*ra[0]*dec[0]) area = 0;
-
-    auto d2r = dpi/180.0;
-    typename TX::effective_type hx = ra[hull]*d2r;
-    typename TY::effective_type hy = dec[hull]*d2r;
-    uint_t nh = hull.size();
-    for (uint_t i = 2; i < nh; ++i) {
-        double e1 = angdistr(hx[0],   hy[0],   hx[i-1], hy[i-1]);
-        double e2 = angdistr(hx[i-1], hy[i-1], hx[i],   hy[i]);
-        double e3 = angdistr(hx[i],   hy[i],   hx[0],   hy[0]);
-        double p = 0.5*(e1 + e2 + e3);
-        area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
-    }
-
-    area /= d2r*d2r;
-
-    return area;
-}
-
-// Compute the area covered by a field given a set of source coordinates [deg^2].
-// Coordinates are assumed to be given in degrees.
-template<typename TX, typename TY>
-double field_area_hull(const TX& ra, const TY& dec) {
-    return field_area_hull(convex_hull(ra, dec), ra, dec);
-}
-
-// Compute the area covered by a field given a set of source coordinates [deg^2] by iteratively
-// building a 2d histogram of point sources.
-// Coordinates are assumed to be given in degrees.
-template<typename TX, typename TY>
-double field_area_h2d(const TX& ra, const TY& dec) {
-    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
-
-    // Get rough extents of the field
-    double min_ra  = min(ra),  max_ra  = max(ra);
-    double min_dec = min(dec), max_dec = max(dec);
-    double rough_area = (angdist(min_ra, min_dec, max_ra, min_dec)/3600.0)*
-                        (angdist(min_ra, min_dec, min_ra, max_dec)/3600.0);
-
-    // Optimal bin size
-    // If field is perfectly uniform, then all cells of the field will contain 'optinum' objects
-    uint_t optinum = 10;
-    double dr = sqrt(optinum)*sqrt(rough_area/ra.size());
-
-    // Since the field is possibly not uniform, we have to introduce a tolerence threshold.
-    uint_t threshold = 0.5*optinum;
-
-    // Now define the grid
-    uint_t nra  = (max_ra  - min_ra)/dr;
-    uint_t ndec = (max_dec - min_dec)/dr;
-    vec2d rb = make_bins(min_ra,  max_ra,  nra);
-    vec2d db = make_bins(min_dec, max_dec, ndec);
-
-    // Compute the area occupied by a cell
-    double cell_area = (rb(0,1) - rb(0,0))*(db(0,1) - db(0,0));
-
-    // Build the 2d histogram
-    vec2u counts = histogram2d(ra, dec, rb, db);
-
-    // Sum up the areas of all cells with counts above the threshold
-    return cell_area*total(counts > threshold);
-}
-
-// Compute the area covered by a field given a set of source coordinates [deg^2].
-// Coordinates are assumed to be given in degrees.
-template<typename TX, typename TY>
-double field_area(const TX& ra, const TY& dec) {
-    return field_area_h2d(ra, dec);
-}
-
-// Compute the area covered by a field given a set of source coordinates [deg^2].
-// Coordinates are assumed to be given in degrees.
-template<typename T>
-double field_area(const T& t) {
-    return field_area(t.ra, t.dec);
 }
 
 struct filter_t {
