@@ -72,8 +72,9 @@ int main(int argc, char* argv[]) {
     uint_t thread = 1;
     bool   verbose = false;
     bool   quiet = false;
+    bool   brute = false;
 
-    read_args(argc, argv, arg_list(cats, output, nth, thread, verbose, quiet, pos));
+    read_args(argc, argv, arg_list(cats, output, nth, thread, verbose, quiet, pos, brute));
 
     if (quiet) verbose = false;
 
@@ -112,6 +113,7 @@ int main(int argc, char* argv[]) {
         }
 
         qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose;
+        p.brute_force = brute;
         res = qxmatch(cat1, cat2, p);
     } else if (cats.size() == 1) {
         if (pos.empty()) pos = {""};
@@ -129,6 +131,7 @@ int main(int argc, char* argv[]) {
         }
 
         qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose;
+        p.brute_force = brute;
         res = qxmatch(cat, p);
     } else {
         if (!quiet) print_help();
