@@ -701,21 +701,18 @@ vec_t<Dim,bool> sex2deg(const vec_t<Dim,TSR>& sra, const vec_t<Dim,TSD>& sdec,
 
 // Convert a set of degree coordinates into sexagesimal format ('hh:mm:ss.ms')
 void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
-    int_t rah, ram, dech, decm;
-    double ras, decs;
-
     double signr = sign(ra);
     ra /= 15.0*signr;
-    rah = ra;
-    ram = (ra - rah)*60.0;
-    ras = ((ra - rah)*60 - ram)*60;
+    int_t  rah = ra;
+    int_t  ram = (ra - rah)*60.0;
+    double ras = ((ra - rah)*60 - ram)*60;
     rah *= signr;
 
     double signd = sign(dec);
     dec *= signd;
-    dech = dec;
-    decm = (dec - dech)*60.0;
-    decs = ((dec - dech)*60 - decm)*60;
+    int_t  dech = dec;
+    int_t  decm = (dec - dech)*60.0;
+    double decs = ((dec - dech)*60 - decm)*60;
     dech *= signd;
 
     auto format_sec = [](double sec) {
@@ -723,13 +720,13 @@ void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
         auto p = s.find_first_of('.');
         if (p == s.npos) {
             if (s.size() != 2) {
-                return "0"+ s + ".0";
+                return "0" + s + ".0";
             } else {
                 return s + ".0";
             }
         } else {
             if (p != 2u) {
-                return "0"+ s;
+                return "0" + s;
             } else {
                 return s;
             }
