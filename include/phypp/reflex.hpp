@@ -250,7 +250,7 @@ namespace reflex {
     template<typename T, typename U>
     using constify = typename std::conditional<std::is_const<T>::value, const U, U>::type;
 
-    #ifdef REFLECTION_STAGE
+    #ifdef NO_REFLECTION
     template<typename T>
     struct struct_t {
         constify<T,data_t>& data;
@@ -291,7 +291,7 @@ namespace reflex {
 
     template<>
     struct wrap_t<true> {
-        #ifdef REFLECTION_STAGE
+        #ifdef NO_REFLECTION
         static empty_t empty;
         template<typename T>
         static auto wrap(T& t) -> decltype(struct_t<T>{empty._reflex}) {
@@ -306,7 +306,7 @@ namespace reflex {
         #endif
     };
 
-    #ifdef REFLECTION_STAGE
+    #ifdef NO_REFLECTION
     empty_t wrap_t<true>::empty;
     #endif
 

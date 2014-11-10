@@ -4,6 +4,8 @@ T="$(date +%s%N)"
 
 DEBUG=0
 OPTIMIZE=0
+PROFILE=0
+TIME=0
 FILE=''
 OUTPUT=''
 NEXT_IS_OUTPUT=0
@@ -17,6 +19,10 @@ for arg in "$@"; do
             DEBUG=1
         elif [ $arg = "optimize" ]; then
             OPTIMIZE=1
+        elif [ $arg = "profile" ]; then
+            PROFILE=1
+        elif [ $arg = "time" ]; then
+            TIME=1
         elif [ $arg = "-o" ]; then
             NEXT_IS_OUTPUT=1
         else
@@ -45,18 +51,36 @@ fi
 if [ $OPTIMIZE -eq 1 ]; then
     OPTIONS="$OPTIONS $PHYPP_COMPILER_OPT_FLAGS"
 fi
-
-TMP_OUTPUT=${PHYPP_TEMP_DIR}/._reflex_$(basename $FILE)
-
-# Parse file and generate reflection data
-if [ $PHYPP_SHOW_CMD -eq 1 ]; then
-    echo $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+if [ $PROFILE -eq 1 ]; then
+    OPTIONS="$OPTIONS $PHYPP_COMPILER_PROF_FLAGS"
 fi
-$PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
 
-if [ $? -ne 0 ]; then
-    echo phy++: program \'$FILE\' FAILED to compile
-    exit
+T="$(date +%s%N)"
+PROG="$(basename $FILE .cpp)"
+
+if [ $PHYPP_DISABLE_REFLECTION -eq 0 ]; then
+    TMP_OUTPUT=${PHYPP_TEMP_DIR}/._reflex_$(basename $FILE)
+
+    # Parse file and generate reflection data
+    if [ $PHYPP_SHOW_CMD -eq 1 ]; then
+        echo $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+    fi
+    $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+
+    if [ $? -ne 0 ]; then
+        echo phy++: program \'$PROG\' FAILED to compile
+        exit
+    fi
+    if [ $TIME -eq 1 ]; then
+        TT="$(($(date +%s%N)-T))"
+        S="$((TT/1000000000))"
+        M="$((TT/1000000))"
+
+        printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
+            "$((S/60%60))" "$((S%60))" "${M}"
+    fi
+else
+    TMP_OUTPUT=$FILE
 fi
 
 # Compile the generated file to build the final executable
@@ -66,6 +90,14 @@ fi
 $PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
 
 if [ $? -ne 0 ]; then
-    echo phy++: program \'$FILE\' FAILED to compile
+    echo phy++: program \'$PROG\' FAILED to compile
     exit
+fi
+if [ $TIME -eq 1 ]; then
+    TT="$(($(date +%s%N)-T))"
+    S="$((TT/1000000000))"
+    M="$((TT/1000000))"
+
+    printf "phy++: program \'$PROG\' successfully compiled (%02d:%02d.%03d)\n" \
+        "$((S/60%60))" "$((S%60))" "${M}"
 fi

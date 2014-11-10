@@ -76,8 +76,20 @@ find_package(GooglePerfTools)
 set(PHYPP_ADD_COMPILER_FLAGS "")
 set(PHYPP_ADD_OPT_COMPILER_FLAGS "")
 
+# handle conditional reflection support
+if (NOT CLANG_FOUND AND NOT NO_REFLECTION)
+    message("note: the clang library could not be found: reflection of C++ structures will not be possible, but apart from that the library will function properly")
+endif()
+if (NO_REFLECTION)
+    message("note: the clang library has been disabled: reflection of C++ structures will not be possible, but apart from that the library will function properly")
+endif()
+if (NOT CLANG_FOUND OR NO_REFLECTION)
+    add_definitions(-DNO_REFLECTION)
+    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -DNO_REFLECTION")
+endif()
+
 # handle conditional GSL support
-if (NOT GSL_FOUND)
+if (NOT GSL_FOUND AND NOT NO_GSL)
     message("note: the GSL library could not be found: certain mathematical functions will not be available, but apart from that the library will function properly")
 endif()
 if (NO_GSL)
@@ -85,12 +97,13 @@ if (NO_GSL)
 endif()
 if (NOT GSL_FOUND OR NO_GSL)
     add_definitions(-DNO_GSL)
-    set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -DNO_GSL")
+    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -DNO_GSL")
+else()
+    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lgsl")
 endif()
 
 # handle conditional FFTW support
-
-if (NOT FFTW_FOUND)
+if (NOT FFTW_FOUND AND NOT NO_FFTW)
     message("note: the FFTW library cound not be found: certain mathematical functions will be slow, but apart from that the library will function properly")
 endif()
 if (NO_FFTW)
@@ -98,16 +111,16 @@ if (NO_FFTW)
 endif()
 if (NOT FFTW_FOUND OR NO_FFTW)
     add_definitions(-DNO_FFTW)
-    set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -DNO_FFTW")
+    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -DNO_FFTW")
 else()
-    set(PHYPP_ADD_COMPILER_FLAGS ${PHYPP_ADD_COMPILER_FLAGS} " -lfftw3")
+    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lfftw3")
 endif()
 
 # handle conditional Google perftools support
 if (NOT TCMALLOC_LIBRARY)
     message("note: could not find Google's tcmalloc library: installing this library will make phy++ programs slightly faster")
 else()
-    set(PHYPP_ADD_OPT_COMPILER_FLAGS ${PHYPP_ADD_OPT_COMPILER_FLAGS} " -ltcmalloc")
+    set(PHYPP_ADD_OPT_COMPILER_FLAGS "${PHYPP_ADD_OPT_COMPILER_FLAGS} -ltcmalloc")
 endif()
 
 if (NOT PROFILER_LIBRARY)
@@ -115,7 +128,9 @@ if (NOT PROFILER_LIBRARY)
 endif()
 
 # build the refgen tool
-add_subdirectory(tools/refgen)
+if (NOT NO_REFLECTION)
+    add_subdirectory(tools/refgen)
+endif()
 
 # build configuration
 set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
@@ -124,6 +139,8 @@ file(WRITE ${PHYPP_OUTPUT_CONFIG} "# phy++ configuration file\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_SHOW_CMD=0\n\n")
 
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DISABLE_REFLECTION=${NO_REFLECTION}\n\n")
+
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_INCLUDE_DIR=-I\"${CMAKE_INSTALL_PREFIX}/include\"\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=${PROJECT_SOURCE_DIR}/\n")
@@ -131,19 +148,19 @@ file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}data/\n\
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DREFLECTION_STAGE -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables\"\n\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DNO_REFLECTION -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables\"\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++11 -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++11 -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
     if (PROFILER_LIBRARY)
         file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++11 -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -lgsl -Wall ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++11 -lstdc++ -lcfitsio -lCCfits -lwcs -llapack -Wall ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
     if (PROFILER_LIBRARY)

@@ -31,40 +31,7 @@ else
 fi
 
 if [ $RECOMPILE -eq 1 ]; then
-    T="$(date +%s%N)"
-
-    # Parse file and generate reflection data
-    $PHYPP_REFGEN $1.cpp ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
-        $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
-
-    if [ $? -ne 0 ]; then
-        echo phy++: program \'$1\' FAILED to compile
-        exit
-    fi
-
-    TT="$(($(date +%s%N)-T))"
-    S="$((TT/1000000000))"
-    M="$((TT/1000000))"
-
-    printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
-        "$((S/60%60))" "$((S%60))" "${M}"
-
-    # Compile the generated file to build the final executable
-    $PHYPP_COMPILER ${PHYPP_TEMP_DIR}/._reflex_$1.cpp \
-        $PHYPP_COMPILER_DEBUG_FLAGS $PHYPP_COMPILER_OPT_FLAGS \
-        -I`pwd` $PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS -o $1
-
-    if [ $? -ne 0 ]; then
-        echo phy++: program \'$1\' FAILED to compile
-        exit
-    fi
-
-    TT="$(($(date +%s%N)-T))"
-    S="$((TT/1000000000))"
-    M="$((TT/1000000))"
-
-    printf "phy++: program \'$1\' successfully compiled (%02d:%02d.%03d)\n" \
-        "$((S/60%60))" "$((S%60))" "${M}"
+    cphy++ time optimize debug $1.cpp
 fi
 
 # Start the debugger and run the program
