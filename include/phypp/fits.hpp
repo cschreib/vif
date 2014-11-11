@@ -301,7 +301,15 @@ namespace fits {
 
         try {
             fits_open_image(&fptr, filename.c_str(), READONLY, &status);
-            phypp_check_cfitsio(status, "cannot open FITS file '"+filename+"'");
+            fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+
+            int naxis = 0;
+            fits_get_img_dim(fptr, &naxis, &status);
+            if (naxis == 0) {
+                fits_close_file(fptr, &status);
+                fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+                fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+            }
 
             // Read the header as a string
             char* hstr = nullptr;
