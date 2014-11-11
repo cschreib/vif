@@ -28,7 +28,7 @@ for arg in "$@"; do
         else
             if [ -n "$FILE" ]; then
                 echo error: cannot compile multiple files at the same time
-                exit
+                exit 1
             fi
             FILE=$arg
         fi
@@ -37,7 +37,7 @@ done
 
 if [ $NEXT_IS_OUTPUT -eq 1 ]; then
     echo error: missing output file name after '-o'
-    exit
+    exit 1
 fi
 
 if [ -z "$OUTPUT" ]; then
@@ -69,7 +69,7 @@ if [ $PHYPP_DISABLE_REFLECTION -eq 0 ]; then
 
     if [ $? -ne 0 ]; then
         echo phy++: program \'$PROG\' FAILED to compile
-        exit
+        exit 1
     fi
     if [ $TIME -eq 1 ]; then
         TT="$(($(date +%s%N)-T))"
@@ -91,7 +91,7 @@ $PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
 
 if [ $? -ne 0 ]; then
     echo phy++: program \'$PROG\' FAILED to compile
-    exit
+    exit 1
 fi
 if [ $TIME -eq 1 ]; then
     TT="$(($(date +%s%N)-T))"

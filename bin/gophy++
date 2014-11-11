@@ -32,6 +32,9 @@ fi
 
 if [ $RECOMPILE -eq 1 ]; then
     cphy++ time optimize debug $1.cpp
+    if [ $? -ne 0 ]; then
+        exit
+    fi
 fi
 
 # Start the debugger and run the program

@@ -148,7 +148,7 @@ file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\${PHYPP_PATH}data/\n\
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DNO_REFLECTION -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables\"\n\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables\"\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
 
@@ -169,8 +169,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 # install headers
-file(GLOB PHYPP_INCLUDES ${PROJECT_SOURCE_DIR}/include/phypp/*.hpp)
-install(FILES ${PHYPP_INCLUDES} DESTINATION include/phypp)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/phypp/ DESTINATION include/phypp
+    FILES_MATCHING PATTERN "*.hpp")
 install(FILES ${PROJECT_SOURCE_DIR}/include/phypp.hpp DESTINATION include)
 
 # install build scripts

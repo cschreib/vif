@@ -32,6 +32,9 @@ fi
 
 if [ $RECOMPILE -eq 1 ]; then
     cphy++ time debug $1.cpp
+    if [ $? -ne 0 ]; then
+        exit
+    fi
 fi
 
 # TODO: http://stackoverflow.com/questions/1805840/arrow-key-via-stdin

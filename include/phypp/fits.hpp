@@ -1006,6 +1006,9 @@ namespace fits {
     template<typename T>
     void read_table_impl_(fitsfile* fptr, const std::string& colname,
         reflex::struct_t<T> data, bool loose) {
+        #ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection capabilities (NO_REFLECTION=0)");
+        #endif
 
         impl::do_read_member run{fptr, toupper(colname)+".", loose};
         reflex::foreach_member(data, run);
@@ -1124,6 +1127,10 @@ namespace fits {
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void read_table(const std::string& filename, T& t) {
+        #ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection capabilities (NO_REFLECTION=0)");
+        #endif
+
         fitsfile* fptr;
         int status = 0;
 
@@ -1144,6 +1151,10 @@ namespace fits {
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void read_table_loose(const std::string& filename, T& t) {
+        #ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection capabilities (NO_REFLECTION=0)");
+        #endif
+
         fitsfile* fptr;
         int status = 0;
 
@@ -1291,6 +1302,9 @@ namespace fits {
     template<typename T>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
         reflex::struct_t<T> data) {
+        #ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection capabilities (NO_REFLECTION=0)");
+        #endif
 
         impl::do_write_member run{fptr, id, colname+"."};
         reflex::foreach_member(data, run);
@@ -1392,6 +1406,10 @@ namespace fits {
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void write_table(const std::string& filename, const T& t) {
+        #ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection capabilities (NO_REFLECTION=0)");
+        #endif
+
         fitsfile* fptr;
         int status = 0;
 

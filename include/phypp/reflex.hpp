@@ -11,6 +11,11 @@ using uint_t = std::size_t;
 
 struct rgb;
 
+#ifdef NO_REFLECTION
+#undef DISABLE_REFLECTION
+#define DISABLE_REFLECTION 1
+#endif
+
 namespace reflex {
     template<typename ... Args>
     struct type_list {
@@ -133,6 +138,7 @@ namespace reflex {
 
     template<typename T>
     std::string seek_name(const T& t, uint_t max_dist = 100000) {
+        #ifndef NO_REFLECTION
         const char* c = reinterpret_cast<const char*>(&t);
         const char* oc = c;
         const char pattern[] = REFLEX_MEM_HEADER;
@@ -168,6 +174,7 @@ namespace reflex {
 
             // If no member matches, then this was not the right data_t, continue searching.
         }
+        #endif
 
         return "<?>";
     }
@@ -250,7 +257,7 @@ namespace reflex {
     template<typename T, typename U>
     using constify = typename std::conditional<std::is_const<T>::value, const U, U>::type;
 
-    #ifdef NO_REFLECTION
+    #ifdef DISABLE_REFLECTION
     template<typename T>
     struct struct_t {
         constify<T,data_t>& data;
@@ -291,7 +298,7 @@ namespace reflex {
 
     template<>
     struct wrap_t<true> {
-        #ifdef NO_REFLECTION
+        #ifdef DISABLE_REFLECTION
         static empty_t empty;
         template<typename T>
         static auto wrap(T& t) -> decltype(struct_t<T>{empty._reflex}) {
@@ -306,7 +313,7 @@ namespace reflex {
         #endif
     };
 
-    #ifdef NO_REFLECTION
+    #ifdef DISABLE_REFLECTION
     empty_t wrap_t<true>::empty;
     #endif
 
@@ -330,16 +337,23 @@ namespace reflex {
     }
 }
 
-#define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, (void*)&name}
+#ifndef NO_REFLECTION
+    #define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, (void*)&name}
 
-#define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
+    #define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
 
-#define MEMBERS2(name, ...) \
-    reflex::data_t _reflex = reflex::do_init(_reflex_types(), this, { \
-        typeid(*this), name, {__VA_ARGS__}})
+    #define MEMBERS2(name, ...) \
+        reflex::data_t _reflex = reflex::do_init(_reflex_types(), this, { \
+            typeid(*this), name, {__VA_ARGS__}})
 
-#define NO_MEMBER(name) \
-    using _reflex_types = decltype(reflex::make_types_()); \
-    reflex::data_t _reflex = reflex::data_impl_t{typeid(*this), name, {}}
+    #define NO_MEMBER(name) \
+        using _reflex_types = decltype(reflex::make_types_()); \
+        reflex::data_t _reflex = reflex::data_impl_t{typeid(*this), name, {}}
+#else
+    #define MAKE_MEMBER(name)
+    #define MEMBERS1(...)
+    #define MEMBERS2(name, ...)
+    #define NO_MEMBER(name)
+#endif
 
 #endif

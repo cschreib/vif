@@ -32,6 +32,9 @@ fi
 
 if [ $RECOMPILE -eq 1 ]; then
     cphy++ time optimize profile $1.cpp
+    if [ $? -ne 0 ]; then
+        exit
+    fi
 fi
 
 # Run the program
