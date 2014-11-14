@@ -1,4 +1,5 @@
 #include <phypp.hpp>
+#include <phypp/astro/qstack.hpp>
 
 void print_help();
 

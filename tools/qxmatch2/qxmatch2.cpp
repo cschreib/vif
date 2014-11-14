@@ -1,4 +1,5 @@
 #include <phypp.hpp>
+#include <phypp/astro/qxmatch.hpp>
 
 void print_help() {
     using namespace format;

@@ -1,4 +1,5 @@
 #include <phypp.hpp>
+#include <phypp/astro/qxmatch.hpp>
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
