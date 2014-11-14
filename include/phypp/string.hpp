@@ -280,6 +280,18 @@ vec_t<Dim,bool> match(const vec_t<Dim,Type>& v, const std::string& regex) {
     return r;
 }
 
+bool match_any_of(const std::string& ts, const vec1s& regex) {
+    for (uint_t i = 0; i < regex.size(); ++i) {
+        regex_t re;
+        build_regex_(regex[i], re);
+        bool ret = match_(ts, regex[i], re);
+        regfree(&re);
+        if (ret) return true;
+    }
+
+    return false;
+}
+
 
 uint_t length(const std::string& s) {
     return s.size();
