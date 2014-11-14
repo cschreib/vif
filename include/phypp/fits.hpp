@@ -834,6 +834,115 @@ namespace fits {
         }
     }
 
+    struct column_info {
+        std::string name;
+        enum type_t {
+            string, boolean, byte, integer, float_simple, float_double
+        } type;
+        vec1u dims;
+        uint_t length = 1;
+    };
+
+    vec_t<1,column_info> read_table_columns(const std::string& filename) {
+        vec_t<1,column_info> cols;
+
+        fitsfile* fptr;
+        int status = 0;
+
+        fits::header hdr = read_header(filename);
+
+        try {
+            fits_open_table(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file");
+
+            int ncol;
+            fits_get_num_cols(fptr, &ncol, &status);
+
+            for (uint_t c : range(ncol)) {
+                column_info ci;
+
+                char name[80];
+                char type = 0;
+                long repeat = 0;
+                fits_get_bcolparms(fptr, c+1, name, nullptr, &type, &repeat,
+                    nullptr, nullptr, nullptr, nullptr, &status);
+
+                const uint_t max_dim = 20;
+                long axes[max_dim];
+                int naxis = 0;
+                fits_read_tdim(fptr, c+1, max_dim, &naxis, axes, &status);
+
+                if (!getkey(hdr, "TTYPE"+strn(c+1), ci.name)) {
+                    continue;
+                }
+
+                ci.name = trim(ci.name);
+
+                switch (type) {
+                case 'B' : {
+                    vec_t<1,char> v(repeat);
+                    char def = traits<char>::def();
+                    int null;
+                    fits_read_col(fptr, traits<char>::ttype, c+1, 1, 1, repeat,
+                        &def, v.data.data(), &null, &status);
+
+                    if (min(v) == 0 && max(v) <= 1) {
+                        ci.type = column_info::boolean;
+                    } else {
+                        ci.type = column_info::string;
+                    }
+                    break;
+                }
+                case 'S' : {
+                    ci.type = column_info::byte;
+                    break;
+                }
+                case 'J' : {
+                    ci.type = column_info::integer;
+                    break;
+                }
+                case 'E' : {
+                    ci.type = column_info::float_simple;
+                    break;
+                }
+                case 'D' : {
+                    ci.type = column_info::float_double;
+                    break;
+                }
+                default : continue;
+                }
+
+                for (uint_t i : range(naxis)) {
+                    // First dimension for string is the string length
+                    if (i == 0 && ci.type == column_info::string) {
+                        ci.length = axes[i];
+                        if (naxis == 1) {
+                            ci.dims.push_back(1);
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    ci.dims.push_back(axes[i]);
+                }
+
+                ci.dims = reverse(ci.dims);
+
+                cols.push_back(ci);
+            }
+
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
+
+        return cols;
+    }
+
     struct macroed_t {};
     #define ftable(...) fits::macroed_t(), #__VA_ARGS__, __VA_ARGS__
 
