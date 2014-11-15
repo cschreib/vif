@@ -41,6 +41,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    vec1d tra(1);
+    vec1d tdec(1);
+    bool xmatch = true;
+
     if (std::string(argv[2]) == "id") {
         vec1s vs = split(trim(argv[3], "[]"), ",");
         vec1b parsed = from_string(vs, id);
@@ -49,14 +53,18 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        d.resize(id.size());
+        if (id.size() > 1) {
+            d.resize(id.size());
+            xmatch = false;
+        } else {
+            tra[0] = cra[id[0]];
+            tdec[0] = cdec[id[0]];
+        }
     } else {
         print("Catalog ranges:");
         print(" RA: [", min(cra), ", ", max(cra), "]");
         print(" Dec: [", min(cdec), ", ", max(cdec), "]");
 
-        vec1d tra(1);
-        vec1d tdec(1);
         std::string sra = argv[2];
         std::string sdec = argv[3];
         if (find(sra, ":") != npos) {
@@ -73,8 +81,11 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
         }
+    }
 
-        qxmatch_params p; p.nth = nsrc;
+    if (xmatch) {
+
+        qxmatch_params p; p.nth = nsrc; p.brute_force = true;
         auto res = qxmatch(tra, tdec, cra, cdec, p);
 
         id = res.id(_,0);
