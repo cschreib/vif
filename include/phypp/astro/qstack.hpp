@@ -60,6 +60,7 @@ struct qstack_params {
     bool keep_nan = false;
     bool save_offsets = false;
     bool save_section = false;
+    bool verbose = false;
 };
 
 struct qstack_output {
@@ -108,6 +109,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
     }
 
     // Loop over all images
+    auto pg = progress_start(ra.size());
     for (uint_t iimg : range(imgs.size())) {
         auto& img = imgs[iimg];
 
@@ -122,6 +124,8 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
             if (p0[0] < 1 || p1[0] >= img.width || p0[1] < 1 || p1[1] >= img.height) {
                 continue;
             }
+
+            if (params.verbose) progress(pg);
 
             found[i] = true;
 
