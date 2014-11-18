@@ -205,6 +205,18 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'remove' function");
+        vec1i i = indgen(10);
+        vec1i di = remove(i, {1,2,5,6,7,9});
+        check(di, "0, 3, 4, 8");
+        check(di.dims, "4");
+        vec2u u = {{0,1,2},{3,4,5},{6,7,8},{9,10,11},{12,13,14}};
+        vec2u du = remove(u, {0,1,3});
+        check(du, "6, 7, 8, 12, 13, 14");
+        check(du.dims, "2, 3");
+    }
+
+    {
         print("2 dimensional array & multiple indices '(i,j)'");
         vec2d u = dindgen(3,2);
         check(u, "0, 1, 2, 3, 4, 5");

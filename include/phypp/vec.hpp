@@ -2283,6 +2283,33 @@ void inplace_sort(vec_t<Dim,Type>& v) {
     std::stable_sort(v.data.begin(), v.data.end(), typename vec_t<Dim,Type>::comparator());
 }
 
+template<std::size_t Dim, typename Type>
+void inplace_remove(vec_t<Dim,Type>& v, vec1u ids) {
+    inplace_sort(ids);
+    uint_t i = 0;
+    uint_t pitch = v.pitch(0);
+    while (i < ids.size()) {
+        uint_t i1 = ids[ids.size()-1-i];
+        uint_t i0 = i1;
+
+        ++i;
+        while (i < ids.size() && i0 - ids[ids.size()-1-i] == 1) {
+            i0 = ids[ids.size()-1-i];
+            ++i;
+        }
+
+        v.data.erase(v.data.begin()+i0*pitch, v.data.begin()+(i1+1)*pitch);
+    }
+
+    v.dims[0] -= ids.size();
+}
+
+template<std::size_t Dim, typename Type>
+vec_t<Dim,Type> remove(vec_t<Dim,Type> v, vec1u ids) {
+    inplace_remove(v, ids);
+    return v;
+}
+
 template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
 void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
