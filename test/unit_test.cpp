@@ -984,6 +984,29 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'bilinear' function");
+        vec2d m = {{0,2},{0,2}};
+        check(fabs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.0, 0.5) - 1.0) < 1e-5, "1");
+        check(fabs(bilinear(m, 1.0, 0.5) - 1.0) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.5, 0.25) - 0.5) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.0, 0.25) - 0.5) < 1e-5, "1");
+        check(fabs(bilinear(m, 1.0, 0.25) - 0.5) < 1e-5, "1");
+
+        m = {{0,0},{2,2}};
+        check(fabs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.5, 0.0) - 1.0) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.5, 1.0) - 1.0) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.25, 0.5) - 0.5) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.25, 0.0) - 0.5) < 1e-5, "1");
+        check(fabs(bilinear(m, 0.25, 1.0) - 0.5) < 1e-5, "1");
+
+        m = {{0,1},{1,1}};
+        print(bilinear(m, 0.5, 0.5));
+        check(fabs(bilinear(m, 0.5, 0.5) - 0.75) < 1e-5, "1");
+    }
+
+    {
         print("'uJy2lsun' & 'lsun2uJy' functions");
         vec1d jy = {1000.0};
         double z = 1.0;
