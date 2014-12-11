@@ -774,7 +774,7 @@ void data_info_(const vec_t<Dim,Type>& v) {
     print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
     if (idok.size() == 0) return;
 
-    vec_t<Dim,rtype_t<Type>> tv = v[idok];
+    vec_t<1,rtype_t<Type>> tv = v[idok];
 
     print(" min : ", min(tv));
     print(" 15% : ", percentile(tv, 0.15));
