@@ -1824,6 +1824,36 @@ auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX>& x, const T& nx
     return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);
 }
 
+template<typename Type>
+rtype_t<Type> bilinear(const vec_t<2,Type>& map, double x, double y) {
+    int_t tix = floor(x);
+    int_t tiy = floor(y);
+    double dx = x - tix;
+    double dy = y - tiy;
+
+    if (tiy >= map.dims[0]-1) {
+        tiy = map.dims[0]-2;
+        dy = y - tiy;
+    } else if (tiy < 0) {
+        tiy = 0;
+        dy = y - tiy;
+    }
+
+    if (tix >= map.dims[1]-1) {
+        tix = map.dims[1]-2;
+        dx = x - tix;
+    } else if (tix < 0) {
+        tix = 0;
+        dx = x - tix;
+    }
+
+    uint_t ix = tix;
+    uint_t iy = tiy;
+
+    return map(ix,iy)*(1.0 - dx)*(1.0 - dy) + map(ix,iy+1)*(1.0 - dx)*dy
+        + map(ix+1,iy)*dx*(1.0 - dy) + map(ix+1,iy+1)*dx*dy;
+}
+
 template<typename TypeX, typename TypeY>
 auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y) -> decltype(0.5*y[0]*x[0]) {
     phypp_check(x.size() == y.size(),
