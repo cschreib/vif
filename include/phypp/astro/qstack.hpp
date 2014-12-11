@@ -30,13 +30,27 @@ namespace qstack_impl {
             // Get the dimensions of the image
             int naxis = 0;
             fits_get_img_dim(fptr, &naxis, &status);
-            phypp_check(naxis == 2, "cannot stack on image cubes (file: '"+file+
-                "'' dimensions: "+strn(naxis)+")");
+            vec_t<1,long> naxes(naxis);
+            fits_get_img_size(fptr, naxis, naxes.data.data(), &status);
+            bool is2D = naxis == 2;
+            if (is2D) {
+                width = naxes[0];
+                height = naxes[1];
+            } else {
+                uint_t found = 0;
+                for (uint_t i : range(naxis)) {
+                    if (naxes[i] > 1) {
+                        if (found == 0) width = naxes[i];
+                        if (found == 1) height = naxes[i];
+                        ++found;
+                    }
+                }
 
-            long naxes[2];
-            fits_get_img_size(fptr, naxis, naxes, &status);
-            width = naxes[0];
-            height = naxes[1];
+                is2D = found == 2;
+            }
+
+            phypp_check(is2D, "cannot stack on image cubes (image dimensions: "+
+                strn(naxes)+")");
         }
 
         image_workspace(const image_workspace&) = delete;
@@ -205,12 +219,30 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
     // Get the dimensions of the image
     int naxis = 0;
     fits_get_img_dim(fptr, &naxis, &status);
-    phypp_check(naxis == 2, "cannot stack on image cubes (image dimensions: "+strn(naxis)+")");
-    long naxes[2];
-    fits_get_img_size(fptr, naxis, naxes, &status);
-    long width = naxes[0], height = naxes[1];
-    long wnaxes[2];
-    fits_get_img_size(wfptr, 2, wnaxes, &status);
+    vec_t<1,long> naxes(naxis);
+    fits_get_img_size(fptr, naxis, naxes.data.data(), &status);
+    bool is2D = naxis == 2;
+    long width, height;
+    if (is2D) {
+        width = naxes[0];
+        height = naxes[1];
+    } else {
+        uint_t found = 0;
+        for (uint_t i : range(naxis)) {
+            if (naxes[i] > 1) {
+                if (found == 0) width = naxes[i];
+                if (found == 1) height = naxes[i];
+                ++found;
+            }
+        }
+
+        is2D = found == 2;
+    }
+
+    phypp_check(is2D, "cannot stack on image cubes (image dimensions: "+strn(naxes)+")");
+
+    vec_t<1,long> wnaxes(naxis);
+    fits_get_img_size(wfptr, naxis, wnaxes.data.data(), &status);
     phypp_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
 
     // Convert ra/dec to x/y
