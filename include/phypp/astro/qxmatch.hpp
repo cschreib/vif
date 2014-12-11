@@ -74,7 +74,7 @@ namespace qxmatch_impl {
             visited(0,0) = true;
 
             // Generate a few in advance
-            for (uint_t d : range(9)) {
+            for (uint_t d : range(std::min(uint_t{9}, std::max(nx, ny)-1))) {
                 grow();
             }
         }
@@ -90,6 +90,10 @@ namespace qxmatch_impl {
         }
 
         void grow() {
+            phypp_check(depths.size() < visited.dims[0] ||
+                depths.size() < visited.dims[1], "cannot grow past the size of the "
+                "bucket field (", visited.dims, "; trying to reach ", depths.size(), ")");
+
             depths.push_back(depth_t{});
             auto& depth = depths.back();
             uint_t d = depths.size();
@@ -100,8 +104,8 @@ namespace qxmatch_impl {
             // See which new buckets are reached.
             // We only need to do the maths for one quadrant, the other 3
             // can be deduced by symmetry.
-            for (uint_t x : range(1,d+1))
-            for (uint_t y : range(d+1)) {
+            for (uint_t x : range(1,std::min(d+1, visited.dims[0])))
+            for (uint_t y : range(std::min(d+1, visited.dims[1]))) {
                 double dist2 = sqr(csize)*min(vec1d{
                     sqr(x-0.5) + sqr(y-0.5), sqr(x+0.5) + sqr(y-0.5),
                     sqr(x+0.5) + sqr(y+0.5), sqr(x-0.5) + sqr(y+0.5)
