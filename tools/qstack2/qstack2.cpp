@@ -216,6 +216,7 @@ int main(int argc, char* argv[]) {
 
     qstack_params params;
     params.keep_nan = keepnan;
+    params.verbose = verbose;
 
     if ((wht.empty() && err.empty()) || median) {
         if (cat.empty()) {
