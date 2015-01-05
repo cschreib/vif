@@ -480,7 +480,7 @@ namespace fits {
                 wcsvfree(&nwcs, &w);
             }
             w = tw.w; tw.w = nullptr;
-            nwcs = tw.nwcs; nwcs = 0;
+            nwcs = tw.nwcs; tw.nwcs = 0;
             return *this;
         }
 
@@ -800,7 +800,6 @@ namespace fits {
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos != entry.npos) {
                 std::string nam = trim(entry.substr(0, eqpos));
-                char* tnam = const_cast<char*>(nam.c_str());
                 if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") || nam == "EXTEND" ||
                     nam == "XTENSION" || nam == "EXTNAME" || nam == "PCOUNT" || nam == "GCOUNT") {
                     continue;
@@ -1065,7 +1064,7 @@ namespace fits {
             }
         }
 
-        delete buffer;
+        delete[] buffer;
     }
 
     void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
@@ -1100,7 +1099,7 @@ namespace fits {
         buffer[naxes[0]] = '\0';
         v = buffer;
 
-        delete buffer;
+        delete[] buffer;
     }
 
     template<typename T>
@@ -1376,7 +1375,7 @@ namespace fits {
             fptr, traits<std::string>::ttype, id, 1, 1, nmax*n_elements(v), buffer, &status
         );
 
-        delete buffer;
+        delete[] buffer;
 
         ++id;
     }
