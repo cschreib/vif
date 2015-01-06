@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
         } else if (out_cols[ic].size() != nrow) {
             warning("incompatible number of rows for column '", names[ic], "' (got ",
                 out_cols[ic].size(), ", expected ", nrow, ")");
-            note("skipping");
+            note("this column will not be serialized");
             skip[ic] = true;
             continue;
         }
