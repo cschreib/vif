@@ -232,6 +232,10 @@ template<typename T, typename TypeX, typename TypeY, typename ... Args>
 vec_t<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec_t<1,TypeX>& px,
     const vec_t<1,TypeY>& py, Args&& ... args) {
 
+    // TODO: use std::piecewise_linear_distribution
+    // std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
+    // TODO: make an alternative version for integers using std::discrete_distribution.
+
     // Build cumulative distribution
     vec1d cpdf(py.size());
     for (uint_t i : range(py)) {
