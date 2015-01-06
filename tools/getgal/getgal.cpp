@@ -181,6 +181,7 @@ int main(int argc, char* argv[]) {
         p.keep_nan = true;
         p.save_offsets = true;
         p.save_section = true;
+        p.verbose = verbose;
         vec3d cube;
         vec1u ids;
 
