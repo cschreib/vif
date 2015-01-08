@@ -332,5 +332,25 @@ struct is_any_type_of :
 template<typename T, typename U>
 struct is_any_type_of<T,U> : std::is_same<T,U> {};
 
+// Get the Nth type from a variadic list
+template<std::size_t N, std::size_t I, typename ... Args>
+struct nth_type_impl;
+
+template<std::size_t N, std::size_t I>
+struct nth_type_impl<N,I> {
+    static_assert(true, "not enough type in this type list");
+};
+
+template<std::size_t I, typename T, typename ... Args>
+struct nth_type_impl<I,I,T,Args...> {
+    using type = T;
+};
+
+template<std::size_t N, std::size_t I, typename T, typename ... Args>
+struct nth_type_impl<N,I,T,Args...> : nth_type_impl<N-1,I, Args...> {};
+
+template<std::size_t N, typename ... Args>
+using nth_type = typename nth_type_impl<sizeof...(Args), N+1, Args...>::type;
+
 #endif
 
