@@ -281,4 +281,29 @@ auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
 #endif
 }
 
+template<typename T, typename F>
+auto boxcar(const vec_t<2,T>& img, uint_t hsize, F&& func) ->
+    vec_t<2,decltype(func(flatten(img)))> {
+
+    vec_t<2,decltype(func(flatten(img)))> res(img.dims);
+    for (uint_t x = 0; x < img.dims[0]; ++x)
+    for (uint_t y = 0; y < img.dims[1]; ++y) {
+        uint_t x0 = x >= hsize ? x - hsize : 0;
+        uint_t x1 = x < img.dims[0]-hsize ? x + hsize : img.dims[0]-1;
+        uint_t y0 = y >= hsize ? y - hsize : 0;
+        uint_t y1 = y < img.dims[1]-hsize ? y + hsize : img.dims[1]-1;
+
+        vec_t<1,rtype_t<T>> tmp;
+        tmp.reserve((x1-x0)*(y1-y0));
+        for (uint_t tx = x0; tx <= x1; ++tx)
+        for (uint_t ty = y0; ty <= y1; ++ty) {
+            tmp.push_back(img(tx,ty));
+        }
+
+        res(x,y) = func(tmp);
+    }
+
+    return res;
+}
+
 #endif
