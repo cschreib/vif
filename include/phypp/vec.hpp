@@ -351,11 +351,36 @@ namespace vec_access {
     struct accessed_dim<T> : std::integral_constant<std::size_t,
         input_dim<T>::value> {};
 
+    template<typename T>
+    struct is_index_vector : std::false_type {};
+
+    template<std::size_t Dim, typename T>
+    struct is_index_vector<vec_t<Dim,T>> : std::integral_constant<bool,
+        std::is_integral<typename std::decay<typename std::remove_pointer<T>::type>::type>::value> {};
+
+    template<typename T>
+    struct is_index : std::integral_constant<bool,
+        std::is_integral<T>::value || std::is_same<T,placeholder_t>::value ||
+        is_index_vector<T>::value> {};
+
+    template<typename ... Args>
+    struct are_indices;
+
+    template<>
+    struct are_indices<> : std::true_type {};
+
+    template<typename T, typename ... Args>
+    struct are_indices<T, Args...> : std::integral_constant<bool,
+        is_index<T>::value && are_indices<Args...>::value> {};
+
     // Helper to build the result of v(_, rgen(1,2), 5), i.e. when at least one index is not scalar.
     // The result is another array.
     template<bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,
         typename ... Args>
     struct helper_ {
+        static_assert(are_indices<Args...>::value, "vector access can only be made with "
+            "integers or '_'");
+
         using rptype = typename std::remove_pointer<Type>::type;
         using itype = typename std::conditional<IsConst,
             const vec_t<Dim,Type>, vec_t<Dim,Type>>::type;
@@ -476,6 +501,9 @@ namespace vec_access {
 
     template<bool IsConst, typename Type, typename Arg>
     struct helper_<IsConst, 1, 1, Type, Arg> {
+        static_assert(is_index<Arg>::value, "vector access can only be made with "
+            "integers or '_'");
+
         using rptype = typename std::remove_pointer<Type>::type;
         using itype = typename std::conditional<IsConst,
             const vec_t<1,Type>, vec_t<1,Type>>::type;
@@ -512,6 +540,9 @@ namespace vec_access {
     // The result is a scalar.
     template<bool IsConst, std::size_t Dim, typename Type, typename ... Args>
     struct helper_<IsConst, Dim, 0, Type, Args...>  {
+        static_assert(are_indices<Args...>::value, "vector access can only be made with "
+            "integers or '_'");
+
         using rptype = typename std::remove_pointer<Type>::type;
         using itype = typename std::conditional<IsConst,
             const vec_t<Dim,Type>, vec_t<Dim,Type>>::type;
@@ -543,6 +574,9 @@ namespace vec_access {
 
     template<bool IsConst, typename Type, typename T>
     struct helper_<IsConst, 1, 0, Type, T> {
+        static_assert(is_index<T>::value, "vector access can only be made with "
+            "integers or '_'");
+
         using rptype = typename std::remove_pointer<Type>::type;
         using itype = typename std::conditional<IsConst,
             const vec_t<1,Type>, vec_t<1,Type>>::type;
@@ -906,19 +940,19 @@ struct vec_t {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec_t&>(*this)[i]);
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     const Type& operator [] (T i) const {
         return reinterpret_cast<const Type&>(data[to_idx(i)]);
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
         vec_t<1,Type*> v(*this);
         v.data.resize(i.data.size());
@@ -930,7 +964,7 @@ struct vec_t {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
         vec_t<1,Type*> v(*this);
         v.data.resize(i.data.size());
@@ -942,7 +976,7 @@ struct vec_t {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
         vec_t<1,const Type*> v(*this);
         v.data.resize(i.data.size());
@@ -954,7 +988,7 @@ struct vec_t {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
         vec_t<1,const Type*> v(*this);
         v.data.resize(i.data.size());
