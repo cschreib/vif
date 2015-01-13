@@ -823,6 +823,26 @@ struct vec_t {
         }
     }
 
+    const Type& back() const {
+        static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+        return reinterpret_cast<const Type&>(data.back());
+    }
+
+    Type& back() {
+        static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+        return const_cast<Type&>(const_cast<const vec_t&>(*this).back());
+    }
+
+    const Type& front() const {
+        static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+        return reinterpret_cast<const Type&>(data.front());
+    }
+
+    Type& front() {
+        static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+        return const_cast<Type&>(const_cast<const vec_t&>(*this).front());
+    }
+
     void push_back(const Type& t) {
         static_assert(Dim == 1, "cannot call push_back(Type) on multidimensional vectors");
         data.push_back(t);
@@ -1267,6 +1287,26 @@ struct vec_t<Dim,Type*> {
 
     effective_type concretise() const {
         return *this;
+    }
+
+    const Type& back() const {
+        static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+        return reinterpret_cast<const Type&>(*data.back());
+    }
+
+    Type& back() {
+        static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+        return const_cast<Type&>(const_cast<const vec_t&>(*this).back());
+    }
+
+    const Type& front() const {
+        static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+        return reinterpret_cast<const Type&>(*data.front());
+    }
+
+    Type& front() {
+        static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+        return const_cast<Type&>(const_cast<const vec_t&>(*this).front());
     }
 
     template<typename T>
