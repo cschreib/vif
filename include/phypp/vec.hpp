@@ -359,9 +359,17 @@ namespace vec_access {
         std::is_integral<typename std::decay<typename std::remove_pointer<T>::type>::type>::value> {};
 
     template<typename T>
-    struct is_index : std::integral_constant<bool,
+    struct is_repeated_index : std::false_type {};
+
+    template<std::size_t N, typename T>
+    struct is_repeated_index<repeated_value<N,T>> : std::integral_constant<bool,
         std::is_integral<T>::value || std::is_same<T,placeholder_t>::value ||
         is_index_vector<T>::value> {};
+
+    template<typename T>
+    struct is_index : std::integral_constant<bool,
+        std::is_integral<T>::value || std::is_same<T,placeholder_t>::value ||
+        is_index_vector<T>::value || is_repeated_index<T>::value> {};
 
     template<typename ... Args>
     struct are_indices;
