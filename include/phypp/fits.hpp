@@ -896,7 +896,8 @@ namespace fits {
                     ci.type = column_info::byte;
                     break;
                 }
-                case 'J' : {
+                case 'J' :
+                case 'I' : {
                     ci.type = column_info::integer;
                     break;
                 }
@@ -908,7 +909,10 @@ namespace fits {
                     ci.type = column_info::float_double;
                     break;
                 }
-                default : continue;
+                default : {
+                    warning("unhandled column type '", type, "' for ", ci.name);
+                    continue;
+                }
                 }
 
                 for (uint_t i : range(naxis)) {
