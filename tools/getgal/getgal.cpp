@@ -104,34 +104,41 @@ int main(int argc, char* argv[]) {
     vec1s mname;
     vec1s mfile;
 
-    std::ifstream mlist(clist);
-    uint_t l = 0;
-    while (!mlist.eof()) {
-        std::string line;
-        std::getline(mlist, line);
-        ++l;
+    if (end_with(clist, ".fits")) {
+        // Single FITS file
+        mname.push_back(split(erase_end(clist, ".fits"), "/").back());
+        mfile.push_back(clist);
+    } else {
+        // Map list
+        std::ifstream mlist(clist);
+        uint_t l = 0;
+        while (!mlist.eof()) {
+            std::string line;
+            std::getline(mlist, line);
+            ++l;
 
-        if (line.find_first_not_of(" \t") == line.npos) continue;
-        line = trim(line);
-        if (line[0] == '#') continue;
-        vec1s spl = trim(split(line, "="));
-        if (spl.size() != 2) {
-            error("wrong format for l."+strn(l)+": '"+line+"'");
-            note("expected: map_code_name = map_file");
-            return 1;
+            if (line.find_first_not_of(" \t") == line.npos) continue;
+            line = trim(line);
+            if (line[0] == '#') continue;
+            vec1s spl = trim(split(line, "="));
+            if (spl.size() != 2) {
+                error("wrong format for l."+strn(l)+": '"+line+"'");
+                note("expected: map_code_name = map_file");
+                return 1;
+            }
+
+            spl[1] = dir+spl[1];
+            if (!file::exists(spl[1])) {
+                warning("could not find '"+spl[1]+"'");
+                continue;
+            }
+
+            mname.push_back(spl[0]);
+            mfile.push_back(spl[1]);
         }
 
-        spl[1] = dir+spl[1];
-        if (!file::exists(spl[1])) {
-            error("could not find '"+spl[1]+"'");
-            return 1;
-        }
-
-        mname.push_back(spl[0]);
-        mfile.push_back(spl[1]);
+        if (verbose) print("map list loaded successfully");
     }
-
-    if (verbose) print("map list loaded successfully");
 
     if (thsize.size() > 1 && bands.size() > 1 && thsize.size() != bands.size()) {
         error("mismatch between number of bands and cutout sizes (",
