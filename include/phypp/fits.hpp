@@ -647,8 +647,8 @@ namespace fits {
         vec1d world(2*ngal);
         vec1u ids1 = 2*uindgen(ngal);
         vec1u ids2 = ids1+1;
-        world[ids1] = ra;
-        world[ids2] = dec;
+        world.safe[ids1] = ra;
+        world.safe[ids2] = dec;
 
         vec1d pos(2*ngal);
 
@@ -659,8 +659,8 @@ namespace fits {
         wcss2p(w.w, ngal, 2, world.data.data(), phi.data(), theta.data(),
             itmp.data(), pos.data.data(), stat.data());
 
-        x = pos[ids1];
-        y = pos[ids2];
+        x = pos.safe[ids1];
+        y = pos.safe[ids2];
     }
 
     template<typename T = double, typename U = double, typename V, typename W>
@@ -676,8 +676,8 @@ namespace fits {
         vec1d map(2*ngal);
         vec1u ids1 = 2*uindgen(ngal);
         vec1u ids2 = ids1+1;
-        map[ids1] = x;
-        map[ids2] = y;
+        map.safe[ids1] = x;
+        map.safe[ids2] = y;
 
         vec1d world(2*ngal);
 
@@ -688,8 +688,8 @@ namespace fits {
         wcsp2s(w.w, ngal, 2, map.data.data(), itmp.data(), phi.data(), theta.data(),
             world.data.data(), stat.data());
 
-        ra = world[ids1];
-        dec = world[ids2];
+        ra = world.safe[ids1];
+        dec = world.safe[ids2];
     }
 
     template<typename T = double, typename U = double, typename V, typename W,
@@ -699,8 +699,8 @@ namespace fits {
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
 
         vec1d world(2);
-        world[0] = ra;
-        world[1] = dec;
+        world.safe[0] = ra;
+        world.safe[1] = dec;
 
         vec1d pos(2);
 
@@ -711,8 +711,8 @@ namespace fits {
         wcss2p(w.w, 1, 2, world.data.data(), &phi, &theta, itmp.data(),
             pos.data.data(), &stat);
 
-        x = pos[0];
-        y = pos[1];
+        x = pos.safe[0];
+        y = pos.safe[1];
     }
 
     template<typename T = double, typename U = double, typename V, typename W,
@@ -722,8 +722,8 @@ namespace fits {
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
 
         vec1d map(2);
-        map[0] = x;
-        map[1] = y;
+        map.safe[0] = x;
+        map.safe[1] = y;
 
         vec1d world(2);
 
@@ -734,8 +734,8 @@ namespace fits {
         wcsp2s(w.w, 1, 2, map.data.data(), itmp.data(), &phi, &theta,
             world.data.data(), &stat);
 
-        ra = world[0];
-        dec = world[1];
+        ra = world.safe[0];
+        dec = world.safe[1];
     }
 
     // Obtain the pixel size of a given image in arsec/pixel.
@@ -758,7 +758,7 @@ namespace fits {
             // Convert radius to number of pixels
             vec1d r, d;
             fits::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
-            aspix = angdist(r[0], d[0], r[1], d[1]);
+            aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
 
             return true;
         }
@@ -774,7 +774,7 @@ namespace fits {
 
         std::valarray<rtype_t<Type>> tv(v.size());
         for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = dref<Type>(v.data[i]);
+            tv[i] = v.safe[i];
         }
 
         try {
@@ -819,7 +819,7 @@ namespace fits {
 
         std::valarray<rtype_t<Type>> tv(v.size());
         for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = dref<Type>(v.data[i]);
+            tv[i] = v.safe[i];
         }
 
         try {

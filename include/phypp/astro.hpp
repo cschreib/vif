@@ -162,7 +162,7 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
     typename vec_t<Dim,Type>::effective_type name(const vec_t<Dim,Type>& z, const Args& ... args) { \
         if (n_elements(z) < 2*npt) { \
             using rtype = rtype_t<Type>; \
-            vec_t<1,rtype> r = z; \
+            vec_t<Dim,rtype> r = z; \
             for (auto& t : r) { \
                 t = name(t, args...); \
             } \
@@ -177,7 +177,7 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
             for (uint_t i = 0; i < npt+1; ++i) { \
                 td[i] = name(tz[i], args...); \
             } \
-            vec_t<1,rtype> r = z; \
+            vec_t<Dim,rtype> r = z; \
             for (auto& t : r) { \
                 t = interpolate(td, tz, t); \
             } \
@@ -921,7 +921,7 @@ template<typename TypeL, typename TypeS>
 double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
     uint_t nflam = filter.lam.size();
 
-    auto bnd = bounds(filter.lam.data[0], filter.lam.data[nflam-1], lam);
+    auto bnd = bounds(filter.lam.safe[0], filter.lam.safe[nflam-1], lam);
     if (bnd[0] == npos || bnd[1] == npos) {
         return dnan;
     }
@@ -931,19 +931,16 @@ double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1
 
     uint_t j = bnd[0];
     for (uint_t i : range(filter.lam)) {
-        nlam.push_back(filter.lam.data[i]);
-        nrs.push_back(filter.res.data[i]*interpolate(
-            dref<TypeS>(sed.data[j-1]), dref<TypeS>(sed.data[j]),
-            dref<TypeL>(lam.data[j-1]), dref<TypeL>(lam.data[j]),
-            filter.lam.data[i]
-        ));
+        nlam.push_back(filter.lam.safe[i]);
+        nrs.push_back(filter.res.safe[i]*interpolate(
+            sed.safe[j-1], sed.safe[j], lam.safe[j-1], lam.safe[j], filter.lam.safe[i]));
 
         if (i != nflam - 1) {
-            while (lam[j] < filter.lam.data[i+1]) {
-                nlam.push_back(dref<TypeL>(lam.data[j]));
-                nrs.push_back(dref<TypeS>(sed.data[j])*interpolate(
-                    filter.res.data[i], filter.res.data[i+1],
-                    filter.lam.data[i], filter.lam.data[i+1], dref<TypeL>(lam.data[j])
+            while (lam[j] < filter.lam.safe[i+1]) {
+                nlam.push_back(lam.safe[j]);
+                nrs.push_back(sed.safe[j]*interpolate(
+                    filter.res.safe[i], filter.res.safe[i+1],
+                    filter.lam.safe[i], filter.lam.safe[i+1], lam.safe[j]
                 ));
                 ++j;
             }
@@ -962,7 +959,7 @@ auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,T
     vec_t<1,rtype> r; r.reserve(nsed);
 
     for (uint_t s = 0; s < nsed; ++s) {
-        r.push_back(sed2flux(filter, lam(s,_).concretise(), sed(s,_).concretise()));
+        r.push_back(sed2flux(filter, lam.safe(s,_).concretise(), sed.safe(s,_).concretise()));
     }
 
     return r;

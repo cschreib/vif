@@ -40,7 +40,7 @@ vec1u rgen(T n) {
 
     vec1u v(n);
     for (uint_t k : range(uint_t(n))) {
-        v.data[k] = k;
+        v.safe[k] = k;
     }
 
     return v;
@@ -53,14 +53,14 @@ vec_t<1,T> rgen(T i, U j) {
         uint_t n = j-i+1;
         vec_t<1,T> v(n);
         for (uint_t k : range(n)) {
-            v.data[k] = i+k;
+            v.safe[k] = i+k;
         }
         return v;
     } else {
         uint_t n = i-j+1;
         vec_t<1,T> v(n);
         for (uint_t k : range(n)) {
-            v.data[k] = i-k;
+            v.safe[k] = i-k;
         }
         return v;
     }
@@ -77,7 +77,7 @@ vec1d rgen(T i, U j, V n) {
         vec1d v(n);
         double dx = (j-i)/double(n-1);
         for (uint_t k : range(uint_t(n))) {
-            v.data[k] = i + k*dx;
+            v.safe[k] = i + k*dx;
         }
 
         return v;
@@ -94,7 +94,7 @@ vec1d rgen_log(T i, U j, V n) {
         vec1d v(n);
         double dx = log10(j/i)/double(n-1);
         for (uint_t k : range(uint_t(n))) {
-            v.data[k] = i*e10(k*dx);
+            v.safe[k] = i*e10(k*dx);
         }
 
         return v;
@@ -111,20 +111,19 @@ vec_t<2,T> make_bins(T mi, T ma, uint_t n) {
     vec_t<2,T> b(2,n);
     T d = (ma - mi)/n;
     for (uint_t i : range(n)) {
-        b(0,i) = mi + i*d;
-        b(1,i) = mi + (i+1)*d;
+        b.safe(0,i) = mi + i*d;
+        b.safe(1,i) = mi + (i+1)*d;
     }
 
     return b;
 }
 
-template<typename T>
+template<typename T = double>
 vec_t<2,T> make_bins(const vec_t<1,T>& v) {
     vec_t<2,T> b(2, v.size()-1);
-    vec1u ids = uindgen(v.size()-1);
     for (uint_t i : range(b.dims[1])) {
-        b(0,i) = dref<T>(v.data[ids.data[i]]);
-        b(1,i) = dref<T>(v.data[ids.data[i]+1]);
+        b.safe(0,i) = v.safe[i];
+        b.safe(1,i) = v.safe[i+1];
     }
 
     return b;
@@ -132,11 +131,35 @@ vec_t<2,T> make_bins(const vec_t<1,T>& v) {
 
 template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
-    auto low = b[0];
-    auto up  = b[1];
+    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        "vector (expected dims=[2], got dims=[", b.dims, "])");
+
+    auto low = b.safe[0];
+    auto up  = b.safe[1];
     vec_t<Dim,bool> res(v.dims);
     for (uint_t i : range(v)) {
-        res.data[i] = dref<Type>(v.data[i]) >= low && dref<Type>(v.data[i]) < up;
+        res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
+    }
+
+    return res;
+}
+
+template<std::size_t Dim, typename Type, typename B = double>
+vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
+    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        "vector (expected dims=[2], got dims=[", b.dims, "])");
+
+    auto low = b.safe[0];
+    auto up  = b.safe[1];
+    vec_t<Dim,bool> res(v.dims);
+    for (uint_t i : range(v)) {
+        if (i == 0) {
+            res.safe[i] = v.safe[i] < up;
+        } else if (i == v.size()-1) {
+            res.safe[i] = v.safe[i] >= low;
+        } else {
+            res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
+        }
     }
 
     return res;
@@ -151,7 +174,7 @@ template<std::size_t Dim, typename Type>
 vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
     vec_t<Dim,bool> r(v.dims);
     for (uint_t i : range(v)) {
-        r.data[i] = std::isfinite(dref<Type>(v.data[i]));
+        r.safe[i] = std::isfinite(v.safe[i]);
     }
 
     return r;
@@ -166,7 +189,7 @@ template<std::size_t Dim, typename Type>
 vec_t<Dim,bool> nan(const vec_t<Dim,Type>& v) {
     vec_t<Dim,bool> r(v.dims);
     for (uint_t i : range(v)) {
-        r.data[i] = std::isnan(dref<Type>(v.data[i]));
+        r.safe[i] = std::isnan(v.safe[i]);
     }
 
     return r;
@@ -190,7 +213,7 @@ vec_t<dim_total<Args...>::value,double> randomn(T& seed, Args&& ... args) {
     vec_t<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
     std::normal_distribution<double> distribution(0.0, 1.0);
     for (uint_t i : range(v)) {
-        v.data[i] = distribution(seed);
+        v.safe[i] = distribution(seed);
     }
 
     return v;
@@ -207,7 +230,7 @@ vec_t<dim_total<Args...>::value,double> randomu(T& seed, Args&& ... args) {
     vec_t<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
     for (uint_t i : range(v)) {
-        v.data[i] = distribution(seed);
+        v.safe[i] = distribution(seed);
     }
 
     return v;
@@ -232,29 +255,34 @@ template<typename T, typename TypeX, typename TypeY, typename ... Args>
 vec_t<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec_t<1,TypeX>& px,
     const vec_t<1,TypeY>& py, Args&& ... args) {
 
-    // TODO: use std::piecewise_linear_distribution
-    // std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
     // TODO: make an alternative version for integers using std::discrete_distribution.
 
-    // Build cumulative distribution
-    vec1d cpdf(py.size());
-    for (uint_t i : range(py)) {
-        cpdf.data[i] = 0.0;
-        for (uint_t j : range(i)) {
-            cpdf.data[i] += dref<TypeY>(py.data[j]);
-        }
+    using rtype = rtype_t<TypeX>;
+    vec_t<dim_total<Args...>::value,rtype> v(std::forward<Args>(args)...);
+    std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
+    for (uint_t i : range(v)) {
+        v.safe[i] = distribution(seed);
     }
 
-    // Normalize it to unity
-    cpdf /= cpdf.data[cpdf.size()-1];
+    return v;
+}
 
-    // Generate random values
-    auto gen = randomu(seed, std::forward<Args>(args)...);
-    vec_t<dim_total<Args...>::value, rtype_t<TypeX>> res;
-    res.dims = gen.dims;
-    auto tmp = interpolate(px, cpdf, flatten(gen));
-    res.data = std::move(tmp.data);
-    return res;
+template<typename T>
+bool random_coin(T& seed, double prob) {
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    return distribution(seed) <= prob;
+}
+
+template<typename T, typename ... Args>
+vec_t<dim_total<Args...>::value,bool> random_coin(T& seed, double prob, Args&& ... args) {
+    vec_t<dim_total<Args...>::value,bool> v(std::forward<Args>(args)...);
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
+    for (uint_t i : range(v)) {
+        v.safe[i] = distribution(seed) <= prob;
+    }
+
+    return v;
 }
 
 template<std::size_t Dim, typename Type, typename T>
@@ -306,7 +334,7 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
     for (uint_t i = 0; i < r.size(); ++i) {
         uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
         for (uint_t j = 0; j < v.dims[dim]; ++j) {
-            tmp[j] = dref<Type>(v.data[base + j*mpitch]);
+            tmp[j] = v.safe[base + j*mpitch];
         }
 
         r[i] = (*f)(tmp);
@@ -331,7 +359,7 @@ void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
     for (uint_t i = 0; i < np; ++i) {
         uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
         for (uint_t j = 0; j < nint; ++j) {
-            tmp[j] = dref<Type>(v.data[base + j*mpitch]);
+            tmp[j] = v.safe[base + j*mpitch];
         }
 
         func(i, tmp);
@@ -340,7 +368,7 @@ void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
 
 template<std::size_t Dim, typename Type>
 vec_t<1,rtype_t<Type>> run_dim_idx_apply_ids_(const vec1u& ids, const vec_t<Dim,Type>& v) {
-    return v[ids].concretise();
+    return v.safe[ids].concretise();
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
@@ -414,7 +442,7 @@ template<std::size_t Dim>
 uint_t count(const vec_t<Dim,bool>& b) {
     uint_t n = 0u;
     for (uint_t i : range(b)) {
-        if (b[i]) ++n;
+        if (b.safe[i]) ++n;
     }
 
     return n;
@@ -482,7 +510,7 @@ rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
     if (ok.empty()) return 0;
 
     // TODO: use same algorithm than median
-    typename vec_t<1,Type>::effective_type t = v[ok];
+    typename vec_t<1,Type>::effective_type t = v.safe[ok];
     std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     return *(t.begin() + offset);
@@ -495,7 +523,7 @@ template<std::size_t Dim, typename Type, typename U, typename ... Args>
 void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, const Args& ... args) {
     std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
-    r.data[i] = *(t.begin() + offset);
+    r.safe[i] = *(t.begin() + offset);
     ++i;
 
     percentiles_(r, i, t, args...);
@@ -506,7 +534,7 @@ typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, con
     vec1u ok = where(finite(v));
     typename vec_t<1,Type>::effective_type t;
     if (ok.empty()) return t;
-    t = v[ok];
+    t = v.safe[ok];
 
     typename vec_t<1,Type>::effective_type r = arr<rtype_t<Type>>(sizeof...(Args));
     percentiles_(r, 0, t, args...);
@@ -521,7 +549,7 @@ vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double
     else if (percu < percl) std::swap(percu, percl);
 
     auto p = percentiles(v, percl, percu);
-    return v > p[0] && v < p[1];
+    return v > p.safe[0] && v < p.safe[1];
 }
 
 template<std::size_t Dim, typename Type>
@@ -592,20 +620,24 @@ uint_t max_id(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
-    phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions");
+    phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions "
+        "(", v1.dims, " vs. ", v2.dims, ")");
+
     vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
-        r[i] = std::min(v1[i], v2[i]);
+        r.safe[i] = std::min<decltype(v1[0]*v2[0])>(v1.safe[i], v2.safe[i]);
     }
     return r;
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
-    phypp_check(v1.dims == v2.dims, "max: incompatible vector dimensions");
+    phypp_check(v1.dims == v2.dims, "max: incompatible vector dimensions "
+        "(", v1.dims, " vs. ", v2.dims, ")");
+
     vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
-        r[i] = std::max(v1[i], v2[i]);
+        r.safe[i] = std::max<decltype(v1[0]*v2[0])>(v1.safe[i], v2.safe[i]);
     }
     return r;
 }
@@ -614,7 +646,7 @@ template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const Type2& v2) {
     vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
-        r[i] = std::min(v1[i], v2);
+        r.safe[i] = std::min<decltype(v1[0]*v2)>(v1.safe[i], v2);
     }
     return r;
 }
@@ -623,7 +655,7 @@ template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const Type2& v2) {
     vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
-        r[i] = std::max(v1[i], v2);
+        r.safe[i] = std::max<decltype(v1[0]*v2)>(v1.safe[i], v2);
     }
     return r;
 }
@@ -632,7 +664,7 @@ template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> min(const Type1& v1, const vec_t<Dim,Type2>& v2) {
     vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
     for (uint_t i = 0; i < v2.size(); ++i) {
-        r[i] = std::min(v1, v2[i]);
+        r.safe[i] = std::min<decltype(v1*v2[0])>(v1, v2.safe[i]);
     }
     return r;
 }
@@ -641,7 +673,7 @@ template<std::size_t Dim, typename Type1, typename Type2>
 vec_t<Dim,rtype_t<Type1>> max(const Type1& v1, const vec_t<Dim,Type2>& v2) {
     vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
     for (uint_t i = 0; i < v2.size(); ++i) {
-        r[i] = std::max(v1, v2[i]);
+        r.safe[i] = std::max<decltype(v1*v2[0])>(v1, v2.safe[i]);
     }
     return r;
 }
@@ -686,6 +718,9 @@ vec_t<Dim-1,double> mad(const vec_t<Dim,Type>& v, uint_t dim) {
 
 template<std::size_t Dim, typename Type, typename TypeB>
 vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
+    phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+        "dims=[2,...], got dims=[", bins.dims, "])");
+
     using rtype = rtype_t<Type>;
     vec_t<Dim,rtype> tmp = data;
 
@@ -695,12 +730,12 @@ vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
     auto first = tmp.data.begin();
     for (uint_t i : range(nbin)) {
         auto last = std::partition(first, tmp.data.end(), [&bins,i](rtype t) {
-            return t >= bins(0,i) && t < bins(1,i);
+            return t >= bins.safe(0,i) && t < bins.safe(1,i);
         });
 
         if (last == tmp.data.end()) break;
 
-        counts[i] = last - first;
+        counts.safe[i] = last - first;
         first = last;
     }
 
@@ -710,6 +745,10 @@ vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
 template<std::size_t Dim, typename Type, typename TypeB, typename TypeW>
 vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
     const vec_t<2,TypeB>& bins) {
+    phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+        "dims=[2, ...], got dims=[", bins.dims, "])");
+    phypp_check(data.dims == weight.dims, "incompatible dimensions for data and weight "
+        "(", data.dims, " vs. ", weight.dims, ")");
 
     vec1u tmp = uindgen(data.size());
 
@@ -719,13 +758,13 @@ vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,T
     auto first = tmp.data.begin();
     for (uint_t i : range(nbin)) {
         auto last = std::partition(first, tmp.data.end(), [&bins,&data,i](uint_t id) {
-            return data[id] >= bins(0,i) && data[id] < bins(1,i);
+            return data.safe[id] >= bins.safe(0,i) && data.safe[id] < bins.safe(1,i);
         });
 
         if (last == tmp.data.end()) break;
 
         for (; first != last; ++first) {
-            counts[i] += weight[*first];
+            counts.safe[i] += weight.safe[*first];
         }
     }
 
@@ -736,6 +775,10 @@ template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX, typen
 vec2u histogram2d(const vec_t<Dim,TypeX>& x, const vec_t<Dim,TypeY>& y,
     const vec_t<2,TypeBX>& xbins, const vec_t<2,TypeBY>& ybins) {
 
+    phypp_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
+        "dims=[2, ...], got dims=[", xbins.dims, "])");
+    phypp_check(ybins.dims[0] == 2, "can only be called with a bin vector (expected "
+        "dims=[2, ...], got dims=[", ybins.dims, "])");
     phypp_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
         y.dims, ")");
 
@@ -748,7 +791,7 @@ vec2u histogram2d(const vec_t<Dim,TypeX>& x, const vec_t<Dim,TypeY>& y,
     auto firstx = ids.data.begin();
     for (uint_t i : range(nxbin)) {
         auto lastx = std::partition(firstx, ids.data.end(), [&xbins,&x,i](uint_t id) {
-            return x[id] >= xbins(0,i) && x[id] < xbins(1,i);
+            return x.safe[id] >= xbins.safe(0,i) && x.safe[id] < xbins.safe(1,i);
         });
 
         if (lastx == ids.data.end()) break;
@@ -756,12 +799,12 @@ vec2u histogram2d(const vec_t<Dim,TypeX>& x, const vec_t<Dim,TypeY>& y,
         auto firsty = firstx;
         for (uint_t j : range(nybin)) {
             auto lasty = std::partition(firsty, lastx, [&ybins,&y,j](uint_t id) {
-                return y[id] >= ybins(0,j) && y[id] < ybins(1,j);
+                return y.safe[id] >= ybins.safe(0,j) && y.safe[id] < ybins.safe(1,j);
             });
 
             if (lasty == lastx) break;
 
-            counts(i,j) = lasty - firsty;
+            counts.safe(i,j) = lasty - firsty;
 
             firsty = lasty;
         }
@@ -778,7 +821,7 @@ void data_info_(const vec_t<Dim,Type>& v) {
     print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
     if (idok.size() == 0) return;
 
-    vec_t<1,rtype_t<Type>> tv = v[idok];
+    vec_t<1,rtype_t<Type>> tv = v.safe[idok];
 
     print(" min : ", min(tv));
     print(" 15% : ", percentile(tv, 0.15));
@@ -1007,7 +1050,7 @@ auto derivate2(F func, const vec1d& x, const double ep, uint_t ip1, uint_t ip2) 
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(a(0,0)*b(0,0))> {
     phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrices "
-        "("+strn(a.dims)+" x "+strn(b.dims)+")");
+        "(", a.dims, " x ", b.dims, ")");
 
     const uint_t o = a.dims[1];
 
@@ -1019,7 +1062,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(
     for (uint_t i = 0; i < n; ++i)
     for (uint_t j = 0; j < m; ++j)
     for (uint_t k = 0; k < o; ++k) {
-        r(i,j) += a(i,k)*b(k,j);
+        r.safe(i,j) += a.safe(i,k)*b.safe(k,j);
     }
 
     return r;
@@ -1028,7 +1071,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
     phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrix by vector "
-        "("+strn(a.dims)+" x "+strn(b.dims)+")");
+        "(", a.dims, " x ", b.dims, ")");
 
     const uint_t o = a.dims[1];
 
@@ -1038,7 +1081,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
     vec_t<1,ntype_t> r(n);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
-        r(i) += a(i,k)*b(k);
+        r.safe(i) += a.safe(i,k)*b.safe(k);
     }
 
     return r;
@@ -1047,7 +1090,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
 template<typename TypeA, typename TypeB>
 auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
     phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying vector by matrix "
-        "("+strn(a.dims)+" x "+strn(b.dims)+")");
+        "(", a.dims, " x ", b.dims, ")");
 
     const uint_t o = a.dims[0];
 
@@ -1057,7 +1100,7 @@ auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(
     vec_t<1,ntype_t> r = arr<ntype_t>(n);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
-        r(i) += b(k)*a(k,i);
+        r.safe(i) += b.safe(k)*a.safe(k,i);
     }
 
     return r;
@@ -1068,7 +1111,7 @@ void mprint(const vec_t<2,Type>& m) {
     for (uint_t i = 0; i < m.dims[0]; ++i) {
         for (uint_t j = 0; j < m.dims[1]; ++j) {
             if (j != 0) std::cout << ", ";
-            std::cout << m(i,j);
+            std::cout << m.safe(i,j);
         }
 
         std::cout << "\n";
@@ -1078,19 +1121,19 @@ void mprint(const vec_t<2,Type>& m) {
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> transpose(vec_t<2,Type> v) {
+vec_t<2,rtype_t<Type>> transpose(const vec_t<2,Type>& v) {
     vec_t<2,rtype_t<Type>> r(v.dims);
     std::swap(r.dims[0], r.dims[1]);
 
     for (uint_t i : range(r.size())) {
-        r[i] = v[(i%r.dims[1])*v.dims[1] + i/r.dims[1]];
+        r[i] = v.safe[(i%r.dims[1])*v.dims[1] + i/r.dims[1]];
     }
 
     // TODO: see who's faster
     // for (uint_t i : range(r.dims[0]))
     // for (uint_t j : range(r.dims[1])) {
-    //     r[j+i*r.dims[1]] = v[i+j*v.dims[1]];
-    //     // r(i,j) = v(j,i);
+    //     r.safe[j+i*r.dims[1]] = v.safe[i+j*v.dims[1]];
+    //     // r.safe(i,j) = v.safe(j,i);
     // }
 
     return r;
@@ -1098,12 +1141,14 @@ vec_t<2,rtype_t<Type>> transpose(vec_t<2,Type> v) {
 
 template<typename Type>
 auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
-    assert(v.dims[0] == v.dims[1]);
+    phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+        v.dims, ")");
+
     decltype(v(_,0)) d(vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
-        d.data[i] = ptr<Type>(v(i,i));
+        d.safe[i] = ptr<Type>(v.safe(i,i));
     }
 
     return d;
@@ -1111,12 +1156,14 @@ auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
 
 template<typename Type>
 auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
-    assert(v.dims[0] == v.dims[1]);
+    phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+        v.dims, ")");
+
     decltype(v(_,0)) d(vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
-        d.data[i] = ptr<Type>(v(i,i));
+        d.data[i] = ptr<Type>(v.safe(i,i));
     }
 
     return d;
@@ -1132,18 +1179,18 @@ vec_t<2,Type> identity_matrix(uint_t dim) {
 template<typename TX, typename TY>
 auto scale_matrix(const TX& sx, const TY& sy) -> vec_t<2,decltype(sx*sy)> {
     vec_t<2,decltype(sx*sy)> m(3, 3);
-    m(0,0) = sx;
-    m(1,1) = sy;
-    m(2,2) = 1;
+    m.safe(0,0) = sx;
+    m.safe(1,1) = sy;
+    m.safe(2,2) = 1;
     return m;
 }
 
 template<typename T>
 vec_t<2,T> scale_matrix(const T& s) {
     vec_t<2,T> m(3, 3);
-    m(0,0) = s;
-    m(1,1) = s;
-    m(2,2) = 1;
+    m.safe(0,0) = s;
+    m.safe(1,1) = s;
+    m.safe(2,2) = 1;
     return m;
 }
 
@@ -1151,8 +1198,8 @@ template<typename TX, typename TY>
 auto translation_matrix(const TX& tx, const TY& ty) -> vec_t<2,decltype(tx*ty)> {
     vec_t<2,decltype(tx*ty)> m(3, 3);
     diagonal(m) = 1;
-    m(0,2) = tx;
-    m(1,2) = ty;
+    m.safe(0,2) = tx;
+    m.safe(1,2) = ty;
     return m;
 }
 
@@ -1160,10 +1207,10 @@ template<typename A>
 auto rotation_matrix(const A& a) -> vec_t<2,decltype(cos(a))> {
     vec_t<2,decltype(cos(a))> m(3, 3);
     auto ca = cos(a), sa = sin(a);
-    m(0,0) = m(1,1) = ca;
-    m(0,1) = -sa;
-    m(1,0) = sa;
-    m(2,2) = 1;
+    m.safe(0,0) = m.safe(1,1) = ca;
+    m.safe(0,1) = -sa;
+    m.safe(1,0) = sa;
+    m.safe(2,2) = 1;
     return m;
 }
 
@@ -1322,169 +1369,8 @@ void symmetrize(vec_t<2,Type>& alpha) {
 
     for (uint_t i = 0; i < alpha.dims[0]; ++i)
     for (uint_t j = i+1; j < alpha.dims[0]; ++j) {
-        alpha(i,j) = alpha(j,i);
+        alpha.safe(i,j) = alpha.safe(j,i);
     }
-}
-
-enum nlfit_status {
-    ILL_MODEL,
-    MAX_ITER,
-    SINGULAR_HESSIAN,
-    MIN_REL,
-    MIN_ABS,
-    PERFECT_FIT
-};
-
-struct nlfit_result {
-    bool         success;
-    nlfit_status status;
-
-    double chi2;
-    vec1d  params;
-    vec1d  errors;
-    vec2d  cov;
-    uint_t niter;
-};
-
-template<typename Func, typename TypeY, typename TypeE>
-nlfit_result nlfit(Func f, const TypeY& y, const TypeE& ye, vec1d params, double e = 0.001,
-    double abs = 0.01, const uint_t max_iter = 1000) {
-
-    nlfit_result fr;
-
-    uint_t np = n_elements(params);
-    uint_t nm = n_elements(y);
-
-    vec2d alpha = dblarr(np,np);
-    vec1d beta  = dblarr(np);
-
-    vec1d best_params = params;
-    vec2d best_alpha  = alpha;
-
-    auto make_chi2 = [&](const vec1d& p) {
-        return total(sqr((f(p) - y)/ye));
-    };
-
-    double best_chi2 = make_chi2(params);
-    double prev_chi2 = best_chi2;
-    fr.chi2          = best_chi2;
-
-    double lambda = 0.001;
-    double factor = 10.0;
-
-    fr.errors = dblarr(np);
-    fr.niter = 0;
-
-    vec2d deriv = dblarr(np,nm);
-
-    auto make_alpha = [&]() {
-        for (uint_t i = 0; i < np; ++i) {
-            deriv(i,_) = flatten(derivate1(f, params, 0.001, i)/ye);
-        }
-
-        auto tmp = flatten((y - f(params))/ye);
-        for (uint_t i = 0; i < np; ++i) {
-            for (uint_t j = 0; j < np; ++j) {
-                if (i == j) {
-                    alpha(i,i) = (1.0 + lambda)*total(deriv(i,_)*deriv(i,_));
-                } else if (i < j) {
-                    alpha(i,j) = total(deriv(i,_)*deriv(j,_));
-                } else {
-                    alpha(i,j) = alpha(j,i);
-                }
-            }
-
-            beta(i) = total(deriv(i,_)*tmp);
-        }
-
-        if (!invert(alpha)) {
-            return false;
-        } else {
-            return true;
-        }
-    };
-
-    auto fail = [&](nlfit_status s) {
-        params = best_params;
-        if (make_alpha()) {
-            best_alpha = alpha;
-        }
-
-        vec1d d = diagonal(best_alpha);
-        d /= (1.0 + lambda);
-
-        fr.cov     = best_alpha;
-        fr.chi2    = best_chi2;
-        fr.params  = params;
-        fr.errors  = sqrt(d);
-        fr.success = false;
-        fr.status  = s;
-    };
-
-    auto succeed = [&](nlfit_status s) {
-        if (make_alpha()) {
-            best_alpha = alpha;
-        }
-
-        vec1d d = diagonal(best_alpha);
-        d /= (1.0 + lambda);
-
-        fr.cov     = best_alpha;
-        fr.params  = params;
-        fr.errors  = sqrt(d);
-        fr.success = true;
-        fr.status  = s;
-    };
-
-    while (max_iter == 0 || fr.niter < max_iter) {
-        if (!make_alpha()) {
-            fail(SINGULAR_HESSIAN);
-            return fr;
-        }
-
-        params += mmul(alpha, beta);
-        fr.chi2 = make_chi2(params);
-
-        if (!finite(fr.chi2)) {
-            fail(ILL_MODEL);
-            return fr;
-        }
-
-        if (fr.chi2 == 0.0) {
-            succeed(PERFECT_FIT);
-            return fr;
-        }
-
-        if (fr.chi2 >= best_chi2) {
-            lambda *= factor;
-
-            prev_chi2 = fr.chi2;
-            params = best_params;
-        } else {
-            if (fr.niter > 10) {
-                if ((best_chi2 - fr.chi2)/best_chi2 < e) {
-                    succeed(MIN_REL);
-                    return fr;
-                }
-
-                if (abs != 0.0 && fabs(prev_chi2 - fr.chi2) < abs) {
-                    succeed(MIN_ABS);
-                    return fr;
-                }
-            }
-
-            lambda /= factor;
-
-            prev_chi2   = best_chi2 = fr.chi2;
-            best_params = params;
-            best_alpha  = alpha;
-        }
-
-        ++fr.niter;
-    }
-
-    fail(MAX_ITER);
-    return fr;
 }
 
 struct linfit_result {
@@ -1503,12 +1389,12 @@ struct linfit_result {
 
 template<typename T, typename TypeE>
 void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t) {
-    cache(i,_) = flatten(t/ye);
+    cache.safe(i,_) = flatten(t/ye);
 }
 
 template<typename T, typename TypeE, typename ... Args>
 void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t, Args&& ... args) {
-    cache(i,_) = flatten(t/ye);
+    cache.safe(i,_) = flatten(t/ye);
     linfit_make_cache_(cache, ye, i+1, args...);
 }
 
@@ -1526,20 +1412,20 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     for (uint_t i = 0; i < np; ++i) {
         for (uint_t j = 0; j < np; ++j) {
             if (i <= j) {
-                alpha(i,j) = 0.0;
+                alpha.safe(i,j) = 0.0;
                 // alpha(i,j) = sum over all points of x[i]*x[j]/e^2
                 for (uint_t m = 0; m < nm; ++m) {
-                    alpha(i,j) += cache(i,m)*cache(j,m);
+                    alpha.safe(i,j) += cache.safe(i,m)*cache.safe(j,m);
                 }
             } else {
-                alpha(i,j) = alpha(j,i);
+                alpha.safe(i,j) = alpha.safe(j,i);
             }
         }
 
-        beta[i] = 0.0;
+        beta.safe[i] = 0.0;
         // beta[i] = sum over all points of x[i]*y/e^2
         for (uint_t m = 0; m < nm; ++m) {
-            beta[i] += cache(i,m)*tmp[m];
+            beta.safe[i] += cache.safe(i,m)*tmp.safe[m];
         }
     }
 
@@ -1560,9 +1446,9 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
 
     vec1d model(nm);
     for (uint_t m = 0; m < nm; ++m) {
-        model[m] = 0.0;
+        model.safe[m] = 0.0;
         for (uint_t i = 0; i < np; ++i) {
-            model[m] += fr.params[i]*cache(i,m);
+            model.safe[m] += fr.params.safe[i]*cache.safe(i,m);
         }
     }
 
@@ -1576,8 +1462,8 @@ void linfit_error_dims_(const TY& y, uint_t i) {}
 
 template<typename TY, typename U, typename ... Args>
 void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
-    phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X"+
-        strn(i)+" ("+strn(dim(y))+" vs. "+strn(dim(t))+")");
+    phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
+        i, " (", dim(y), " vs. ", dim(t), ")");
     linfit_error_dims_(y, i+1, args...);
 }
 
@@ -1585,8 +1471,8 @@ template<typename TypeY, typename TypeE, typename ... Args>
 linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
     bool bad = !same_dims_or_scalar(y, ye, args...);
     if (bad) {
-        phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and YE arrays "
-            "("+strn(dim(y))+" vs. "+strn(dim(ye))+")");
+        phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
+            "YE arrays (", dim(y), " vs. ", dim(ye), ")");
         linfit_error_dims_(y, 0, args...);
     }
 
@@ -1602,16 +1488,26 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
 template<std::size_t Dim, typename TypeY, typename TypeE, typename TypeX>
 linfit_result linfit_pack(const vec_t<Dim,TypeY>& y, const vec_t<Dim,TypeE>& ye,
     const vec_t<Dim+1,TypeX>& x) {
+    bool good = true;
+    for (uint_t i : range(Dim)) {
+        if (x.dims[i+1] != ye.dims[i] || x.dims[i+1] != y.dims[i]) {
+            good = false;
+            break;
+        }
+    }
+
+    phypp_check(good, "incompatible dimensions between X, Y and YE arrays (", x.dims,
+        " vs. ", y.dims, " vs. ", ye.dims, ")")
 
     linfit_result fr;
 
     uint_t np = x.dims[0];
-    uint_t nm = n_elements(y);
+    uint_t nm = y.size();
 
     vec2d cache(np,nm);
     for (uint_t i = 0; i < np; ++i) {
         for (uint_t j = 0; j < nm; ++j) {
-            cache(i,j) = x[i*x.pitch(0) + j]/ye[j];
+            cache.safe(i,j) = x.safe[i*x.pitch(0) + j]/ye.safe[j];
         }
     }
 
@@ -1742,7 +1638,7 @@ vec1u equal_range(T x, const vec_t<Dim,Type>& v) {
 template<typename Type>
 bool is_sorted(const vec_t<1,Type>& v) {
     for (uint_t i = 0; i < v.size()-1; ++i) {
-        if (v[i] >= v[i+1]) return false;
+        if (v.safe[i] >= v.safe[i+1]) return false;
     }
 
     return true;
@@ -1778,15 +1674,15 @@ auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_
         rtypex xlow, xup;
         if (low != npos) {
             if (low != nmax-1) {
-                ylow = dref<TypeY>(y.data[low]); yup = dref<TypeY>(y.data[low+1]);
-                xlow = dref<TypeX1>(x.data[low]); xup = dref<TypeX1>(x.data[low+1]);
+                ylow = y.safe[low]; yup = y.safe[low+1];
+                xlow = x.safe[low]; xup = x.safe[low+1];
             } else {
-                ylow = dref<TypeY>(y.data[low-1]); yup = dref<TypeY>(y.data[low]);
-                xlow = dref<TypeX1>(x.data[low-1]); xup = dref<TypeX1>(x.data[low]);
+                ylow = y.safe[low-1]; yup = y.safe[low];
+                xlow = x.safe[low-1]; xup = x.safe[low];
             }
         } else {
-            ylow = dref<TypeY>(y.data[0]); yup = dref<TypeY>(y.data[1]);
-            xlow = dref<TypeX1>(x.data[0]); xup = dref<TypeX1>(x.data[1]);
+            ylow = y.safe[0]; yup = y.safe[1];
+            xlow = x.safe[0]; xup = x.safe[1];
         }
 
         r.push_back(ylow + (yup - ylow)*(tx - xlow)/(xup - xlow));
@@ -1819,15 +1715,15 @@ auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX>& x, const T& nx
     rtypex xlow, xup;
     if (low != npos) {
         if (low != nmax-1) {
-            ylow = dref<TypeY>(y.data[low]); yup = dref<TypeY>(y.data[low+1]);
-            xlow = dref<TypeX>(x.data[low]); xup = dref<TypeX>(x.data[low+1]);
+            ylow = y.safe[low]; yup = y.safe[low+1];
+            xlow = x.safe[low]; xup = x.safe[low+1];
         } else {
-            ylow = dref<TypeY>(y.data[low-1]); yup = dref<TypeY>(y.data[low]);
-            xlow = dref<TypeX>(x.data[low-1]); xup = dref<TypeX>(x.data[low]);
+            ylow = y.safe[low-1]; yup = y.safe[low];
+            xlow = x.safe[low-1]; xup = x.safe[low];
         }
     } else {
-        ylow = dref<TypeY>(y.data[0]); yup = dref<TypeY>(y.data[1]);
-        xlow = dref<TypeX>(x.data[0]); xup = dref<TypeX>(x.data[1]);
+        ylow = y.safe[0]; yup = y.safe[1];
+        xlow = x.safe[0]; xup = x.safe[1];
     }
 
     return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);
@@ -1840,41 +1736,144 @@ rtype_t<Type> bilinear(const vec_t<2,Type>& map, double x, double y) {
     double dx = x - tix;
     double dy = y - tiy;
 
-    if (tiy >= map.dims[0]-1) {
-        tiy = map.dims[0]-2;
-        dy = y - tiy;
-    } else if (tiy < 0) {
-        tiy = 0;
-        dy = y - tiy;
-    }
-
-    if (tix >= map.dims[1]-1) {
-        tix = map.dims[1]-2;
+    if (tix >= map.dims[0]-1) {
+        tix = map.dims[0]-2;
         dx = x - tix;
     } else if (tix < 0) {
         tix = 0;
         dx = x - tix;
     }
 
+    if (tiy >= map.dims[1]-1) {
+        tiy = map.dims[1]-2;
+        dy = y - tiy;
+    } else if (tiy < 0) {
+        tiy = 0;
+        dy = y - tiy;
+    }
+
     uint_t ix = tix;
     uint_t iy = tiy;
 
-    return map(ix,iy)*(1.0 - dx)*(1.0 - dy) + map(ix,iy+1)*(1.0 - dx)*dy
-        + map(ix+1,iy)*dx*(1.0 - dy) + map(ix+1,iy+1)*dx*dy;
+    return map.safe(ix,iy)*(1.0 - dx)*(1.0 - dy) + map.safe(ix,iy+1)*(1.0 - dx)*dy
+        + map.safe(ix+1,iy)*dx*(1.0 - dy) + map.safe(ix+1,iy+1)*dx*dy;
+}
+
+template<typename Type>
+vec_t<2,rtype_t<Type>> rebin(const vec_t<2,Type>& map, const vec1d& mx,
+    const vec1d& my, const vec1d& x, const vec1d& y) {
+
+    phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
+        " vs. ", mx.size(), ")");
+    phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
+        " vs. ", my.size(), ")");
+
+    vec_t<2,rtype_t<Type>> v(x.size(), y.size());
+
+    vec1d ux = interpolate(dindgen(mx.size()), mx, x);
+    vec1d uy = interpolate(dindgen(my.size()), my, y);
+
+    for (uint_t ix : range(ux))
+    for (uint_t iy : range(uy)) {
+        v.safe(ix,iy) = bilinear(map, ux.safe[ix], uy.safe[iy]);
+    }
+
+    return v;
 }
 
 template<typename TypeX, typename TypeY>
-auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y) -> decltype(0.5*y[0]*x[0]) {
-    phypp_check(x.size() == y.size(),
-        "incompatible x and y array dimensions ("+strn(x.size())+" vs "+
-        strn(y.size())+")");
+auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y)
+    -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
-    decltype(0.5*y[0]*x[0]) r = 0;
+    phypp_check(x.size() == y.size(),
+        "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+
+    decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
     for (uint_t i = 0; i < x.size()-1; ++i) {
-        r += 0.5*(y.data[i+1]+y.data[i])*(x.data[i+1]-x.data[i]);
+        r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
     }
 
     return r;
+}
+
+template<typename TypeX, typename TypeY>
+auto integrate(const vec_t<2,TypeX>& x, const vec_t<1,TypeY>& y)
+    -> decltype(y[0]*(x[1]-x[0])) {
+
+    phypp_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
+        "got dim=[", x.dims[0], ",...]");
+    phypp_check(x.dims[1] == y.size(),
+        "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
+
+    decltype(y[0]*(x[1]-x[0])) r = 0;
+    for (uint_t i = 0; i < x.dims[1]; ++i) {
+        r += y.safe[i]*(x.safe[i+x.dims[1]]-x.safe[i]);
+    }
+
+    return r;
+}
+
+template<typename TypeX, typename TypeY>
+auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y, double x0, double x1)
+    -> decltype(0.5*y[0]*(x[1]-x[0])) {
+
+    phypp_check(x.size() == y.size(),
+        "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+
+    phypp_check(x.front() <= x0 && x.back() >= x1, "x array must cover the range [x0,x1]");
+
+    uint_t i0 = upper_bound(x0, x);
+    uint_t i1 = lower_bound(x1, x);
+
+    if (i0 > i1) {
+        return 0.5*(y.safe[i1]+y.safe[i0])*(x1 - x0);
+    } else {
+        decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
+        for (uint_t i = i0; i < i1; ++i) {
+            r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
+        }
+
+        if (i0 > 0) {
+            double y0 = interpolate(y.safe[i0-1], y.safe[i0], x.safe[i0-1], x.safe[i0], x0);
+            r += 0.5*(y.safe[i0]+y0)*(x[i0]-x0);
+        }
+
+        if (i1 < x.size()-1) {
+            double y1 = interpolate(y.safe[i1], y.safe[i1+1], x.safe[i1], x.safe[i1+1], x1);
+            r += 0.5*(y1+y.safe[i1])*(x1-x.safe[i1]);
+        }
+
+        return r;
+    }
+}
+
+template<typename TypeX, typename TypeY>
+auto integrate(const vec_t<2,TypeX>& x, const vec_t<1,TypeY>& y, double x0, double x1)
+    -> decltype(y[0]*(x[1]-x[0])) {
+
+    phypp_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
+        "got dim=[", x.dims[0], ",...]");
+    phypp_check(x.dims[1] == y.size(),
+        "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
+
+    phypp_check(x[0] <= x0 && x[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
+
+    uint_t i0 = upper_bound(x0, x(0,_));
+    uint_t i1 = lower_bound(x1, x(0,_));
+
+    if (i0 > i1) {
+        return y.safe[i1]*(x1 - x0);
+    } else {
+        decltype(y[0]*(x[1]-x[0])) r = 0;
+        for (uint_t i = i0; i < i1; ++i) {
+            r += y.safe[i]*(x.safe[i+x.dims[1]]-x.safe[i]);
+        }
+
+        r += y.safe[i0]*(x.safe[i0] - x0);
+        r += y.safe[i1]*(x1 - x.safe[i1]);
+
+        return r;
+    }
 }
 
 template<typename F, typename T, typename U>
@@ -1894,7 +1893,8 @@ auto integrate_trap(F f, T x0, U x1, uint_t n) -> decltype(0.5*f(x0)*x0) {
     return r;
 }
 
-template<typename F, typename T, typename U>
+template<typename F, typename T, typename U,
+    typename enable = typename std::enable_if<!is_vec<F>::value>::type>
 auto integrate(F f, T x0, U x1,
     double e = std::numeric_limits<typename std::result_of<F(T)>::type>::epsilon()) ->
     decltype(0.5*f(x0)*x0) {
@@ -1968,16 +1968,21 @@ template<typename TypeX, typename TypeY1, typename TypeY2>
 auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,TypeY2>& y2) ->
     vec_t<1,decltype(x[0]*y1[0]*y2[0])> {
 
-    phypp_check(x.size() > 3, "convolve needs arrays of at least 3 elements to work");
+    phypp_check(x.dims == y1.dims, "incompatible dimensions for X and Y1 "
+        "(", x.dims, " vs. ", y1.dims, ")");
+    phypp_check(x.dims == y2.dims, "incompatible dimensions for X and Y2 "
+        "(", x.dims, " vs. ", y2.dims, ")");
+    phypp_check(x.size() > 3, "convolve needs arrays of at least 3 elements to work "
+        "(got ", x.size(), ")");
 
     vec_t<1,decltype(x[0]*y1[0]*y2[0])> r(x.size());
     for (uint_t i = 0; i < x.size(); ++i) {
-        auto dx = x[i];
-        if (i == 0) dx = x[i+1] - dx;
-        else dx -= x[i-1];
+        auto dx = x.safe[i];
+        if (i == 0) dx = x.safe[i+1] - dx;
+        else dx -= x.safe[i-1];
 
-        auto tmp = interpolate(y2, x + x[i], x);
-        r += y1[i]*tmp*dx;
+        auto tmp = interpolate(y2, x + x.safe[i], x);
+        r += y1.safe[i]*tmp*dx;
     }
 
     return r;
@@ -1989,34 +1994,35 @@ auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,
 // http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#C.2B.2B
 template<typename TX, typename TY>
 vec1u convex_hull(const TX& x, const TY& y) {
-    phypp_check(n_elements(x) == n_elements(y),
-        "convex_hull requires same number of elements in 'x' and 'y'");
+    phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        "(", x.dims, " vs. ", y.dims, ")");
 
     uint_t npt = n_elements(x);
     vec1u res = uintarr(2*npt);
     vec1u ids = uindgen(npt);
     std::sort(ids.data.begin(), ids.data.end(), [&](uint_t i, uint_t j) {
-        if (x[i] < x[j]) return true;
-        if (x[i] > x[j]) return false;
-        if (y[i] < y[j]) return true;
+        if (x.safe[i] < x.safe[j]) return true;
+        if (x.safe[i] > x.safe[j]) return false;
+        if (y.safe[i] < y.safe[j]) return true;
         return false;
     });
 
     auto cross = [&](uint_t i, uint_t j, uint_t k) {
-        return (x[j] - x[i])*(y[k] - y[i]) - (y[j] - y[i])*(x[k] - x[i]);
+        return (x.safe[j] - x.safe[i])*(y.safe[k] - y.safe[i])
+             - (y.safe[j] - y.safe[i])*(x.safe[k] - x.safe[i]);
     };
 
     uint_t k = 0;
     for (uint_t i = 0; i < npt; ++i) {
-        while (k >= 2 && cross(res[k-2], res[k-1], ids[i]) <= 0) --k;
-        res[k] = ids[i];
+        while (k >= 2 && cross(res.safe[k-2], res.safe[k-1], ids.safe[i]) <= 0) --k;
+        res.safe[k] = ids.safe[i];
         ++k;
     }
 
     uint_t t = k+1;
     for (uint_t i = npt-2; i != npos; --i) {
-        while (k >= t && cross(res[k-2], res[k-1], ids[i]) <= 0) --k;
-        res[k] = ids[i];
+        while (k >= t && cross(res.safe[k-2], res.safe[k-1], ids.safe[i]) <= 0) --k;
+        res.safe[k] = ids.safe[i];
         ++k;
     }
 
@@ -2028,29 +2034,29 @@ vec1u convex_hull(const TX& x, const TY& y) {
 
 template<typename THX, typename THY>
 bool is_hull_closed(const vec1u& hull, const THX& hx, const THY& hy) {
+    phypp_check(hull.size() >= 3, "a hull must have at least 3 elements "
+        "(got ", hull.size(), ")");
+    phypp_check(hx.dims == hy.dims, "incompatible dimensions between HX and HY "
+        "(", hx.dims, " vs. ", hy.dims, ")");
+
     using rtype = typename THX::rtype;
     const auto eps = std::numeric_limits<rtype>::epsilon();
     const uint_t hend = hull.size()-1;
-    return hull[0] == hull[hend] ||
-        (fabs(hx[hull[0]] - hx[hull[hend]]) < eps &&
-         fabs(hy[hull[0]] - hy[hull[hend]]) < eps);
+    return hull.safe[0] == hull.safe[hend] ||
+        (fabs(hx[hull.safe[0]] - hx[hull.safe[hend]]) < eps &&
+         fabs(hy[hull.safe[0]] - hy[hull.safe[hend]]) < eps);
 }
 
 template<typename TX, typename TY, typename THX, typename THY>
 bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, const THY& hy) {
-    phypp_check(n_elements(hx) == n_elements(hy),
-        "in_convex_hull requires same number of elements in 'hx' and 'hy'");
-    phypp_check(n_elements(hx) >= 3,
-        "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(is_hull_closed(hull, hx, hy),
-        "in_convex_hull requires that the hull is closed");
+    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
 
     // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull[0], i1 = hull[1], i2 = hull[2];
+    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
     for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull[i], p2 = hull[i+1];
+        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
         auto cross = (hx[p2] - hx[p1])*(y - hy[p1]) - (hy[p2] - hy[p1])*(x - hx[p1]);
         if ((cross < 0) == sign) return false;
     }
@@ -2062,26 +2068,22 @@ template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
 vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
     const THX& hx, const THY& hy) {
 
-    phypp_check(n_elements(x) == n_elements(y),
-        "in_convex_hull requires same number of elements in 'x' and 'y'");
-    phypp_check(n_elements(hx) == n_elements(hy),
-        "in_convex_hull requires same number of elements in 'hx' and 'hy'");
-    phypp_check(n_elements(hx) >= 3,
-        "in_convex_hull requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(is_hull_closed(hull, hx, hy),
-        "in_convex_hull requires that the hull is closed");
+    phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        "(", x.dims, " vs. ", y.dims, ")");
+    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
 
     // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull[0], i1 = hull[1], i2 = hull[2];
+    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
     vec_t<Dim,bool> res = replicate(true, x.dims);
     for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull[i], p2 = hull[i+1];
+        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
         for (uint_t p = 0; p < x.size(); ++p) {
-            if (!res[p]) continue;
-            auto cross = (hx[p2] - hx[p1])*(y[p] - hy[p1]) - (hy[p2] - hy[p1])*(x[p] - hx[p1]);
-            if ((cross < 0) == sign) res[p] = false;
+            if (!res.safe[p]) continue;
+            auto cross = (hx[p2] - hx[p1])*(y.safe[p] - hy[p1])
+                       - (hy[p2] - hy[p1])*(x.safe[p] - hx[p1]);
+            if ((cross < 0) == sign) res.safe[p] = false;
         }
     }
 
@@ -2094,23 +2096,19 @@ template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
 auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
     const THX& hx, const THY& hy) -> vec_t<Dim, decltype(x[0]*y[0])> {
 
-    phypp_check(n_elements(x) == n_elements(y),
-        "convex_hull_distance requires same number of elements in 'x' and 'y'");
-    phypp_check(n_elements(hx) == n_elements(hy),
-        "convex_hull_distance requires same number of elements in 'hx' and 'hy'");
-    phypp_check(n_elements(hx) >= 3,
-        "convex_hull_distance requires at least 3 point in hull (got ", n_elements(hx), ")");
-    phypp_check(is_hull_closed(hull, hx, hy),
-        "convex_hull_distance requires that the hull is closed");
+    phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        "(", x.dims, " vs. ", y.dims, ")");
+    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
 
     // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull[0], i1 = hull[1], i2 = hull[2];
+    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
     vec_t<Dim,decltype(x[0]*y[0])> res = replicate(finf, x.dims);
     vec_t<Dim,bool> inhull = replicate(true, x.dims);
+
     for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull[i], p2 = hull[i+1];
+        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
 
         // Get unit vector
         auto ux = hx[p2] - hx[p1];
@@ -2124,17 +2122,17 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
 
         for (uint_t p = 0; p < x.size(); ++p) {
             // Comput signed distance to current hull face line
-            auto dx = x[p] - hx[p1];
-            auto dy = y[p] - hy[p1];
+            auto dx = x.safe[p] - hx[p1];
+            auto dy = y.safe[p] - hy[p1];
             auto d = dx*nx + dy*ny;
 
             // Check if the point is inside the hull or not
             if (d > 0) {
-                inhull[p] = false;
+                inhull.safe[p] = false;
             }
 
             d = fabs(d);
-            if (res[p] > d) {
+            if (res.safe[p] > d) {
                 // Find if the projection of the point on the face lies on the segment
                 auto proj = dx*ux + dy*uy;
                 if (proj < 0) {
@@ -2142,19 +2140,19 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
                     d = sqrt(sqr(dx) + sqr(dy));
                 } else if (proj > l) {
                     // Projection lies after ending point
-                    d = sqrt(sqr(x[p] - hx[p2]) + sqr(y[p] - hy[p2]));
+                    d = sqrt(sqr(x.safe[p] - hx[p2]) + sqr(y.safe[p] - hy[p2]));
                 }
 
                 // Keep this distance if it is minimal
-                if (res[p] > d) res[p] = d;
+                if (res.safe[p] > d) res.safe[p] = d;
             }
         }
     }
 
     // Give negative distance to points outside the hull
-    for (uint_t i : range(inhull)) {
-        if (!inhull[i]) {
-            res[i] *= -1.0;
+    for (uint_t p : range(inhull)) {
+        if (!inhull.safe[p]) {
+            res.safe[p] *= -1.0;
         }
     }
 
@@ -2193,7 +2191,7 @@ vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 
     vec_t<N,double> res(tra1.dims);
     for (uint_t i : range(tra1)) {
-        res[i] = angdist(tra1[i], tdec1[i], tra2[i], tdec2[i]);
+        res.safe[i] = angdist(tra1.safe[i], tdec1.safe[i], tra2.safe[i], tdec2.safe[i]);
     }
 
     return res;
@@ -2209,7 +2207,7 @@ vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 
     vec_t<N,double> res(tra1.dims);
     for (uint_t i : range(tra1)) {
-        res[i] = angdist(tra1[i], tdec1[i], tra2, tdec2);
+        res.safe[i] = angdist(tra1.safe[i], tdec1.safe[i], tra2, tdec2);
     }
 
     return res;
@@ -2229,10 +2227,13 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 
     vec_t<N,bool> res(tra1.dims);
     for (uint_t i : range(tra1)) {
-        double ra1 = d2r*tra1[i], ra2 = d2r*tra2, dec1 = d2r*tdec1[i], dec2 = d2r*tdec2;
+        double ra1 = d2r*tra1.safe[i], ra2 = d2r*tra2;
+        double dec1 = d2r*tdec1.safe[i], dec2 = d2r*tdec2;
+
         double sra = sin(0.5*(ra2 - ra1));
         double sde = sin(0.5*(dec2 - dec1));
-        res[i] = sqr(sde) + sqr(sra)*cos(dec2)*cos(dec1) < crad;
+
+        res.safe[i] = sqr(sde) + sqr(sra)*cos(dec2)*cos(dec1) < crad;
     }
 
     return res;

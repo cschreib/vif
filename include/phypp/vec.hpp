@@ -383,7 +383,7 @@ namespace vec_access {
 
     // Helper to build the result of v(_, rgen(1,2), 5), i.e. when at least one index is not scalar.
     // The result is another array.
-    template<bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,
+    template<bool IsSafe, bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,
         typename ... Args>
     struct helper_ {
         static_assert(are_indices<Args...>::value, "vector access can only be made with "
@@ -420,12 +420,28 @@ namespace vec_access {
             t.resize();
         }
 
+        // Adapter to switch between safe/unsafe array indexing
+        template<std::size_t D, typename T>
+        static uint_t to_idx_(itype& v, const T& t, std::true_type) {
+            return v.template to_idx<D>(t);
+        }
+
+        template<std::size_t D>
+        static uint_t to_idx_(itype&, uint_t t, std::false_type) {
+            return t;
+        }
+
+        template<std::size_t D, typename T>
+        static uint_t to_idx(itype& v, const T& t) {
+            return to_idx_<D>(v, t, std::integral_constant<bool,IsSafe>{});
+        }
+
         // Functions to populate the resulting vector
         template<typename T>
         static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
             const std::array<uint_t, Dim>& pitch, const T& ix) {
 
-            t.data[itx] = ptr<Type>(v.data[ivx+v.template to_idx<Dim-1>(ix)]);
+            t.data[itx] = ptr<Type>(v.data[ivx+to_idx<Dim-1>(v,ix)]);
             ++itx;
         }
 
@@ -443,7 +459,7 @@ namespace vec_access {
             const std::array<uint_t, Dim>& pitch, const vec_t<1,T>& r) {
 
             for (uint_t j = 0; j < r.data.size(); ++j) {
-                t.data[itx] = ptr<Type>(v.data[ivx+v.template to_idx<Dim-1>(dref<T>(r.data[j]))]);
+                t.data[itx] = ptr<Type>(v.data[ivx+to_idx<Dim-1>(v, r.safe[j])]);
                 ++itx;
             }
         }
@@ -453,7 +469,7 @@ namespace vec_access {
             const std::array<uint_t, Dim>& pitch, const T& ix, const Args2& ... i) {
 
             make_indices_(t, itx, v, ivx +
-                v.template to_idx<IV>(ix)*pitch[IV], cte_t<IV+1>(), pitch, i...
+                to_idx<IV>(v, ix)*pitch[IV], cte_t<IV+1>(), pitch, i...
             );
         }
 
@@ -472,7 +488,7 @@ namespace vec_access {
 
             for (uint_t j = 0; j < r.data.size(); ++j) {
                 make_indices_(t, itx, v, ivx +
-                    v.template to_idx<IV>(dref<T>(r.data[j]))*pitch[IV], cte_t<IV+1>(),
+                    to_idx<IV>(v, r.safe[j])*pitch[IV], cte_t<IV+1>(),
                     pitch, i...
                 );
             }
@@ -507,8 +523,8 @@ namespace vec_access {
         }
     };
 
-    template<bool IsConst, typename Type, typename Arg>
-    struct helper_<IsConst, 1, 1, Type, Arg> {
+    template<bool IsSafe, bool IsConst, typename Type, typename Arg>
+    struct helper_<IsSafe, IsConst, 1, 1, Type, Arg> {
         static_assert(is_index<Arg>::value, "vector access can only be made with "
             "integers or '_'");
 
@@ -518,6 +534,22 @@ namespace vec_access {
         using type = typename std::conditional<IsConst,
             vec_t<1, const rptype*>, vec_t<1, rptype*>>::type;
 
+        // Adapter to switch between safe/unsafe array indexing
+        template<typename T>
+        static uint_t to_idx_(itype& v, const T& t, std::true_type) {
+            return v.to_idx(t);
+        }
+
+        static uint_t to_idx_(itype&, uint_t t, std::false_type) {
+            return t;
+        }
+
+        template<typename T>
+        static uint_t to_idx(itype& v, const T& t) {
+            return to_idx_(v, t, std::integral_constant<bool,IsSafe>{});
+        }
+
+        // Access functions
         static type access(itype& v, placeholder_t) {
             type t(get_parent(v));
             t.dims[0] = v.dims[0];
@@ -537,7 +569,7 @@ namespace vec_access {
             t.resize();
 
             for (uint_t i = 0; i < r.data.size(); ++i) {
-                t.data[i] = ptr<Type>(v.data[v.to_idx(dref<T>(r.data[i]))]);
+                t.data[i] = ptr<Type>(v.data[to_idx(v, r.safe[i])]);
             }
 
             return t;
@@ -546,8 +578,8 @@ namespace vec_access {
 
     // Helper to build the result of v(1,2,3), i.e. when all indices are scalars.
     // The result is a scalar.
-    template<bool IsConst, std::size_t Dim, typename Type, typename ... Args>
-    struct helper_<IsConst, Dim, 0, Type, Args...>  {
+    template<bool IsSafe, bool IsConst, std::size_t Dim, typename Type, typename ... Args>
+    struct helper_<IsSafe, IsConst, Dim, 0, Type, Args...>  {
         static_assert(are_indices<Args...>::value, "vector access can only be made with "
             "integers or '_'");
 
@@ -557,6 +589,23 @@ namespace vec_access {
         using type = typename std::conditional<IsConst,
             const dtype_t<rptype>&, dtype_t<rptype>&>::type;
 
+        // Adapter to switch between safe/unsafe array indexing
+        template<std::size_t D, typename T>
+        static uint_t to_idx_(itype& v, const T& t, std::true_type) {
+            return v.template to_idx<D>(t);
+        }
+
+        template<std::size_t D>
+        static uint_t to_idx_(itype&, uint_t t, std::false_type) {
+            return t;
+        }
+
+        template<std::size_t D, typename T>
+        static uint_t to_idx(itype& v, const T& t) {
+            return to_idx_<D>(v, t, std::integral_constant<bool,IsSafe>{});
+        }
+
+        // Access functions
         template<typename V>
         static uint_t get_index_(V& vi, uint_t idx) {
             return idx;
@@ -570,18 +619,18 @@ namespace vec_access {
                 pitch *= v.dims[j];
             }
 
-            idx += v.template to_idx<Dim-1-sizeof...(Args2)>(ix)*pitch;
+            idx += to_idx<Dim-1-sizeof...(Args2)>(v, ix)*pitch;
 
             return get_index_(v, idx, i...);
         }
 
         static type access(itype& v, const Args& ... i) {
-            return reinterpret_cast<type>(dref<Type>(v.data[get_index_(v, 0, i...)]));
+            return reinterpret_cast<type>(v.safe[get_index_(v, 0, i...)]);
         }
     };
 
-    template<bool IsConst, typename Type, typename T>
-    struct helper_<IsConst, 1, 0, Type, T> {
+    template<bool IsSafe, bool IsConst, typename Type, typename T>
+    struct helper_<IsSafe, IsConst, 1, 0, Type, T> {
         static_assert(is_index<T>::value, "vector access can only be made with "
             "integers or '_'");
 
@@ -591,13 +640,27 @@ namespace vec_access {
         using type = typename std::conditional<IsConst,
             const dtype_t<rptype>&, dtype_t<rptype>&>::type;
 
+        // Adapter to switch between safe/unsafe array indexing
+        static uint_t to_idx_(itype& v, const T& t, std::true_type) {
+            return v.to_idx(t);
+        }
+
+        static uint_t to_idx_(itype&, uint_t t, std::false_type) {
+            return t;
+        }
+
+        static uint_t to_idx(itype& v, const T& t) {
+            return to_idx_(v, t, std::integral_constant<bool,IsSafe>{});
+        }
+
+        // Access function
         static type access(itype& v, const T& i) {
-            return dref<Type>(v.data[v.to_idx(i)]);
+            return v.safe[to_idx(v, i)];
         }
     };
 
-    template<bool IsConst, std::size_t Dim, typename Type, typename ... Args>
-    using helper = helper_<IsConst, Dim, result_dim<Args...>::value, Type, Args...>;
+    template<bool IsSafe, bool IsConst, std::size_t Dim, typename Type, typename ... Args>
+    using helper = helper_<IsSafe, IsConst, Dim, result_dim<Args...>::value, Type, Args...>;
 }
 
 // Helper to intialize a generic vector from an initializer_list.
@@ -704,6 +767,18 @@ template<typename T, typename ... Args>
 struct is_dim_list<T, Args...> : std::integral_constant<bool,
     is_dim_elem<typename std::decay<T>::type>::value && is_dim_list<Args...>::value> {};
 
+template<typename TFrom, typename TTo>
+struct vec_convertible_ : std::is_convertible<TFrom,TTo> {};
+
+template<typename TFrom>
+struct vec_convertible_<TFrom,bool> : std::is_same<TFrom,bool> {};
+
+template<typename TFrom, typename TTo>
+using vec_convertible = vec_convertible_<
+    typename std::decay<typename std::remove_pointer<TFrom>::type>::type,
+    typename std::decay<typename std::remove_pointer<TTo>::type>::type
+>;
+
 // The generic vector itself.
 template<std::size_t Dim, typename Type>
 struct vec_t;
@@ -746,9 +821,12 @@ struct vec_t {
 
     template<typename T>
     vec_t(const vec_t<Dim,T>& v) : dims(v.dims) {
+        static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
+            "non-convertible types");
+
         data.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
-            data[i] = dref<T>(v.data[i]);
+            data[i] = v.safe[i];
         }
     }
 
@@ -911,6 +989,21 @@ struct vec_t {
         return v;
     }
 
+    uint_t flat_id_(uint_t ret, cte_t<Dim>) const {
+        return ret;
+    }
+
+    template<typename T, std::size_t D, typename ... Args>
+    uint_t flat_id_(uint_t ret, cte_t<D>, T i, Args&& ... args) const {
+        return flat_id_(ret + pitch(D)*to_idx<D>(i), cte_t<D+1>{}, std::forward<Args>(args)...);
+    }
+
+    template<typename ... Args>
+    uint_t flat_id(Args&& ... args) const {
+        static_assert(sizeof...(Args) == Dim, "wrong number of IDs provided");
+        return flat_id_(0, cte_t<0>{}, std::forward<Args>(args)...);
+    }
+
     template<typename T>
     T to_idx_(T ui, cte_t<false>) const {
         phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
@@ -1049,19 +1142,131 @@ struct vec_t {
 
     template<typename ... Args>
     auto operator () (const Args& ... i) ->
-        typename vec_access::helper<false, Dim, Type, Args...>::type {
+        typename vec_access::helper<true, false, Dim, Type, Args...>::type {
         static_assert(vec_access::accessed_dim<Args...>::value == Dim,
             "wrong number of indices for this vector");
-        return vec_access::helper<false, Dim, Type, Args...>::access(*this, i...);
+        return vec_access::helper<true, false, Dim, Type, Args...>::access(*this, i...);
     }
 
     template<typename ... Args>
     auto operator () (const Args& ... i) const ->
-        typename vec_access::helper<true, Dim, Type, Args...>::type {
+        typename vec_access::helper<true, true, Dim, Type, Args...>::type {
         static_assert(vec_access::accessed_dim<Args...>::value == Dim,
             "wrong number of indices for this vector");
-        return vec_access::helper<true, Dim, Type, Args...>::access(*this, i...);
+        return vec_access::helper<true, true, Dim, Type, Args...>::access(*this, i...);
     }
+
+    struct safe_proxy {
+        vec_t& vec;
+
+        vec_t& get_vec_() {
+            return *reinterpret_cast<vec_t*>(
+                reinterpret_cast<char*>(this) - offsetof(vec_t, safe));
+        }
+
+        safe_proxy() : vec(get_vec_()) {}
+        safe_proxy(const safe_proxy&) : vec(get_vec_()) {}
+        safe_proxy(safe_proxy&&) : vec(get_vec_()) {}
+
+        safe_proxy& operator=(const safe_proxy&) { return *this; }
+        safe_proxy& operator=(safe_proxy&&) { return *this; }
+
+        Type& operator [] (uint_t i) {
+            return const_cast<Type&>(const_cast<const safe_proxy&>(*this)[i]);
+        }
+
+        const Type& operator [] (uint_t i) const {
+            return reinterpret_cast<const Type&>(vec.data[i]);
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
+            vec_t<1,Type*> v(vec);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+            }
+            return v;
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
+            vec_t<1,Type*> v(vec);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+            }
+            return v;
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
+            vec_t<1,const Type*> v(vec);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+            }
+            return v;
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
+            vec_t<1,const Type*> v(vec);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+            }
+            return v;
+        }
+
+        vec_t<1,Type*> operator [] (placeholder_t) {
+            vec_t<1,Type*> v(vec);
+            v.data.resize(vec.data.size());
+            v.dims[0] = vec.data.size();
+            for (uint_t i = 0; i < vec.data.size(); ++i) {
+                v.data[i] = ptr<Type>(vec.data[i]);
+            }
+            return v;
+        }
+
+        vec_t<Dim,const Type*> operator [] (placeholder_t) const {
+            vec_t<1,const Type*> v(vec);
+            v.data.resize(vec.data.size());
+            v.dims[0] = vec.data.size();
+            for (uint_t i = 0; i < vec.data.size(); ++i) {
+                v.data[i] = ptr<Type>(vec.data[i]);
+            }
+            return v;
+        }
+
+        template<typename ... Args>
+        auto operator () (const Args& ... i) ->
+            typename vec_access::helper<false, false, Dim, Type, Args...>::type {
+            static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+                "wrong number of indices for this vector");
+            return vec_access::helper<false, false, Dim, Type, Args...>::access(vec, i...);
+        }
+
+        template<typename ... Args>
+        auto operator () (const Args& ... i) const ->
+            typename vec_access::helper<false, true, Dim, Type, Args...>::type {
+            static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+                "wrong number of indices for this vector");
+            return vec_access::helper<false, true, Dim, Type, Args...>::access(vec, i...);
+        }
+    } safe;
 
     vec_t operator + () const {
         return *this;
@@ -1084,14 +1289,14 @@ struct vec_t {
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    t[i] = dref<U>(u.data[i]); \
+                    t[i] = u.safe[i]; \
                 } \
                 for (uint_t i = 0; i < data.size(); ++i) { \
                     data[i] op t[i]; \
                 } \
             } else { \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    data[i] op dref<U>(u.data[i]); \
+                    data[i] op u.safe[i]; \
                 } \
             } \
             return *this; \
@@ -1266,7 +1471,7 @@ struct vec_t<Dim,Type*> {
         phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
             v.data.size(), " to ", data.size(), ")");
         for (uint_t i = 0; i < v.data.size(); ++i) {
-            *data[i] = dref<T>(v.data[i]);
+            *data[i] = v.safe[i];
         }
         return *this;
     }
@@ -1392,7 +1597,7 @@ struct vec_t<Dim,Type*> {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = data[to_idx(i[j])];
+            v.data[j] = data[to_idx(i.safe[j])];
         }
         return v;
     }
@@ -1404,7 +1609,7 @@ struct vec_t<Dim,Type*> {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = data[to_idx(i[j])];
+            v.data[j] = data[to_idx(i.safe[j])];
         }
         return v;
     }
@@ -1416,7 +1621,7 @@ struct vec_t<Dim,Type*> {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = data[to_idx(i[j])];
+            v.data[j] = data[to_idx(i.safe[j])];
         }
         return v;
     }
@@ -1428,15 +1633,16 @@ struct vec_t<Dim,Type*> {
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
-            v.data[j] = data[to_idx(i[j])];
+            v.data[j] = data[to_idx(i.safe[j])];
         }
         return v;
     }
 
     vec_t<1,Type*> operator [] (placeholder_t) {
         vec_t<1,Type*> v(parent);
-        v.data.resize(data.size());
         v.dims[0] = data.size();
+        // TODO: can't this be simplified to v.data = vec.data?
+        v.data.resize(data.size());
         for (uint_t i = 0; i < data.size(); ++i) {
             v.data[i] = data[i];
         }
@@ -1445,8 +1651,9 @@ struct vec_t<Dim,Type*> {
 
     vec_t<1,const Type*> operator [] (placeholder_t) const {
         vec_t<1,const Type*> v(parent);
-        v.data.resize(data.size());
         v.dims[0] = data.size();
+        // TODO: can't this be simplified to v.data = vec.data?
+        v.data.resize(data.size());
         for (uint_t i = 0; i < data.size(); ++i) {
             v.data[i] = data[i];
         }
@@ -1455,19 +1662,133 @@ struct vec_t<Dim,Type*> {
 
     template<typename ... Args>
     auto operator () (const Args& ... i) ->
-        typename vec_access::helper<false, Dim, Type*, Args...>::type {
+        typename vec_access::helper<true, false, Dim, Type*, Args...>::type {
         static_assert(vec_access::accessed_dim<Args...>::value == Dim,
             "wrong number of indices for this vector");
-        return vec_access::helper<false, Dim, Type*, Args...>::access(*this, i...);
+        return vec_access::helper<true, false, Dim, Type*, Args...>::access(*this, i...);
     }
 
     template<typename ... Args>
     auto operator () (const Args& ... i) const ->
-        typename vec_access::helper<true, Dim, Type*, Args...>::type {
+        typename vec_access::helper<true, true, Dim, Type*, Args...>::type {
         static_assert(vec_access::accessed_dim<Args...>::value == Dim,
             "wrong number of indices for this vector");
-        return vec_access::helper<true, Dim, Type*, Args...>::access(*this, i...);
+        return vec_access::helper<true, true, Dim, Type*, Args...>::access(*this, i...);
     }
+
+    struct safe_proxy {
+        vec_t& vec;
+
+        vec_t& get_vec_() {
+            return *reinterpret_cast<vec_t*>(
+                reinterpret_cast<char*>(this) - offsetof(vec_t, safe));
+        }
+
+        safe_proxy() : vec(get_vec_()) {}
+        safe_proxy(const safe_proxy&) : vec(get_vec_()) {}
+        safe_proxy(safe_proxy&&) : vec(get_vec_()) {}
+
+        safe_proxy& operator=(const safe_proxy&) { return *this; }
+        safe_proxy& operator=(safe_proxy&&) { return *this; }
+
+        Type& operator [] (uint_t i) {
+            return const_cast<Type&>(const_cast<const safe_proxy&>(*this)[i]);
+        }
+
+        const Type& operator [] (uint_t i) const {
+            return *vec.data[i];
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
+            vec_t<1,Type*> v(vec.parent);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = vec.data[i.safe[j]];
+            }
+            return v;
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
+            vec_t<1,Type*> v(vec.parent);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = vec.data[i.safe[j]];
+            }
+            return v;
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
+            vec_t<1,const Type*> v(vec.parent);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = vec.data[i.safe[j]];
+            }
+            return v;
+        }
+
+        template<typename T, typename enable =
+            typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value>::type>
+        vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
+            vec_t<1,const Type*> v(vec.parent);
+            v.data.resize(i.data.size());
+            v.dims[0] = i.data.size();
+            for (uint_t j = 0; j < i.data.size(); ++j) {
+                v.data[j] = vec.data[i.safe[j]];
+            }
+            return v;
+        }
+
+        vec_t<1,Type*> operator [] (placeholder_t) {
+            vec_t<1,Type*> v(vec.parent);
+            v.dims[0] = vec.data.size();
+            // TODO: can't this be simplified to v.data = vec.data?
+            v.data.resize(vec.data.size());
+            for (uint_t i = 0; i < vec.data.size(); ++i) {
+                v.data[i] = vec.data[i];
+            }
+            return v;
+        }
+
+        vec_t<Dim,const Type*> operator [] (placeholder_t) const {
+            vec_t<1,const Type*> v(vec.parent);
+            v.dims[0] = vec.data.size();
+            // TODO: can't this be simplified to v.data = vec.data?
+            v.data.resize(vec.data.size());
+            for (uint_t i = 0; i < vec.data.size(); ++i) {
+                v.data[i] = vec.data[i];
+            }
+            return v;
+        }
+
+        template<typename ... Args>
+        auto operator () (const Args& ... i) ->
+            typename vec_access::helper<false, false, Dim, Type*, Args...>::type {
+            static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+                "wrong number of indices for this vector");
+            return vec_access::helper<false, false, Dim, Type*, Args...>::access(vec, i...);
+        }
+
+        template<typename ... Args>
+        auto operator () (const Args& ... i) const ->
+            typename vec_access::helper<false, true, Dim, Type*, Args...>::type {
+            static_assert(vec_access::accessed_dim<Args...>::value == Dim,
+                "wrong number of indices for this vector");
+            return vec_access::helper<false, true, Dim, Type*, Args...>::access(vec, i...);
+        }
+    } safe;
 
     effective_type operator + () const {
         return *this;
@@ -1490,14 +1811,14 @@ struct vec_t<Dim,Type*> {
             if (u.is_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    t[i] = dref<U>(u.data[i]); \
+                    t[i] = u.safe[i]; \
                 } \
                 for (uint_t i = 0; i < data.size(); ++i) { \
                     *data[i] op t[i]; \
                 } \
             } else { \
                 for (uint_t i = 0; i < data.size(); ++i) { \
-                    *data[i] op dref<U>(u.data[i]); \
+                    *data[i] op u.safe[i]; \
                 } \
             } \
             return *this; \
@@ -1684,8 +2005,8 @@ const T& get_element_(const T& t, uint_t i) {
 }
 
 template<std::size_t Dim, typename T>
-auto get_element_(const vec_t<Dim,T>& t, uint_t i) -> decltype(dref<T>(t.data[i])) {
-    return dref<T>(t.data[i]);
+auto get_element_(const vec_t<Dim,T>& t, uint_t i) -> decltype(t.safe[i]) {
+    return t.safe[i];
 }
 
 #define VECTORIZE(op, sop) \
@@ -1778,7 +2099,7 @@ VECTORIZE(-, -=)
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v, const U& u) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.data.size(); ++i) { \
-            tv.data[i] = (dref<T>(v.data[i]) op u); \
+            tv.safe[i] = (v.safe[i] op u); \
         } \
         return tv; \
     } \
@@ -1787,7 +2108,7 @@ VECTORIZE(-, -=)
     vec_t<Dim,bool> operator op (const U& u, const vec_t<Dim,T>& v) { \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
-            tv.data[i] = (u op dref<T>(v.data[i])); \
+            tv.safe[i] = (u op v.safe[i]); \
         } \
         return tv; \
     } \
@@ -1798,7 +2119,7 @@ VECTORIZE(-, -=)
             "' ("+strn(v.dims)+" vs "+strn(u.dims)+")"); \
         vec_t<Dim,bool> tv = boolarr(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
-            tv.data[i] = (dref<T>(v.data[i]) op dref<U>(u.data[i])); \
+            tv.safe[i] = (v.safe[i] op u.safe[i]); \
         } \
         return tv; \
     }
@@ -1823,7 +2144,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         vec_t<Dim,bool> tv = v1; \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            tv.data[i] = tv.data[i] op dref<U>(v2.data[i]); \
+            tv.safe[i] = tv.safe[i] op v2.safe[i]; \
         } \
         return tv; \
     } \
@@ -1833,7 +2154,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
         phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            v1.data[i] = v1.data[i] op dref<U>(v2.data[i]); \
+            v1.safe[i] = v1.safe[i] op v2.safe[i]; \
         } \
         return std::move(v1); \
     } \
@@ -1843,7 +2164,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
         phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v2.size(); ++i) { \
-            v2.data[i] = dref<T>(v1.data[i]) op v2.data[i]; \
+            v2.safe[i] = v1.safe[i] op v2.safe[i]; \
         } \
         return std::move(v2); \
     } \
@@ -1852,7 +2173,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
         phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
             "' ("+strn(v1.dims)+" vs "+strn(v2.dims)+")"); \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            v1.data[i] = v1.data[i] op v2.data[i]; \
+            v1.safe[i] = v1.safe[i] op v2.safe[i]; \
         } \
         return std::move(v1); \
     } \
@@ -1861,7 +2182,7 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
     vec_t<Dim,bool> operator op (const vec_t<Dim,T>& v1, bool b) { \
         vec_t<Dim,bool> tv = v1; \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            tv.data[i] = tv.data[i] op b; \
+            tv.safe[i] = tv.safe[i] op b; \
         } \
         return tv; \
     } \
@@ -1870,21 +2191,21 @@ using is_bool_t = std::is_same<typename std::decay<typename std::remove_pointer<
     vec_t<Dim,bool> operator op (bool b, const vec_t<Dim,T>& v2) { \
         vec_t<Dim,bool> tv = v2; \
         for (uint_t i = 0; i < v2.size(); ++i) { \
-            tv.data[i] = b op tv.data[i]; \
+            tv.safe[i] = b op tv.safe[i]; \
         } \
         return tv; \
     } \
     template<std::size_t Dim> \
     vec_t<Dim,bool> operator op (vec_t<Dim,bool>&& v1, bool b) { \
         for (uint_t i = 0; i < v1.size(); ++i) { \
-            v1.data[i] = v1.data[i] op b; \
+            v1.safe[i] = v1.safe[i] op b; \
         } \
         return std::move(v1); \
     } \
     template<std::size_t Dim> \
     vec_t<Dim,bool> operator op (bool b, vec_t<Dim,bool>&& v2) { \
         for (uint_t i = 0; i < v2.size(); ++i) { \
-            v2.data[i] = b op v2.data[i]; \
+            v2.safe[i] = b op v2.safe[i]; \
         } \
         return std::move(v2); \
     }
@@ -1899,7 +2220,7 @@ template<std::size_t Dim, typename T, typename enable = typename std::enable_if<
 vec_t<Dim,bool> operator ! (const vec_t<Dim,T>& v) {
     vec_t<Dim,bool> tv = v;
     for (uint_t i = 0; i < v.data.size(); ++i) {
-        tv.data[i] = !tv.data[i];
+        tv.safe[i] = !tv.safe[i];
     }
 
     return tv;
@@ -1908,7 +2229,7 @@ vec_t<Dim,bool> operator ! (const vec_t<Dim,T>& v) {
 template<std::size_t Dim>
 vec_t<Dim,bool> operator ! (vec_t<Dim,bool>&& v) {
     for (uint_t i = 0; i < v.data.size(); ++i) {
-        v.data[i] = !v.data[i];
+        v.safe[i] = !v.safe[i];
     }
 
     return std::move(v);
@@ -1919,7 +2240,7 @@ template<typename T, typename ... Dims>
 auto indgen_(Dims&& ... ds) -> decltype(arr<T>(std::forward<Dims>(ds)...)) {
     auto v = arr<T>(std::forward<Dims>(ds)...);
     for (uint_t i = 0; i < v.size(); ++i) {
-        v[i] = i;
+        v.safe[i] = i;
     }
     return v;
 }
@@ -1960,7 +2281,7 @@ template<std::size_t Dim, typename T>
 vec1u dim(const vec_t<Dim,T>& v) {
     vec1u d = uintarr(Dim);
     for (uint_t i = 0; i < Dim; ++i) {
-        d[i] = v.dims[i];
+        d.safe[i] = v.dims[i];
     }
     return d;
 }
@@ -2020,9 +2341,9 @@ bool same_dims_or_scalar(const Args& ... args) {
 }
 
 template<std::size_t Dim, typename T>
-auto element(const vec_t<Dim,T>& v) -> decltype(dref<T>(v.data[0])) {
+auto element(const vec_t<Dim,T>& v) -> decltype(v.safe[0]) {
     phypp_check(!v.empty(), "cannot get element of empty array");
-    return dref<T>(v.data[0]);
+    return v.safe[0];
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
@@ -2031,15 +2352,15 @@ T& element(T& v) {
 }
 
 template<typename T>
-auto first(const vec_t<1,T>& v) -> decltype(dref<T>(v.data[0])) {
+auto first(const vec_t<1,T>& v) -> decltype(v.safe[0]) {
     phypp_check(!v.empty(), "cannot get first element of empty array");
-    return dref<T>(v.data[0]);
+    return v.safe[0];
 }
 
 template<typename T>
-auto last(const vec_t<1,T>& v) -> decltype(dref<T>(v.data[0])) {
+auto last(const vec_t<1,T>& v) -> decltype(v.safe[0]) {
     phypp_check(!v.empty(), "cannot get last element of empty array");
-    return dref<T>(v.data[v.data.size()-1]);
+    return v.safe[v.data.size()-1];
 }
 
 // Return the indices of the vector where the value is 'true'.
@@ -2075,7 +2396,7 @@ vec1u complement(const vec_t<Dim,Type>& v, const vec1u& ids) {
 
     vec1u res; res.reserve(v.size() - ids.size());
     for (uint_t i = 0; i < v.size(); ++i) {
-        if (!sel[i]) {
+        if (!sel.safe[i]) {
             res.push_back(i);
         }
     }
@@ -2092,12 +2413,12 @@ vec1u uniq(const vec_t<Dim,Type>& v) {
     if (v.empty()) return r;
     r.reserve(v.size()/4);
 
-    rtype_t<Type> last = v[0];
+    rtype_t<Type> last = v.safe[0];
     r.push_back(0);
     for (uint_t i = 1; i < v.size(); ++i) {
-        if (v[i] != last) {
+        if (v.safe[i] != last) {
             r.push_back(i);
-            last = v[i];
+            last = v.safe[i];
         }
     }
 
@@ -2117,10 +2438,10 @@ vec1u uniq(const vec_t<Dim,Type>& v, const vec1u& sid) {
     rtype_t<Type> last = v[sid[0]];
     r.push_back(sid[0]);
     for (uint_t ti = 1; ti < sid.size(); ++ti) {
-        uint_t i = sid[ti];
+        uint_t i = sid.safe[ti];
         if (v[i] != last) {
             r.push_back(i);
-            last = v[i];
+            last = v.safe[i];
         }
     }
 
@@ -2133,7 +2454,7 @@ vec1u uniq(const vec_t<Dim,Type>& v, const vec1u& sid) {
 template<typename Type1, std::size_t Dim2, typename Type2 = Type1>
 bool is_any_of(const Type1& v1, const vec_t<Dim2,Type2>& v2) {
     for (uint_t j = 0; j < v2.size(); ++j) {
-        if (v1 == v2[j]) {
+        if (v1 == v2.safe[j]) {
             return true;
         }
     }
@@ -2148,8 +2469,8 @@ vec_t<Dim1,bool> is_any_of(const vec_t<Dim1,Type1>& v1, const vec_t<Dim2,Type2>&
     vec_t<Dim1,bool> r(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i)
     for (uint_t j = 0; j < v2.size(); ++j) {
-        if (v1[i] == v2[j]) {
-            r[i] = true;
+        if (v1.safe[i] == v2.safe[j]) {
+            r.safe[i] = true;
             break;
         }
     }
@@ -2173,11 +2494,11 @@ void match(const vec_t<D1,Type1>& v1, const vec_t<D2,Type2>& v2, vec1u& id1, vec
     id2.data.reserve(n1 + id2.size());
 
     for (uint_t i = 0; i < n1; ++i) {
-        vec1u r = where(v2 == v1[i]);
+        vec1u r = where(v2 == v1.safe[i]);
         if (r.empty()) continue;
 
         id1.data.push_back(i);
-        id2.data.push_back(r[0]);
+        id2.data.push_back(r.safe[0]);
     }
 
     id1.dims[0] = id1.data.size();
@@ -2199,7 +2520,7 @@ void match_dictionary(const vec_t<D1,Type1>& v1, const vec_t<D2,Type2>& v2, vec1
     vec1u idu = uniq(sv1);
 
     vec1u tid1, tid2;
-    match(sv1[idu], v2, tid1, tid2);
+    match(sv1.safe[idu], v2, tid1, tid2);
 
     const uint_t nm = tid1.size();
     const uint_t nplus = nm*(float(idu.size())/v1.size());
@@ -2207,12 +2528,12 @@ void match_dictionary(const vec_t<D1,Type1>& v1, const vec_t<D2,Type2>& v2, vec1
     id2.reserve(id2.size() + nplus);
 
     for (uint_t tu = 0; tu < nm; ++tu) {
-        uint_t iu = tid1[tu];
-        uint_t u = idu[iu];
-        uint_t n = iu == idu.size()-1 ? sv1.size() - u : idu[iu+1] - u;
+        uint_t iu = tid1.safe[tu];
+        uint_t u = idu.safe[iu];
+        uint_t n = iu == idu.size()-1 ? sv1.size() - u : idu.safe[iu+1] - u;
         for (uint_t i = 0; i < n; ++i) {
-            id1.push_back(ids[u+i]);
-            id2.push_back(tid2[tu]);
+            id1.push_back(ids.safe[u+i]);
+            id2.push_back(tid2.safe[tu]);
         }
     }
 }
@@ -2261,7 +2582,7 @@ vec_t<sizeof...(Args), Type> reform(const vec_t<Dim,Type>& v, Args&& ... args) {
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
 
     for (uint_t i : range(v)) {
-        r[i] = v[i];
+        r.safe[i] = v.safe[i];
     }
 
     return r;
@@ -2292,7 +2613,7 @@ vec_t<sizeof...(Args), Type*> reform(const vec_t<Dim,Type*>& v, Args&& ... args)
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
 
     for (uint_t i : range(v)) {
-        r[i] = v[i];
+        r.safe[i] = v.safe[i];
     }
 
     return r;
@@ -2331,7 +2652,7 @@ vec_t<Dim+dim_total<Args...>::value, rtype_t<Type>>
     std::size_t n = vec.size()/pitch;
     for (uint_t i = 0; i < n; ++i) {
         for (uint_t j = 0; j < pitch; ++j) {
-            vec.data[i*pitch + j] = t[j];
+            vec.safe[i*pitch + j] = t.safe[j];
         }
     }
 
@@ -2371,12 +2692,12 @@ void inplace_remove(vec_t<Dim,Type>& v, vec1u ids) {
     uint_t i = 0;
     uint_t pitch = v.pitch(0);
     while (i < ids.size()) {
-        uint_t i1 = ids[ids.size()-1-i];
+        uint_t i1 = ids.safe[ids.size()-1-i];
         uint_t i0 = i1;
 
         ++i;
-        while (i < ids.size() && i0 - ids[ids.size()-1-i] == 1) {
-            i0 = ids[ids.size()-1-i];
+        while (i < ids.size() && i0 - ids.safe[ids.size()-1-i] == 1) {
+            i0 = ids.safe[ids.size()-1-i];
             ++i;
         }
 
@@ -2387,49 +2708,55 @@ void inplace_remove(vec_t<Dim,Type>& v, vec1u ids) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,Type> remove(vec_t<Dim,Type> v, vec1u ids) {
+vec_t<Dim,Type> remove(vec_t<Dim,Type> v, const vec1u& ids) {
     inplace_remove(v, ids);
     return v;
 }
 
-template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
+template<std::size_t N, std::size_t Dim, typename Type1, typename Type2,
+    typename enable = typename std::enable_if<(N < Dim)>::type>
 void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
         t1 = t2;
-    } else {
-        if (t2.empty()) return;
-
-        std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
-        phypp_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
-            ") and (", t2.dims, ")");
-
-        auto tmp = t1;
-        t1.dims[N] += n2;
-        t1.resize();
-
-        t1(repeat<N>(_), uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
-        t1(repeat<N>(_), n1+uindgen(n2), repeat<Dim-N-1>(_)) = t2;
+        return;
     }
+
+    if (t2.empty()) return;
+
+    std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
+    phypp_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
+        ") and (", t2.dims, ")");
+
+    // TODO: optimize this copy
+    auto tmp = t1;
+    t1.dims[N] += n2;
+    t1.resize();
+
+    t1(repeat<N>(_), uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
+    t1(repeat<N>(_), n1+uindgen(n2), repeat<Dim-N-1>(_)) = t2;
 }
 
-template<std::size_t N, std::size_t Dim, typename Type1, typename Type2, typename enable = typename std::enable_if<(N < Dim)>::type>
+template<std::size_t N, std::size_t Dim, typename Type1, typename Type2,
+    typename enable = typename std::enable_if<(N < Dim)>::type>
 void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
         t1 = t2;
-    } else {
-        if (t2.empty()) return;
-
-        std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
-        phypp_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
-            ") and (", t2.dims, ")");
-
-        auto tmp = t1;
-        t1.dims[N] += n2;
-        t1.resize();
-
-        t1(repeat<N>(_), uindgen(n2), repeat<Dim-N-1>(_)) = t2;
-        t1(repeat<N>(_), n2+uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
+        return;
     }
+
+    if (t2.empty()) return;
+
+    std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
+    phypp_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
+        ") and (", t2.dims, ")");
+
+    // TODO: optimize this copy
+    auto tmp = t1;
+    t1.dims[N] += n2;
+    t1.resize();
+
+    t1(repeat<N>(_), uindgen(n2), repeat<Dim-N-1>(_)) = t2;
+    t1(repeat<N>(_), n2+uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
 }
 
 template<typename Type1, typename Type2>
@@ -2513,7 +2840,7 @@ O& operator << (O& o, const vec_t<Dim,Type>& v) {
     o << '[';
     for (uint_t i = 0; i < v.data.size(); ++i) {
         if (i != 0) o << ", ";
-        o << v[i];
+        o << v.safe[i];
     }
     o << ']';
 
@@ -2525,7 +2852,7 @@ O& operator << (O& o, const vec_t<Dim,bool>& v) {
     o << '[';
     for (uint_t i = 0; i < v.data.size(); ++i) {
         if (i != 0) o << ", ";
-        o << bool(v[i]);
+        o << bool(v.safe[i]);
     }
     o << ']';
 

@@ -155,9 +155,9 @@ namespace file {
 
     template<std::size_t Dim>
     vec_t<Dim,bool> exists(const vec_t<Dim,std::string>& file) {
-        vec_t<Dim,bool> r = boolarr(file.dims);
-        for (std::size_t i = 0; i < file.size(); ++i) {
-            r.data[i] = file_exists(file.data[i]);
+        vec_t<Dim,bool> r(file.dims);
+        for (std::size_t i : range(file)) {
+            r.safe[i] = exists(file.safe[i]);
         }
 
         return r;

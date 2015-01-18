@@ -13,7 +13,7 @@ vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, const std::array<uint_t,4
 
     for (uint_t x : range(v.dims[0]))
     for (uint_t y : range(v.dims[1])) {
-        r(x+upix[0],y+upix[1]) = v(x,y);
+        r.safe(x+upix[0],y+upix[1]) = v.safe(x,y);
     }
 
     return r;
@@ -37,7 +37,7 @@ vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4>
 
     for (uint_t x : range(r.dims[0]))
     for (uint_t y : range(r.dims[1])) {
-        r(x,y) = v(x+upix[0],y+upix[1]);
+        r.safe(x,y) = v.safe(x+upix[0],y+upix[1]);
     }
 
     return r;
@@ -55,41 +55,42 @@ template<typename TypeV, typename TypeR = int_t>
 void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1u& rr, vec1u& rs) {
     assert(n_elements(reg) == 4);
     int_t nvx = v.dims[0], nvy = v.dims[1];
-    int_t nx = reg[2]-reg[0]+1, ny = reg[3]-reg[1]+1;
+    int_t nx = reg.safe[2]-reg.safe[0]+1, ny = reg.safe[3]-reg.safe[1]+1;
 
     vec1i vreg = reg;
     vec1i sreg = {0,0,nx-1,ny-1};
 
-    if (reg[0] >= nvx || reg[0] > reg[2] || reg[1] >= nvy || reg[1] > reg[3]) {
+    if (reg.safe[0] >= nvx || reg.safe[0] > reg.safe[2] ||
+        reg.safe[1] >= nvy || reg.safe[1] > reg.safe[3]) {
         rr = rs = uintarr(0);
         return;
     }
 
-    if (reg[0] < 0) {
-        vreg[0] = 0;
-        sreg[0] += 0 - reg[0];
+    if (reg.safe[0] < 0) {
+        vreg.safe[0] = 0;
+        sreg.safe[0] += 0 - reg.safe[0];
     }
-    if (reg[2] >= nvx) {
-        vreg[2] = nvx-1;
-        sreg[2] -= reg[2] - (nvx-1);
-    }
-
-    if (reg[1] < 0) {
-        vreg[1] = 0;
-        sreg[1] += 0 - reg[1];
-    }
-    if (reg[3] >= nvy) {
-        vreg[3] = nvy-1;
-        sreg[3] -= reg[3] - (nvy-1);
+    if (reg.safe[2] >= nvx) {
+        vreg.safe[2] = nvx-1;
+        sreg.safe[2] -= reg.safe[2] - (nvx-1);
     }
 
-    vec1u vx = rgen(vreg[0], vreg[2]);
-    vec1u vy = rgen(vreg[1], vreg[3]);
-    vec1u sx = rgen(sreg[0], sreg[2]);
-    vec1u sy = rgen(sreg[1], sreg[3]);
+    if (reg.safe[1] < 0) {
+        vreg.safe[1] = 0;
+        sreg.safe[1] += 0 - reg.safe[1];
+    }
+    if (reg.safe[3] >= nvy) {
+        vreg.safe[3] = nvy-1;
+        sreg.safe[3] -= reg.safe[3] - (nvy-1);
+    }
 
-    rr = flatten(uindgen(nvx,nvy)(vx,vy));
-    rs = flatten(uindgen(nx,ny)(sx,sy));
+    vec1u vx = rgen(vreg.safe[0], vreg.safe[2]);
+    vec1u vy = rgen(vreg.safe[1], vreg.safe[3]);
+    vec1u sx = rgen(sreg.safe[0], sreg.safe[2]);
+    vec1u sy = rgen(sreg.safe[1], sreg.safe[3]);
+
+    rr = flatten(uindgen(nvx,nvy).safe(vx,vy));
+    rs = flatten(uindgen(nx,ny).safe(sx,sy));
 }
 
 template<typename TypeV, typename TypeR>
@@ -102,7 +103,7 @@ typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
     int_t nx = reg(2)-reg(0)+1, ny = reg(3)-reg(1)+1;
     vec_t<2,rtype_t<TypeV>> sub = replicate(rtype_t<TypeV>(def), nx, ny);
 
-    sub[rs] = v[rr];
+    sub.safe[rs] = v.safe[rr];
 
     return sub;
 }
@@ -145,10 +146,10 @@ typename vec_t<2,TypeV>::effective_type translate(const vec_t<2,TypeV>& v, doubl
             if (ry < 0) continue;
         }
 
-        trs(x,y) = v(rx,ry)*(nx - tx)*(ny - ty) +
-                   v(nx,ry)*(tx - rx)*(ny - ty) +
-                   v(rx,ny)*(nx - tx)*(ty - ry) +
-                   v(nx,ny)*(tx - rx)*(ty - ry);
+        trs.safe(x,y) = v.safe(rx,ry)*(nx - tx)*(ny - ty) +
+                        v.safe(nx,ry)*(tx - rx)*(ny - ty) +
+                        v.safe(rx,ny)*(nx - tx)*(ty - ry) +
+                        v.safe(nx,ny)*(tx - rx)*(ty - ry);
     }
 
     return trs;
@@ -163,15 +164,15 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
 
     assert(n_elements(center) == 2);
 
-    vec3d m = dblarr(dim[0], dim[1], 4);
+    vec3d m(dim[0], dim[1], 4);
 
     vec2d px = replicate(dindgen(dim[1]), dim[0]);
     vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
 
-    m(_,_,0) = pow(px-0.5 - center[1],2) + pow(py-0.5 - center[0],2) <= radius*radius;
-    m(_,_,1) = pow(px+0.5 - center[1],2) + pow(py-0.5 - center[0],2) <= radius*radius;
-    m(_,_,2) = pow(px+0.5 - center[1],2) + pow(py+0.5 - center[0],2) <= radius*radius;
-    m(_,_,3) = pow(px-0.5 - center[1],2) + pow(py+0.5 - center[0],2) <= radius*radius;
+    m.safe(_,_,0) = pow(px-0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius;
+    m.safe(_,_,1) = pow(px+0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius;
+    m.safe(_,_,2) = pow(px+0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius;
+    m.safe(_,_,3) = pow(px-0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius;
 
     return mean(m,2);
 }
@@ -185,7 +186,7 @@ vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
     for (uint_t i : range(1u, npix)) {
         vec2d mask = circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i)*
             (1.0 - circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i-1));
-        res[i] = total(mask*img)/total(mask);
+        res.safe[i] = total(mask*img)/total(mask);
     }
 
     return res;
@@ -196,7 +197,7 @@ auto generate_img(const std::array<uint_t,2>& dims, F&& expr) -> vec_t<2,decltyp
     vec_t<2,decltype(expr(0,0))> img(dims);
     for (uint_t x : range(img.dims[0]))
     for (uint_t y : range(img.dims[1])) {
-        img(x,y) = expr(x,y);
+        img.safe(x,y) = expr(x,y);
     }
 
     return img;
@@ -222,7 +223,7 @@ auto convolve2d_naive(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel)
     vec_t<2,decltype(map[0]*kernel[0])> r(map.dims);
     for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
     for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
-        const auto kw = kernel(kx, ky);
+        const auto kw = kernel.safe(kx, ky);
         if (kw == 0.0) continue;
 
         uint_t x0 = (kx >= hxsize ? 0 : hxsize-kx);
@@ -232,7 +233,7 @@ auto convolve2d_naive(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel)
 
         for (uint_t x = x0; x < xn; ++x)
         for (uint_t y = y0; y < yn; ++y) {
-            r(x+kx-hxsize,y+ky-hysize) += map(x,y)*kw;
+            r.safe(x+kx-hxsize,y+ky-hysize) += map.safe(x,y)*kw;
         }
     }
 
@@ -297,10 +298,10 @@ auto boxcar(const vec_t<2,T>& img, uint_t hsize, F&& func) ->
         tmp.reserve((x1-x0)*(y1-y0));
         for (uint_t tx = x0; tx <= x1; ++tx)
         for (uint_t ty = y0; ty <= y1; ++ty) {
-            tmp.push_back(img(tx,ty));
+            tmp.push_back(img.safe(tx,ty));
         }
 
-        res(x,y) = func(tmp);
+        res.safe(x,y) = func(tmp);
     }
 
     return res;

@@ -26,40 +26,40 @@ int main(int argc, char* argv[]) {
     {
         print("Type checking on array indexation");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,int_t,int_t,int_t>::type,
+            vec_access::helper<true,false,3,float,int_t,int_t,int_t>::type,
             float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<true,3,float,int_t,int_t,int_t>::type,
+            vec_access::helper<true,true,3,float,int_t,int_t,int_t>::type,
             const float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,int_t,placeholder_t,int_t>::type,
+            vec_access::helper<true,false,3,float,int_t,placeholder_t,int_t>::type,
             vec_t<1,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<true,3,const float,int_t,placeholder_t,int_t>::type,
+            vec_access::helper<true,true,3,const float,int_t,placeholder_t,int_t>::type,
             vec_t<1,const float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,int_t,placeholder_t&,int_t>::type,
+            vec_access::helper<true,false,3,float,int_t,placeholder_t,int_t>::type,
             vec_t<1,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,placeholder_t&,placeholder_t&,placeholder_t&>::type,
+            vec_access::helper<true,false,3,float,placeholder_t,placeholder_t,placeholder_t>::type,
             vec_t<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,vec_t<1, int_t>&,placeholder_t&,placeholder_t&>::type,
+            vec_access::helper<true,false,3,float,vec_t<1, int_t>,placeholder_t,placeholder_t>::type,
             vec_t<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,const vec_t<1, int_t>&,placeholder_t&,int_t>::type,
+            vec_access::helper<true,false,3,float,vec_t<1, int_t>,placeholder_t,int_t>::type,
             vec_t<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,vec_t<1, int_t>,placeholder_t&,int_t>::type,
+            vec_access::helper<true,false,3,float,vec_t<1, int_t>,placeholder_t,int_t>::type,
             vec_t<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,repeated_value<3,placeholder_t>>::type,
+            vec_access::helper<true,false,3,float,repeated_value<3,placeholder_t>>::type,
             vec_t<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,repeated_value<2,placeholder_t>,int_t>::type,
+            vec_access::helper<true,false,3,float,repeated_value<2,placeholder_t>,int_t>::type,
             vec_t<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<false,3,float,int_t,repeated_value<2,placeholder_t>>::type,
+            vec_access::helper<true,false,3,float,int_t,repeated_value<2,placeholder_t>>::type,
             vec_t<2,float*>>::value, "wrong type of indexed array");
     }
 
@@ -266,6 +266,12 @@ int main(int argc, char* argv[]) {
 
         v(_,-1) = replicate(-2,5);
         check(v, "4, 5, -4, -2, 8, 9, -4, -2, 0, 1, -4, -2, -1, -5, -4, -2, 2, 2, 2, -2");
+
+        check(v.flat_id(0,0), "0");
+        check(v.flat_id(0,1), "1");
+        check(v.flat_id(1,0), "4");
+        check(v.flat_id(2,0), "8");
+        check(v.flat_id(2,1), "9");
     }
 
     {
@@ -487,6 +493,14 @@ int main(int argc, char* argv[]) {
     }
 
     {
+        print("'random_coin', 'fraction_of' functions");
+        auto seed = make_seed(42);
+        uint_t ntry = 10000;
+        vec1b rnd = random_coin(seed, 0.3, ntry);
+        check(fabs(fraction_of(rnd)-0.3) < 1.0/sqrt(ntry), "1");
+    }
+
+    {
         print("'shuffle' function");
         auto seed = make_seed(42);
         vec1i i = {4,5,-8,5,2,0};
@@ -660,7 +674,23 @@ int main(int argc, char* argv[]) {
 
         vec1d x = {0,1,2};
         vec1d y = {0,1,0};
-        check(integrate(x,y), "1");
+        check(integrate(x, y), "1");
+        check(integrate(x, y, 0, 2), "1");
+        check(integrate(x, y, 0, 1), "0.5");
+        check(integrate(x, y, 1, 2), "0.5");
+        check(integrate(x, y, 0.5, 1.5), "0.75");
+        check(integrate(x, y, 1.25, 1.75), "0.25");
+
+        vec2d x2 = {{0,1,2,3}, {1,2,3,4}};
+        vec1d y2 = {1,1,1,1};
+        check(integrate(x2, y2), "4");
+        check(integrate(x2, y2, 0, 4), "4");
+        check(integrate(x2, y2, 0, 3), "3");
+        check(integrate(x2, y2, 0, 3.5), "3.5");
+        check(integrate(x2, y2, 0.5, 4.0), "3.5");
+        check(integrate(x2, y2, 0.5, 3.5), "3");
+        check(integrate(x2, y2, 0.5, 1.5), "1");
+        check(integrate(x2, y2, 1.25, 1.75), "0.5");
 
         x = 0.5*3.14159265359*dindgen(30)/29.0;
         y = cos(x);
@@ -858,26 +888,6 @@ int main(int argc, char* argv[]) {
         auto fr = affinefit(x, y, ye);
         check(fr.slope, "5");
         check(fr.offset, "3");
-    }
-
-    {
-        print("'nlfit' function");
-        vec1d x = dindgen(5);
-        vec1d y = 3.1415*x*x;
-
-        auto model = [&](const vec1d& p) { return p(0)*x*x; };
-
-        auto fr = nlfit(model, y, 1.0, {1.0});
-        if (fr.success) {
-            check(fr.params, "3.1415");
-        } else {
-            print("failure: ", fr.status);
-            print("param: ", fr.params);
-            print("error: ", fr.errors);
-            print("chi2: ", fr.chi2);
-            print("iter: ", fr.niter);
-            assert(false);
-        }
     }
 
     {

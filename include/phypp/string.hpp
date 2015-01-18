@@ -3,6 +3,7 @@
 
 #include "phypp/vec.hpp"
 #include "phypp/reflex.hpp"
+#include "phypp/range.hpp"
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -13,7 +14,7 @@
 namespace std {
     template<typename O, typename T, std::size_t N>
     O& operator << (O& o, const std::array<T,N>& v) {
-        for (std::size_t i = 0; i < N; ++i) {
+        for (uint_t i : range(N)) {
             if (i != 0) o << ", ";
             o << v[i];
         }
@@ -69,8 +70,8 @@ std::string strn(const T& t, std::size_t n, char fill = '0') {
 template<std::size_t Dim, typename Type>
 vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v) {
     vec_t<Dim,std::string> s = strarr(v.dims);
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
-        s.data[i] = strn(dref<Type>(v.data[i]));
+    for (uint_t i : range(v)) {
+        s.data[i] = strn(v.safe[i]);
     }
 
     return s;
@@ -79,8 +80,8 @@ vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v) {
 template<std::size_t Dim, typename Type>
 vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v, std::size_t n, char fill = '0') {
     vec_t<Dim,std::string> s = strarr(v.dims);
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
-        s.data[i] = strn(dref<Type>(v.data[i]), n, fill);
+    for (uint_t i : range(v)) {
+        s.data[i] = strn(v.safe[i], n, fill);
     }
 
     return s;
@@ -97,8 +98,8 @@ std::string strn_sci(const T& t) {
 template<std::size_t Dim, typename Type>
 vec_t<Dim,std::string> strna_sci(const vec_t<Dim,Type>& v) {
     vec_t<Dim,std::string> s = strarr(v.dims);
-    for (std::size_t i = 0; i < v.data.size(); ++i) {
-        s.data[i] = strn_sci(dref<Type>(v.data[i]));
+    for (uint_t i : range(v)) {
+        s.data[i] = strn_sci(v.safe[i]);
     }
 
     return s;
@@ -115,7 +116,7 @@ vec_t<Dim,bool> from_string(const vec_t<Dim,std::string>& s, vec_t<Dim,T>& t) {
     vec_t<Dim,bool> res(s.dims);
     t.resize(s.dims);
     for (uint_t i : range(s)) {
-        res[i] = from_string(s[i], t[i]);
+        res.safe[i] = from_string(s.safe[i], t.safe[i]);
     }
 
     return res;
@@ -126,7 +127,7 @@ vec_t<Dim,bool> from_string(const vec_t<Dim,std::string*>& s, vec_t<Dim,T>& t) {
     vec_t<Dim,bool> res(s.dims);
     t.resize(s.dims);
     for (uint_t i : range(s)) {
-        res[i] = from_string(s[i], t[i]);
+        res.safe[i] = from_string(s.safe[i], t.safe[i]);
     }
 
     return res;
@@ -188,7 +189,7 @@ bool empty(const std::string& s) {
 uint_t distance(const std::string& t, const std::string& u) {
     uint_t n = std::min(t.size(), u.size());
     uint_t d = abs(t.size() - u.size());
-    for (uint_t i = 0; i < n; ++i) {
+    for (uint_t i : range(n)) {
         if (t[i] != u[i]) ++d;
     }
 
@@ -272,19 +273,19 @@ template<std::size_t Dim, typename Type, typename enable = typename std::enable_
 vec_t<Dim,bool> match(const vec_t<Dim,Type>& v, const std::string& regex) {
     regex_t re;
     build_regex_(regex, re);
-    vec_t<Dim,bool> r = boolarr(v.dims);
+    vec_t<Dim,bool> r(v.dims);
     for (uint_t i = 0; i < v.size(); ++i) {
-        r.data[i] = match_(dref<Type>(v.data[i]), regex, re);
+        r.safe[i] = match_(v.safe[i], regex, re);
     }
     regfree(&re);
     return r;
 }
 
 bool match_any_of(const std::string& ts, const vec1s& regex) {
-    for (uint_t i = 0; i < regex.size(); ++i) {
+    for (uint_t i : range(regex)) {
         regex_t re;
-        build_regex_(regex[i], re);
-        bool ret = match_(ts, regex[i], re);
+        build_regex_(regex.safe[i], re);
+        bool ret = match_(ts, regex.safe[i], re);
         regfree(&re);
         if (ret) return true;
     }
@@ -410,8 +411,8 @@ std::string remove_extension(std::string s) {
         vec_t<Dim,decltype(name(v[0], args...))> { \
         using ntype = decltype(name(v[0], args...)); \
         vec_t<Dim,ntype> r = arr<ntype>(v.dims); \
-        for (std::size_t i = 0; i < v.data.size(); ++i) { \
-            r.data[i] = name(dref<Type>(v.data[i]), args...); \
+        for (uint_t i = 0; i < v.size(); ++i) { \
+            r.safe[i] = name(v.safe[i], args...); \
         } \
         return r; \
     }
@@ -446,7 +447,7 @@ vec1s split(const std::string& ts, const T& pattern) {
     }
 
     ret.data.push_back(ts.substr(op));
-    ret.dims[0] = ret.data.size();
+    ret.dims[0] = ret.size();
 
     return ret;
 }
@@ -455,7 +456,7 @@ vec1s cut(const std::string& ts, uint_t size) {
     uint_t ncut = floor(ts.size()/float(size));
     vec1s res(ncut);
     for (uint_t i = 0; i < ncut; ++i) {
-        res[i] = ts.substr(i*size, std::min(size, ts.size() - i*size));
+        res.safe[i] = ts.substr(i*size, std::min(size, ts.size() - i*size));
     }
 
     return res;
