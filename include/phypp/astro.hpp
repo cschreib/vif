@@ -984,8 +984,7 @@ double lir_8_1000(const vec_t<1,TL>& lam, const vec_t<1,TS>& sed) {
     uint_t e = upper_bound(1000.0, lam);
     if (s == npos || e == npos) return dnan;
 
-    vec1u id = rgen(s, e);
-    return integrate(lam[id], sed[id]/lam[id]);
+    return integrate(lam[s-_-e], sed[s-_-e]/lam[s-_-e]);
 }
 
 bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,

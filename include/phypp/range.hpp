@@ -1,10 +1,17 @@
 #ifndef RANGE_HPP
 #define RANGE_HPP
 
-#include "phypp/vec.hpp"
+#include "phypp/print.hpp"
+
+using int_t = std::ptrdiff_t;
+using uint_t = std::size_t;
+static const uint_t npos = uint_t(-1);
 
 template<typename T>
 struct range_t;
+
+template<std::size_t Dim, typename T>
+struct vec_t;
 
 template<typename T>
 struct range_iterator_t;
@@ -77,5 +84,112 @@ template<std::size_t Dim, typename T>
 range_t<std::size_t> range(const vec_t<Dim,T>& n) {
     return range(n.size());
 }
+
+// Full range variable v(_)
+static struct full_range_t {} _;
+
+using placeholder_t = full_range_t;
+
+// Left range variable v(_-last)
+struct left_range_t {
+    uint_t last;
+};
+
+// Right range variable v(first-_)
+struct right_range_t {
+    uint_t first;
+};
+
+// Left-right range variable v(first-_-last)
+struct left_right_range_t {
+    uint_t first, last;
+};
+
+template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+left_range_t operator - (full_range_t, T last) {
+    return left_range_t{static_cast<uint_t>(last)};
+}
+
+template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+left_right_range_t operator - (T first, left_range_t left) {
+    return left_right_range_t{static_cast<uint_t>(first), left.last};
+}
+
+template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+right_range_t operator - (T first, full_range_t) {
+    return right_range_t{static_cast<uint_t>(first)};
+}
+
+template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+left_right_range_t operator - (right_range_t right, T last) {
+    return left_right_range_t{right.first, static_cast<uint_t>(last)};
+}
+
+namespace range_impl {
+    template<typename T>
+    void check_lower_bounds(const T& right, uint_t size) {
+        phypp_check(right.first < size, "lower bound of range goes past the "
+            "size of this vector (", right.first, " vs. ", size, ")");
+    }
+
+    template<typename T>
+    void check_upper_bounds(const T& left, uint_t size) {
+        phypp_check(left.last < size, "upper bound of range goes past the "
+            "size of this vector (", left.last, " vs. ", size, ")");
+    }
+
+
+    void check_bounds(full_range_t, uint_t size) {}
+
+    void check_bounds(const left_range_t& left, uint_t size) {
+        check_upper_bounds(left, size);
+    }
+
+    void check_bounds(const right_range_t& right, uint_t size) {
+        check_lower_bounds(right, size);
+    }
+
+    void check_bounds(const left_right_range_t& rng, uint_t size) {
+        check_upper_bounds(rng, size);
+        check_lower_bounds(rng, size);
+    }
+
+    std::size_t range_size(full_range_t, std::size_t size) {
+        return size;
+    }
+    std::size_t range_size(left_range_t rng, std::size_t size) {
+        return rng.last+1;
+    }
+    std::size_t range_size(right_range_t rng, std::size_t size) {
+        return size - rng.first;
+    }
+    std::size_t range_size(left_right_range_t rng, std::size_t size) {
+        return (rng.last+1) - rng.first;
+    }
+}
+
+range_t<std::size_t> range(full_range_t, std::size_t size) {
+    return range(size);
+}
+
+range_t<std::size_t> range(const left_range_t& rng, std::size_t size) {
+    range_impl::check_bounds(rng, size);
+    return range(rng.last+1);
+}
+
+range_t<std::size_t> range(const right_range_t& rng, std::size_t size) {
+    range_impl::check_bounds(rng, size);
+    return range(rng.first, size);
+}
+
+range_t<std::size_t> range(const left_right_range_t& rng, std::size_t size) {
+    range_impl::check_bounds(rng, size);
+    return range(rng.first, rng.last+1);
+}
+
+template<typename T>
+struct is_range : std::integral_constant<bool,
+    std::is_same<T,full_range_t>::value || std::is_same<T,left_range_t>::value ||
+    std::is_same<T,right_range_t>::value || std::is_same<T,left_right_range_t>::value> {};
 
 #endif
