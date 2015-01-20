@@ -486,18 +486,18 @@ double total(const vec_t<Dim,Type>& v) {
     return total;
 }
 
-
 template<std::size_t Dim, typename Type>
 vec_t<Dim-1,double> total(const vec_t<Dim,Type>& v, uint_t dim) {
     using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
     return run_index_<fptr, &total<1,rtype_t<Type>>>(v, dim);
 }
 
-template<std::size_t Dim>
-uint_t count(const vec_t<Dim,bool>& b) {
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<Type>, bool>::value>::type>
+uint_t count(const vec_t<Dim,Type>& v) {
     uint_t n = 0u;
-    for (uint_t i : range(b)) {
-        if (b.safe[i]) ++n;
+    for (bool b : v) {
+        if (b) ++n;
     }
 
     return n;
