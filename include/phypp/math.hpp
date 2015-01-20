@@ -476,9 +476,14 @@ auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) ->
     return r;
 }
 
+template<typename T>
+using total_return_type = typename std::conditional<std::is_integral<T>::value,
+    typename std::conditional<std::is_unsigned<T>::value, uint_t, int_t>::type,
+    double>::type;
+
 template<std::size_t Dim, typename Type>
-double total(const vec_t<Dim,Type>& v) {
-    double total = 0;
+total_return_type<rtype_t<Type>> total(const vec_t<Dim,Type>& v) {
+    total_return_type<rtype_t<Type>> total = 0;
     for (auto& t : v) {
         total += t;
     }
