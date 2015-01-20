@@ -144,7 +144,24 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
     return res;
 }
 
-template<std::size_t Dim, typename Type, typename B = double>
+template<std::size_t Dim, typename Type, typename B>
+vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=[2, ...], got dims=[", b.dims, "])");
+    phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        "(", ib, " vs. ", b.dims[1], ")");
+
+    auto low = b.safe(0,ib);
+    auto up  = b.safe(1,ib);
+    vec_t<Dim,bool> res(v.dims);
+    for (uint_t i : range(v)) {
+        res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
+    }
+
+    return res;
+}
+
+template<std::size_t Dim, typename Type, typename B>
 vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
