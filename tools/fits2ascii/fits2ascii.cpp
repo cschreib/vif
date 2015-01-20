@@ -256,8 +256,6 @@ int main(int argc, char* argv[]) {
         }
 
         if (c.dims.size() == 1) {
-            names.push_back(tolower(c.name));
-
             std::string type;
             vec1s v;
 
@@ -266,6 +264,7 @@ int main(int argc, char* argv[]) {
             if (next == do_next::abort) return 1;
 
             out_cols.push_back(v);
+            names.push_back(tolower(c.name));
             types.push_back("["+type+"]");
         } else if (c.dims.size() == 2) {
             vec1u i2c = where(split_cols == c.name);
