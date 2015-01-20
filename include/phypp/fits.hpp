@@ -139,7 +139,7 @@ namespace fits {
     template<typename Dummy = void>
     uint_t file_axes(const std::string& name) {
 #ifdef NO_CCFITS
-        static_assert(std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
+        static_assert(!std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
             "please enable the CCfits library to use this function");
 #else
         try {
@@ -156,14 +156,17 @@ namespace fits {
 #endif
     }
 
+    template<typename Dummy = void>
     bool is_cube(const std::string& name) {
-        return file_axes(name) == 3;
+        return file_axes<Dummy>(name) == 3;
     }
 
+    template<typename Dummy = void>
     bool is_image(const std::string& name) {
-        return file_axes(name) == 2;
+        return file_axes<Dummy>(name) == 2;
     }
 
+#ifndef NO_CCFITS
     template<std::size_t Dim, typename Type>
     void read_impl_(fits::FITS& file, vec_t<Dim, Type>& v, std::string& hdr, bool gethdr) {
         fits::PHDU& phdu = file.pHDU();
@@ -228,12 +231,13 @@ namespace fits {
             }
         }
     }
+#endif
 
     // Load the content of a FITS file into an array.
     template<std::size_t Dim, typename Type>
     void read(const std::string& name, vec_t<Dim, Type>& v, fits::header& hdr) {
 #ifdef NO_CCFITS
-        static_assert(std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
+        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
             "please enable the CCfits library to use this function");
 #else
         try {
@@ -623,17 +627,13 @@ namespace fits {
         }
     };
 #else
-    template<typename Dummy = void>
-    struct wcs {
-        static_assert(std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
-            "please enable the WCSLib library to use this structure");
-    };
+    struct wcs {};
 #endif
 
     template<typename Dummy = void>
     fits::wcs extast(const fits::header& hdr) {
 #ifdef NO_WCSLIB
-        static_assert(std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
         return fits::wcs(hdr);
@@ -644,7 +644,7 @@ namespace fits {
     void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
         vec_t<1,V>& x, vec_t<1,W>& y) {
 #ifdef NO_WCSLIB
-        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
 
@@ -678,7 +678,7 @@ namespace fits {
     void xy2ad(const fits::wcs& w, const vec_t<1,T>& x, const vec_t<1,U>& y,
         vec_t<1,V>& ra, vec_t<1,W>& dec) {
 #ifdef NO_WCSLIB
-        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
 
@@ -713,7 +713,7 @@ namespace fits {
             !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
     void ad2xy(const fits::wcs& w, const T& ra, const U& dec, V& x, W& y) {
 #ifdef NO_WCSLIB
-        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
@@ -741,7 +741,7 @@ namespace fits {
             !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
     void xy2ad(const fits::wcs& w, const T& x, const U& y, V& ra, W& dec) {
 #ifdef NO_WCSLIB
-        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
@@ -766,9 +766,10 @@ namespace fits {
 
     // Obtain the pixel size of a given image in arsec/pixel.
     // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
     bool get_pixel_size(const std::string& file, double& aspix) {
 #ifdef NO_WCSLIB
-        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
         if (end_with(file, ".sectfits")) {
@@ -822,7 +823,7 @@ namespace fits {
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v, const fits::header& hdr) {
 #ifdef NO_CCFITS
-        static_assert(std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
+        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
             "please enable the CCfits library to use this function");
 #else
         std::array<long,Dim> isize;
