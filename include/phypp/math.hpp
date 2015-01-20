@@ -145,19 +145,25 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
 }
 
 template<std::size_t Dim, typename Type, typename B = double>
-vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
-    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
-        "vector (expected dims=[2], got dims=[", b.dims, "])");
+vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=[2, ...], got dims=[", b.dims, "])");
+    phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        "(", ib, " vs. ", b.dims[1], ")");
 
-    auto low = b.safe[0];
-    auto up  = b.safe[1];
+    auto low = b.safe(0,ib);
+    auto up  = b.safe(1,ib);
     vec_t<Dim,bool> res(v.dims);
-    for (uint_t i : range(v)) {
-        if (i == 0) {
+    if (ib == 0) {
+        for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] < up;
-        } else if (i == v.size()-1) {
+        }
+    } else if (ib == b.dims[1]-1) {
+        for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] >= low;
-        } else {
+        }
+    } else {
+        for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
         }
     }
