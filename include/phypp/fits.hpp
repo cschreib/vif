@@ -1,8 +1,13 @@
 #ifndef FITS_HPP
 #define FITS_HPP
 
+#ifndef NO_CCFITS
 #include <CCfits/CCfits>
+#endif
+#ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
+#endif
+#include <fitsio.h>
 #include <string>
 #include "phypp/vec.hpp"
 #include "phypp/reflex.hpp"
@@ -11,7 +16,9 @@
 #include "phypp/math.hpp"
 
 namespace fits {
+#ifndef NO_CCFITS
     using namespace CCfits;
+#endif
 
     struct exception : std::exception {
         explicit exception(const std::string& m) : msg(m) {}
@@ -31,7 +38,6 @@ namespace fits {
 
         static const char tform = 'B';
         static const int ttype = TBYTE;
-        static const fits::ValueType type = (fits::ValueType)TBYTE;
 
         static std::string def() {
             return "";
@@ -44,7 +50,6 @@ namespace fits {
 
         static const char tform = 'B';
         static const int ttype = TBYTE;
-        static const fits::ValueType type = (fits::ValueType)TBYTE;
         static const int image_type = BYTE_IMG;
 
         static bool def() {
@@ -58,7 +63,6 @@ namespace fits {
 
         static const char tform = 'S';
         static const int ttype = TSBYTE;
-        static const fits::ValueType type = (fits::ValueType)TSBYTE;
         static const int image_type = SBYTE_IMG;
 
         static bool def() {
@@ -72,8 +76,8 @@ namespace fits {
 
         static const char tform = 'J';
         static const int ttype = TLONG;
-        static const fits::ValueType type = fits::Tlong;
         static const int image_type = LONG_IMG;
+
         static uint_t def() {
             return 0;
         }
@@ -85,8 +89,8 @@ namespace fits {
 
         static const char tform = 'J';
         static const int ttype = TLONG;
-        static const fits::ValueType type = fits::Tlong;
         static const int image_type = LONG_IMG;
+
         static int_t def() {
             return 0;
         }
@@ -98,8 +102,8 @@ namespace fits {
 
         static const char tform = 'E';
         static const int ttype = TFLOAT;
-        static const fits::ValueType type = fits::Tfloat;
         static const int image_type = FLOAT_IMG;
+
         static float def() {
             return fnan;
         }
@@ -111,8 +115,8 @@ namespace fits {
 
         static const char tform = 'D';
         static const int ttype = TDOUBLE;
-        static const fits::ValueType type = fits::Tdouble;
         static const int image_type = DOUBLE_IMG;
+
         static float def() {
             return dnan;
         }
@@ -132,7 +136,12 @@ namespace fits {
     using header = std::string;
 
     // Return the number of dimensions of a FITS file
+    template<typename Dummy = void>
     uint_t file_axes(const std::string& name) {
+#ifdef NO_CCFITS
+        static_assert(std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
+            "please enable the CCfits library to use this function");
+#else
         try {
             return fits::FITS(name, fits::Read).pHDU().axes();
         } catch (fits::FitsException& e) {
@@ -144,6 +153,7 @@ namespace fits {
             error(e.msg);
             throw;
         }
+#endif
     }
 
     bool is_cube(const std::string& name) {
@@ -220,16 +230,15 @@ namespace fits {
     }
 
     // Load the content of a FITS file into an array.
-    // Be careful that C++ is a row-major language, in the sense that to get the (x,y) pixel of a
-    // given image, one has to get the (y,x) element in the array.
-    template<std::size_t Dim = 2, typename Type = double>
-    vec_t<Dim, Type> read(const std::string& name) {
+    template<std::size_t Dim, typename Type>
+    void read(const std::string& name, vec_t<Dim, Type>& v, fits::header& hdr) {
+#ifdef NO_CCFITS
+        static_assert(std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
+            "please enable the CCfits library to use this function");
+#else
         try {
             fits::FITS file(name, fits::Read);
-            vec_t<Dim, Type> v;
-            std::string hdr;
-            read_impl_(file, v, hdr, false);
-            return v;
+            read_impl_(file, v, hdr, true);
         } catch (fits::FitsException& e) {
             error("reading: "+name);
             error("FITS: "+e.message());
@@ -239,37 +248,20 @@ namespace fits {
             error(e.msg);
             throw;
         }
+#endif
     }
 
     template<std::size_t Dim, typename Type>
     void read(const std::string& name, vec_t<Dim, Type>& v) {
-        try {
-            fits::FITS file(name, fits::Read);
-            std::string hdr;
-            read_impl_(file, v, hdr, false);
-        } catch (fits::FitsException& e) {
-            print("error: FITS: "+e.message());
-            throw;
-        } catch (fits::exception& e) {
-            error("reading: "+name);
-            error(e.msg);
-            throw;
-        }
+        std::string hdr;
+        read(name, v, hdr);
     }
 
-    template<std::size_t Dim, typename Type>
-    void read(const std::string& name, vec_t<Dim, Type>& v, fits::header& hdr) {
-        try {
-            fits::FITS file(name, fits::Read);
-            read_impl_(file, v, hdr, true);
-        } catch (fits::FitsException& e) {
-            print("error: FITS: "+e.message());
-            throw;
-        } catch (fits::exception& e) {
-            error("reading: "+name);
-            error(e.msg);
-            throw;
-        }
+    template<std::size_t Dim = 2, typename Type = double>
+    vec_t<Dim, Type> read(const std::string& name) {
+        vec_t<Dim, Type> v;
+        read(name, v);
+        return v;
     }
 
     vec1s read_sectfits(const std::string& filename) {
@@ -453,48 +445,6 @@ namespace fits {
         return true;
     }
 
-    // Extract astrometry from a FITS image header
-    struct wcs {
-        wcsprm* w = nullptr;
-        int nwcs  = 0;
-
-        wcs() = default;
-
-        explicit wcs(const fits::header& hdr) {
-            // Feed it to WCSLib to extract the astrometric parameters
-            int nreject = 0;
-            wcspih(
-                const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
-                WCSHDR_all, 0, &nreject, &nwcs, &w
-            );
-        }
-
-        wcs(const wcs&) = delete;
-        wcs& operator = (const wcs&) = delete;
-        wcs(wcs&& tw) {
-            std::swap(w, tw.w);
-            std::swap(nwcs, tw.nwcs);
-        }
-        wcs& operator = (wcs&& tw) {
-            if (w) {
-                wcsvfree(&nwcs, &w);
-            }
-            w = tw.w; tw.w = nullptr;
-            nwcs = tw.nwcs; tw.nwcs = 0;
-            return *this;
-        }
-
-        ~wcs() {
-            if (w) {
-                wcsvfree(&nwcs, &w);
-            }
-        }
-    };
-
-    fits::wcs extast(const fits::header& hdr) {
-        return fits::wcs(hdr);
-    }
-
     bool make_wcs_header(const vec1s& params, fits::header& hdr) {
         if (hdr.empty()) {
             hdr = "END" + std::string(77, ' ');
@@ -634,9 +584,69 @@ namespace fits {
         return true;
     }
 
+#ifndef NO_WCSLIB
+    // Extract astrometry from a FITS image header
+    struct wcs {
+        wcsprm* w = nullptr;
+        int nwcs  = 0;
+
+        wcs() = default;
+
+        explicit wcs(const fits::header& hdr) {
+            // Feed it to WCSLib to extract the astrometric parameters
+            int nreject = 0;
+            wcspih(
+                const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
+                WCSHDR_all, 0, &nreject, &nwcs, &w
+            );
+        }
+
+        wcs(const wcs&) = delete;
+        wcs& operator = (const wcs&) = delete;
+        wcs(wcs&& tw) {
+            std::swap(w, tw.w);
+            std::swap(nwcs, tw.nwcs);
+        }
+        wcs& operator = (wcs&& tw) {
+            if (w) {
+                wcsvfree(&nwcs, &w);
+            }
+            w = tw.w; tw.w = nullptr;
+            nwcs = tw.nwcs; tw.nwcs = 0;
+            return *this;
+        }
+
+        ~wcs() {
+            if (w) {
+                wcsvfree(&nwcs, &w);
+            }
+        }
+    };
+#else
+    template<typename Dummy = void>
+    struct wcs {
+        static_assert(std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this structure");
+    };
+#endif
+
+    template<typename Dummy = void>
+    fits::wcs extast(const fits::header& hdr) {
+#ifdef NO_WCSLIB
+        static_assert(std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        return fits::wcs(hdr);
+#endif
+    }
+
     template<typename T = double, typename U = double, typename V, typename W>
     void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
         vec_t<1,V>& x, vec_t<1,W>& y) {
+#ifdef NO_WCSLIB
+        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
 
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
         phypp_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
@@ -661,11 +671,16 @@ namespace fits {
 
         x = pos.safe[ids1];
         y = pos.safe[ids2];
+#endif
     }
 
     template<typename T = double, typename U = double, typename V, typename W>
     void xy2ad(const fits::wcs& w, const vec_t<1,T>& x, const vec_t<1,U>& y,
         vec_t<1,V>& ra, vec_t<1,W>& dec) {
+#ifdef NO_WCSLIB
+        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
 
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
         phypp_check(x.size() == y.size(), "x and y arrays do not match sizes ("+
@@ -690,12 +705,17 @@ namespace fits {
 
         ra = world.safe[ids1];
         dec = world.safe[ids2];
+#endif
     }
 
     template<typename T = double, typename U = double, typename V, typename W,
         typename enable = typename std::enable_if<!is_vec<T>::value &&
             !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
     void ad2xy(const fits::wcs& w, const T& ra, const U& dec, V& x, W& y) {
+#ifdef NO_WCSLIB
+        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
 
         vec1d world(2);
@@ -713,12 +733,17 @@ namespace fits {
 
         x = pos.safe[0];
         y = pos.safe[1];
+#endif
     }
 
     template<typename T = double, typename U = double, typename V, typename W,
         typename enable = typename std::enable_if<!is_vec<T>::value &&
             !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
     void xy2ad(const fits::wcs& w, const T& x, const U& y, V& ra, W& dec) {
+#ifdef NO_WCSLIB
+        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
         phypp_check(w.w != nullptr, "uninitialized WCS structure");
 
         vec1d map(2);
@@ -736,11 +761,16 @@ namespace fits {
 
         ra = world.safe[0];
         dec = world.safe[1];
+#endif
     }
 
     // Obtain the pixel size of a given image in arsec/pixel.
     // Will fail (return false) if no WCS information is present in the image.
     bool get_pixel_size(const std::string& file, double& aspix) {
+#ifdef NO_WCSLIB
+        static_assert(std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
         if (end_with(file, ".sectfits")) {
             vec1s sects = fits::read_sectfits(file);
             return get_pixel_size(sects[0], aspix);
@@ -762,29 +792,7 @@ namespace fits {
 
             return true;
         }
-    }
-
-    // Write an image in a FITS file
-    template<std::size_t Dim, typename Type>
-    void write(const std::string& name, const vec_t<Dim,Type>& v) {
-        std::array<long,Dim> isize;
-        for (uint_t i = 0; i < Dim; ++i) {
-            isize[i] = v.dims[Dim-1-i];
-        }
-
-        std::valarray<rtype_t<Type>> tv(v.size());
-        for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = v.safe[i];
-        }
-
-        try {
-            fits::FITS f("!"+name, traits<rtype_t<Type>>::image_type, Dim, isize.data());
-            f.pHDU().write(1, tv.size(), tv);
-            f.flush();
-        } catch (fits::FitsException& e) {
-            print("error: FITS: "+e.message());
-            throw;
-        }
+#endif
     }
 
     void header2fits_(fitsfile* fptr, const std::string& hdr) {
@@ -810,8 +818,13 @@ namespace fits {
         }
     }
 
+    // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
     void write(const std::string& name, const vec_t<Dim,Type>& v, const fits::header& hdr) {
+#ifdef NO_CCFITS
+        static_assert(std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
+            "please enable the CCfits library to use this function");
+#else
         std::array<long,Dim> isize;
         for (uint_t i = 0; i < Dim; ++i) {
             isize[i] = v.dims[Dim-1-i];
@@ -825,13 +838,22 @@ namespace fits {
         try {
             fits::FITS f("!"+name, traits<rtype_t<Type>>::image_type, Dim, isize.data());
             f.pHDU().write(1, tv.size(), tv);
-            header2fits_(f.pHDU().fitsPointer(), hdr);
+            if (!hdr.empty()) {
+                header2fits_(f.pHDU().fitsPointer(), hdr);
+            }
             f.flush();
         } catch (fits::FitsException& e) {
             print("error: FITS: "+e.message());
             throw;
         }
+#endif
     }
+
+    template<std::size_t Dim, typename Type>
+    void write(const std::string& name, const vec_t<Dim,Type>& v) {
+        write(name, v, "");
+    }
+
 
     struct column_info {
         std::string name;

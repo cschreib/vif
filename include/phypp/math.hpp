@@ -1219,10 +1219,27 @@ auto point2d(const TX& x, const TY& y) -> vec_t<1,decltype(x*y)> {
     return vec_t<1,decltype(x*y)>{x, y, 1};
 }
 
+// LAPACK functions
+// ----------------
+
+#ifndef NO_LAPACK
 extern "C" void dgetrf_(int* n, int* m, double* a, int* lda, int* ipiv, int* info);
 extern "C" void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work, int* lwork, int* info);
+extern "C" void dsytrf_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work,
+    int* lwork, int* info);
+extern "C" void dsytri_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work, int* info);
+extern "C" void dsysv_(char* uplo, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
+    int* ldb, double* work, int* lwork, int* info);
+extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
+    double* work, int* lwork, int* info);
+#endif
 
+template<typename Dummy = void>
 bool invert(vec2d& i) {
+#ifdef NO_LAPACK
+    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+        "please enable LAPACK to use this function");
+#else
     phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
     int n = i.dims[0];
@@ -1243,6 +1260,7 @@ bool invert(vec2d& i) {
     }
 
     return true;
+#endif
 }
 
 template<typename TypeA>
@@ -1251,11 +1269,12 @@ bool invert(const vec_t<2,TypeA>& a, vec2d& i) {
     return invert(i);
 }
 
-extern "C" void dsytrf_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work,
-    int* lwork, int* info);
-extern "C" void dsytri_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work, int* info);
-
+template<typename Dummy = void>
 bool invert_symmetric(vec2d& i) {
+#ifdef NO_LAPACK
+    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+        "please enable LAPACK to use this function");
+#else
     phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
     char uplo = 'U';
@@ -1282,6 +1301,7 @@ bool invert_symmetric(vec2d& i) {
     }
 
     return true;
+#endif
 }
 
 template<typename TypeA>
@@ -1290,10 +1310,12 @@ bool invert_symmetric(const vec_t<2,TypeA>& a, vec2d& i) {
     return invert_symmetric(i);
 }
 
-extern "C" void dsysv_(char* uplo, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
-    int* ldb, double* work, int* lwork, int* info);
-
+template<typename Dummy = void>
 bool solve_symmetric(vec2d& alpha, vec1d& beta) {
+#ifdef NO_LAPACK
+    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+        "please enable LAPACK to use this function");
+#else
     phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
         alpha.dims, ")");
     phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimesions (",
@@ -1320,12 +1342,15 @@ bool solve_symmetric(vec2d& alpha, vec1d& beta) {
     }
 
     return true;
+#endif
 }
 
-extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
-    double* work, int* lwork, int* info);
-
+template<typename Dummy = void>
 bool eigen_symmetric(vec2d& a, vec1d& vals) {
+#ifdef NO_LAPACK
+    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+        "please enable LAPACK to use this function");
+#else
     phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
         a.dims, ")");
 
@@ -1355,12 +1380,18 @@ bool eigen_symmetric(vec2d& a, vec1d& vals) {
     // each corresponding to the eigen values given in 'vals'
 
     return true;
+#endif
 }
 
 bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
     vecs = a;
     return eigen_symmetric(vecs, vals);
 }
+
+
+// -----------------------
+// end of LAPACK functions
+
 
 template<typename Type>
 void symmetrize(vec_t<2,Type>& alpha) {

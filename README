@@ -21,9 +21,11 @@ to do "real-time" testing of code, and that any program must be recompiled
 whenever a change is made. This issue can be partly solved by making use of
 command line arguments to quickly modify the behavior of a program.
 
-The library itself relies on standard C++11, and a small tool ('refgen') is used
-to parse the source code to generate necessary data for compile-time reflection
-which is not (yet [4]) part of the C++ standard.
+The library itself relies only on standard C++11, and a couple of well-known
+libraries (see INSTALL). A few features require compile-time reflection, which
+is not yet part of the C++ standard [4], so a small tool ('refgen') is used to
+fill the gap. These features are non-essential though, so reflection can be
+completely disabled if not needed.
 
 [1]: http://www.exelisvis.com/ProductsServices/IDL.aspx
 [2]: http://gnudatalanguage.sourceforge.net/
@@ -103,7 +105,7 @@ List of compilers:
  - cphy++:
     General purpose compiler. Contrary to all the compilers listed above, this
     one will not execute the program after compilation. Nor will it check for
-    changes in the code or its dependencies: the program is always compiled.
+    changes in the code or its dependencies: the program is always recompiled.
     You can set some options, like enabling optimizations, debug information,
     and specifying the output file name.
 
