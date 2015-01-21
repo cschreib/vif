@@ -105,8 +105,14 @@ int main(int argc, char* argv[]) {
         print("Direct data access (single index)");
         check(v[1], "1");
         check(v(1), "1");
-        print("Placeholder index '_'");
+        print("Range index '_'");
         check(v[_], "0, 1, 2, 3, 4, 5, 6");
+        print("Range index '3-_'");
+        check(v[3-_], "3, 4, 5, 6");
+        print("Range index '_-3'");
+        check(v[_-3], "0, 1, 2, 3");
+        print("Range index '2-_-4'");
+        check(v[2-_-4], "2, 3, 4");
 
         print("Basic math");
         check(2*v, "0, 2, 4, 6, 8, 10, 12");
@@ -234,13 +240,14 @@ int main(int argc, char* argv[]) {
         check(tu.data.size(), "6");
         check(tu, "5, 8, 4, 5, 1, 2");
         check(tu(1,1), "5");
-        tu(rgen(1,2),rgen(0,1)) = {{1,2},{3,4}};
+        tu(1-_-2,0-_-1) = {{1,2},{3,4}};
         check(tu, "5, 8, 1, 2, 3, 4");
 
         vec2i v = {{4,5,6,7}, {8,9,5,2}, {7,8,2,0}, {-1, -5, -6, -7}, {-4,1,-2,5}};
         check(v(_,_).dims, "5, 4");
         check(v(_,0).dims, "5");
         check(v(0,_).dims, "4");
+        check(v(1-_-2,1-_-3).dims, "2, 3");
         check(v(rgen(1,2),rgen(1,3)).dims, "2, 3");
         check(v(rgen(1,2),0).dims, "2");
         check(v(0,rgen(1,3)).dims, "3");
