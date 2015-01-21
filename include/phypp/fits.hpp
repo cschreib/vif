@@ -449,12 +449,106 @@ namespace fits {
         return true;
     }
 
-    bool make_wcs_header(const vec1s& params, fits::header& hdr) {
+    struct make_wcs_header_params {
+        // The pixel size in arcsec
+        double pixel_scale = dnan;
+        // The reference position
+        double sky_ref_ra = dnan, sky_ref_dec = dnan;
+        // The pixel corresponding to the reference position
+        double pixel_ref_x = dnan, pixel_ref_y = dnan;
+        // The number of pixels in X and Y axis
+        uint_t dims_x = npos, dims_y = npos;
+    };
+
+    // Add WCS data to a FITS header, computed from a set of simple parameters.
+    bool make_wcs_header(const make_wcs_header_params& params, fits::header& hdr) {
         if (hdr.empty()) {
             hdr = "END" + std::string(77, ' ');
         }
 
-        for (auto& p : params) {
+        if (finite(params.pixel_scale)) {
+            if (!setkey(hdr, "CDELT1", -params.pixel_scale/3600.0)) {
+                error("make_wcs_header: could not set keyword 'CDELT1' to '",
+                    -params.pixel_scale, "'");
+                return false;
+            }
+            if (!setkey(hdr, "CDELT2", params.pixel_scale/3600.0)) {
+                error("make_wcs_header: could not set keyword 'CDELT2' to '",
+                    params.pixel_scale, "'");
+                return false;
+            }
+            if (!setkey(hdr, "CTYPE1", "'RA---TAN'")) {
+                error("make_wcs_header: could not set keyword 'CTYPE1' to 'RA---TAN'");
+                return false;
+            }
+            if (!setkey(hdr, "CTYPE2", "'DEC--TAN'")) {
+                error("make_wcs_header: could not set keyword 'CTYPE2' to 'DEC--TAN'");
+                return false;
+            }
+            if (!setkey(hdr, "EQUINOX", 2000.0)) {
+                error("make_wcs_header: could not set keyword 'EQUINOX' to '",
+                    2000.0, "'");
+                return false;
+            }
+        }
+
+        if (finite(params.pixel_ref_x) && finite(params.pixel_ref_y)) {
+            if (!setkey(hdr, "CRPIX1", params.pixel_ref_x)) {
+                error("make_wcs_header: could not set keyword 'CRPIX1' to '",
+                    params.pixel_ref_x, "'");
+                return false;
+            }
+            if (!setkey(hdr, "CRPIX2", params.pixel_ref_y)) {
+                error("make_wcs_header: could not set keyword 'CRPIX2' to '",
+                    params.pixel_ref_y, "'");
+                return false;
+            }
+        }
+
+        if (finite(params.sky_ref_ra) && finite(params.sky_ref_dec)) {
+            if (!setkey(hdr, "CRVAL1", params.sky_ref_ra)) {
+                error("make_wcs_header: could not set keyword 'CRVAL1' to '",
+                    params.sky_ref_ra, "'");
+                return false;
+            }
+            if (!setkey(hdr, "CRVAL2", params.sky_ref_dec)) {
+                error("make_wcs_header: could not set keyword 'CRVAL2' to '",
+                    params.sky_ref_dec, "'");
+                return false;
+            }
+        }
+
+        if (params.dims_x != npos && params.dims_y != npos) {
+            if (!setkey(hdr, "META_0", 2u)) {
+                error("make_wcs_header: could not set keyword 'META_0' to '", 2u, "'");
+                return false;
+            }
+            if (!setkey(hdr, "META_1", params.dims_x)) {
+                error("make_wcs_header: could not set keyword 'META_1' to '",
+                    params.dims_x, "'");
+                return false;
+            }
+            if (!setkey(hdr, "META_2", params.dims_y)) {
+                error("make_wcs_header: could not set keyword 'META_2' to '",
+                    params.dims_y, "'");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Add WCS data to a FITS header, computed from a set of simple parameters.
+    // Format: {"pixel_scale:0.06", "sky_ref:-3.56985,52.6456", ...}
+    // Parameters:
+    //  - pixel_scale [float]: the pixel size in arcsec
+    //  - sky_ref [float,float]: the reference position
+    //  - pixel_ref [float,float]: the pixel corresponding to the reference position
+    //  - dims [uint,uint]: number of pixels in X and Y axis
+    bool make_wcs_header(const vec1s& string_params, fits::header& hdr) {
+        make_wcs_header_params params;
+
+        for (auto& p : string_params) {
             vec1s spl = split(p, ":");
 
             if (spl.size() != 2) {
@@ -465,35 +559,12 @@ namespace fits {
             spl[0] = trim(tolower(spl[0]));
 
             if (spl[0] == "pixel_scale") {
-                double scale;
-                if (!from_string(spl[1], scale)) {
+                if (!from_string(spl[1], params.pixel_scale)) {
                     error("make_wcs_header: could not read pixel scale '",
                         spl[1], "' as double");
                     return false;
                 }
-
-                if (!setkey(hdr, "CDELT1", -scale)) {
-                    error("make_wcs_header: could not set keyword 'CDELT1' to '", -scale, "'");
-                    return false;
-                }
-                if (!setkey(hdr, "CDELT2", scale)) {
-                    error("make_wcs_header: could not set keyword 'CDELT2' to '", scale, "'");
-                    return false;
-                }
-                if (!setkey(hdr, "CTYPE1", "'RA---TAN'")) {
-                    error("make_wcs_header: could not set keyword 'CTYPE1' to 'RA---TAN'");
-                    return false;
-                }
-                if (!setkey(hdr, "CTYPE2", "'DEC--TAN'")) {
-                    error("make_wcs_header: could not set keyword 'CTYPE2' to 'DEC--TAN'");
-                    return false;
-                }
-                if (!setkey(hdr, "EQUINOX", 2000.0)) {
-                    error("make_wcs_header: could not set keyword 'EQUINOX' to '", 2000.0, "'");
-                    return false;
-                }
             } else if (spl[0] == "pixel_ref") {
-                double x, y;
                 vec1s tspl = split(spl[1], ",");
                 if (tspl.size() != 2) {
                     error("make_wcs_header: ill formed 'pixel_ref' parameter: '", spl[0], "'");
@@ -501,27 +572,17 @@ namespace fits {
                         "reference pixel");
                     return false;
                 }
-                if (!from_string(tspl[0], x)) {
+                if (!from_string(tspl[0], params.pixel_ref_x)) {
                     error("make_wcs_header: could not read X pixel reference '",
                         tspl[0], "' as double");
                     return false;
                 }
-                if (!from_string(tspl[1], y)) {
+                if (!from_string(tspl[1], params.pixel_ref_y)) {
                     error("make_wcs_header: could not read Y pixel reference '",
                         tspl[1], "' as double");
                     return false;
                 }
-
-                if (!setkey(hdr, "CRPIX1", x)) {
-                    error("make_wcs_header: could not set keyword 'CRPIX1' to '", x, "'");
-                    return false;
-                }
-                if (!setkey(hdr, "CRPIX2", y)) {
-                    error("make_wcs_header: could not set keyword 'CRPIX2' to '", y, "'");
-                    return false;
-                }
             } else if (spl[0] == "sky_ref") {
-                double x, y;
                 vec1s tspl = split(spl[1], ",");
                 if (tspl.size() != 2) {
                     error("make_wcs_header: ill formed 'sky_ref' parameter: '", spl[0], "'");
@@ -529,54 +590,31 @@ namespace fits {
                         "reference sky position");
                     return false;
                 }
-                if (!from_string(tspl[0], x)) {
+                if (!from_string(tspl[0], params.sky_ref_ra)) {
                     error("make_wcs_header: could not read RA sky position reference '",
                         tspl[0], "' as double");
                     return false;
                 }
-                if (!from_string(tspl[1], y)) {
+                if (!from_string(tspl[1], params.sky_ref_dec)) {
                     error("make_wcs_header: could not read Dec sky position reference '",
                         tspl[1], "' as double");
                     return false;
                 }
-
-                if (!setkey(hdr, "CRVAL1", x)) {
-                    error("make_wcs_header: could not set keyword 'CRVAL1' to '", x, "'");
-                    return false;
-                }
-                if (!setkey(hdr, "CRVAL2", y)) {
-                    error("make_wcs_header: could not set keyword 'CRVAL2' to '", y, "'");
-                    return false;
-                }
             } else if (spl[0] == "dims") {
-                uint_t x, y;
                 vec1s tspl = split(spl[1], ",");
                 if (tspl.size() != 2) {
                     error("make_wcs_header: ill formed 'dims' parameter: '", spl[0], "'");
                     note("make_wcs_header: expecting two comma separated number of pixels");
                     return false;
                 }
-                if (!from_string(tspl[0], x)) {
+                if (!from_string(tspl[0], params.dims_x)) {
                     error("make_wcs_header: could not read number of pixels in first axis '",
                         tspl[0], "' as unsigned integer");
                     return false;
                 }
-                if (!from_string(tspl[1], y)) {
+                if (!from_string(tspl[1], params.dims_y)) {
                     error("make_wcs_header: could not read number of pixels in second axis '",
                         tspl[1], "' as unsigned integer");
-                    return false;
-                }
-
-                if (!setkey(hdr, "META_0", 2u)) {
-                    error("make_wcs_header: could not set keyword 'META_0' to '", 2u, "'");
-                    return false;
-                }
-                if (!setkey(hdr, "META_1", x)) {
-                    error("make_wcs_header: could not set keyword 'META_1' to '", x, "'");
-                    return false;
-                }
-                if (!setkey(hdr, "META_2", y)) {
-                    error("make_wcs_header: could not set keyword 'META_2' to '", y, "'");
                     return false;
                 }
             } else {
@@ -585,7 +623,7 @@ namespace fits {
             }
         }
 
-        return true;
+        return make_wcs_header(params, hdr);
     }
 
 #ifndef NO_WCSLIB
