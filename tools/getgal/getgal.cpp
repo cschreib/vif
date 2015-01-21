@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
             warning("no band named '", bands[i], "', skipping");
         }
 
-        bands = where(is_any_of(bands, mname));
+        bands = bands[where(is_any_of(bands, mname))];
     }
 
     uint_t ib = 0;
@@ -206,6 +206,14 @@ int main(int argc, char* argv[]) {
             }
 
             std::string file_name = out+name[ids[i]]+mname[b]+".fits";
+
+            // Make sure that we are not going to overwrite one of the images
+            if (is_any_of(file_name, mfile)) {
+                error("this operation would overwrite the image '", file_name, "'");
+                note("aborting");
+                return 1;
+            }
+
             if (verbose) print("writing ", file_name);
             fits::write(file_name, cube(i,_,_), nhdr);
         }
@@ -226,6 +234,14 @@ int main(int argc, char* argv[]) {
             }
 
             std::string file_name = out+name[nids[i]]+mname[b]+".fits";
+
+            // Make sure that we are not going to overwrite one of the images
+            if (is_any_of(file_name, mfile)) {
+                error("this operation would overwrite the image '", file_name, "'");
+                note("aborting");
+                return 1;
+            }
+
             if (verbose) print("writing ", file_name);
             fits::write(file_name, empty, nhdr);
         }
