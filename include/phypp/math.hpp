@@ -205,7 +205,7 @@ vec_t<1,rtype_t<Type>> bin_width(const vec_t<2,Type>& b) {
 }
 
 template<typename Type>
-vec_t<1,rtype_t<Type>> bin_center(const vec_t<1,Type>& b) {
+rtype_t<Type> bin_center(const vec_t<1,Type>& b) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=2, got dims=", b.dims, ")");
 
@@ -213,7 +213,7 @@ vec_t<1,rtype_t<Type>> bin_center(const vec_t<1,Type>& b) {
 }
 
 template<typename Type>
-vec_t<1,rtype_t<Type>> bin_width(const vec_t<1,Type>& b) {
+rtype_t<Type> bin_width(const vec_t<1,Type>& b) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=2, got dims=", b.dims, ")");
 
