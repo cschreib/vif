@@ -2331,6 +2331,14 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     return res;
 }
 
+// Move a point in RA/Dec [degree] by an increment in [arcsec]
+void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
+    ra *= cos(dec*dpi/180.0);
+    dec += ddec/3600.0;
+    ra += dra/3600.0;
+    ra /= cos(dec*dpi/180.0);
+}
+
 // Find the closest point in a 2D array that satisfies a given criterium
 bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
     phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
