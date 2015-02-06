@@ -661,6 +661,7 @@ namespace fits {
         ~wcs() {
             if (w) {
                 wcsvfree(&nwcs, &w);
+                w = nullptr;
             }
         }
     };
