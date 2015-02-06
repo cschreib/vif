@@ -626,6 +626,27 @@ namespace fits {
         return make_wcs_header(params, hdr);
     }
 
+    fits::header filter_wcs(const fits::header& hdr) {
+        // List of keywords taken from 'cphead' (WCSTools)
+        vec1s keywords = {"RA", "DEC", "EPOCH", "EQUINOX", "RADECSYS", "SECPIX", "IMWCS",
+            "CD1_1", "CD1_2", "CD2_1", "CD2_2", "PC1_1", "PC1_2", "PC2_1", "PC2_2",
+            "PC001001", "PC001002", "PC002001", "PC002002", "LATPOLE", "LONPOLE",
+            "SECPIX", "CTYPE", "CRVAL", "CDELT", "CRPIX", "CROTA",
+            "CUNIT", "CO1_", "CO2_", "PROJP", "PV1_", "PV2_", "END"};
+
+        vec1s okeys = cut(hdr, 80);
+        vec1s nkeys;
+        for (auto& k : okeys) {
+            for (auto& wk : keywords) {
+                if (start_with(k, wk)) {
+                    nkeys.push_back(k);
+                }
+            }
+        }
+
+        return collapse(nkeys);
+    }
+
 #ifndef NO_WCSLIB
     // Extract astrometry from a FITS image header
     struct wcs {
