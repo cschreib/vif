@@ -727,14 +727,27 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
                     fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
                 }
             } else {
-                if (newk) {
-                    fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
-                        &status);
-                    fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                if (end_with(new_value, ".") || find(new_value, ".") == npos) {
+                    int di = d;
+                    if (newk) {
+                        fits_write_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                    } else {
+                        fits_update_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                    }
                 } else {
-                    fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
-                        &status);
-                    fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                    if (newk) {
+                        fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                    } else {
+                        fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                    }
                 }
             }
 
