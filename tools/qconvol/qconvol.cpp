@@ -48,7 +48,11 @@ int main(int argc, char* argv[]) {
     fits::header hdr;
     fits::read(fimg, img, hdr);
 
-    vec2d beam = gaussian_profile(img.dims, radius/1.117);
+    radius /= 1.117;
+    uint_t nk = ceil(30*radius);
+    if (nk % 2 == 0) ++nk;
+
+    vec2d beam = gaussian_profile({{nk,nk}}, radius);
 
     vec2d out = convolve2d(img, beam);
     fits::write(fout, out, hdr);
