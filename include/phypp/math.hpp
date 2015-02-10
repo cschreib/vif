@@ -346,8 +346,10 @@ vec_t<Dim,Type> shuffle(vec_t<Dim,Type> v, T& seed) {
     return v;
 }
 
-template<typename F, F f, std::size_t Dim, typename Type>
-auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename return_type<F>::type> {
+template<typename F, F f, std::size_t Dim, typename Type, typename ... Args>
+auto run_index_(const vec_t<Dim,Type>& v, const Args& ... args, uint_t dim) ->
+vec_t<Dim-1,typename return_type<F>::type> {
+
     vec_t<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
         r.dims[i] = v.dims[i];
@@ -392,7 +394,7 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
             tmp[j] = v.safe[base + j*mpitch];
         }
 
-        r[i] = (*f)(tmp);
+        r[i] = (*f)(tmp, args...);
     }
 
     return r;
@@ -491,11 +493,6 @@ total_return_type<rtype_t<Type>> total(const vec_t<Dim,Type>& v) {
     return total;
 }
 
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> total(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &total<1,rtype_t<Type>>>(v, dim);
-}
 
 template<std::size_t Dim, typename Type, typename enable =
     typename std::enable_if<std::is_same<rtype_t<Type>, bool>::value>::type>
@@ -507,6 +504,7 @@ uint_t count(const vec_t<Dim,Type>& v) {
 
     return n;
 }
+
 
 template<std::size_t Dim, typename T>
 double fraction_of(const vec_t<Dim,T>& b) {
@@ -521,12 +519,6 @@ double mean(const vec_t<Dim,Type>& v) {
     }
 
     return total/n_elements(v);
-}
-
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> mean(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &mean<1,rtype_t<Type>>>(v, dim);
 }
 
 template<std::size_t Dim, typename Type>
@@ -556,12 +548,6 @@ rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
 template<std::size_t Dim, typename Type>
 rtype_t<Type> median(vec_t<Dim,Type> v) {
     return inplace_median(v);
-}
-
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,rtype_t<Type>> median(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = rtype_t<Type> (*)(vec_t<1,rtype_t<Type>>);
-    return run_index_<fptr, &median<1,rtype_t<Type>>>(v, dim);
 }
 
 template<std::size_t Dim, typename Type, typename U>
@@ -749,20 +735,8 @@ double rms(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> rms(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &rms<1,rtype_t<Type>>>(v, dim);
-}
-
-template<std::size_t Dim, typename Type>
 double stddev(const vec_t<Dim,Type>& v) {
     return rms(v - mean(v));
-}
-
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> stddev(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &stddev<1,rtype_t<Type>>>(v, dim);
 }
 
 template<std::size_t Dim, typename Type>
@@ -770,11 +744,35 @@ double mad(const vec_t<Dim,Type>& v) {
     return median(fabs(v - median(v)));
 }
 
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> mad(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &mad<1,rtype_t<Type>>>(v, dim);
-}
+#define RUN_INDEX(func) \
+    struct func ## _run_index_wrapper_ { \
+        template<typename T, typename ... Args> \
+        static auto run(const vec_t<1,T>& v, Args&& ... args) -> \
+        decltype(func(v, std::forward<Args>(args)...)) { \
+            return func(v, std::forward<Args>(args)...); \
+        } \
+    }; \
+    \
+    template<std::size_t Dim, typename Type, typename ... Args> \
+    auto func(const vec_t<Dim,Type>& v, Args&& ... args, uint_t dim) -> \
+    vec_t<Dim-1, decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
+        using fptr = decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
+            (*)(const vec_t<1,rtype_t<Type>>&, Args&& ...); \
+        using wrapper = func ## _run_index_wrapper_; \
+        return run_index_<fptr, &wrapper::run<rtype_t<Type>, Args...>>(v, dim); \
+    }
+
+RUN_INDEX(total);
+RUN_INDEX(count);
+RUN_INDEX(fraction_of);
+RUN_INDEX(mean);
+RUN_INDEX(median);
+RUN_INDEX(percentile);
+RUN_INDEX(rms);
+RUN_INDEX(stddev);
+RUN_INDEX(mad);
+
+#undef RUN_INDEX
 
 template<std::size_t Dim, typename Type, typename TypeB>
 vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
