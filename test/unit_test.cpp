@@ -461,7 +461,7 @@ int main(int argc, char* argv[]) {
     {
         print("File system functions");
         check(file::exists("unit_test.cpp"), "1");
-        check(file::exists("unit_test_bidouille.cpp"), "0");
+        check(file::exists("unit_test_not_gonna_work.cpp"), "0");
         vec1s dlist = file::list_directories("../");
         print(dlist);
         check(where(dlist == "bin").empty(), "0");
@@ -469,7 +469,16 @@ int main(int argc, char* argv[]) {
         print(flist);
         flist = file::list_files("../include/*.hpp");
         print(flist);
+    }
+
+    {
+        print("file::get_directory and file::get_basename");
         check(file::get_directory("../somedir/someother/afile.cpp"), "../somedir/someother/");
+        check(file::get_directory("../somedir/someother/"), "../somedir/");
+        check(file::get_directory("afile.cpp"), "./");
+        check(file::get_basename("../somedir/someother/afile.cpp"), "afile.cpp");
+        check(file::get_basename("../somedir/someother/"), "someother");
+        check(file::get_basename("afile.cpp"), "afile.cpp");
     }
 
     {
