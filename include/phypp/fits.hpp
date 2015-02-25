@@ -1667,6 +1667,85 @@ namespace fits {
         }
     }
 
+    // Append an new column to an existing FITS table
+    // Note: if the column already exsits in the file, it will be overwritten
+
+    void remove_column_(fitsfile* fptr, const std::string& name) {
+        int id = 0, status = 0;
+        fits_get_colnum(fptr, CASEINSEN, const_cast<char*>(name.c_str()), &id, &status);
+        if (status == 0) {
+            fits_delete_col(fptr, id, &status);
+        }
+    }
+
+    void remove_columns_(fitsfile* fptr) {}
+
+    template<typename T, typename ... Args>
+    void remove_columns_(fitsfile* fptr, const std::string& name, const T& t, const Args& ... args) {
+        remove_column_(fptr, name);
+        remove_columns_(fptr, args...);
+    }
+
+    template<typename ... Args>
+    void remove_columns_(macroed_t, fitsfile* fptr, const std::string& names, const Args& ... args) {
+        vec1s vnames = split(names.substr(names.find_first_of(')')+1), ",");
+        for (auto& s : vnames) {
+            s = bake_macroed_name(s);
+            if (s.empty()) continue;
+            remove_column_(fptr, s);
+        }
+    }
+
+    template<typename ... Args>
+    void update_table(const std::string& filename, const std::string& name, Args&& ... args) {
+        fitsfile* fptr;
+        int status = 0;
+
+        try {
+            fits_open_table(&fptr, filename.c_str(), READWRITE, &status);
+            phypp_check_cfitsio(status, "cannot open file");
+
+            remove_columns_(fptr, name, args...);
+
+            int ncol;
+            fits_get_num_cols(fptr, &ncol, &status);
+            write_table_(fptr, ncol+1, name, std::forward<Args>(args)...);
+
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
+            throw;
+        }
+    }
+
+    template<typename ... Args>
+    void update_table(const std::string& filename, macroed_t,
+        const std::string& names, Args&& ... args) {
+
+        fitsfile* fptr;
+        int status = 0;
+
+        try {
+            fits_open_table(&fptr, filename.c_str(), READWRITE, &status);
+            phypp_check_cfitsio(status, "cannot open file");
+
+            remove_columns_(macroed_t(), fptr, names, std::forward<Args>(args)...);
+
+            int ncol;
+            fits_get_num_cols(fptr, &ncol, &status);
+            write_table_(macroed_t(), fptr, ncol+1, names, std::forward<Args>(args)...);
+
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
+            throw;
+        }
+    }
+
     void display(const std::string& name) {
         fork("ds9 "+name);
     }
