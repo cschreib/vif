@@ -50,19 +50,26 @@ vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix,
     return shrink(v, {{upix, upix, upix, upix}}, def);
 }
 
-// Get a sub region 'reg' inside an image. reg = {x0, y0, x1, y1}.
+// Get a sub region 'reg' inside an image, with reg = {x0, y0, x1, y1} (inclusive).
+// The sub region is returned as two index vectors, the first containing indices in the
+// image, and the second containing indices in the region. The number of returned indices
+// may be smaller than the size of the requested region, if a fraction of the region falls
+// out of the image boundaries. In particular, the index vectors will be empty if there is
+// no overlap between the image and the requested region.
 template<typename TypeV, typename TypeR = int_t>
 void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1u& rr, vec1u& rs) {
-    assert(n_elements(reg) == 4);
+    phypp_check(reg.size() == 4, "invalid region parameter "
+        "(expected 4 components, got "+strn(reg.size())+")");
+
     int_t nvx = v.dims[0], nvy = v.dims[1];
     int_t nx = reg.safe[2]-reg.safe[0]+1, ny = reg.safe[3]-reg.safe[1]+1;
 
     vec1i vreg = reg;
     vec1i sreg = {0,0,nx-1,ny-1};
 
-    if (reg.safe[0] >= nvx || reg.safe[0] > reg.safe[2] ||
-        reg.safe[1] >= nvy || reg.safe[1] > reg.safe[3]) {
-        rr = rs = uintarr(0);
+    if (reg.safe[0] >= nvx || reg.safe[2] < 0 || reg.safe[0] > reg.safe[2] ||
+        reg.safe[1] >= nvy || reg.safe[3] < 0 || reg.safe[1] > reg.safe[3]) {
+        rr.clear(); rs.clear();
         return;
     }
 
