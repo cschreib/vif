@@ -198,69 +198,29 @@ namespace fits {
     }
 
 #ifndef NO_CCFITS
-    template<std::size_t Dim, typename Type>
-    void read_impl_(fits::FITS& file, vec_t<Dim, Type>& v, std::string& hdr, bool gethdr) {
-        fits::PHDU& phdu = file.pHDU();
-        if (phdu.axes() == 0) {
-            fits::ExtHDU* hdu = nullptr;
-            uint_t i = 1;
-            while (!hdu && i <= file.extension().size()) {
-                hdu = &file.extension(i);
-                if (hdu->axes() == 0) hdu = nullptr;
-            }
+    template<typename THDU, std::size_t Dim, typename Type>
+    void read_impl__(THDU& hdu, vec_t<Dim, Type>& v, std::string& hdr) {
+        phypp_check_fits(hdu.axes() == Dim, "FITS file does not match array dimensions ("+
+            strn(hdu.axes())+" vs "+strn(Dim)+")");
 
-            phypp_check_fits(hdu, "FITS file does not contain any data");
-
-            fits::ExtHDU& thdu = *hdu;
-
-            phypp_check_fits(thdu.axes() == Dim, "FITS file does not match array dimensions ("+
-                strn(thdu.axes())+" vs "+strn(Dim)+")");
-
-            std::size_t n = 1;
-            for (uint_t j = 0; j < Dim; ++j) {
-                v.dims[j] = thdu.axis(Dim-1-j);
-                n *= v.dims[j];
-            }
-
-            std::valarray<Type> tv(n);
-            thdu.read(tv, 1, n);
-
-            v.data.assign(std::begin(tv), std::end(tv));
-
-            if (gethdr) {
-                // Read the header as a string
-                char* hstr = nullptr;
-                int nkeys  = 0;
-                int status = 0;
-                fits_hdr2str(thdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
-                hdr = hstr;
-                free(hstr);
-            }
-        } else {
-            phypp_check_fits(phdu.axes() == Dim, "FITS file does not match array dimensions ("+
-                strn(phdu.axes())+" vs "+strn(Dim)+")");
-
-            std::size_t n = 1;
-            for (uint_t i = 0; i < Dim; ++i) {
-                v.dims[i] = phdu.axis(Dim-1-i);
-                n *= v.dims[i];
-            }
-
-            std::valarray<Type> tv(n);
-            phdu.read(tv, 1, n);
-
-            v.data.assign(std::begin(tv), std::end(tv));
-
-            if (gethdr) {
-                // Read the header as a string
-                char* hstr = nullptr;
-                int nkeys  = 0;
-                int status = 0;
-                fits_hdr2str(phdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
-                hdr = hstr;
-                free(hstr);
-            }
+        std::size_t n = 1;
+        for (uint_t j = 0; j < Dim; ++j) {
+            v.dims[j] = hdu.axis(Dim-1-j);
+            n *= v.dims[j];
         }
+
+        std::valarray<Type> tv(n);
+        hdu.read(tv, 1, n);
+
+        v.data.assign(std::begin(tv), std::end(tv));
+
+        // Read the header as a string
+        char* hstr = nullptr;
+        int nkeys  = 0;
+        int status = 0;
+        fits_hdr2str(hdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
+        hdr = hstr;
+        free(hstr);
     }
 #endif
 
@@ -273,7 +233,21 @@ namespace fits {
 #else
         try {
             fits::FITS file(name, fits::Read);
-            read_impl_(file, v, hdr, true);
+            fits::PHDU& phdu = file.pHDU();
+            if (phdu.axes() == 0) {
+                fits::ExtHDU* hdu = nullptr;
+                uint_t i = 1;
+                while (!hdu && i <= file.extension().size()) {
+                    hdu = &file.extension(i);
+                    if (hdu->axes() == 0) hdu = nullptr;
+                }
+
+                phypp_check_fits(hdu, "FITS file does not contain any data");
+
+                read_impl__(*hdu, v, hdr);
+            } else {
+                read_impl__(phdu, v, hdr);
+            }
         } catch (fits::FitsException& e) {
             error("reading: "+name);
             error("FITS: "+e.message());
@@ -290,6 +264,36 @@ namespace fits {
     void read(const std::string& name, vec_t<Dim, Type>& v) {
         std::string hdr;
         read(name, v, hdr);
+    }
+
+    // Load the content of a FITS file into an array.
+    template<std::size_t Dim, typename Type>
+    void read_hdu(const std::string& name, vec_t<Dim, Type>& v, uint_t hdu, fits::header& hdr) {
+#ifdef NO_CCFITS
+        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
+            "please enable the CCfits library to use this function");
+#else
+        try {
+            fits::FITS file(name, fits::Read);
+            fits::ExtHDU& thdu = file.extension(hdu+1);
+            phypp_check_fits(thdu.axes() != 0, "FITS HDU does not contain any data");
+            read_impl__(thdu, v, hdr);
+        } catch (fits::FitsException& e) {
+            error("reading: "+name);
+            error("FITS: "+e.message());
+            throw;
+        } catch (fits::exception& e) {
+            error("reading: "+name);
+            error(e.msg);
+            throw;
+        }
+#endif
+    }
+
+    template<std::size_t Dim, typename Type>
+    void read_hdu(const std::string& name, vec_t<Dim, Type>& v, uint_t hdu) {
+        std::string hdr;
+        read_hdu(name, v, hdu, hdr);
     }
 
     template<std::size_t Dim = 2, typename Type = double>
