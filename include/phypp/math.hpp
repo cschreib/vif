@@ -1202,7 +1202,7 @@ auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
         v.dims, ")");
 
-    decltype(v(_,0)) d(vec_access::get_parent(v));
+    decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
@@ -1217,7 +1217,7 @@ auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
         v.dims, ")");
 
-    decltype(v(_,0)) d(vec_access::get_parent(v));
+    decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {

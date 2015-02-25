@@ -213,6 +213,9 @@ struct vec_iterator_type<vec_t<Dim,bool>> {
         typename vtype::const_reverse_iterator,vec_t<Dim,bool>>;
 };
 
+// Tag type to mark initialization of a reference vector.
+struct vec_ref_tag_t {} vec_ref_tag;
+
 // Helper to check if a given type is a generic vector.
 template<typename T>
 struct is_vec_ : public std::false_type {};
@@ -531,7 +534,7 @@ namespace vec_access {
 
         template<typename ... UArgs>
         static type access_(itype& v, const UArgs& ... i) {
-            type t(get_parent(v));
+            type t(vec_ref_tag, get_parent(v));
             resize_(t, v, cte_t<0>(), cte_t<0>(), i...);
 
             // TODO: cache this on construction
@@ -587,7 +590,7 @@ namespace vec_access {
         // Access functions
         template<typename T, typename enable = typename std::enable_if<is_range<T>::value>::type>
         static type access(itype& v, const T& rng) {
-            type t(get_parent(v));
+            type t(vec_ref_tag, get_parent(v));
             t.dims[0] = range_impl::range_size(range, v.dims[0]);
             t.resize();
 
@@ -602,7 +605,7 @@ namespace vec_access {
 
         template<typename T>
         static type access(itype& v, const vec_t<1,T>& ids) {
-            type t(get_parent(v));
+            type t(vec_ref_tag, get_parent(v));
             t.dims[0] = ids.size();
             t.resize();
 
@@ -707,7 +710,7 @@ namespace vec_access {
     template<typename V, typename T>
     auto bracket_access(V& parent, const T& rng) ->
         vec_t<1,constify<typename V::rtype, V>*> {
-        vec_t<1,constify<typename V::rtype, V>*> v(parent);
+        vec_t<1,constify<typename V::rtype, V>*> v(vec_ref_tag, parent);
         v.dims[0] = range_impl::range_size(rng, parent.size());
         v.data.resize(v.dims[0]);
 
@@ -1133,7 +1136,7 @@ struct vec_t {
     template<typename T, typename enable =
         typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
-        vec_t<1,Type*> v(*this);
+        vec_t<1,Type*> v(vec_ref_tag, *this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1145,7 +1148,7 @@ struct vec_t {
     template<typename T, typename enable =
         typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
-        vec_t<1,Type*> v(*this);
+        vec_t<1,Type*> v(vec_ref_tag, *this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1157,7 +1160,7 @@ struct vec_t {
     template<typename T, typename enable =
         typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
-        vec_t<1,const Type*> v(*this);
+        vec_t<1,const Type*> v(vec_ref_tag, *this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1169,7 +1172,7 @@ struct vec_t {
     template<typename T, typename enable =
         typename std::enable_if<std::is_integral<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
-        vec_t<1,const Type*> v(*this);
+        vec_t<1,const Type*> v(vec_ref_tag, *this);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1253,7 +1256,7 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
-            vec_t<1,Type*> v(vec);
+            vec_t<1,Type*> v(vec_ref_tag, vec);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1266,7 +1269,7 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
-            vec_t<1,Type*> v(vec);
+            vec_t<1,Type*> v(vec_ref_tag, vec);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1279,7 +1282,7 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
-            vec_t<1,const Type*> v(vec);
+            vec_t<1,const Type*> v(vec_ref_tag, vec);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1292,7 +1295,7 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
-            vec_t<1,const Type*> v(vec);
+            vec_t<1,const Type*> v(vec_ref_tag, vec);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1508,12 +1511,13 @@ struct vec_t<Dim,Type*> {
     vec_t(const vec_t&) = default;
     vec_t(vec_t&&) = default;
 
-    template<std::size_t D>
-    explicit vec_t(const vec_t<D,rtype>& p) {
-        parent = static_cast<void*>(const_cast<vec_t<D,rtype>*>(&p));
+    template<std::size_t D, typename T, typename enable =
+        typename std::enable_if<std::is_same<rtype_t<T>, rtype>::value>::type>
+    explicit vec_t(vec_ref_tag_t, const vec_t<D,T>& p) {
+        parent = static_cast<void*>(const_cast<vec_t<D,T>*>(&p));
     }
 
-    explicit vec_t(void* p) {
+    explicit vec_t(vec_ref_tag_t, void* p) {
         parent = p;
     }
 
@@ -1675,7 +1679,7 @@ struct vec_t<Dim,Type*> {
     template<typename T, typename enable =
         typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
-        vec_t<1,Type*> v(parent);
+        vec_t<1,Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1687,7 +1691,7 @@ struct vec_t<Dim,Type*> {
     template<typename T, typename enable =
         typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
-        vec_t<1,Type*> v(parent);
+        vec_t<1,Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1699,7 +1703,7 @@ struct vec_t<Dim,Type*> {
     template<typename T, typename enable =
         typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
-        vec_t<1,const Type*> v(parent);
+        vec_t<1,const Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1711,7 +1715,7 @@ struct vec_t<Dim,Type*> {
     template<typename T, typename enable =
         typename std::enable_if<std::is_arithmetic<T>::value>::type>
     vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
-        vec_t<1,const Type*> v(parent);
+        vec_t<1,const Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
         v.dims[0] = i.data.size();
         for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1795,7 +1799,7 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
-            vec_t<1,Type*> v(vec.parent);
+            vec_t<1,Type*> v(vec_ref_tag, vec.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1808,7 +1812,7 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
-            vec_t<1,Type*> v(vec.parent);
+            vec_t<1,Type*> v(vec_ref_tag, vec.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1821,7 +1825,7 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
-            vec_t<1,const Type*> v(vec.parent);
+            vec_t<1,const Type*> v(vec_ref_tag, vec.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -1834,7 +1838,7 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
-            vec_t<1,const Type*> v(vec.parent);
+            vec_t<1,const Type*> v(vec_ref_tag, vec.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
@@ -2663,7 +2667,7 @@ vec_t<1,Type> flatten(vec_t<Dim,Type>&& v) {
 
 template<std::size_t Dim, typename Type>
 vec_t<1,Type*> flatten(const vec_t<Dim,Type*>& v) {
-    vec_t<1,Type*> r(v.parent);
+    vec_t<1,Type*> r(vec_ref_tag, v.parent);
     r.dims[0] = v.data.size();
     r.data = v.data;
     return r;
@@ -2671,7 +2675,7 @@ vec_t<1,Type*> flatten(const vec_t<Dim,Type*>& v) {
 
 template<std::size_t Dim, typename Type>
 vec_t<1,Type*> flatten(vec_t<Dim,Type*>&& v) {
-    vec_t<1,Type*> r(v.parent);
+    vec_t<1,Type*> r(vec_ref_tag, v.parent);
     r.dims[0] = v.data.size();
     r.data = std::move(v.data);
     return r;
@@ -2709,7 +2713,7 @@ vec_t<sizeof...(Args), Type> reform(vec_t<Dim,Type>&& v, Args&& ... args) {
 
 template<std::size_t Dim, typename Type, typename ... Args>
 vec_t<sizeof...(Args), Type*> reform(const vec_t<Dim,Type*>& v, Args&& ... args) {
-    vec_t<sizeof...(Args), Type*> r(v.parent);
+    vec_t<sizeof...(Args), Type*> r(vec_ref_tag, v.parent);
     r.resize(std::forward<Args>(args)...);
     phypp_check(r.size() == v.size(),
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
@@ -2723,7 +2727,7 @@ vec_t<sizeof...(Args), Type*> reform(const vec_t<Dim,Type*>& v, Args&& ... args)
 
 template<std::size_t Dim, typename Type, typename ... Args>
 vec_t<sizeof...(Args), Type*> reform(vec_t<Dim,Type*>&& v, Args&& ... args) {
-    vec_t<sizeof...(Args), Type*> r(v.parent);
+    vec_t<sizeof...(Args), Type*> r(vec_ref_tag, v.parent);
     set_array(r.dims, std::forward<Args>(args)...);
     std::size_t size = 1;
     for (uint_t i = 0; i < sizeof...(Args); ++i) {
