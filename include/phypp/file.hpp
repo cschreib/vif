@@ -170,6 +170,12 @@ namespace file {
         return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
     }
 
+    void copy(const std::string& file_from, const std::string& file_to) {
+        std::ifstream src(file_from, std::ios::binary);
+        std::ofstream dst(file_to,   std::ios::binary);
+        dst << src.rdbuf();
+    }
+
     vec1s list_directories(const std::string& path = "") {
         vec1s dlist;
 
