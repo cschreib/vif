@@ -156,6 +156,37 @@ namespace fits {
 #endif
     }
 
+    // Return the dimensions of a FITS image
+    // Note: will return an empty array for FITS tables
+    vec1u file_dimensions(const std::string& filename) {
+        fitsfile* fptr;
+        int status = 0;
+
+        try {
+            fits_open_image(&fptr, filename.c_str(), READONLY, &status);
+            fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+
+            vec1u dims;
+            int naxis = 0;
+            fits_get_img_dim(fptr, &naxis, &status);
+            if (naxis != 0) {
+                std::vector<long> naxes(naxis);
+                fits_get_img_size(fptr, naxis, naxes.data(), &status);
+                for (auto& l : naxes) {
+                    dims.push_back(l);
+                }
+            }
+
+            fits_close_file(fptr, &status);
+            return dims;
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
+    }
+
     template<typename Dummy = void>
     bool is_cube(const std::string& name) {
         return file_axes<Dummy>(name) == 3;
