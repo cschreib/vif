@@ -9,6 +9,7 @@
 #include <map>
 
 static std::string data_dir = system_var("PHYPP_DATA_DIR", "./");
+static std::string temporary_dir = system_var("PHYPP_TMP_DIR", "./");
 
 struct psffit_result {
     double bg;
