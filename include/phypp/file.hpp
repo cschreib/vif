@@ -253,10 +253,49 @@ namespace file {
         return dir;
     }
 
-    std::string get_directory(const std::string& file) {
-        vec1s tree = split(file, "/");
-        if (tree.size() == 1) return "./";
-        return file.substr(0, file.size()-tree[tree.size()-1].size());
+    // Same behavior as 'basename'
+    std::string get_basename(std::string path) {
+        auto pos = path.find_last_of('/');
+        if (pos == path.npos) {
+            return path;
+        } else {
+            auto lpos = path.find_last_not_of(' ');
+            if (pos == lpos) {
+                if (pos == 0) {
+                    return "/";
+                } else {
+                    pos = path.find_last_of('/', pos-1);
+                    if (pos == path.npos) {
+                        return path.substr(lpos);
+                    } else {
+                        return path.substr(pos+1, lpos-pos-1);
+                    }
+                }
+            } else {
+                return path.substr(pos+1);
+            }
+        }
+    }
+
+    // Same behavior as 'dirname'
+    std::string get_directory(const std::string& path) {
+        auto pos = path.find_last_of('/');
+        if (pos == path.npos) {
+            return "./";
+        } else if (pos == path.find_last_not_of(' ')) {
+            if (pos == 0) {
+                return "/";
+            } else {
+                pos = path.find_last_of('/', pos-1);
+                if (pos == path.npos) {
+                    return "./";
+                } else {
+                    return path.substr(0, pos+1);
+                }
+            }
+        } else {
+            return path.substr(0, pos+1);
+        }
     }
 
     bool mkdir(const std::string& path) {
