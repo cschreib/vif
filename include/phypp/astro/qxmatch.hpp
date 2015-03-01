@@ -149,25 +149,25 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     auto ddec2 = dec2*d2r;
     auto dcdec2 = cos(ddec2);
 
-    const uint_t n1 = n_elements(ra1);
-    const uint_t n2 = n_elements(ra2);
+    const uint_t n1 = ra1.size();
+    const uint_t n2 = ra2.size();
 
     uint_t nth = clamp(params.nth, 1u, npos);
 
     qxmatch_res res;
     res.id = replicate(npos, nth, n1);
-    res.d  = dblarr(nth, n1)+dinf;
+    res.d  = replicate(dinf, nth, n1);
     res.rid = replicate(npos, n2);
-    res.rd  = dblarr(n2)+dinf;
+    res.rd  = replicate(dinf, n2);
 
     auto distance_proxy = [&](uint_t i, uint_t j) {
         // Note that this is not the 'true' distance in arseconds, but this is
         // sufficient to find the nearest neighbors (the true distance is obtained
         // by computing 2*asin(sqrt(sd))), but all these functions are monotonous,
         // hence not applying them does not change the relative distances).
-        double sra = sin(0.5*(dra2[j] - dra1[i]));
-        double sde = sin(0.5*(ddec2[j] - ddec1[i]));
-        return sde*sde + sra*sra*dcdec2[j]*dcdec1[i];
+        double sra = sin(0.5*(dra2.safe[j] - dra1.safe[i]));
+        double sde = sin(0.5*(ddec2.safe[j] - ddec1.safe[i]));
+        return sde*sde + sra*sra*dcdec2.safe[j]*dcdec1.safe[i];
     };
 
     if (!params.brute_force) {
@@ -476,9 +476,9 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             std::vector<qxmatch_res> vres(params.thread);
             for (auto& r : vres) {
                 r.id = replicate(npos, nth, n1);
-                r.d  = dblarr(nth, n1)+dinf;
+                r.d  = replicate(dinf, nth, n1);
                 r.rid = replicate(npos, n2);
-                r.rd  = dblarr(n2)+dinf;
+                r.rd  = replicate(dinf, n2);
             }
             vec1u tbeg(params.thread);
             vec1u tend(params.thread);
