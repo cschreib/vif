@@ -250,8 +250,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             do {
                 auto& depth = tdepths[d];
                 for (uint_t b : range(depth.bx)) {
-                    int_t x = x0+depth.bx[b];
-                    int_t y = y0+depth.by[b];
+                    int_t x = x0+depth.bx.safe[b];
+                    int_t y = y0+depth.by.safe[b];
                     if (x < 0 || uint_t(x) >= nra || y < 0 || uint_t(y) >= ndec) continue;
 
                     auto& bucket = buckets(uint_t(x),uint_t(y));
@@ -265,13 +265,13 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                         // insert it in the list, removing the old one, and sort the
                         // whole thing so that the largest distance goes as the end of
                         // the list.
-                        if (sd < tres.d(nth-1,i)) {
-                            tres.id(nth-1,i) = j;
-                            tres.d(nth-1,i) = sd;
+                        if (sd < tres.d.safe(nth-1,i)) {
+                            tres.id.safe(nth-1,i) = j;
+                            tres.d.safe(nth-1,i) = sd;
                             uint_t k = nth-2;
-                            while (k != npos && tres.d(k,i) > tres.d(k+1,i)) {
-                                std::swap(tres.d(k,i), tres.d(k+1,i));
-                                std::swap(tres.id(k,i), tres.id(k+1,i));
+                            while (k != npos && tres.d.safe(k,i) > tres.d.safe(k+1,i)) {
+                                std::swap(tres.d.safe(k,i), tres.d.safe(k+1,i));
+                                std::swap(tres.id.safe(k,i), tres.id.safe(k+1,i));
                                 --k;
                             }
                         }
@@ -282,7 +282,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                     std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
 
                 ++d;
-            } while (tres.d(nth-1,i) > reached_distance);
+            } while (tres.d.safe(nth-1,i) > reached_distance);
         };
 
         auto work2 = [&] (uint_t j, qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
@@ -309,9 +309,9 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                         double sd = distance_proxy(i, j);
 
                         // Just keep the nearest match
-                        if (sd < tres.rd[j]) {
-                            tres.rd[j] = sd;
-                            tres.rid[j] = i;
+                        if (sd < tres.rd.safe[j]) {
+                            tres.rd.safe[j] = sd;
+                            tres.rid.safe[j] = i;
                         }
                     }
                 }
@@ -421,12 +421,12 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             // Merge back the results of each thread
             for (uint_t t = 0; t < params.thread; ++t) {
                 auto ids = rgen(tend1[t] - tbeg1[t]) + tbeg1[t];
-                res.id(_,ids) = vres[t].id(_,ids);
-                res.d(_,ids) = vres[t].d(_,ids);
+                res.id.safe(_,ids) = vres[t].id.safe(_,ids);
+                res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
                 ids = rgen(tend2[t] - tbeg2[t]) + tbeg2[t];
-                res.rid[ids] = vres[t].rid[ids];
-                res.rd[ids] = vres[t].rd[ids];
+                res.rid.safe[ids] = vres[t].rid.safe[ids];
+                res.rd.safe[ids] = vres[t].rd.safe[ids];
             }
         }
     } else {
@@ -437,21 +437,21 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             // nearest neighbor list. If it is lower than that, we insert it in the list,
             // removing the old one, and sort the whole thing so that the largest distance
             // goes as the end of the list.
-            if (sd < tres.d(nth-1,i)) {
-                tres.id(nth-1,i) = j;
-                tres.d(nth-1,i) = sd;
+            if (sd < tres.d.safe(nth-1,i)) {
+                tres.id.safe(nth-1,i) = j;
+                tres.d.safe(nth-1,i) = sd;
                 uint_t k = nth-2;
-                while (k != npos && tres.d(k,i) > tres.d(k+1,i)) {
-                    std::swap(tres.d(k,i), tres.d(k+1,i));
-                    std::swap(tres.id(k,i), tres.id(k+1,i));
+                while (k != npos && tres.d.safe(k,i) > tres.d.safe(k+1,i)) {
+                    std::swap(tres.d.safe(k,i), tres.d.safe(k+1,i));
+                    std::swap(tres.id.safe(k,i), tres.id.safe(k+1,i));
                     --k;
                 }
             }
 
             // Take care of reverse search
-            if (sd < tres.rd[j]) {
-                tres.rid[j] = i;
-                tres.rd[j] = sd;
+            if (sd < tres.rd.safe[j]) {
+                tres.rid.safe[j] = i;
+                tres.rd.safe[j] = sd;
             }
         };
 
@@ -525,17 +525,17 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             // Merge back the results of each thread
             for (uint_t t = 0; t < params.thread; ++t) {
                 auto ids = rgen(tend[t] - tbeg[t]) + tbeg[t];
-                res.id(_,ids) = vres[t].id(_,ids);
-                res.d(_,ids) = vres[t].d(_,ids);
+                res.id.safe(_,ids) = vres[t].id.safe(_,ids);
+                res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
                 if (t == 0) {
                     res.rid = vres[t].rid;
                     res.rd = vres[t].rd;
                 } else {
                     for (uint_t j = 0; j < n2; ++j) {
-                        if (res.rd[j] >= vres[t].rd[j]) {
-                            res.rid[j] = vres[t].rid[j];
-                            res.rd[j] = vres[t].rd[j];
+                        if (res.rd.safe[j] >= vres[t].rd.safe[j]) {
+                            res.rid.safe[j] = vres[t].rid.safe[j];
+                            res.rd.safe[j] = vres[t].rd.safe[j];
                         }
                     }
                 }
