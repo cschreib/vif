@@ -592,4 +592,43 @@ void xmatch_save_lost(const id_pair& p, const std::string& save) {
     }
 }
 
+struct qdist_params {
+    bool verbose = false;
+};
+
+template<typename TypeR, typename TypeD>
+vec2d qdist(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec,
+    qdist_params params = qdist_params{}) {
+    vec2d ret(ra.size(), ra.size());
+
+    phypp_check(ra.dims == dec.dims, "first RA and Dec dimensions do not match (",
+        ra.dims, " vs ", dec.dims, ")");
+
+    const double d2r = 3.14159265359/180.0;
+    auto dra  = ra*d2r;
+    auto ddec = dec*d2r;
+    auto dcdec = cos(ddec);
+
+    const uint_t n = ra.size();
+
+    auto distance = [&](uint_t i, uint_t j) {
+        double sra = sin(0.5*(dra.safe[j] - dra.safe[i]));
+        double sde = sin(0.5*(ddec.safe[j] - ddec.safe[i]));
+        double d = sde*sde + sra*sra*dcdec.safe[j]*dcdec.safe[i];
+        return 3600.0*(180.0/3.14159265359)*2*asin(sqrt(d));
+    };
+
+    // When using a single thread, all the work is done in the main thread
+    auto p = progress_start(n*(n-1)/2);
+    for (uint_t i : range(n)) {
+        for (uint_t j : range(i+1, n)) {
+            ret(j,i) = distance(i, j);
+
+            if (params.verbose) progress(p, 113);
+        }
+    }
+
+    return ret;
+}
+
 #endif
