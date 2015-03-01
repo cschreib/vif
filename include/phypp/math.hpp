@@ -2184,7 +2184,7 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
 // hull. Positive distances mean that the point lies inside the hull.
 template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
 auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
-    const THX& hx, const THY& hy) -> vec_t<Dim, decltype(x[0]*y[0])> {
+    const THX& hx, const THY& hy) -> vec_t<Dim, decltype(sqrt(x[0]*y[0]))> {
 
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
         "(", x.dims, " vs. ", y.dims, ")");
@@ -2194,7 +2194,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
     uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
-    vec_t<Dim,decltype(x[0]*y[0])> res = replicate(finf, x.dims);
+    vec_t<Dim,decltype(sqrt(x[0]*y[0]))> res = replicate(finf, x.dims);
     vec_t<Dim,bool> inhull = replicate(true, x.dims);
 
     for (uint_t i = 0; i < hull.size()-1; ++i) {
@@ -2211,7 +2211,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
         ux /= l; uy /= l; nx /= l; ny /= l;
 
         for (uint_t p = 0; p < x.size(); ++p) {
-            // Comput signed distance to current hull face line
+            // Compute signed distance to current hull face line
             auto dx = x.safe[p] - hx[p1];
             auto dy = y.safe[p] - hy[p1];
             auto d = dx*nx + dy*ny;
