@@ -2182,6 +2182,70 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
 
 // Compute the signed distance of a set of points with respect to the provided convex
 // hull. Positive distances mean that the point lies inside the hull.
+template<typename TX, typename TY, typename THX, typename THY, typename enable =
+    typename std::enable_if<!is_vec<TX>::value && !is_vec<TY>::value>::type>
+auto convex_hull_distance(const TX& x, const TY& y, const vec1u& hull,
+    const THX& hx, const THY& hy) -> decltype(sqrt(x*y)) {
+
+    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
+
+    // Find out if the hull is built counter-clockwise or not
+    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
+    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
+
+    decltype(sqrt(x*y)) res = finf;
+    bool inhull = true;
+
+    for (uint_t i = 0; i < hull.size()-1; ++i) {
+        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
+
+        // Get unit vector
+        auto ux = hx[p2] - hx[p1];
+        auto uy = hy[p2] - hy[p1];
+        // Get perpendicular vector, pointing inside the hull
+        auto nx = sign ? hy[p2] - hy[p1] : hy[p1] - hy[p2];
+        auto ny = sign ? hx[p1] - hx[p2] : hx[p2] - hx[p1];
+        // Normalize hull segment
+        auto l = sqrt(sqr(nx) + sqr(ny));
+        ux /= l; uy /= l; nx /= l; ny /= l;
+
+        // Compute signed distance to current hull face line
+        auto dx = x - hx[p1];
+        auto dy = y - hy[p1];
+        auto d = dx*nx + dy*ny;
+
+        // Check if the point is inside the hull or not
+        if (d > 0) {
+            inhull = false;
+        }
+
+        d = fabs(d);
+        if (res > d) {
+            // Find if the projection of the point on the face lies on the segment
+            auto proj = dx*ux + dy*uy;
+            if (proj < 0) {
+                // Projection lies before starting point
+                d = sqrt(sqr(dx) + sqr(dy));
+            } else if (proj > l) {
+                // Projection lies after ending point
+                d = sqrt(sqr(x - hx[p2]) + sqr(y - hy[p2]));
+            }
+
+            // Keep this distance if it is minimal
+            if (res > d) res = d;
+        }
+    }
+
+    // Give negative distance to points outside the hull
+    if (!inhull) {
+        res = -res;
+    }
+
+    return res;
+}
+
+// Compute the signed distance of a set of points with respect to the provided convex
+// hull. Positive distances mean that the point lies inside the hull.
 template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
 auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
     const THX& hx, const THY& hy) -> vec_t<Dim, decltype(sqrt(x[0]*y[0]))> {
