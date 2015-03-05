@@ -6,6 +6,7 @@
 #endif
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
+#include <wcslib/wcserr.h>
 #endif
 #include <fitsio.h>
 #include <string>
@@ -693,10 +694,33 @@ namespace fits {
         explicit wcs(const fits::header& hdr) {
             // Feed it to WCSLib to extract the astrometric parameters
             int nreject = 0;
-            wcspih(
+            int success = wcspih(
                 const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
                 WCSHDR_all, 0, &nreject, &nwcs, &w
             );
+
+            if ((success != 0 || nwcs == 0) && w) {
+                wcsvfree(&nwcs, &w);
+                w = nullptr;
+            }
+
+            // Try a dummy coordinate conversion to see if everything is recognized
+            if (w) {
+                double map[2] = {0.0, 0.0};
+                double itmp[2];
+                double phi, theta;
+                double world[2];
+                int status = 0;
+
+                wcserr_enable(1);
+                int ret = wcsp2s(w, 1, 2, map, itmp, &phi, &theta, world, &status);
+                if (ret != 0) {
+                    wcserr_prt(w->err, "error: ");
+                    wcsvfree(&nwcs, &w);
+                    w = nullptr;
+                }
+                wcserr_enable(0);
+            }
         }
 
         wcs(const wcs&) = delete;
@@ -712,6 +736,10 @@ namespace fits {
             w = tw.w; tw.w = nullptr;
             nwcs = tw.nwcs; tw.nwcs = 0;
             return *this;
+        }
+
+        bool is_valid() const {
+            return w != nullptr;
         }
 
         ~wcs() {
@@ -743,7 +771,7 @@ namespace fits {
             "please enable the WCSLib library to use this function");
 #else
 
-        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+        phypp_check(w.is_valid(), "invalid WCS data");
         phypp_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
             strn(ra.size())+" vs "+strn(dec.size())+")");
 
@@ -777,7 +805,7 @@ namespace fits {
             "please enable the WCSLib library to use this function");
 #else
 
-        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+        phypp_check(w.is_valid(), "invalid WCS data");
         phypp_check(x.size() == y.size(), "x and y arrays do not match sizes ("+
             strn(x.size())+" vs "+strn(y.size())+")");
 
@@ -811,7 +839,7 @@ namespace fits {
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+        phypp_check(w.is_valid(), "invalid WCS data");
 
         vec1d world(2);
         world.safe[0] = ra;
@@ -839,7 +867,7 @@ namespace fits {
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        phypp_check(w.w != nullptr, "uninitialized WCS structure");
+        phypp_check(w.is_valid(), "invalid WCS data");
 
         vec1d map(2);
         map.safe[0] = x;
@@ -872,14 +900,12 @@ namespace fits {
             return get_pixel_size(sects[0], aspix);
         } else {
             fits::header hdr = fits::read_header(file);
-            double rx = 0, ry = 0;
-            if (!fits::getkey(hdr, "CRPIX1", rx) || !fits::getkey(hdr, "CRPIX2", ry)) {
-                warning("could not extract WCS information (CRPIX1 & CRPIX2)");
+            auto wcs = fits::wcs(hdr);
+            if (!wcs.is_valid()) {
+                warning("could not extract WCS information");
                 note("parsing '", file, "'");
                 return false;
             }
-
-            auto wcs = fits::wcs(hdr);
 
             // Convert radius to number of pixels
             vec1d r, d;
