@@ -171,7 +171,6 @@ int main(int argc, char* argv[]) {
                 hsize = ceil(radius/aspix);
                 if (hsize < 10) hsize = 10;
             } else {
-                warning("could not read WCS of '", mfile[b], "'");
                 note("cutout size has been set to default (50 pixels)");
                 hsize = 50;
             }
