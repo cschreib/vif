@@ -32,6 +32,7 @@ void print_help() {
     bullet("pos", "[string, optional] prefix of the RA and Dec coordinates in 'cat'");
     bullet("ids", "[2 x integer, optional] inclusive range of IDs to stack in the catalog (or cube)");
     bullet("   ", "note: use '*' to symbolize the beginning or the end");
+    bullet("subpixel", "[flag] perform sub-pixel interpolation (default: false)");
     bullet("mean", "[flag] perform mean stacking (default)");
     bullet("median", "[flag] perform median stacking");
     bullet("cube", "[flag] do not stack, just ouput the cube");
@@ -99,6 +100,7 @@ int main(int argc, char* argv[]) {
     bool mean = false;
     bool verbose = false;
     bool bstrap = false;
+    bool subpixel = false;
     uint_t randomize = 0;
     bool tcube = false;
     bool keepnan = false;
@@ -109,7 +111,7 @@ int main(int argc, char* argv[]) {
 
     read_args(argc, argv, arg_list(
         out, cat, img, wht, err, pos, hsize, median, mean, bstrap, nbstrap, sbstrap,
-        randomize, name(tseed, "seed"), name(tcube, "cube"), verbose, keepnan,
+        randomize, name(tseed, "seed"), name(tcube, "cube"), subpixel, verbose, keepnan,
         name(cids, "ids")
     ));
 
@@ -214,9 +216,16 @@ int main(int argc, char* argv[]) {
     vec3f cube;
     vec3f bs;
 
+    auto do_subpixel = [&cube](const vec1d& dx, const vec1d& dy) {
+        for (uint_t i : range(dx)) {
+            cube(i,_,_) = translate(cube(i,_,_), dy[i], dx[i]);
+        }
+    };
+
     qstack_params params;
     params.keep_nan = keepnan;
     params.verbose = verbose;
+    params.save_offsets = subpixel;
 
     if ((wht.empty() && err.empty()) || median) {
         if (cat.empty()) {
@@ -234,8 +243,12 @@ int main(int argc, char* argv[]) {
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
             vec1u ids;
-            qstack(fcat.ra, fcat.dec, img, hsize, cube, ids, params);
+            qstack_output qout = qstack(fcat.ra, fcat.dec, img, hsize, cube, ids, params);
             if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
+
+            if (subpixel) {
+                do_subpixel(qout.dx, qout.dy);
+            }
         }
 
         if (!tcube) {
@@ -278,8 +291,13 @@ int main(int argc, char* argv[]) {
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
             vec1u ids;
-            qstack(fcat.ra, fcat.dec, img, wht.empty() ? err : wht, hsize, cube, wcube, ids, params);
+            qstack_output qout = qstack(fcat.ra, fcat.dec, img,
+                wht.empty() ? err : wht, hsize, cube, wcube, ids, params);
             if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
+
+            if (subpixel) {
+                do_subpixel(qout.dx, qout.dy);
+            }
         }
 
         if (!tcube) {
