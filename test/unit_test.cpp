@@ -641,14 +641,16 @@ int main(int argc, char* argv[]) {
         vec2d test(51,51);
         test(25,25) = 1.0;
 
-        vec3d cube(20,51,51);
-        for (uint_t i = 0; i < 20; ++i) {
-            cube(i,_,_) = translate(test, i*0.14, i*(-0.14));
-        }
+        vec2d trans = translate(test, 2, 0);
 
-#ifndef NO_CCFITS
-        fits::write("out/translated.fits", cube);
-#endif
+        vec1u mid = trans.ids(max_id(trans));
+        check(mid[0], "27");
+        check(mid[1], "25");
+
+        trans = translate(trans, -2, 0);
+        mid = trans.ids(max_id(trans));
+        check(mid[0], "25");
+        check(mid[1], "25");
     }
 
     {
