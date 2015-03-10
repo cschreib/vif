@@ -518,11 +518,13 @@ double mean(const vec_t<Dim,Type>& v) {
         total += t;
     }
 
-    return total/n_elements(v);
+    return total/v.size();
 }
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the median of an empty vector");
+
     using vtype = typename vec_t<Dim,Type>::vtype;
     using dtype = typename vtype::value_type;
 
@@ -552,6 +554,8 @@ rtype_t<Type> median(vec_t<Dim,Type> v) {
 
 template<std::size_t Dim, typename Type, typename U>
 rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
+    phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
+
     vec1u ok = where(finite(v));
     if (ok.empty()) return 0;
 
@@ -577,6 +581,8 @@ void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, co
 
 template<std::size_t Dim, typename Type, typename ... Args>
 typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, const Args& ... args) {
+    phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
+
     vec1u ok = where(finite(v));
     typename vec_t<1,Type>::effective_type t;
     if (ok.empty()) return t;
@@ -608,6 +614,8 @@ vec_t<Dim,bool> mad_clip(const vec_t<Dim,Type>& tv, double sigma) {
 
 template<std::size_t Dim, typename Type>
 typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
+
     auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return false;
         if (nan(t2)) return true;
@@ -620,6 +628,8 @@ typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 typename vec_t<Dim,Type>::const_iterator max_(const vec_t<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
+
     auto iter = std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return true;
         if (nan(t2)) return false;
