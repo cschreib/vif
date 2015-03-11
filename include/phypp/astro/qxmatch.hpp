@@ -30,6 +30,7 @@ struct qxmatch_params {
     bool verbose = false;
     bool self = false;
     bool brute_force = false;
+    bool no_mirror = false;
 };
 
 template<typename C1, typename C2,
@@ -140,6 +141,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
     qxmatch_params params = qxmatch_params{}) {
 
+    qxmatch_res res;
+
     phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
         ra1.dims, " vs ", dec1.dims, ")");
     phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
@@ -158,11 +161,17 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
 
     uint_t nth = clamp(params.nth, 1u, npos);
 
-    qxmatch_res res;
     res.id = replicate(npos, nth, n1);
     res.d  = replicate(dinf, nth, n1);
-    res.rid = replicate(npos, n2);
-    res.rd  = replicate(dinf, n2);
+
+    if (!params.no_mirror) {
+        res.rid = replicate(npos, n2);
+        res.rd  = replicate(dinf, n2);
+    }
+
+    if (ra1.empty() || ra2.empty()) {
+        return;
+    }
 
     auto distance_proxy = [&](uint_t i, uint_t j) {
         // Note that this is not the 'true' distance in arseconds, but this is
@@ -234,11 +243,6 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             return sqr(sin(dist/(3600.0*(180.0/3.14159265359)*2)));
         };
 
-        res.id = replicate(npos, nth, n1);
-        res.d  = dblarr(nth, n1)+dinf;
-        res.rid = replicate(npos, n2);
-        res.rd  = dblarr(n2)+dinf;
-
         auto work1 = [&] (uint_t i, qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
             int_t x0 = idx1[i];
             int_t y0 = idy1[i];
@@ -306,6 +310,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 for (uint_t b : range(depth.bx)) {
                     int_t x = x0+depth.bx[b];
                     int_t y = y0+depth.by[b];
+
                     if (x < 0 || uint_t(x) >= nra || y < 0 || uint_t(y) >= ndec) continue;
 
                     auto& bucket = buckets(uint_t(x),uint_t(y));
@@ -340,7 +345,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 work1(i, depths, res);
                 if (params.verbose) progress(p, 31);
             }
-            if (!params.self) {
+            if (!params.self && !params.no_mirror) {
                 for (uint_t j : range(ra2)) {
                     work2(j, depths, res);
                     if (params.verbose) progress(p, 31);
@@ -394,7 +399,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                         ++iter;
                     }
 
-                    if (!params.self) {
+                    if (!params.self && !params.no_mirror) {
                         for (uint_t j = tbeg2[t]; j < tend2[t]; ++j) {
                             work2(j, depths, vres[t]);
                             ++iter;
@@ -428,9 +433,11 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 res.id.safe(_,ids) = vres[t].id.safe(_,ids);
                 res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
-                ids = rgen(tend2[t] - tbeg2[t]) + tbeg2[t];
-                res.rid.safe[ids] = vres[t].rid.safe[ids];
-                res.rd.safe[ids] = vres[t].rd.safe[ids];
+                if (!params.no_mirror) {
+                    ids = rgen(tend2[t] - tbeg2[t]) + tbeg2[t];
+                    res.rid.safe[ids] = vres[t].rid.safe[ids];
+                    res.rd.safe[ids] = vres[t].rd.safe[ids];
+                }
             }
         }
     } else {
@@ -453,7 +460,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             }
 
             // Take care of reverse search
-            if (sd < tres.rd.safe[j]) {
+            if (!params.no_mirror && sd < tres.rd.safe[j]) {
                 tres.rid.safe[j] = i;
                 tres.rd.safe[j] = sd;
             }
@@ -481,9 +488,12 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             for (auto& r : vres) {
                 r.id = replicate(npos, nth, n1);
                 r.d  = replicate(dinf, nth, n1);
-                r.rid = replicate(npos, n2);
-                r.rd  = replicate(dinf, n2);
+                if (!params.no_mirror) {
+                    r.rid = replicate(npos, n2);
+                    r.rd  = replicate(dinf, n2);
+                }
             }
+
             vec1u tbeg(params.thread);
             vec1u tend(params.thread);
             auto pool = thread::pool(params.thread);
@@ -532,14 +542,16 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 res.id.safe(_,ids) = vres[t].id.safe(_,ids);
                 res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
-                if (t == 0) {
-                    res.rid = vres[t].rid;
-                    res.rd = vres[t].rd;
-                } else {
-                    for (uint_t j = 0; j < n2; ++j) {
-                        if (res.rd.safe[j] >= vres[t].rd.safe[j]) {
-                            res.rid.safe[j] = vres[t].rid.safe[j];
-                            res.rd.safe[j] = vres[t].rd.safe[j];
+                if (!params.no_mirror) {
+                    if (t == 0) {
+                        res.rid = vres[t].rid;
+                        res.rd = vres[t].rd;
+                    } else {
+                        for (uint_t j = 0; j < n2; ++j) {
+                            if (res.rd.safe[j] >= vres[t].rd.safe[j]) {
+                                res.rid.safe[j] = vres[t].rid.safe[j];
+                                res.rd.safe[j] = vres[t].rd.safe[j];
+                            }
                         }
                     }
                 }
@@ -549,7 +561,9 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
 
     // Convert the distance estimator to a real distance
     res.d = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.d));
-    res.rd = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.rd));
+    if (!params.no_mirror) {
+        res.rd = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.rd));
+    }
 
     return res;
 }
