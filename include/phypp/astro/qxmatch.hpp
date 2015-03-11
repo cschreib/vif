@@ -196,23 +196,23 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         // Choose a bucket size (arcsec)
         const double overgrowth = 10.0;
         uint_t nc2 = ceil(0.5*sqrt(dpi*ra2.size()/nth/overgrowth));
-        vec1d hx = vec1d{rra2[0], rra2[0], rra2[1], rra2[1]};
+        vec1d hx = vec1d{rra2[0],  rra2[0],  rra2[1],  rra2[1]};
         vec1d hy = vec1d{rdec2[0], rdec2[1], rdec2[0], rdec2[1]};
         double area2 = field_area_hull(hx, hy);
         double cell_size = 3600.0*sqrt(area2)/nc2;
 
         // Be careful that RA and Dec are spherical coordinates
-        double dra = cell_size*fabs(cos(mean(rdec2)*dpi/180.0))/3600.0;
+        double dra = cell_size/fabs(cos(mean(rdec2)*dpi/180.0))/3600.0;
         double ddec = cell_size/3600.0;
 
         // Add some padding to prevent border issues
-        rra[0] -= dra;
-        rra[1] += dra;
+        rra[0]  -= dra;
+        rra[1]  += dra;
         rdec[0] -= ddec;
         rdec[1] += ddec;
 
         // Final number of buckets
-        uint_t nra = (rra[1] - rra[0])/dra;
+        uint_t nra  = (rra[1]  - rra[0])/dra;
         uint_t ndec = (rdec[1] - rdec[0])/ddec;
 
         // Build the buckets
