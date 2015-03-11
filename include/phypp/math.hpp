@@ -2404,11 +2404,18 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 }
 
 // Move a point in RA/Dec [degree] by an increment in [arcsec]
+// This is an approximation for small movements of the order of a degree or less.
 void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
-    ra *= cos(dec*dpi/180.0);
+    ra += dra/cos(dec*dpi/180.0)/3600.0;
     dec += ddec/3600.0;
-    ra += dra/3600.0;
-    ra /= cos(dec*dpi/180.0);
+
+    // Note: another, in principle more accurate implementation is
+    // ra *= cos(dec*dpi/180.0);
+    // dec += ddec/3600.0;
+    // ra += dra/3600.0;
+    // ra /= cos(dec*dpi/180.0);
+    // But this implementation suffers from numerical instability!
+    // The culprit is the cos(dec_old)/cos(dec_new) ratio.
 }
 
 // Find the closest point in a 2D array that satisfies a given criterium
