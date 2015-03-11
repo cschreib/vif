@@ -2334,7 +2334,7 @@ double angdistr(double ra1, double dec1, double ra2, double dec2) {
 // Compute the angular distance between two RA/Dec positions [arcsec].
 // Assumes that RA & Dec coordinates are in degrees.
 double angdist(double tra1, double tdec1, double tra2, double tdec2) {
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     double ra1 = d2r*tra1, ra2 = d2r*tra2, dec1 = d2r*tdec1, dec2 = d2r*tdec2;
     double sra = sin(0.5*(ra2 - ra1));
     double sde = sin(0.5*(dec2 - dec1));
@@ -2385,7 +2385,7 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
         tra1.dims, " vs ", tdec1.dims, ")");
 
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     const double rrad = d2r*radius/3600.0;
     const double crad = sqr(sin(rrad/2.0));
 
