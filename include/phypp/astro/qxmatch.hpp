@@ -89,6 +89,10 @@ namespace qxmatch_impl {
             return depths[i];
         }
 
+        std::size_t size() const {
+            return depths.size();
+        }
+
         void grow() {
             phypp_check(depths.size() < visited.dims[0] ||
                 depths.size() < visited.dims[1], "cannot grow past the size of the "
@@ -104,7 +108,7 @@ namespace qxmatch_impl {
             // See which new buckets are reached.
             // We only need to do the maths for one quadrant, the other 3
             // can be deduced by symmetry.
-            for (uint_t x : range(1,std::min(d+1, visited.dims[0])))
+            for (uint_t x : range(std::min(d+1, visited.dims[0])))
             for (uint_t y : range(std::min(d+1, visited.dims[1]))) {
                 double dist2 = sqr(csize)*min(vec1d{
                     sqr(x-0.5) + sqr(y-0.5), sqr(x+0.5) + sqr(y-0.5),
@@ -121,12 +125,12 @@ namespace qxmatch_impl {
             // We have (+x,+y), fill the other 3 quadrants:
             // (-x,+y), (-x,-y), (-x,+y)
             vec1u idnew = uindgen(depth.bx.size());
-            append(depth.bx, -depth.by[idnew]);
-            append(depth.by, depth.bx[idnew]);
+            append(depth.bx, -depth.bx[idnew]);
+            append(depth.by, depth.by[idnew]);
             append(depth.bx, -depth.bx[idnew]);
             append(depth.by, -depth.by[idnew]);
-            append(depth.bx, depth.by[idnew]);
-            append(depth.by, -depth.bx[idnew]);
+            append(depth.bx, depth.bx[idnew]);
+            append(depth.by, -depth.by[idnew]);
         }
     };
 }
@@ -282,7 +286,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                     std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
 
                 ++d;
-            } while (tres.d.safe(nth-1,i) > reached_distance);
+            } while (tres.d.safe(nth-1,i) > reached_distance && d < tdepths.size());
         };
 
         auto work2 = [&] (uint_t j, qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
@@ -320,7 +324,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                     std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
 
                 ++d;
-            } while (tres.rd[j] > reached_distance);
+            } while (tres.rd[j] > reached_distance && d < tdepths.size());
         };
 
         if (params.thread <= 1) {
