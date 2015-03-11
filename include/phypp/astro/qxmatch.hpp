@@ -290,7 +290,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 }
 
                 reached_distance = dist_proj(
-                    std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
+                    std::max(0.0, tdepths[d].max_dist - 1.1*cell_dist - 0.1*cell_size));
 
                 ++d;
             } while (tres.d.safe(nth-1,i) > reached_distance && d < tdepths.size());
@@ -329,7 +329,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 }
 
                 reached_distance = dist_proj(
-                    std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
+                    std::max(0.0, tdepths[d].max_dist - 1.1*cell_dist - 0.1*cell_size));
 
                 ++d;
             } while (tres.rd[j] > reached_distance && d < tdepths.size());
