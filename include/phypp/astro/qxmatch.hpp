@@ -61,8 +61,11 @@ namespace qxmatch_impl {
         std::vector<depth_t> depths;
         vec2b                visited;
         double               csize;
+        std::size_t          max_depth;
 
-        depth_cache(uint_t nx, uint_t ny, double cs) : csize(cs) {
+        depth_cache(uint_t nx, uint_t ny, double cs) : csize(cs),
+            max_depth(std::max(nx, ny)) {
+
             visited = vec2b(nx, ny);
             depths.reserve(20);
 
@@ -91,7 +94,7 @@ namespace qxmatch_impl {
         }
 
         std::size_t size() const {
-            return depths.size();
+            return max_depth;
         }
 
         void grow() {
