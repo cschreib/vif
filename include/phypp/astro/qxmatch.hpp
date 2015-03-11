@@ -151,7 +151,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
         ra2.dims, " vs ", dec2.dims, ")");
 
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     auto dra1  = ra1*d2r;
     auto ddec1 = dec1*d2r;
     auto dcdec1 = cos(ddec1);
@@ -243,7 +243,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         qxmatch_impl::depth_cache depths(nra, ndec, cell_size);
 
         auto dist_proj = [] (double dist) {
-            return sqr(sin(dist/(3600.0*(180.0/3.14159265359)*2)));
+            return sqr(sin(dist/(3600.0*(180.0/dpi)*2)));
         };
 
         auto work1 = [&] (uint_t i, qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
@@ -563,9 +563,9 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     }
 
     // Convert the distance estimator to a real distance
-    res.d = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.d));
+    res.d = 3600.0*(180.0/dpi)*2*asin(sqrt(res.d));
     if (!params.no_mirror) {
-        res.rd = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.rd));
+        res.rd = 3600.0*(180.0/dpi)*2*asin(sqrt(res.rd));
     }
 
     return res;
@@ -625,7 +625,7 @@ vec2d qdist(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec,
     phypp_check(ra.dims == dec.dims, "first RA and Dec dimensions do not match (",
         ra.dims, " vs ", dec.dims, ")");
 
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     auto dra  = ra*d2r;
     auto ddec = dec*d2r;
     auto dcdec = cos(ddec);
@@ -636,7 +636,7 @@ vec2d qdist(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec,
         double sra = sin(0.5*(dra.safe[j] - dra.safe[i]));
         double sde = sin(0.5*(ddec.safe[j] - ddec.safe[i]));
         double d = sde*sde + sra*sra*dcdec.safe[j]*dcdec.safe[i];
-        return 3600.0*(180.0/3.14159265359)*2*asin(sqrt(d));
+        return 3600.0*(180.0/dpi)*2*asin(sqrt(d));
     };
 
     // When using a single thread, all the work is done in the main thread
