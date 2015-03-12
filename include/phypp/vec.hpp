@@ -913,6 +913,14 @@ struct vec_t {
         }
     }
 
+    // TODO: for some reason, clang does not like this, but gcc does
+    // vec_t(const vec_t<Dim,Type*>& v) : dims(v.dims) {
+    //     data.resize(v.data.size());
+    //     for (uint_t i = 0; i < v.data.size(); ++i) {
+    //         data[i] = *v.data[i];
+    //     }
+    // }
+
     vec_t& operator = (const Type& t) {
         for (uint_t i = 0; i < Dim; ++i) {
             dims[i] = 1;
