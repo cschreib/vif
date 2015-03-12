@@ -764,7 +764,7 @@ double mad(const vec_t<Dim,Type>& v) {
     }; \
     \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto func(const vec_t<Dim,Type>& v, Args&& ... args, uint_t dim) -> \
+    auto partial_ ## func (uint_t dim, const vec_t<Dim,Type>& v, Args&& ... args) -> \
     vec_t<Dim-1, decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
         using fptr = decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
             (*)(const vec_t<1,rtype_t<Type>>&, Args&& ...); \

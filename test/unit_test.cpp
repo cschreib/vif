@@ -530,22 +530,22 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("'mean' and 'median' for 2-d array");
+        print("'partial_mean' and 'partial_median' for 2-d array");
         vec2d v = {{1,2,3},{4,5,6},{7,8,9}};
-        check(mean(v,0), "4, 5, 6");
-        check(mean(v,1), "2, 5, 8");
-        check(median(v,0), "4, 5, 6");
-        check(median(v,1), "2, 5, 8");
+        check(partial_mean(0,v), "4, 5, 6");
+        check(partial_mean(1,v), "2, 5, 8");
+        check(partial_median(0,v), "4, 5, 6");
+        check(partial_median(1,v), "2, 5, 8");
     }
 
     {
-        print("'median' for 3-d array");
+        print("'partial_median' for 3-d array");
         vec3d v = dblarr(21,21,11);
         v(_,_,rgen(0,4)) = 0;
         v(_,_,rgen(6,10)) = 1;
         v(_,_,5) = 0.5;
 
-        vec2d m = median(v,2);
+        vec2d m = partial_median(2,v);
 #ifndef NO_CCFITS
         fits::write("out/median.fits", m);
 #endif
@@ -554,7 +554,7 @@ int main(int argc, char* argv[]) {
     {
         print("'run_dim' function");
         vec2i v = {{1,2,3},{4,5,6}};
-        vec1d mv = mean(v, 0);
+        vec1d mv = partial_mean(0, v);
         vec1d tmv = run_dim(v, 0, [](const vec1d& d) { return mean(d); });
         check(total(mv != tmv), "0");
     }

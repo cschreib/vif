@@ -185,7 +185,7 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
     m.safe(_,_,2) = pow(px+0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius;
     m.safe(_,_,3) = pow(px-0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius;
 
-    return mean(m,2);
+    return partial_mean(2,m);
 }
 
 template<typename Type>
