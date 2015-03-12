@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <cstddef>
 #include <algorithm>
 #include <initializer_list>
 #include "phypp/range.hpp"
