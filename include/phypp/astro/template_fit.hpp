@@ -97,6 +97,11 @@ vec2d template_observed(const TypeLib& lib, const vec_t<2,TypeZ>& z, const vec_t
 // Assuming: d = (limit - model)/error
 // Also note that this function can also give the weight of a *lower* limit simply by using
 // d = (model - limit)/error.
+//
+// The underlying assumption is that, instead of a Gaussian weight
+//            exp(-(measure - true)^2/(2*error^2))
+// the upper limit weight is given by an error function
+//            0.5 + 0.5*erf(-(measure - limit)/(sqrt(2.0)*error))
 double limweight(double d) {
     return d < -3.0 ? d*d + 2.0*log(-2.0*sqrt(dpi/2.0)*d) : -2.0*log(0.5*(1.0 + erf(d/sqrt(2.0))));
 }

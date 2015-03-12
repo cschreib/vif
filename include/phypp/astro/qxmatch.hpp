@@ -30,6 +30,7 @@ struct qxmatch_params {
     bool verbose = false;
     bool self = false;
     bool brute_force = false;
+    bool no_mirror = false;
 };
 
 template<typename C1, typename C2,
@@ -60,8 +61,11 @@ namespace qxmatch_impl {
         std::vector<depth_t> depths;
         vec2b                visited;
         double               csize;
+        std::size_t          max_depth;
 
-        depth_cache(uint_t nx, uint_t ny, double cs) : csize(cs) {
+        depth_cache(uint_t nx, uint_t ny, double cs) : csize(cs),
+            max_depth(std::max(nx, ny)) {
+
             visited = vec2b(nx, ny);
             depths.reserve(20);
 
@@ -89,6 +93,10 @@ namespace qxmatch_impl {
             return depths[i];
         }
 
+        std::size_t size() const {
+            return max_depth;
+        }
+
         void grow() {
             phypp_check(depths.size() < visited.dims[0] ||
                 depths.size() < visited.dims[1], "cannot grow past the size of the "
@@ -104,7 +112,7 @@ namespace qxmatch_impl {
             // See which new buckets are reached.
             // We only need to do the maths for one quadrant, the other 3
             // can be deduced by symmetry.
-            for (uint_t x : range(1,std::min(d+1, visited.dims[0])))
+            for (uint_t x : range(std::min(d+1, visited.dims[0])))
             for (uint_t y : range(std::min(d+1, visited.dims[1]))) {
                 double dist2 = sqr(csize)*min(vec1d{
                     sqr(x-0.5) + sqr(y-0.5), sqr(x+0.5) + sqr(y-0.5),
@@ -121,12 +129,12 @@ namespace qxmatch_impl {
             // We have (+x,+y), fill the other 3 quadrants:
             // (-x,+y), (-x,-y), (-x,+y)
             vec1u idnew = uindgen(depth.bx.size());
-            append(depth.bx, -depth.by[idnew]);
-            append(depth.by, depth.bx[idnew]);
+            append(depth.bx, -depth.bx[idnew]);
+            append(depth.by, depth.by[idnew]);
             append(depth.bx, -depth.bx[idnew]);
             append(depth.by, -depth.by[idnew]);
-            append(depth.bx, depth.by[idnew]);
-            append(depth.by, -depth.bx[idnew]);
+            append(depth.bx, depth.bx[idnew]);
+            append(depth.by, -depth.by[idnew]);
         }
     };
 }
@@ -136,12 +144,14 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
     qxmatch_params params = qxmatch_params{}) {
 
+    qxmatch_res res;
+
     phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
         ra1.dims, " vs ", dec1.dims, ")");
     phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
         ra2.dims, " vs ", dec2.dims, ")");
 
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     auto dra1  = ra1*d2r;
     auto ddec1 = dec1*d2r;
     auto dcdec1 = cos(ddec1);
@@ -149,25 +159,31 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     auto ddec2 = dec2*d2r;
     auto dcdec2 = cos(ddec2);
 
-    const uint_t n1 = n_elements(ra1);
-    const uint_t n2 = n_elements(ra2);
+    const uint_t n1 = ra1.size();
+    const uint_t n2 = ra2.size();
 
     uint_t nth = clamp(params.nth, 1u, npos);
 
-    qxmatch_res res;
     res.id = replicate(npos, nth, n1);
-    res.d  = dblarr(nth, n1)+dinf;
-    res.rid = replicate(npos, n2);
-    res.rd  = dblarr(n2)+dinf;
+    res.d  = replicate(dinf, nth, n1);
+
+    if (!params.no_mirror) {
+        res.rid = replicate(npos, n2);
+        res.rd  = replicate(dinf, n2);
+    }
+
+    if (ra1.empty() || ra2.empty()) {
+        return;
+    }
 
     auto distance_proxy = [&](uint_t i, uint_t j) {
         // Note that this is not the 'true' distance in arseconds, but this is
         // sufficient to find the nearest neighbors (the true distance is obtained
         // by computing 2*asin(sqrt(sd))), but all these functions are monotonous,
         // hence not applying them does not change the relative distances).
-        double sra = sin(0.5*(dra2[j] - dra1[i]));
-        double sde = sin(0.5*(ddec2[j] - ddec1[i]));
-        return sde*sde + sra*sra*dcdec2[j]*dcdec1[i];
+        double sra = sin(0.5*(dra2.safe[j] - dra1.safe[i]));
+        double sde = sin(0.5*(ddec2.safe[j] - ddec1.safe[i]));
+        return sde*sde + sra*sra*dcdec2.safe[j]*dcdec1.safe[i];
     };
 
     if (!params.brute_force) {
@@ -183,23 +199,23 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         // Choose a bucket size (arcsec)
         const double overgrowth = 10.0;
         uint_t nc2 = ceil(0.5*sqrt(dpi*ra2.size()/nth/overgrowth));
-        vec1d hx = vec1d{rra2[0], rra2[0], rra2[1], rra2[1]};
+        vec1d hx = vec1d{rra2[0],  rra2[0],  rra2[1],  rra2[1]};
         vec1d hy = vec1d{rdec2[0], rdec2[1], rdec2[0], rdec2[1]};
         double area2 = field_area_hull(hx, hy);
         double cell_size = 3600.0*sqrt(area2)/nc2;
 
         // Be careful that RA and Dec are spherical coordinates
-        double dra = cell_size*fabs(cos(mean(rdec2)*dpi/180.0))/3600.0;
+        double dra = cell_size/fabs(cos(mean(rdec2)*dpi/180.0))/3600.0;
         double ddec = cell_size/3600.0;
 
         // Add some padding to prevent border issues
-        rra[0] -= dra;
-        rra[1] += dra;
+        rra[0]  -= dra;
+        rra[1]  += dra;
         rdec[0] -= ddec;
         rdec[1] += ddec;
 
         // Final number of buckets
-        uint_t nra = (rra[1] - rra[0])/dra;
+        uint_t nra  = (rra[1]  - rra[0])/dra;
         uint_t ndec = (rdec[1] - rdec[0])/ddec;
 
         // Build the buckets
@@ -227,13 +243,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         qxmatch_impl::depth_cache depths(nra, ndec, cell_size);
 
         auto dist_proj = [] (double dist) {
-            return sqr(sin(dist/(3600.0*(180.0/3.14159265359)*2)));
+            return sqr(sin(dist/(3600.0*(180.0/dpi)*2)));
         };
-
-        res.id = replicate(npos, nth, n1);
-        res.d  = dblarr(nth, n1)+dinf;
-        res.rid = replicate(npos, n2);
-        res.rd  = dblarr(n2)+dinf;
 
         auto work1 = [&] (uint_t i, qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
             int_t x0 = idx1[i];
@@ -250,8 +261,8 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             do {
                 auto& depth = tdepths[d];
                 for (uint_t b : range(depth.bx)) {
-                    int_t x = x0+depth.bx[b];
-                    int_t y = y0+depth.by[b];
+                    int_t x = x0+depth.bx.safe[b];
+                    int_t y = y0+depth.by.safe[b];
                     if (x < 0 || uint_t(x) >= nra || y < 0 || uint_t(y) >= ndec) continue;
 
                     auto& bucket = buckets(uint_t(x),uint_t(y));
@@ -265,13 +276,13 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                         // insert it in the list, removing the old one, and sort the
                         // whole thing so that the largest distance goes as the end of
                         // the list.
-                        if (sd < tres.d(nth-1,i)) {
-                            tres.id(nth-1,i) = j;
-                            tres.d(nth-1,i) = sd;
+                        if (sd < tres.d.safe(nth-1,i)) {
+                            tres.id.safe(nth-1,i) = j;
+                            tres.d.safe(nth-1,i) = sd;
                             uint_t k = nth-2;
-                            while (k != npos && tres.d(k,i) > tres.d(k+1,i)) {
-                                std::swap(tres.d(k,i), tres.d(k+1,i));
-                                std::swap(tres.id(k,i), tres.id(k+1,i));
+                            while (k != npos && tres.d.safe(k,i) > tres.d.safe(k+1,i)) {
+                                std::swap(tres.d.safe(k,i), tres.d.safe(k+1,i));
+                                std::swap(tres.id.safe(k,i), tres.id.safe(k+1,i));
                                 --k;
                             }
                         }
@@ -279,10 +290,10 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 }
 
                 reached_distance = dist_proj(
-                    std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
+                    std::max(0.0, tdepths[d].max_dist - 1.1*cell_dist - 0.1*cell_size));
 
                 ++d;
-            } while (tres.d(nth-1,i) > reached_distance);
+            } while (tres.d.safe(nth-1,i) > reached_distance && d < tdepths.size());
         };
 
         auto work2 = [&] (uint_t j, qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
@@ -302,6 +313,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 for (uint_t b : range(depth.bx)) {
                     int_t x = x0+depth.bx[b];
                     int_t y = y0+depth.by[b];
+
                     if (x < 0 || uint_t(x) >= nra || y < 0 || uint_t(y) >= ndec) continue;
 
                     auto& bucket = buckets(uint_t(x),uint_t(y));
@@ -309,18 +321,18 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                         double sd = distance_proxy(i, j);
 
                         // Just keep the nearest match
-                        if (sd < tres.rd[j]) {
-                            tres.rd[j] = sd;
-                            tres.rid[j] = i;
+                        if (sd < tres.rd.safe[j]) {
+                            tres.rd.safe[j] = sd;
+                            tres.rid.safe[j] = i;
                         }
                     }
                 }
 
                 reached_distance = dist_proj(
-                    std::max(0.0, tdepths[d].max_dist - 2.0*cell_dist));
+                    std::max(0.0, tdepths[d].max_dist - 1.1*cell_dist - 0.1*cell_size));
 
                 ++d;
-            } while (tres.rd[j] > reached_distance);
+            } while (tres.rd[j] > reached_distance && d < tdepths.size());
         };
 
         if (params.thread <= 1) {
@@ -336,7 +348,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                 work1(i, depths, res);
                 if (params.verbose) progress(p, 31);
             }
-            if (!params.self) {
+            if (!params.self && !params.no_mirror) {
                 for (uint_t j : range(ra2)) {
                     work2(j, depths, res);
                     if (params.verbose) progress(p, 31);
@@ -390,7 +402,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
                         ++iter;
                     }
 
-                    if (!params.self) {
+                    if (!params.self && !params.no_mirror) {
                         for (uint_t j = tbeg2[t]; j < tend2[t]; ++j) {
                             work2(j, depths, vres[t]);
                             ++iter;
@@ -421,12 +433,14 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             // Merge back the results of each thread
             for (uint_t t = 0; t < params.thread; ++t) {
                 auto ids = rgen(tend1[t] - tbeg1[t]) + tbeg1[t];
-                res.id(_,ids) = vres[t].id(_,ids);
-                res.d(_,ids) = vres[t].d(_,ids);
+                res.id.safe(_,ids) = vres[t].id.safe(_,ids);
+                res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
-                ids = rgen(tend2[t] - tbeg2[t]) + tbeg2[t];
-                res.rid[ids] = vres[t].rid[ids];
-                res.rd[ids] = vres[t].rd[ids];
+                if (!params.no_mirror) {
+                    ids = rgen(tend2[t] - tbeg2[t]) + tbeg2[t];
+                    res.rid.safe[ids] = vres[t].rid.safe[ids];
+                    res.rd.safe[ids] = vres[t].rd.safe[ids];
+                }
             }
         }
     } else {
@@ -437,21 +451,21 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             // nearest neighbor list. If it is lower than that, we insert it in the list,
             // removing the old one, and sort the whole thing so that the largest distance
             // goes as the end of the list.
-            if (sd < tres.d(nth-1,i)) {
-                tres.id(nth-1,i) = j;
-                tres.d(nth-1,i) = sd;
+            if (sd < tres.d.safe(nth-1,i)) {
+                tres.id.safe(nth-1,i) = j;
+                tres.d.safe(nth-1,i) = sd;
                 uint_t k = nth-2;
-                while (k != npos && tres.d(k,i) > tres.d(k+1,i)) {
-                    std::swap(tres.d(k,i), tres.d(k+1,i));
-                    std::swap(tres.id(k,i), tres.id(k+1,i));
+                while (k != npos && tres.d.safe(k,i) > tres.d.safe(k+1,i)) {
+                    std::swap(tres.d.safe(k,i), tres.d.safe(k+1,i));
+                    std::swap(tres.id.safe(k,i), tres.id.safe(k+1,i));
                     --k;
                 }
             }
 
             // Take care of reverse search
-            if (sd < tres.rd[j]) {
-                tres.rid[j] = i;
-                tres.rd[j] = sd;
+            if (!params.no_mirror && sd < tres.rd.safe[j]) {
+                tres.rid.safe[j] = i;
+                tres.rd.safe[j] = sd;
             }
         };
 
@@ -476,10 +490,13 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             std::vector<qxmatch_res> vres(params.thread);
             for (auto& r : vres) {
                 r.id = replicate(npos, nth, n1);
-                r.d  = dblarr(nth, n1)+dinf;
-                r.rid = replicate(npos, n2);
-                r.rd  = dblarr(n2)+dinf;
+                r.d  = replicate(dinf, nth, n1);
+                if (!params.no_mirror) {
+                    r.rid = replicate(npos, n2);
+                    r.rd  = replicate(dinf, n2);
+                }
             }
+
             vec1u tbeg(params.thread);
             vec1u tend(params.thread);
             auto pool = thread::pool(params.thread);
@@ -525,17 +542,19 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             // Merge back the results of each thread
             for (uint_t t = 0; t < params.thread; ++t) {
                 auto ids = rgen(tend[t] - tbeg[t]) + tbeg[t];
-                res.id(_,ids) = vres[t].id(_,ids);
-                res.d(_,ids) = vres[t].d(_,ids);
+                res.id.safe(_,ids) = vres[t].id.safe(_,ids);
+                res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
-                if (t == 0) {
-                    res.rid = vres[t].rid;
-                    res.rd = vres[t].rd;
-                } else {
-                    for (uint_t j = 0; j < n2; ++j) {
-                        if (res.rd[j] >= vres[t].rd[j]) {
-                            res.rid[j] = vres[t].rid[j];
-                            res.rd[j] = vres[t].rd[j];
+                if (!params.no_mirror) {
+                    if (t == 0) {
+                        res.rid = vres[t].rid;
+                        res.rd = vres[t].rd;
+                    } else {
+                        for (uint_t j = 0; j < n2; ++j) {
+                            if (res.rd.safe[j] >= vres[t].rd.safe[j]) {
+                                res.rid.safe[j] = vres[t].rid.safe[j];
+                                res.rd.safe[j] = vres[t].rd.safe[j];
+                            }
                         }
                     }
                 }
@@ -544,8 +563,10 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     }
 
     // Convert the distance estimator to a real distance
-    res.d = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.d));
-    res.rd = 3600.0*(180.0/3.14159265359)*2*asin(sqrt(res.rd));
+    res.d = 3600.0*(180.0/dpi)*2*asin(sqrt(res.d));
+    if (!params.no_mirror) {
+        res.rd = 3600.0*(180.0/dpi)*2*asin(sqrt(res.rd));
+    }
 
     return res;
 }
@@ -590,6 +611,45 @@ void xmatch_save_lost(const id_pair& p, const std::string& save) {
         warning(n_elements(p.lost), " sources failed to cross match");
         fits::write_table(save, ftable(p.lost));
     }
+}
+
+struct qdist_params {
+    bool verbose = false;
+};
+
+template<typename TypeR, typename TypeD>
+vec2d qdist(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec,
+    qdist_params params = qdist_params{}) {
+    vec2d ret(ra.size(), ra.size());
+
+    phypp_check(ra.dims == dec.dims, "first RA and Dec dimensions do not match (",
+        ra.dims, " vs ", dec.dims, ")");
+
+    const double d2r = dpi/180.0;
+    auto dra  = ra*d2r;
+    auto ddec = dec*d2r;
+    auto dcdec = cos(ddec);
+
+    const uint_t n = ra.size();
+
+    auto distance = [&](uint_t i, uint_t j) {
+        double sra = sin(0.5*(dra.safe[j] - dra.safe[i]));
+        double sde = sin(0.5*(ddec.safe[j] - ddec.safe[i]));
+        double d = sde*sde + sra*sra*dcdec.safe[j]*dcdec.safe[i];
+        return 3600.0*(180.0/dpi)*2*asin(sqrt(d));
+    };
+
+    // When using a single thread, all the work is done in the main thread
+    auto p = progress_start(n*(n-1)/2);
+    for (uint_t i : range(n)) {
+        for (uint_t j : range(i+1, n)) {
+            ret(j,i) = distance(i, j);
+
+            if (params.verbose) progress(p, 113);
+        }
+    }
+
+    return ret;
 }
 
 #endif

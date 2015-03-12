@@ -10,6 +10,8 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file);
 bool copy_wcs_header(int argc, char* argv[], const std::string& file);
 bool show_header(int argc, char* argv[], const std::string& file);
 bool edit_keyword(int argc, char* argv[], const std::string& file);
+bool remove_keyword(int argc, char* argv[], const std::string& file);
+bool make_2d(int argc, char* argv[], const std::string& file);
 bool move_meta_columns(int argc, char* argv[], const std::string& file);
 
 void print_remove_help();
@@ -18,6 +20,8 @@ void print_r2c_help();
 void print_cpwcs_help();
 void print_hdr_help();
 void print_editkwd_help();
+void print_rmkwd_help();
+void print_make2d_help();
 void print_meta_help();
 
 int main(int argc, char* argv[]) {
@@ -43,6 +47,10 @@ int main(int argc, char* argv[]) {
             print_hdr_help();
         } else if (op == "editkwd") {
             print_editkwd_help();
+        } else if (op == "rmkwd") {
+            print_rmkwd_help();
+        } else if (op == "make2d") {
+            print_make2d_help();
         } else if (op == "meta") {
             print_meta_help();
         } else {
@@ -66,6 +74,10 @@ int main(int argc, char* argv[]) {
             show_header(argc-2, argv+2, file);
         } else if (op == "editkwd") {
             edit_keyword(argc-2, argv+2, file);
+        } else if (op == "rmkwd") {
+            remove_keyword(argc-2, argv+2, file);
+        } else if (op == "make2d") {
+            make_2d(argc-2, argv+2, file);
         } else if (op == "meta") {
             move_meta_columns(argc-2, argv+2, file);
         } else {
@@ -721,20 +733,184 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
                     fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
                 }
             } else {
-                if (newk) {
-                    fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
-                        &status);
-                    fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                if (end_with(new_value, ".") || find(new_value, ".") == npos) {
+                    int di = d;
+                    if (newk) {
+                        fits_write_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                    } else {
+                        fits_update_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                    }
                 } else {
-                    fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
-                        &status);
-                    fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                    if (newk) {
+                        fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                    } else {
+                        fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                            &status);
+                        fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                    }
                 }
             }
 
             fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
             print(name, " = ", value, " (", comment, ")");
         }
+
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        print(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
+void print_rmkwd_help() {
+    using namespace format;
+
+    paragraph("The program will remove the listed keywords (if found) from the provided FITS "
+        "file. This is a destructive procedure: the FITS file will be modified and data will "
+        "be lost.");
+
+    header("List of available command line options:");
+    bullet("key", "[string array] list of keywords to remove");
+    bullet("verbose", "[flag] print additional information");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool remove_keyword(int argc, char* argv[], const std::string& file) {
+    vec1s key;
+    bool help = false;
+    bool verbose = false;
+    read_args(argc, argv, arg_list(key, help, verbose));
+
+    if (help) {
+        print_rmkwd_help();
+        return true;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_image(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+
+        bool table = false;
+        int naxis = 0;
+        fits_get_img_dim(fptr, &naxis, &status);
+        if (naxis == 0) {
+            fits_close_file(fptr, &status);
+            fits_open_table(&fptr, file.c_str(), READWRITE, &status);
+            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            if (verbose) print("loaded table file");
+            table = true;
+        } else {
+            if (verbose) print("loaded image file");
+        }
+
+        for (auto& k : key) {
+            while (status == 0) {
+                fits_delete_key(fptr, k.c_str(), &status);
+            }
+            status = 0;
+        }
+
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        print(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
+void print_make2d_help() {
+    using namespace format;
+
+    paragraph("The program will remove and modify specific keywords to transform a "
+        "multidimensional image into a simple 2D image. Note that the pixel content "
+        "will not be changed! This is just keyword manipulation. This procedure can "
+        "only run on images for which the extra dimensions have size 1.");
+
+    header("List of available command line options:");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool make_2d(int argc, char* argv[], const std::string& file) {
+    bool help = false;
+    read_args(argc, argv, arg_list(help));
+
+    if (help) {
+        print_make2d_help();
+        return true;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_image(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+
+        bool table = false;
+        int naxis = 0;
+        fits_get_img_dim(fptr, &naxis, &status);
+        if (naxis < 2) {
+            error("'make2d' requires an image FITS file");
+            return false;
+        } else if (naxis == 2) {
+            // Nothing to do
+            return true;
+        }
+
+        // Check the dimensions are of size 1
+        std::vector<long> naxes(naxis);
+        fits_get_img_size(fptr, naxis, naxes.data(), &status);
+        for (int i = 2; i < naxis; ++i) {
+            if (naxes[i] != 1) {
+                error("cannot remove extra dimensions from '"+file+"'");
+                note("these dimensions contain data");
+                return false;
+            }
+        }
+
+        // First remove the extra keywords
+        vec1s keybase = {"NAXIS", "CTYPE", "CUNIT", "CRVAL", "CRPIX", "CROTA", "CDELT"};
+
+        for (int i = 3; i <= naxis; ++i) {
+            for (auto& k : keybase) {
+                fits_delete_key(fptr, (k+strn(i)).c_str(), &status);
+                if (status != 0) {
+                    status = 0;
+                }
+            }
+
+            for (int j = 1; j <= naxis; ++j) {
+                fits_delete_key(fptr, ("PC"+strn(i,2)+"_"+strn(j,2)).c_str(), &status);
+                if (status != 0) {
+                    status = 0;
+                }
+                fits_delete_key(fptr, ("PC"+strn(j,2)+"_"+strn(i,2)).c_str(), &status);
+                if (status != 0) {
+                    status = 0;
+                }
+            }
+        }
+
+        // Then modify NAXIS
+        naxis = 2;
+        char comment[] = "";
+        fits_update_key(fptr, TINT, "NAXIS", &naxis, comment, &status);
 
         fits_close_file(fptr, &status);
     } catch (fits::exception& e) {
@@ -964,7 +1140,9 @@ void print_help() {
     bullet("r2c", "convert a row oriented FITS table to a column oriented one");
     bullet("cpwcs", "copy the WCS keywords from this FIST file into another");
     bullet("hdr", "print the header of the provided FITS file");
-    bullet("editkwd", "edit keywords of the provided FIST file manually");
+    bullet("editkwd", "modify or add keywords to the provided FIST file interactively");
+    bullet("rmkwd", "remove keywords from the provided FIST file");
+    bullet("make2d", "remove extra dimensions from FITS image");
     bullet("meta", "shift all 'meta' columns into a new extension so that the file can be read in "
         "programs like TOPCAT that expect a single invariant dimension for all columns");
     print("");

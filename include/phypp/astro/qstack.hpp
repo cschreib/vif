@@ -66,6 +66,7 @@ namespace qstack_impl {
 
         ~image_workspace() {
             if (fptr) fits_close_file(fptr, &status);
+            fptr = nullptr;
         }
     };
 }

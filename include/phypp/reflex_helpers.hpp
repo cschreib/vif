@@ -36,12 +36,20 @@ namespace reflex {
 
     template<typename T, typename F>
     void foreach_member(reflex::struct_t<T> d, F&& tf) {
+#ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection "
+            "capabilities (NO_REFLECTION=0)");
+#endif
         F& f = tf;
         foreach_member_(d, f, cte_t<0>(), cte_t<reflex::struct_t<T>::member_count>());
     }
 
     template<typename O, typename T>
     O& operator << (O& o, reflex::struct_t<T> d) {
+#ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection "
+            "capabilities (NO_REFLECTION=0)");
+#endif
         if (reflex::struct_t<T>::member_count == 0) {
             o << "{}";
             return o;
@@ -141,6 +149,10 @@ namespace reflex {
 
 template<typename T, typename U>
 void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u) {
+#ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection "
+            "capabilities (NO_REFLECTION=0)");
+#endif
     reflex::foreach_member(u, reflex::impl::do_merge<T>(t));
 }
 
@@ -246,6 +258,10 @@ namespace reflex {
 
 template<typename T, typename U>
 void merge_elements_(reflex::struct_t<T> t, reflex::struct_t<U> u, const vec1u& ids) {
+#ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection "
+            "capabilities (NO_REFLECTION=0)");
+#endif
     reflex::foreach_member(u, reflex::impl::do_merge_ids<T>(t, ids));
 }
 
@@ -256,6 +272,10 @@ void merge_elements(T& t, const U& u, const vec1u& ids) {
 
 template<typename T>
 typename std::decay<T>::type pick_elements(const T& t, const vec1u& ids) {
+#ifdef NO_REFLECTION
+        static_assert(!std::is_same<T,T>::value, "this function requires reflection "
+            "capabilities (NO_REFLECTION=0)");
+#endif
     typename std::decay<T>::type n;
     merge_elements(n, t, ids);
     return n;

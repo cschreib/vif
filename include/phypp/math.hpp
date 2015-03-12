@@ -144,25 +144,80 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
     return res;
 }
 
-template<std::size_t Dim, typename Type, typename B = double>
-vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
-    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
-        "vector (expected dims=[2], got dims=[", b.dims, "])");
+template<std::size_t Dim, typename Type, typename B>
+vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=[2, ...], got dims=[", b.dims, "])");
+    phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        "(", ib, " vs. ", b.dims[1], ")");
 
-    auto low = b.safe[0];
-    auto up  = b.safe[1];
+    auto low = b.safe(0,ib);
+    auto up  = b.safe(1,ib);
     vec_t<Dim,bool> res(v.dims);
     for (uint_t i : range(v)) {
-        if (i == 0) {
+        res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
+    }
+
+    return res;
+}
+
+template<std::size_t Dim, typename Type, typename B>
+vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=[2, ...], got dims=[", b.dims, "])");
+    phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        "(", ib, " vs. ", b.dims[1], ")");
+
+    auto low = b.safe(0,ib);
+    auto up  = b.safe(1,ib);
+    vec_t<Dim,bool> res(v.dims);
+    if (ib == 0) {
+        for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] < up;
-        } else if (i == v.size()-1) {
+        }
+    } else if (ib == b.dims[1]-1) {
+        for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] >= low;
-        } else {
+        }
+    } else {
+        for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
         }
     }
 
     return res;
+}
+
+template<typename Type>
+vec_t<1,rtype_t<Type>> bin_center(const vec_t<2,Type>& b) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=[2, ...], got dims=[", b.dims, "])");
+
+    return 0.5*(b.safe(1,_) + b.safe(0,_));
+}
+
+template<typename Type>
+vec_t<1,rtype_t<Type>> bin_width(const vec_t<2,Type>& b) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=[2, ...], got dims=[", b.dims, "])");
+
+    return b.safe(1,_) - b.safe(0,_);
+}
+
+template<typename Type>
+rtype_t<Type> bin_center(const vec_t<1,Type>& b) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=2, got dims=", b.dims, ")");
+
+    return 0.5*(b.safe[1] + b.safe[0]);
+}
+
+template<typename Type>
+rtype_t<Type> bin_width(const vec_t<1,Type>& b) {
+    phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        "(expected dims=2, got dims=", b.dims, ")");
+
+    return b.safe[1] - b.safe[0];
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
@@ -291,8 +346,10 @@ vec_t<Dim,Type> shuffle(vec_t<Dim,Type> v, T& seed) {
     return v;
 }
 
-template<typename F, F f, std::size_t Dim, typename Type>
-auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename return_type<F>::type> {
+template<typename F, F f, std::size_t Dim, typename Type, typename ... Args>
+auto run_index_(const vec_t<Dim,Type>& v, const Args& ... args, uint_t dim) ->
+vec_t<Dim-1,typename return_type<F>::type> {
+
     vec_t<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
         r.dims[i] = v.dims[i];
@@ -337,7 +394,7 @@ auto run_index_(const vec_t<Dim,Type>& v, uint_t dim) -> vec_t<Dim-1,typename re
             tmp[j] = v.safe[base + j*mpitch];
         }
 
-        r[i] = (*f)(tmp);
+        r[i] = (*f)(tmp, args...);
     }
 
     return r;
@@ -421,9 +478,14 @@ auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) ->
     return r;
 }
 
+template<typename T>
+using total_return_type = typename std::conditional<std::is_integral<T>::value,
+    typename std::conditional<std::is_unsigned<T>::value, uint_t, int_t>::type,
+    double>::type;
+
 template<std::size_t Dim, typename Type>
-double total(const vec_t<Dim,Type>& v) {
-    double total = 0;
+total_return_type<rtype_t<Type>> total(const vec_t<Dim,Type>& v) {
+    total_return_type<rtype_t<Type>> total = 0;
     for (auto& t : v) {
         total += t;
     }
@@ -432,21 +494,17 @@ double total(const vec_t<Dim,Type>& v) {
 }
 
 
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> total(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &total<1,rtype_t<Type>>>(v, dim);
-}
-
-template<std::size_t Dim>
-uint_t count(const vec_t<Dim,bool>& b) {
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<Type>, bool>::value>::type>
+uint_t count(const vec_t<Dim,Type>& v) {
     uint_t n = 0u;
-    for (uint_t i : range(b)) {
-        if (b.safe[i]) ++n;
+    for (bool b : v) {
+        if (b) ++n;
     }
 
     return n;
 }
+
 
 template<std::size_t Dim, typename T>
 double fraction_of(const vec_t<Dim,T>& b) {
@@ -460,17 +518,13 @@ double mean(const vec_t<Dim,Type>& v) {
         total += t;
     }
 
-    return total/n_elements(v);
-}
-
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> mean(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &mean<1,rtype_t<Type>>>(v, dim);
+    return total/v.size();
 }
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the median of an empty vector");
+
     using vtype = typename vec_t<Dim,Type>::vtype;
     using dtype = typename vtype::value_type;
 
@@ -498,14 +552,10 @@ rtype_t<Type> median(vec_t<Dim,Type> v) {
     return inplace_median(v);
 }
 
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,rtype_t<Type>> median(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = rtype_t<Type> (*)(vec_t<1,rtype_t<Type>>);
-    return run_index_<fptr, &median<1,rtype_t<Type>>>(v, dim);
-}
-
 template<std::size_t Dim, typename Type, typename U>
 rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
+    phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
+
     vec1u ok = where(finite(v));
     if (ok.empty()) return 0;
 
@@ -531,6 +581,8 @@ void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, co
 
 template<std::size_t Dim, typename Type, typename ... Args>
 typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, const Args& ... args) {
+    phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
+
     vec1u ok = where(finite(v));
     typename vec_t<1,Type>::effective_type t;
     if (ok.empty()) return t;
@@ -562,6 +614,8 @@ vec_t<Dim,bool> mad_clip(const vec_t<Dim,Type>& tv, double sigma) {
 
 template<std::size_t Dim, typename Type>
 typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
+
     auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return false;
         if (nan(t2)) return true;
@@ -574,6 +628,8 @@ typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 typename vec_t<Dim,Type>::const_iterator max_(const vec_t<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
+
     auto iter = std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
         if (nan(t1)) return true;
         if (nan(t2)) return false;
@@ -689,20 +745,8 @@ double rms(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> rms(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &rms<1,rtype_t<Type>>>(v, dim);
-}
-
-template<std::size_t Dim, typename Type>
 double stddev(const vec_t<Dim,Type>& v) {
     return rms(v - mean(v));
-}
-
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> stddev(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &stddev<1,rtype_t<Type>>>(v, dim);
 }
 
 template<std::size_t Dim, typename Type>
@@ -710,11 +754,35 @@ double mad(const vec_t<Dim,Type>& v) {
     return median(fabs(v - median(v)));
 }
 
-template<std::size_t Dim, typename Type>
-vec_t<Dim-1,double> mad(const vec_t<Dim,Type>& v, uint_t dim) {
-    using fptr = double (*)(const vec_t<1,rtype_t<Type>>&);
-    return run_index_<fptr, &mad<1,rtype_t<Type>>>(v, dim);
-}
+#define RUN_INDEX(func) \
+    struct func ## _run_index_wrapper_ { \
+        template<typename T, typename ... Args> \
+        static auto run(const vec_t<1,T>& v, Args&& ... args) -> \
+        decltype(func(v, std::forward<Args>(args)...)) { \
+            return func(v, std::forward<Args>(args)...); \
+        } \
+    }; \
+    \
+    template<std::size_t Dim, typename Type, typename ... Args> \
+    auto func(const vec_t<Dim,Type>& v, Args&& ... args, uint_t dim) -> \
+    vec_t<Dim-1, decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
+        using fptr = decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
+            (*)(const vec_t<1,rtype_t<Type>>&, Args&& ...); \
+        using wrapper = func ## _run_index_wrapper_; \
+        return run_index_<fptr, &wrapper::run<rtype_t<Type>, Args...>>(v, dim); \
+    }
+
+RUN_INDEX(total);
+RUN_INDEX(count);
+RUN_INDEX(fraction_of);
+RUN_INDEX(mean);
+RUN_INDEX(median);
+RUN_INDEX(percentile);
+RUN_INDEX(rms);
+RUN_INDEX(stddev);
+RUN_INDEX(mad);
+
+#undef RUN_INDEX
 
 template<std::size_t Dim, typename Type, typename TypeB>
 vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
@@ -1144,7 +1212,7 @@ auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
     phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
         v.dims, ")");
 
-    decltype(v(_,0)) d(vec_access::get_parent(v));
+    decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
@@ -1159,7 +1227,7 @@ auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
     phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
         v.dims, ")");
 
-    decltype(v(_,0)) d(vec_access::get_parent(v));
+    decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
     d.dims[0] = v.dims[0];
     d.resize();
     for (uint_t i = 0; i < v.dims[0]; ++i) {
@@ -1237,7 +1305,7 @@ extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, doub
 template<typename Dummy = void>
 bool invert(vec2d& i) {
 #ifdef NO_LAPACK
-    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
 #else
     phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
@@ -1266,13 +1334,13 @@ bool invert(vec2d& i) {
 template<typename TypeA>
 bool invert(const vec_t<2,TypeA>& a, vec2d& i) {
     i = a;
-    return invert(i);
+    return invert<TypeA>(i);
 }
 
 template<typename Dummy = void>
 bool invert_symmetric(vec2d& i) {
 #ifdef NO_LAPACK
-    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
 #else
     phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
@@ -1307,13 +1375,13 @@ bool invert_symmetric(vec2d& i) {
 template<typename TypeA>
 bool invert_symmetric(const vec_t<2,TypeA>& a, vec2d& i) {
     i = a;
-    return invert_symmetric(i);
+    return invert_symmetric<TypeA>(i);
 }
 
 template<typename Dummy = void>
 bool solve_symmetric(vec2d& alpha, vec1d& beta) {
 #ifdef NO_LAPACK
-    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
 #else
     phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
@@ -1348,7 +1416,7 @@ bool solve_symmetric(vec2d& alpha, vec1d& beta) {
 template<typename Dummy = void>
 bool eigen_symmetric(vec2d& a, vec1d& vals) {
 #ifdef NO_LAPACK
-    static_assert(std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
 #else
     phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
@@ -1383,9 +1451,10 @@ bool eigen_symmetric(vec2d& a, vec1d& vals) {
 #endif
 }
 
+template<typename Dummy = void>
 bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
     vecs = a;
-    return eigen_symmetric(vecs, vals);
+    return eigen_symmetric<Dummy>(vecs, vals);
 }
 
 
@@ -2123,9 +2192,73 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
 
 // Compute the signed distance of a set of points with respect to the provided convex
 // hull. Positive distances mean that the point lies inside the hull.
+template<typename TX, typename TY, typename THX, typename THY, typename enable =
+    typename std::enable_if<!is_vec<TX>::value && !is_vec<TY>::value>::type>
+auto convex_hull_distance(const TX& x, const TY& y, const vec1u& hull,
+    const THX& hx, const THY& hy) -> decltype(sqrt(x*y)) {
+
+    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
+
+    // Find out if the hull is built counter-clockwise or not
+    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
+    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
+
+    decltype(sqrt(x*y)) res = finf;
+    bool inhull = true;
+
+    for (uint_t i = 0; i < hull.size()-1; ++i) {
+        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
+
+        // Get unit vector
+        auto ux = hx[p2] - hx[p1];
+        auto uy = hy[p2] - hy[p1];
+        // Get perpendicular vector, pointing inside the hull
+        auto nx = sign ? hy[p2] - hy[p1] : hy[p1] - hy[p2];
+        auto ny = sign ? hx[p1] - hx[p2] : hx[p2] - hx[p1];
+        // Normalize hull segment
+        auto l = sqrt(sqr(nx) + sqr(ny));
+        ux /= l; uy /= l; nx /= l; ny /= l;
+
+        // Compute signed distance to current hull face line
+        auto dx = x - hx[p1];
+        auto dy = y - hy[p1];
+        auto d = dx*nx + dy*ny;
+
+        // Check if the point is inside the hull or not
+        if (d > 0) {
+            inhull = false;
+        }
+
+        d = fabs(d);
+        if (res > d) {
+            // Find if the projection of the point on the face lies on the segment
+            auto proj = dx*ux + dy*uy;
+            if (proj < 0) {
+                // Projection lies before starting point
+                d = sqrt(sqr(dx) + sqr(dy));
+            } else if (proj > l) {
+                // Projection lies after ending point
+                d = sqrt(sqr(x - hx[p2]) + sqr(y - hy[p2]));
+            }
+
+            // Keep this distance if it is minimal
+            if (res > d) res = d;
+        }
+    }
+
+    // Give negative distance to points outside the hull
+    if (!inhull) {
+        res = -res;
+    }
+
+    return res;
+}
+
+// Compute the signed distance of a set of points with respect to the provided convex
+// hull. Positive distances mean that the point lies inside the hull.
 template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
 auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
-    const THX& hx, const THY& hy) -> vec_t<Dim, decltype(x[0]*y[0])> {
+    const THX& hx, const THY& hy) -> vec_t<Dim, decltype(sqrt(x[0]*y[0]))> {
 
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
         "(", x.dims, " vs. ", y.dims, ")");
@@ -2135,7 +2268,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
     uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
-    vec_t<Dim,decltype(x[0]*y[0])> res = replicate(finf, x.dims);
+    vec_t<Dim,decltype(sqrt(x[0]*y[0]))> res = replicate(finf, x.dims);
     vec_t<Dim,bool> inhull = replicate(true, x.dims);
 
     for (uint_t i = 0; i < hull.size()-1; ++i) {
@@ -2152,7 +2285,7 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
         ux /= l; uy /= l; nx /= l; ny /= l;
 
         for (uint_t p = 0; p < x.size(); ++p) {
-            // Comput signed distance to current hull face line
+            // Compute signed distance to current hull face line
             auto dx = x.safe[p] - hx[p1];
             auto dy = y.safe[p] - hy[p1];
             auto d = dx*nx + dy*ny;
@@ -2201,7 +2334,7 @@ double angdistr(double ra1, double dec1, double ra2, double dec2) {
 // Compute the angular distance between two RA/Dec positions [arcsec].
 // Assumes that RA & Dec coordinates are in degrees.
 double angdist(double tra1, double tdec1, double tra2, double tdec2) {
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     double ra1 = d2r*tra1, ra2 = d2r*tra2, dec1 = d2r*tdec1, dec2 = d2r*tdec2;
     double sra = sin(0.5*(ra2 - ra1));
     double sde = sin(0.5*(dec2 - dec1));
@@ -2252,7 +2385,7 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
         tra1.dims, " vs ", tdec1.dims, ")");
 
-    const double d2r = 3.14159265359/180.0;
+    const double d2r = dpi/180.0;
     const double rrad = d2r*radius/3600.0;
     const double crad = sqr(sin(rrad/2.0));
 
@@ -2268,6 +2401,75 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     }
 
     return res;
+}
+
+// Move a point in RA/Dec [degree] by an increment in [arcsec]
+// This is an approximation for small movements of the order of a degree or less.
+void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
+    ra += dra/cos(dec*dpi/180.0)/3600.0;
+    dec += ddec/3600.0;
+
+    // Note: another, in principle more accurate implementation is
+    // ra *= cos(dec*dpi/180.0);
+    // dec += ddec/3600.0;
+    // ra += dra/3600.0;
+    // ra /= cos(dec*dpi/180.0);
+    // But this implementation suffers from numerical instability!
+    // The culprit is the cos(dec_old)/cos(dec_new) ratio.
+}
+
+// Find the closest point in a 2D array that satisfies a given criterium
+bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
+    phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
+
+    if (x >= map.dims[0]) x = map.dims[0]-1;
+    if (y >= map.dims[1]) y = map.dims[1]-1;
+
+    if (map.safe(x,y)) return true;
+
+
+    using vec_pair = vec_t<1,std::pair<uint_t,uint_t>>;
+    vec_pair open;
+    open.push_back(std::make_pair(x,y));
+
+    vec2b visit(map.dims);
+    visit.safe(x,y) = true;
+
+    bool found = false;
+    while (!open.empty()) {
+        vec_pair old_open = std::move(open);
+
+        for (auto p : old_open) {
+            int_t ox = p.first, oy = p.second;
+
+            for (uint_t d : range(4)) {
+                int_t tnx, tny;
+                if (d == 0) {
+                    tnx = ox;   tny = oy+1;
+                } else if (d == 1) {
+                    tnx = ox+1; tny = oy;
+                } else if (d == 2) {
+                    tnx = ox;   tny = oy-1;
+                } else {
+                    tnx = ox-1; tny = oy;
+                }
+
+                if (tnx < 0 || tny < 0) continue;
+
+                x = tnx, y = tny;
+                if (x >= map.dims[0] || y >= map.dims[1] || visit.safe(x,y)) continue;
+
+                if (!map.safe(x,y)) {
+                    open.push_back(std::make_pair(x,y));
+                    visit.safe(x,y) = true;
+                } else {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 #endif

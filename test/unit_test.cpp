@@ -105,8 +105,14 @@ int main(int argc, char* argv[]) {
         print("Direct data access (single index)");
         check(v[1], "1");
         check(v(1), "1");
-        print("Placeholder index '_'");
+        print("Range index '_'");
         check(v[_], "0, 1, 2, 3, 4, 5, 6");
+        print("Range index '3-_'");
+        check(v[3-_], "3, 4, 5, 6");
+        print("Range index '_-3'");
+        check(v[_-3], "0, 1, 2, 3");
+        print("Range index '2-_-4'");
+        check(v[2-_-4], "2, 3, 4");
 
         print("Basic math");
         check(2*v, "0, 2, 4, 6, 8, 10, 12");
@@ -234,13 +240,14 @@ int main(int argc, char* argv[]) {
         check(tu.data.size(), "6");
         check(tu, "5, 8, 4, 5, 1, 2");
         check(tu(1,1), "5");
-        tu(rgen(1,2),rgen(0,1)) = {{1,2},{3,4}};
+        tu(1-_-2,0-_-1) = {{1,2},{3,4}};
         check(tu, "5, 8, 1, 2, 3, 4");
 
         vec2i v = {{4,5,6,7}, {8,9,5,2}, {7,8,2,0}, {-1, -5, -6, -7}, {-4,1,-2,5}};
         check(v(_,_).dims, "5, 4");
         check(v(_,0).dims, "5");
         check(v(0,_).dims, "4");
+        check(v(1-_-2,1-_-3).dims, "2, 3");
         check(v(rgen(1,2),rgen(1,3)).dims, "2, 3");
         check(v(rgen(1,2),0).dims, "2");
         check(v(0,rgen(1,3)).dims, "3");
@@ -283,6 +290,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+#ifndef NO_CCFITS
     {
         print("FITS image loading");
         vec2d v; fits::header hdr;
@@ -306,6 +314,7 @@ int main(int argc, char* argv[]) {
         fits::read("out/image_saved.fits", nv);
         check(total(nv != v) == 0, "1");
     }
+#endif
 
     {
         print("FITS table loading");
@@ -452,7 +461,7 @@ int main(int argc, char* argv[]) {
     {
         print("File system functions");
         check(file::exists("unit_test.cpp"), "1");
-        check(file::exists("unit_test_bidouille.cpp"), "0");
+        check(file::exists("unit_test_not_gonna_work.cpp"), "0");
         vec1s dlist = file::list_directories("../");
         print(dlist);
         check(where(dlist == "bin").empty(), "0");
@@ -460,7 +469,16 @@ int main(int argc, char* argv[]) {
         print(flist);
         flist = file::list_files("../include/*.hpp");
         print(flist);
+    }
+
+    {
+        print("file::get_directory and file::get_basename");
         check(file::get_directory("../somedir/someother/afile.cpp"), "../somedir/someother/");
+        check(file::get_directory("../somedir/someother/"), "../somedir/");
+        check(file::get_directory("afile.cpp"), "./");
+        check(file::get_basename("../somedir/someother/afile.cpp"), "afile.cpp");
+        check(file::get_basename("../somedir/someother/"), "someother");
+        check(file::get_basename("afile.cpp"), "afile.cpp");
     }
 
     {
@@ -528,7 +546,9 @@ int main(int argc, char* argv[]) {
         v(_,_,5) = 0.5;
 
         vec2d m = median(v,2);
+#ifndef NO_CCFITS
         fits::write("out/median.fits", m);
+#endif
     }
 
     {
@@ -567,39 +587,53 @@ int main(int argc, char* argv[]) {
         vec1u dim = {51,41};
         vec2d px = replicate(dindgen(dim[1]), dim[0]);
         vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
+#ifndef NO_CCFITS
         fits::write("out/px.fits", px);
         fits::write("out/py.fits", py);
+#endif
 
         vec2d m = circular_mask({51,51}, {25,25}, 8);
+#ifndef NO_CCFITS
         fits::write("out/circular.fits", m);
+#endif
     }
 
     {
         print("'enlarge' function");
         vec2d v = dblarr(5,3)*0 + 3.1415;
         v = enlarge(v, 5, 1.0);
+#ifndef NO_CCFITS
         fits::write("out/enlarge.fits", v);
+#endif
     }
 
     {
         print("'subregion' function");
         vec2i v = indgen(5,5);
+#ifndef NO_CCFITS
         fits::write("out/sub0.fits", v);
+#endif
 
         vec2i s = subregion(v, {0,0,4,4});
         vec2i tv = v;
         check(total(s != tv) == 0, "1");
+#ifndef NO_CCFITS
         fits::write("out/sub1.fits", s);
+#endif
 
         s = subregion(v, {0,1,4,3});
         tv = {{1,2,3},{6,7,8},{11,12,13},{16,17,18},{21,22,23}};
         check(total(s != tv) == 0, "1");
+#ifndef NO_CCFITS
         fits::write("out/sub2.fits", s);
+#endif
 
         s = subregion(v, {1,-1,3,5});
         tv = {{0,5,6,7,8,9,0},{0,10,11,12,13,14,0},{0,15,16,17,18,19,0}};
         check(total(s != tv) == 0, "1");
+#ifndef NO_CCFITS
         fits::write("out/sub4.fits", s);
+#endif
     }
 
     {
@@ -607,12 +641,16 @@ int main(int argc, char* argv[]) {
         vec2d test(51,51);
         test(25,25) = 1.0;
 
-        vec3d cube(20,51,51);
-        for (uint_t i = 0; i < 20; ++i) {
-            cube(i,_,_) = translate(test, i*0.14, i*(-0.14));
-        }
+        vec2d trans = translate(test, 2, 0);
 
-        fits::write("out/translated.fits", cube);
+        vec1u mid = trans.ids(max_id(trans));
+        check(mid[0], "27");
+        check(mid[1], "25");
+
+        trans = translate(trans, -2, 0);
+        mid = trans.ids(max_id(trans));
+        check(mid[0], "25");
+        check(mid[1], "25");
     }
 
     {
@@ -712,18 +750,19 @@ int main(int argc, char* argv[]) {
 
         vec2d id = {{1,0,0},{0,1,0},{0,0,1}};
 
+#ifndef NO_LAPACK
         vec2d i;
         check(invert(a,i), "1");
         vec2d tid = mmul(a,i);
         check(rms(tid - id) < 1e-10, "1");
+#endif
 
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
         diagonal(sq) *= 5;
         check(sq, "5, 1, 1, 1, 5, 1, 1, 1, 5");
 
-        tid = id;
-        id = identity_matrix(3);
-        check(rms(tid - id) < 1e-10, "1");
+        vec2d id2 = identity_matrix(3);
+        check(rms(id2 - id) < 1e-10, "1");
 
         check(total(mmul(id, a) != a) == 0, "1");
     }
@@ -754,6 +793,7 @@ int main(int argc, char* argv[]) {
         check(mmul(tm, p), "-15, 14, 1");
     }
 
+#ifndef NO_LAPACK
     {
         print("'invert_symmetric' function");
         vec2d alpha = identity_matrix(2);
@@ -858,6 +898,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+#ifndef NO_CCFITS
     {
         print("'linfit' function doing PSF fitting");
         vec2d img, psf;
@@ -878,6 +919,8 @@ int main(int argc, char* argv[]) {
         img -= psf*fr.params(1);
         fits::write("out/residual.fits", img);
     }
+#endif
+#endif
 
     {
         print("'affinefit' function");
@@ -1027,6 +1070,7 @@ int main(int argc, char* argv[]) {
         check(jy == lsun2uJy(z, d, lam_rf, lsun), "1");
     }
 
+#ifndef NO_REFLECTION
     {
         print("Reflection: print a structure");
         struct {
@@ -1040,7 +1084,6 @@ int main(int argc, char* argv[]) {
 
         check(str, "{ i=5, j=[0, 1, 2], k={ u=-1, v=2 } }");
     }
-
     {
         print("Reflection: save & write a structure");
         struct tmp_t {
@@ -1114,6 +1157,7 @@ int main(int argc, char* argv[]) {
         check(reflex::seek_name(tmp1.j.k), "tmp.j.k");
         check(reflex::seek_name(tmp2.j.k), "tmp.j.k");
     }
+#endif
 
     {
         print("Convex hull");
@@ -1122,9 +1166,9 @@ int main(int argc, char* argv[]) {
             vec1i hull;
         } cat;
 
-        fits::read_table_loose("data/sources.fits", cat);
+        fits::read_table("data/sources.fits", ftable(cat.ra, cat.dec));
         cat.hull = convex_hull(cat.ra, cat.dec);
-        fits::write_table("out/hull.fits", cat);
+        fits::write_table("out/hull.fits", ftable(cat.ra, cat.dec, cat.hull));
 
         print(field_area(cat));
 

@@ -6,9 +6,6 @@
 #include <utility>
 #include <cassert>
 
-// Placeholder variable & type.
-static struct placeholder_t {} _;
-
 // Class holding an integer value.
 template<std::size_t I>
 struct cte_t {};
@@ -351,6 +348,9 @@ struct nth_type_impl<N,I,T,Args...> : nth_type_impl<N-1,I, Args...> {};
 
 template<std::size_t N, typename ... Args>
 using nth_type = typename nth_type_impl<sizeof...(Args), N+1, Args...>::type;
+
+template<typename T, typename C>
+using constify = typename std::conditional<std::is_const<C>::value, const T, T>::type;
 
 #endif
 

@@ -2,6 +2,7 @@
 #define REFLEX_HPP
 
 #include <string>
+#include "phypp/variadic.hpp"
 
 template<std::size_t Dim, typename Type>
 struct vec_t;

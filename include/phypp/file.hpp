@@ -153,21 +153,17 @@ namespace file {
         return f.is_open();
     }
 
-    template<std::size_t Dim>
-    vec_t<Dim,bool> exists(const vec_t<Dim,std::string>& file) {
-        vec_t<Dim,bool> r(file.dims);
-        for (std::size_t i : range(file)) {
-            r.safe[i] = exists(file.safe[i]);
-        }
-
-        return r;
-    }
-
     bool is_older(const std::string& file1, const std::string& file2) {
         struct stat st1, st2;
         if (::stat(file1.c_str(), &st1) != 0) return false;
         if (::stat(file2.c_str(), &st2) != 0) return false;
         return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
+    }
+
+    void copy(const std::string& file_from, const std::string& file_to) {
+        std::ifstream src(file_from, std::ios::binary);
+        std::ofstream dst(file_to,   std::ios::binary);
+        dst << src.rdbuf();
     }
 
     vec1s list_directories(const std::string& path = "") {
@@ -247,10 +243,49 @@ namespace file {
         return dir;
     }
 
-    std::string get_directory(const std::string& file) {
-        vec1s tree = split(file, "/");
-        if (tree.size() == 1) return "./";
-        return file.substr(0, file.size()-tree[tree.size()-1].size());
+    // Same behavior as 'basename'
+    std::string get_basename(std::string path) {
+        auto pos = path.find_last_of('/');
+        if (pos == path.npos) {
+            return path;
+        } else {
+            auto lpos = path.find_last_not_of(' ');
+            if (pos == lpos) {
+                if (pos == 0) {
+                    return "/";
+                } else {
+                    pos = path.find_last_of('/', pos-1);
+                    if (pos == path.npos) {
+                        return path.substr(lpos);
+                    } else {
+                        return path.substr(pos+1, lpos-pos-1);
+                    }
+                }
+            } else {
+                return path.substr(pos+1);
+            }
+        }
+    }
+
+    // Same behavior as 'dirname'
+    std::string get_directory(const std::string& path) {
+        auto pos = path.find_last_of('/');
+        if (pos == path.npos) {
+            return "./";
+        } else if (pos == path.find_last_not_of(' ')) {
+            if (pos == 0) {
+                return "/";
+            } else {
+                pos = path.find_last_of('/', pos-1);
+                if (pos == path.npos) {
+                    return "./";
+                } else {
+                    return path.substr(0, pos+1);
+                }
+            }
+        } else {
+            return path.substr(0, pos+1);
+        }
     }
 
     bool mkdir(const std::string& path) {
@@ -266,6 +301,30 @@ namespace file {
         }
         return true;
     }
+
+
+#define VECTORIZE(name) \
+    template<std::size_t Dim, typename Type, typename ... Args, \
+        typename enable = typename std::enable_if< \
+            std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type> \
+    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
+        vec_t<Dim,decltype(name(v[0], args...))> { \
+        using ntype = decltype(name(v[0], args...)); \
+        vec_t<Dim,ntype> r = arr<ntype>(v.dims); \
+        for (uint_t i = 0; i < v.size(); ++i) { \
+            r.safe[i] = name(v.safe[i], args...); \
+        } \
+        return r; \
+    }
+
+    VECTORIZE(directorize)
+    VECTORIZE(get_basename)
+    VECTORIZE(get_directory)
+    VECTORIZE(mkdir)
+    VECTORIZE(exists)
+    VECTORIZE(is_older)
+
+#undef VECTORIZE
 
     template<typename T, typename ... Args>
     auto columns(std::size_t n, T& t, Args& ... args) ->
