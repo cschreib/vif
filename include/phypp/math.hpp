@@ -756,7 +756,7 @@ double mad(const vec_t<Dim,Type>& v) {
 
 #define RUN_INDEX(func) \
     struct func ## _run_index_wrapper_ { \
-        template<typename T, typename ... Args> \
+        template<typename T, typename ... Args> \
         static auto run(const vec_t<1,T>& v, Args&& ... args) -> \
         decltype(func(v, std::forward<Args>(args)...)) { \
             return func(v, std::forward<Args>(args)...); \
