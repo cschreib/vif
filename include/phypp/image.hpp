@@ -180,10 +180,10 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
     vec2d px = replicate(dindgen(dim[1]), dim[0]);
     vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
 
-    m.safe(_,_,0) = pow(px-0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius;
-    m.safe(_,_,1) = pow(px+0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius;
-    m.safe(_,_,2) = pow(px+0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius;
-    m.safe(_,_,3) = pow(px-0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius;
+    m.safe(_,_,0) = vec2d{pow(px-0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius};
+    m.safe(_,_,1) = vec2d{pow(px+0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius};
+    m.safe(_,_,2) = vec2d{pow(px+0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius};
+    m.safe(_,_,3) = vec2d{pow(px-0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius};
 
     return partial_mean(2,m);
 }

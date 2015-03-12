@@ -832,6 +832,7 @@ struct is_dim_list<T, Args...> : std::integral_constant<bool,
 template<typename TFrom, typename TTo>
 struct vec_convertible_ : std::is_convertible<TFrom,TTo> {};
 
+// Implicit conversion to/from bool is disabled
 template<typename TFrom>
 struct vec_convertible_<TFrom,bool> : std::is_same<TFrom,bool> {};
 
@@ -881,11 +882,31 @@ struct vec_t {
         ilist_t<Dim, Type>::fill(*this, il);
     }
 
-    template<typename T>
+    template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
     vec_t(const vec_t<Dim,T>& v) : dims(v.dims) {
         static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
             "non-convertible types");
 
+        data.resize(v.data.size());
+        for (uint_t i = 0; i < v.data.size(); ++i) {
+            data[i] = v.safe[i];
+        }
+    }
+
+    template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
+    explicit vec_t(const vec_t<Dim,bool>& v) : dims(v.dims) {
+        static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
+            "non-convertible types");
+        data.resize(v.data.size());
+        for (uint_t i = 0; i < v.data.size(); ++i) {
+            data[i] = v.safe[i];
+        }
+    }
+
+    template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
+    explicit vec_t(const vec_t<Dim,bool*>& v) : dims(v.dims) {
+        static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
+            "non-convertible types");
         data.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
             data[i] = v.safe[i];
@@ -908,6 +929,20 @@ struct vec_t {
 
     vec_t& operator = (const vec_t&) = default;
     vec_t& operator = (vec_t&&) = default;
+
+    template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
+    vec_t& operator = (const vec_t<Dim,T>& v) {
+        static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
+            "non-convertible types");
+
+        dims = v.dims;
+        data.resize(v.data.size());
+        for (uint_t i = 0; i < v.data.size(); ++i) {
+            data[i] = v.safe[i];
+        }
+
+        return *this;
+    }
 
     vec_t& operator = (const vec_t<Dim,Type*>& v) {
         if (v.is_same(*this)) {
@@ -1553,8 +1588,10 @@ struct vec_t<Dim,Type*> {
         return *this;
     }
 
-    template<typename T>
+    template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
     vec_t& operator = (const vec_t<Dim,T>& v) {
+        static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
+            "non-convertible types");
         phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
             v.data.size(), " to ", data.size(), ")");
         for (uint_t i = 0; i < v.data.size(); ++i) {
