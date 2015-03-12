@@ -1,0 +1,271 @@
+\documentclass[12pt]{report}
+
+\usepackage{graphicx}
+\usepackage{txfonts}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage{geometry}
+
+\newcommand{\via}{{\it via}\xspace}
+\newcommand{\phypp}{\texttt{phy++}\xspace}
+\newcommand{\cpp}[1]{\texttt{#1}\xspace}
+\newcommand{\stdvec}{\cppinline|std::vector|\xspace}
+
+\newenvironment{advanced}
+{
+    \vspace{0.3cm}\noindent \textbf{Advanced} \\
+    \noindent\begin{tabular}{p{0.95\textwidth}}
+    \hline\\[-0.3cm]
+}
+{
+    \\[0.2cm]\hline
+    \end{tabular}
+}
+\newenvironment{warning}
+{
+    \vspace{0.3cm}\noindent \textbf{\color{blue} Warning} \\
+    \noindent\begin{tabular}{p{0.95\textwidth}}
+    \hline\\[-0.3cm]
+}
+{
+    \\[0.2cm]\hline
+    \end{tabular}
+}
+
+\newminted{cpp}{fontsize=\small}
+\newmintinline{cpp}{fontsize=\small}
+
+\begin{document}
+\begin{center}
+\Large \bf \phypp v1.0
+\end{center}
+
+\tableofcontents
+
+\chapter{Introduction \label{SEC:intro}}
+
+
+
+\chapter{Core library \label{SEC:core}}
+% vec.hpp
+% variadic.hpp
+% reflex.hpp
+% range.hpp
+% iterator.hpp
+
+\section{Overview \label{SEC:core:overview}}
+At the core of the \phypp library is the \emph{vector} class. This is basically an enhanced \stdvec\footnote{In fact, \stdvec is used to implement the \phypp vectors internally.}, and it therefore shares most of its features and strengths. In particular, a vector can contain zero, one, or as many elements as your computer can handle. Its size is defined at \emph{runtime}, meaning that its content can vary depending on user input, but also that a vector can change its total number of elements at any time. These elements are stored contiguously in memory, which provides optimal performances in most situations. Lastly, a vector is an homogeneous container, meaning that a given vector can only contain a single type of elements (e.g., \cppinline|int| or \cppinline|float|, but not both at the same time).
+
+Like most advanced C++ libraries, \phypp is essentially \emph{template} based. This means that most of the code is written to work for \emph{any} type \cppinline|T|, e.g., \cppinline|int|, \cppinline|float|, \cppinline|std::string|, or whatever you need. However, while templates are a fantastic tool for library writers, they can easily become a burden for the \emph{user} of the library. The good thing is, since \phypp is a numerical analysis library, we know in advance what types will most often be stored inside the vectors. So for this reason, to reduce typing and enhance readability, we introduce type aliases for the most commonly used vector types:
+\begin{itemize}
+\item \cppinline|vec1f|: vector of \cppinline|float|,
+\item \cppinline|vec1d|: vector of \cppinline|double|,
+\item \cppinline|vec1i|: vector of \cppinline|int| (precisely, \cppinline|int_t = std::ptrdiff_t|),
+\item \cppinline|vec1u|: vector of \cppinline|unsigned int| (precisely, \cppinline|uint_t = std::size_t|),
+\item \cppinline|vec1b|: vector of \cppinline|bool|,
+\item \cppinline|vec1s|: vector of \cppinline|std::string|,
+\item \cppinline|vec1c|: vector of \cppinline|char|.
+\end{itemize}
+
+On top of the \stdvec interface, the \phypp vector adds some extra functionalities. The most important ones are operator overloading, multi-dimensional indexing, and array indexing.
+
+\subsection{Operator overloading \label{SEC:core:overview:overloading}}
+
+The only thing you can do to operate on all the elements of an \stdvec is to iterate over these elements explicitly, either using a C++11 range-based loop, or using indices:
+\begin{cppcode}
+// Goal: multiply all elements by two.
+std::vector<float> v = {1,2,3,4};
+
+// Either using a range-based loop,
+for (float& x : v) {
+    x *= 2;
+}
+
+// ... or an index-based loop.
+for (std::size_t i = 0; i < v.size(); ++i) {
+    v[i] *= 2;
+}
+\end{cppcode}
+
+While this is fairly readable (especially the first version), it is still not very concise and expressive. In \phypp, we have \emph{overloaded} the usual mathematical operators on our vector type, meaning that it is possible to write the above code in a much simpler way:
+
+\begin{cppcode}
+// Using phy++ vector.
+vec1f w = {1,2,3,4};
+w *= 2; // {2,4,6,8}
+\end{cppcode}
+
+Not only this, but we can perform operations on a pair of vectors in the same way:
+\begin{cppcode}
+// Goal: sum the content of the two vectors.
+vec1f x = {1,2,3,4}, y = {4,3,2,1};
+vec1f z = x + y; // {5,5,5,5}
+\end{cppcode}
+
+\begin{warning}
+The only issue with operator overloading concerns the hat operator \cppinline|^|. In most languages, this operator is used for exponentiation, e.g., \cppinline|4^2 == 16|. However, in C++ this value is actually \cppinline|6|, because the hat operator is the binary XOR (exclusive-or). Even worse, the hat operator in C++ does not have the same \emph{precedence} as in regular mathematics: it has a lower priority than any other mathematical operator. Both these reasons make it unwise to overload the hat operator in \phypp. In order to perform exponentiation, you will have to use a dedicated function such as \cppinline|pow(4,2)| (see \ref{SEC:math:pow}).
+\end{warning}
+
+\subsection{Multi-dimensional indexing \label{SEC:core:overview:multidim}}
+
+The standard \stdvec is a purely linear container: one can access its elements using \cppinline|v[i]|, with \cppinline|i| ranging from \cppinline|0| up to \cppinline|std::vector::size()-1| (included). However, the \phypp vector allows N-dimensional indexing, i.e., using a group of indices to identify one element. For example, this is particularly useful to work on images, which are essentially 2-dimensional objects where one identifies a given pixel by its coordinates \cppinline|x| and \cppinline|y|. The natural syntax for this indexing would be to write \cppinline|img[x,y]|. This syntax is valid C++ code, but unfortunately will not do what you expect\footnote{This will call the \emph{comma} operator, which evaluates both elements \cppinline|x| and \cppinline|y| and returns the last one, i.e., \cppinline|y|. So this code actually means \cppinline|img[y]|. With proper configuration, most compiler will warn about this though, since in this context \cppinline|x| is a useless statement, so you should be safe should you make this mistake.} and there is no sane way around it. The alternative we chose here is to write instead \cppinline|img(x,y)|. While it is not as semantically clear as using brackets, it has the nice advantage of being compatible with the IDL syntax.
+
+The multi-dimensional nature of a vector is determined at \emph{compile time}, i.e., it cannot be changed after the vector is declared. By default, a vector is mono-dimensional. To use the above feature, one needs to specify the number of needed dimensions in the type of the vector. For example, a 2D image of \cppinline|float| will be declared as \cppinline|vec2f|. These type aliases are provided for dimensions up to $6$. Here is an example of manipulation of a 2D matrix:
+
+\begin{cppcode}
+// Create a simple matrix.
+vec2f m = {{1,2,3}, {4,5,6}, {7,8,9}};
+
+// Index ordering is similar to C arrays: the last index
+// is contiguous in memory. Note that this is *opposite*
+// to the IDL convention.
+m(0,0); // 1
+m(0,1); // 2
+m(1,0); // 4
+
+// It is still possible to access elements as if in a
+// "flat" vector
+m[0]; // 1
+m[1]; // 2
+m[3]; // 4
+\end{cppcode}
+
+\begin{advanced}
+If for some reason you need to use more than 6 dimensions, or if you need to declare a vector of some type which is not covered above, you can always fall back to the full template syntax:
+\begin{cppcode}
+using vec12f = vec_t<12,float>;
+using vec3cx = vec_t<3,std::complex>;
+\end{cppcode}
+
+The hard limit on the number of dimensions will then depend on your compiler. The C++ standard does not guarantee anything, but you should be able to go as high as 256 on all major compilers. Beyond this, you should probably see a doctor first.
+
+As for the types allowed inside the vector, there is no explicit restriction. However, some features may not be available depending on your type, and you will have to enable these yourself (operator overloading, in particular). Lastly, the \phypp vector shares the same restrictions as the \stdvec regarding the \emph{copyable} and \emph{movable} capabilities of the stored type.
+\end{advanced}
+
+\subsection{Array indexing \label{SEC:core:overview:array_index}}
+
+We have seen that, instead of accessing each element individually, we can use operator overloading to perform simple operations on all the elements of the vector at once: \cppinline|w *= 2|. We can also, like with \stdvec, modify each element individually, knowing their indices: \cppinline|w[2] *= 2|. One last important feature allowed by the \phypp vector is array indexing, which allows us to create a \emph{view} inside an array. Each element of the view is actually a reference to another element in the original array, and modifying the elements of the view actually modifies the values in the original array.
+
+\begin{cppcode}
+// Create a simple vector.
+vec1f w = {1,2,3,4,5,6};
+
+// We want to "view" only the second, the third and the
+// fifth elements. So we first create a vector containing
+// the corresponding indices.
+vec1u id = {1,2,4};
+
+// Then we create the view.
+// Note the usage of "auto" there. The type of the view is
+// complex, and it is better not to worry about it.
+auto v = w[id];
+
+// Now we can modify these elements very simply, as if they
+// were part of a real vector.
+v;         // {2,3,5}
+v *= 2;    // {4,6,10}
+w;         // {1,4,6,4,10,6}
+w[1] = 99; // {1,99,6,4,10,6}
+v;         // {99,6,10}
+\end{cppcode}
+
+\begin{warning}
+It is important to note that, since a view keeps \emph{references} to the elements of the original vector, its lifetime must not exceed that of the original vector. Else, it will contain \emph{dangling} references that point to unused memory, and this should be avoided at all cost. In fact, views are not meant to be stored into named variables like in the above example. Most of the time, one will use them as temporary variables, e.g.:
+\begin{cppcode}
+vec1f w = {1,2,3,4,5,6};
+vec1u id = {1,2,4};
+w[id] *= 2; // {1,4,6,4,10,6}
+\end{cppcode}
+\end{warning}
+
+\section{The vector class \label{SEC:core:vec}}
+
+The full type of the vector class is
+\begin{cppcode}
+template<std::size_t Dimension, typename ElementType>
+struct vec_t<Dimension,ElementType>;
+\end{cppcode}
+
+In the rest of this document, \cppinline{Dimension} will usually just be called \cppinline{D} and \cppinline{ElementType} will be shortened to \cppinline{T}.
+
+\subsection{Member variables \label{SEC:core:vec:member_var}}
+\subsection{Constructors and assignment \label{SEC:core:vec:constructor}}
+\subsection{Member functions \label{SEC:core:vec:member_fun}}
+\subsection{Indexing \label{SEC:core:vec:indexing}}
+\subsection{Operators \label{SEC:core:vec:operator}}
+
+\section{The view class \label{SEC:core:view}}
+
+The full type of the view class is
+\begin{cppcode}
+template<std::size_t Dimension, typename ElementType>
+struct vec_t<Dimension,ElementType*>;
+//              note the asterisk ^
+\end{cppcode}
+
+The public interface of the view class is very similar to that of the normal vector, and we will not repeat it here. There are some important differences though, which are inherent to the goal of this class. In particular, there is no available constructor (you do now create a view yourself, you ask for it from an existing vector that will create it for you), and the \cppinline|resize()| function is not available. Lastly, the view provides a new member function called \cppinline|concretize()|, which is described below.
+
+Thanks to their strong similarity, we will not distinguish in the other sections between vectors and views, and will consider views as just another kind of vectors. Indeed, the interface of these two classes has been designed for views to be completely interchangeable with vectors, and vice versa, so that the code of any given function is written once and is valid for both types.
+
+\subsection{Member functions \label{SEC:core:view:member_fun}}
+\subsubsection{concretize \label{SEC:core:view:member_fun:concretize}}
+Signature: \cppinline|vec_t<D,T> vec_t<D,T*>::concretize() const| \\
+
+This function creates a new vector out of the elements of this view. The returned vector is completely independent from this view, or the original vector this view is currently pointing to. This function is mostly useful when writing generic functions. Indeed, views are implicitly convertible to normal vectors on assignment (see \ref{SEC:core:vec:constructor}).
+
+\section{Metaprogramming traits \label{SEC:core:meta}}
+
+\begin{warning}
+This whole section is more advanced than the rest. It is describing the sets of helper types and metaprogramming functions that one can use to write new functions. It is intended to be followed by readers already familiar with the \phypp library.
+\end{warning}
+
+\chapter{Support libraries}
+
+\section{Parsing command line arguments}
+% argv.hpp
+
+\section{File input/output}
+% file.hpp
+
+\section{String manipulation}
+% string.hpp
+
+\section{Printing to the terminal}
+% print.hpp
+
+\section{Measuring time}
+% time.hpp
+
+\section{Math and generic algorithms}
+% math.hpp
+% mpfit.hpp
+
+\section{Parallel execution}
+% thread.hpp
+
+\section{FITS input/output}
+% fits.hpp
+
+\section{Image processing}
+% image.hpp
+
+\section{Astrophysics}
+% astro.hpp
+
+\subsection{Catalog management}
+% astro/catalog_merge.hpp
+
+\subsection{Position cross-matching}
+% astro/qxmatch.hpp
+
+\subsection{Image stacking}
+% astro/qstack.hpp
+
+\subsection{Template fitting}
+% astro/qstack.hpp
+
+\chapter{Function index}
+
+\end{document}

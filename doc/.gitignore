@@ -1,0 +1,5 @@
+_minted-phypp
+*.aux
+*.log
+*.out
+*.toc
