@@ -666,18 +666,6 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("'merge' function");
-        vec1i v = {1, 2, 3, 4};
-        v = merge(0, v);
-        check(v, "0, 1, 2, 3, 4");
-        v = merge(v, 5);
-        check(v, "0, 1, 2, 3, 4, 5");
-        vec1i t = {4, 3, 2, 1};
-        v = merge(v, t);
-        check(v, "0, 1, 2, 3, 4, 5, 4, 3, 2, 1");
-    }
-
-    {
         print("'append' & 'prepend' functions");
         vec1i v = {0, 5, 2};
         vec1i w = {4, 1, 3};
@@ -1019,8 +1007,9 @@ int main(int argc, char* argv[]) {
         check(float(lookback_time(0.5, cosmo)), "5.09887");
 
         vec1d v = rgen(0.0, 12.0, 1500);
-        auto r = lumdist(v, cosmo);
-        auto r1 = merge(lumdist(v[rgen(0,750)], cosmo), lumdist(v[rgen(751,1499)], cosmo));
+        vec1d r = lumdist(v, cosmo);
+        vec1d r1 = lumdist(v[rgen(0,750)], cosmo);
+        append(r1, lumdist(v[rgen(751,1499)], cosmo));
         check(max(fabs(r - r1)/r1) < 1e-5, "1");
     }
 

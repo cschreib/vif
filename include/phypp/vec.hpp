@@ -2795,7 +2795,7 @@ vec_t<1,Type> reverse(vec_t<1,Type> v) {
     return v;
 }
 
-template<std::size_t Dim, typename Type, typename ... Args>
+template<std::size_t Dim, typename Type = double, typename ... Args>
 vec_t<Dim+dim_total<Args...>::value, rtype_t<Type>>
     replicate(const vec_t<Dim,Type>& t, Args&& ... args) {
     static const std::size_t FDim = Dim+dim_total<Args...>::value;
@@ -2866,7 +2866,7 @@ vec_t<Dim,Type> remove(vec_t<Dim,Type> v, const vec1u& ids) {
     return v;
 }
 
-template<std::size_t N, std::size_t Dim, typename Type1, typename Type2,
+template<std::size_t N, std::size_t Dim, typename Type1, typename Type2 = Type1,
     typename enable = typename std::enable_if<(N < Dim)>::type>
 void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
@@ -2889,7 +2889,7 @@ void append(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     t1(repeat<N>(_), n1+uindgen(n2), repeat<Dim-N-1>(_)) = t2;
 }
 
-template<std::size_t N, std::size_t Dim, typename Type1, typename Type2,
+template<std::size_t N, std::size_t Dim, typename Type1, typename Type2 = Type1,
     typename enable = typename std::enable_if<(N < Dim)>::type>
 void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     if (t1.empty()) {
@@ -2912,13 +2912,13 @@ void prepend(vec_t<Dim,Type1>& t1, const vec_t<Dim,Type2>& t2) {
     t1(repeat<N>(_), n2+uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
 }
 
-template<typename Type1, typename Type2>
+template<typename Type1, typename Type2 = Type1>
 void append(vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
     t1.data.insert(t1.data.end(), t2.begin(), t2.end());
     t1.dims[0] += t2.dims[0];
 }
 
-template<typename Type1, typename Type2>
+template<typename Type1, typename Type2 = Type1>
 void prepend(vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
     t1.data.insert(t1.data.begin(), t2.begin(), t2.end());
     t1.dims[0] += t2.dims[0];
@@ -2944,47 +2944,6 @@ vec_t<1,rtype_t<Type>> shift(const vec_t<1,Type>& v, int_t n, rtype_t<Type> def 
     }
 
     return tmp;
-}
-
-template<typename Type1, typename Type2>
-vec_t<1,rtype_t<Type1>> merge(const vec_t<1,Type1>& t1, const vec_t<1,Type2>& t2) {
-    using rtype = rtype_t<Type1>;
-    vec_t<1,rtype> tv = t1;
-    tv.data.insert(tv.data.end(), t2.begin(), t2.end());
-    tv.dims[0] += t2.dims[0];
-    return tv;
-}
-
-template<typename T, typename Type, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-vec_t<1,rtype_t<Type>> merge(T&& t, const vec_t<1,Type>& v) {
-    using rtype = rtype_t<Type>;
-    vec_t<1,rtype> tv = v;
-    tv.data.insert(tv.data.begin(), std::forward<T>(t));
-    ++tv.dims[0];
-    return tv;
-}
-
-template<typename T, typename Type, typename enable = typename std::enable_if<!is_vec<T>::value && std::is_same<rtype_t<Type>, Type>::value>::type>
-vec_t<1,Type> merge(T&& t, vec_t<1,Type>&& v) {
-    v.data.insert(v.data.begin(), std::forward<T>(t));
-    ++v.dims[0];
-    return std::move(v);
-}
-
-template<typename T, typename Type, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-vec_t<1,rtype_t<Type>> merge(const vec_t<1,Type>& v, T&& t) {
-    using rtype = rtype_t<Type>;
-    vec_t<1,rtype> tv = v;
-    tv.data.push_back(std::forward<T>(t));
-    ++tv.dims[0];
-    return tv;
-}
-
-template<typename T, typename Type, typename enable = typename std::enable_if<!is_vec<T>::value && std::is_same<rtype_t<Type>, Type>::value>::type>
-vec_t<1,Type> merge(vec_t<1,Type>&& v, T&& t) {
-    v.data.push_back(std::forward<T>(t));
-    ++v.dims[0];
-    return std::move(v);
 }
 
 // Print a vector into a stream.

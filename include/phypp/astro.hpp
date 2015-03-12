@@ -161,7 +161,7 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
 #define VECTORIZE_INTERPOL(name, npt) \
     template<std::size_t Dim, typename Type, typename ... Args> \
     typename vec_t<Dim,Type>::effective_type name(const vec_t<Dim,Type>& z, const Args& ... args) { \
-        if (n_elements(z) < 2*npt) { \
+        if (z.size() < 2*npt) { \
             using rtype = rtype_t<Type>; \
             vec_t<Dim,rtype> r = z; \
             for (auto& t : r) { \
@@ -172,16 +172,15 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
             auto idz = where(z > 0); \
             auto mi = min(z[idz]); \
             auto ma = max(z[idz]); \
-            auto tz = merge(0.0, e10(rgen(log10(mi), log10(ma), npt))); \
+            auto tz = e10(rgen(log10(mi), log10(ma), npt)); \
+            prepend(tz, {0.0}); \
             using rtype = rtype_t<Type>; \
-            vec_t<1,rtype> td = arr<rtype>(npt+1); \
-            for (uint_t i = 0; i < npt+1; ++i) { \
+            vec_t<1,rtype> td = arr<rtype>(tz.dims); \
+            for (uint_t i : range(tz)) { \
                 td[i] = name(tz[i], args...); \
             } \
-            vec_t<Dim,rtype> r = z; \
-            for (auto& t : r) { \
-                t = interpolate(td, tz, t); \
-            } \
+            vec_t<Dim,rtype> r(z.dims); \
+            r[idz] = interpolate(td, tz, z[idz]); \
             idz = where(z <= 0); \
             r[idz] = name(0.0, args...); \
             return r; \
