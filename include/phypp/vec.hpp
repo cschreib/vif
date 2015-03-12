@@ -2516,7 +2516,8 @@ auto last(const vec_t<1,T>& v) -> decltype(v.safe[0]) {
 }
 
 // Return the indices of the vector where the value is 'true'.
-template<std::size_t Dim, typename Type>
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<Type>,bool>::value>::type>
 vec1u where(const vec_t<Dim,Type>& v) {
     vec1u ids;
     ids.data.reserve(n_elements(v));
