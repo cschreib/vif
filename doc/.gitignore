@@ -3,3 +3,6 @@ _minted-phypp
 *.log
 *.out
 *.toc
+*.idx
+*.ilg
+*.ind
