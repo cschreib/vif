@@ -555,7 +555,7 @@ double mean(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename T, typename enable =
-    typename std::enable_if<std::is_same<rtype_t<T>, bool>::value>::type>>
+    typename std::enable_if<std::is_same<rtype_t<T>, bool>::value>::type>
 double fraction_of(const vec_t<Dim,T>& b) {
     return mean(b);
 }
