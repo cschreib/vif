@@ -55,7 +55,7 @@ vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix) {
 template<typename TypeV, typename TypeR = int_t>
 void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1u& rr, vec1u& rs) {
     phypp_check(reg.size() == 4, "invalid region parameter "
-        "(expected 4 components, got "+strn(reg.size())+")");
+        "(expected 4 components, got ", reg.size(), ")");
 
     int_t nvx = v.dims[0], nvy = v.dims[1];
     int_t nx = reg.safe[2]-reg.safe[0]+1, ny = reg.safe[3]-reg.safe[1]+1;
@@ -221,8 +221,8 @@ vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
 template<typename TypeY1, typename TypeY2>
 auto convolve2d_naive(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
     vec_t<2,decltype(map[0]*kernel[0])> {
-    phypp_check(kernel.dims[0]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
-    phypp_check(kernel.dims[1]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
+    phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+        "kernel must have odd dimensions (", kernel.dims, ")");
 
     uint_t hxsize = kernel.dims[0]/2;
     uint_t hysize = kernel.dims[1]/2;
@@ -255,8 +255,8 @@ auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
 #ifdef NO_FFTW
     return convolve2d_naive(map, kernel);
 #else
-    phypp_check(kernel.dims[0]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
-    phypp_check(kernel.dims[1]%2 == 1, "kernel must have odd dimensions (", kernel.dims, ")");
+    phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+        "kernel must have odd dimensions (", kernel.dims, ")");
 
     uint_t hsx = kernel.dims[0]/2, hsy = kernel.dims[1]/2;
 
