@@ -544,12 +544,6 @@ uint_t count(const vec_t<Dim,Type>& v) {
     return n;
 }
 
-
-template<std::size_t Dim, typename T>
-double fraction_of(const vec_t<Dim,T>& b) {
-    return mean(b);
-}
-
 template<std::size_t Dim, typename Type>
 double mean(const vec_t<Dim,Type>& v) {
     double total = 0.0;
@@ -558,6 +552,12 @@ double mean(const vec_t<Dim,Type>& v) {
     }
 
     return total/v.size();
+}
+
+template<std::size_t Dim, typename T, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<T>, bool>::value>::type>>
+double fraction_of(const vec_t<Dim,T>& b) {
+    return mean(b);
 }
 
 template<std::size_t Dim, typename Type>
