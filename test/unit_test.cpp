@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
         print("Index conversion");
         vec2i v = uindgen(2,3);
         for (uint_t i = 0; i < v.size(); ++i) {
-            vec1u ids = v.ids(i);
+            auto ids = v.ids(i);
             check(v(ids[0], ids[1]), strn(i));
         }
     }
@@ -643,7 +643,7 @@ int main(int argc, char* argv[]) {
 
         vec2d trans = translate(test, 2, 0);
 
-        vec1u mid = trans.ids(max_id(trans));
+        auto mid = trans.ids(max_id(trans));
         check(mid[0], "27");
         check(mid[1], "25");
 
