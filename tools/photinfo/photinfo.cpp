@@ -60,8 +60,8 @@ int main(int argc, char* argv[]) {
     auto seed = make_seed(42);
 
     vec1u rndid;
-    if (gidg.size() > 2000) {
-        rndid = shuffle(gidg, seed)[uindgen(2000)];
+    if (gidg.size() >= 2000) {
+        rndid = shuffle(seed, gidg)[_-2000];
     } else {
         rndid = uindgen(gidg.size());
     }
