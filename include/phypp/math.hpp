@@ -1076,7 +1076,7 @@ VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
 #undef VECTORIZE
 
 template<typename F>
-auto derivate1(F func, const double& x, const double ep) -> decltype(func(x)) {
+auto derivate1(F func, double x, double ep) -> decltype(0.5*func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
 
     double tmp = x - 2*ep;
@@ -1090,7 +1090,7 @@ auto derivate1(F func, const double& x, const double ep) -> decltype(func(x)) {
 }
 
 template<typename F>
-auto derivate2(F func, const double& x, const double ep) -> decltype(func(x)) {
+auto derivate2(F func, double x, double ep) -> decltype(0.5*func(x)) {
     static const double a[5] = {-1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0};
 
     double tmp = x - 2*ep;
@@ -1104,7 +1104,7 @@ auto derivate2(F func, const double& x, const double ep) -> decltype(func(x)) {
 }
 
 template<typename F>
-auto derivate1(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(func(x)) {
+auto derivate1(F func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
 
     vec1d tmp = x;
@@ -1120,7 +1120,7 @@ auto derivate1(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(f
 }
 
 template<typename F>
-auto derivate2(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(func(x)) {
+auto derivate2(F func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*func(x)) {
     static const double a[5] = {-1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0};
 
     vec1d tmp = x;
@@ -1136,7 +1136,7 @@ auto derivate2(F func, const vec1d& x, const double ep, uint_t ip) -> decltype(f
 }
 
 template<typename F>
-auto derivate2(F func, const vec1d& x, const double ep, uint_t ip1, uint_t ip2) -> decltype(func(x)) {
+auto derivate2(F func, const vec1d& x, double ep, uint_t ip1, uint_t ip2) -> decltype(0.5*func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
 
     vec1d tmp = x;
