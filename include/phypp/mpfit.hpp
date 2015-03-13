@@ -875,7 +875,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
 // ytest is compted from a model function taking as a first argument the position x at which to
 // compute the model (given) and the function parameters p (to be found).
 template<typename F, typename TX, typename TY, typename TYE>
-mpfit_result mpfitfun(F&& model, const TX& x, const TY& y, const TYE& ye,
+mpfit_result mpfitfun(const TY& y, const TYE& ye, const TX& x, F&& model,
     const vec1d& params, const mpfit_options& options = mpfit_options()) {
 
     bool bad = !same_dims_or_scalar(x, y, ye);
