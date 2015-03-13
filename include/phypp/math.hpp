@@ -375,7 +375,7 @@ vec_t<dim_total<Args...>::value,bool> random_coin(T& seed, double prob, Args&& .
 }
 
 template<std::size_t Dim, typename Type, typename T>
-vec_t<Dim,Type> shuffle(vec_t<Dim,Type> v, T& seed) {
+vec_t<Dim,Type> shuffle(T& seed, vec_t<Dim,Type> v) {
     std::shuffle(v.begin(), v.end(), seed);
     return v;
 }
