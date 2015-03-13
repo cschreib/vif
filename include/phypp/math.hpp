@@ -1351,7 +1351,7 @@ extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, doub
 #endif
 
 template<typename Dummy = void>
-bool invert(vec2d& i) {
+bool inplace_invert(vec2d& i) {
 #ifdef NO_LAPACK
     static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
@@ -1382,11 +1382,11 @@ bool invert(vec2d& i) {
 template<typename TypeA>
 bool invert(const vec_t<2,TypeA>& a, vec2d& i) {
     i = a;
-    return invert<TypeA>(i);
+    return inplace_invert<TypeA>(i);
 }
 
 template<typename Dummy = void>
-bool invert_symmetric(vec2d& i) {
+bool inplace_invert_symmetric(vec2d& i) {
 #ifdef NO_LAPACK
     static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
@@ -1423,7 +1423,7 @@ bool invert_symmetric(vec2d& i) {
 template<typename TypeA>
 bool invert_symmetric(const vec_t<2,TypeA>& a, vec2d& i) {
     i = a;
-    return invert_symmetric<TypeA>(i);
+    return inplace_invert_symmetric<TypeA>(i);
 }
 
 template<typename Dummy = void>
@@ -1577,7 +1577,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
         }
     }
 
-    if (!invert_symmetric(alpha)) {
+    if (!inplace_invert_symmetric(alpha)) {
         fr.success = false;
         fr.chi2 = dnan;
         fr.params = replicate(dnan, np);

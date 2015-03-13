@@ -791,8 +791,8 @@ int main(int argc, char* argv[]) {
         vec2d alpha = identity_matrix(2);
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
-        check(invert(talpha), "1");
-        check(invert_symmetric(alpha), "1");
+        check(inplace_invert(talpha), "1");
+        check(inplace_invert_symmetric(alpha), "1");
         symmetrize(alpha);
         check(total(fabs(alpha - talpha) > 1e-6), "0");
     }
@@ -819,7 +819,7 @@ int main(int argc, char* argv[]) {
         vec1d ubeta = mmul(talpha, beta);
         check(total(fabs(ubeta - tbeta)) > 1e-6, "0");
 
-        invert(talpha);
+        inplace_invert(talpha);
         tbeta = mmul(talpha, tbeta);
         check(total(fabs(beta - tbeta)) > 1e-6, "0");
     }
