@@ -536,6 +536,10 @@ int main(int argc, char* argv[]) {
         check(partial_mean(1,v), "2, 5, 8");
         check(partial_median(0,v), "4, 5, 6");
         check(partial_median(1,v), "2, 5, 8");
+        check(partial_min(0,v), "1, 2, 3");
+        check(partial_min(1,v), "1, 4, 7");
+        check(partial_max(0,v), "7, 8, 9");
+        check(partial_max(1,v), "3, 6, 9");
     }
 
     {
