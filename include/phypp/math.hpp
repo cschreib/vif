@@ -1427,14 +1427,14 @@ bool invert_symmetric(const vec_t<2,TypeA>& a, vec2d& i) {
 }
 
 template<typename Dummy = void>
-bool solve_symmetric(vec2d& alpha, vec1d& beta) {
+bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
 #ifdef NO_LAPACK
     static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
         "please enable LAPACK to use this function");
 #else
     phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
         alpha.dims, ")");
-    phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimesions (",
+    phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimensions (",
         "got ", alpha.dims[0], " and ", beta.dims[0], ")");
 
     char uplo = 'U';

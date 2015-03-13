@@ -798,10 +798,10 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("'solve_symmetric' function");
+        print("'inplace_solve_symmetric' function");
         vec1d beta = {1,2,3,4};
         vec2d alpha = identity_matrix(4);
-        check(solve_symmetric(alpha, beta), "1");
+        check(inplace_solve_symmetric(alpha, beta), "1");
         check(beta, "1, 2, 3, 4");
 
         // x + 2*y = b1
@@ -813,7 +813,7 @@ int main(int argc, char* argv[]) {
         alpha = identity_matrix(2);
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
-        check(solve_symmetric(alpha, beta), "1");
+        check(inplace_solve_symmetric(alpha, beta), "1");
         check(total(fabs(beta - vec1d{1, 0}) > 1e-6), "0");
 
         vec1d ubeta = mmul(talpha, beta);
