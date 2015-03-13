@@ -1023,10 +1023,28 @@ int main(int argc, char* argv[]) {
         vec1f x = {0, 1, 2, 3, 4, 5};
         vec1f nx = {0.2, 0.5, 1.6, -0.5, 12};
         vec1f i = interpolate(y, x, nx);
-        float t = 0.5;
-        check(y(lower_bound(t, y)), "0");
-        check(y(upper_bound(t, y)), "1");
         check(total(i != nx), "0");
+
+        i = findgen(10);
+
+        check(lower_bound(0.5, i) == 0, "1");
+        check(upper_bound(0.5, i) == 1, "1");
+
+        check(lower_bound(-0.1, i) == npos, "1");
+        check(lower_bound(0.0, i) == 0, "1");
+        check(lower_bound(0.1, i) == 0, "1");
+
+        check(upper_bound(-0.1, i) == 0, "1");
+        check(upper_bound(0.0, i) == 1, "1");
+        check(upper_bound(0.1, i) == 1, "1");
+
+        check(lower_bound(8.9, i) == 8, "1");
+        check(lower_bound(9.0, i) == 9, "1");
+        check(lower_bound(9.1, i) == 9, "1");
+
+        check(upper_bound(8.9, i) == 9, "1");
+        check(upper_bound(9.0, i) == npos, "1");
+        check(upper_bound(9.1, i) == npos, "1");
     }
 
     {
