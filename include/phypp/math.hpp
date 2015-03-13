@@ -1990,9 +1990,6 @@ auto integrate(F f, T x0, U x1,
 }
 
 #ifndef NO_FFTW
-template<typename T>
-using complex_type = phypp::complex<T>;
-
 // Compute the Fast Fourrier Transform (FFT) of the provided 2d array
 vec2cd fft(const vec2d& v) {
     vec2cd r(v.dims);
