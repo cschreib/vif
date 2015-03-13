@@ -10,8 +10,16 @@ static const uint_t npos = uint_t(-1);
 template<typename T>
 struct range_t;
 
-template<std::size_t Dim, typename T>
-struct vec_t;
+template<typename T>
+struct has_size_t {
+    template <typename U> static std::true_type dummy(typename std::decay<
+        decltype(std::declval<U&>().size())>::type*);
+    template <typename U> static std::false_type dummy(...);
+    using type = decltype(dummy<T>(0));
+};
+
+template<typename T>
+using has_size = typename has_size_t<T>::type;
 
 template<typename T>
 struct range_iterator_t;
@@ -80,8 +88,8 @@ range_t<T> range(T n) {
     return range(T(0), n);
 }
 
-template<std::size_t Dim, typename T>
-range_t<std::size_t> range(const vec_t<Dim,T>& n) {
+template<typename T, typename enable = typename std::enable_if<has_size<T>::value>::type>
+range_t<std::size_t> range(const T& n) {
     return range(n.size());
 }
 
