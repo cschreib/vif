@@ -522,7 +522,7 @@ int main(int argc, char* argv[]) {
         print("'shuffle' function");
         auto seed = make_seed(42);
         vec1i i = {4,5,-8,5,2,0};
-        vec1i si = shuffle(i, seed);
+        vec1i si = shuffle(seed, i);
         vec1u id1, id2;
         match(i, si, id1, id2);
         check(i.size() == id1.size(), "1");
@@ -944,7 +944,7 @@ int main(int argc, char* argv[]) {
         check(id, "0, 1, 4, 6, 7, 9");
 
         auto seed = make_seed(42);
-        v = shuffle(v, seed);
+        inplace_shuffle(seed, v);
         vec1i sid = sort(v);
         vec1i id2 = uniq(v, sid);
         check(v[id2], "0, 1, 2, 3, 5, 6");
