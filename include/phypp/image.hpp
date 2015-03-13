@@ -26,9 +26,7 @@ vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, uint_t upix,
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4> upix,
-    const rtype_t<Type>& def = 0.0) {
-
+vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4> upix) {
     if (upix[0]+upix[2] >= v.dims[0] || upix[1]+upix[3] >= v.dims[1]) {
         return vec_t<2,rtype_t<Type>>();
     }
@@ -44,10 +42,8 @@ vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4>
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix,
-    const rtype_t<Type>& def = 0.0) {
-
-    return shrink(v, {{upix, upix, upix, upix}}, def);
+vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix) {
+    return shrink(v, {{upix, upix, upix, upix}});
 }
 
 // Get a sub region 'reg' inside an image, with reg = {x0, y0, x1, y1} (inclusive).
