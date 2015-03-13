@@ -321,17 +321,17 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
 
 template<typename Type>
 vec_t<2,rtype_t<Type>> qstack_mean(const vec_t<3,Type>& fcube) {
-    return mean(fcube, 0);
+    return partial_mean(0, fcube);
 }
 
 template<typename TypeF, typename TypeW>
 vec_t<2,rtype_t<TypeF>> qstack_mean(const vec_t<3,TypeF>& fcube, const vec_t<3,TypeW>& wcube) {
-    return total(fcube*wcube, 0)/total(wcube, 0);
+    return partial_total(0, fcube*wcube)/partial_total(0, wcube);
 }
 
 template<typename Type>
 vec_t<2,rtype_t<Type>> qstack_median(const vec_t<3,Type>& fcube) {
-    return median(fcube, 0);
+    return partial_median(0, fcube);
 }
 
 template<typename Type, typename TypeS, typename F>
