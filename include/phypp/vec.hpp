@@ -3095,6 +3095,59 @@ vec_t<1,rtype_t<Type>> shift(const vec_t<1,Type>& v, int_t n, rtype_t<Type> def 
     return tmp;
 }
 
+// Find the closest point in a 2D array that satisfies a given criterium
+bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
+    phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
+
+    if (x >= map.dims[0]) x = map.dims[0]-1;
+    if (y >= map.dims[1]) y = map.dims[1]-1;
+
+    if (map.safe(x,y)) return true;
+
+    using vec_pair = vec_t<1,std::pair<uint_t,uint_t>>;
+    vec_pair open;
+    open.push_back(std::make_pair(x,y));
+
+    vec2b visit(map.dims);
+    visit.safe(x,y) = true;
+
+    bool found = false;
+    while (!open.empty()) {
+        vec_pair old_open = std::move(open);
+
+        for (auto p : old_open) {
+            int_t ox = p.first, oy = p.second;
+
+            for (uint_t d : range(4)) {
+                int_t tnx, tny;
+                if (d == 0) {
+                    tnx = ox;   tny = oy+1;
+                } else if (d == 1) {
+                    tnx = ox+1; tny = oy;
+                } else if (d == 2) {
+                    tnx = ox;   tny = oy-1;
+                } else {
+                    tnx = ox-1; tny = oy;
+                }
+
+                if (tnx < 0 || tny < 0) continue;
+
+                x = tnx, y = tny;
+                if (x >= map.dims[0] || y >= map.dims[1] || visit.safe(x,y)) continue;
+
+                if (!map.safe(x,y)) {
+                    open.push_back(std::make_pair(x,y));
+                    visit.safe(x,y) = true;
+                } else {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 // Print a vector into a stream.
 template<typename O, std::size_t Dim, typename Type, typename enable = typename std::enable_if<!std::is_same<Type, bool>::value>::type>
 O& operator << (O& o, const vec_t<Dim,Type>& v) {
