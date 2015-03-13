@@ -1,6 +1,8 @@
 #ifndef SIMPLE_COMPLEX_HPP
 #define SIMPLE_COMPLEX_HPP
 
+#ifdef USE_PHYPP_COMPLEX
+
 namespace phypp {
     template<typename T>
     struct complex {
@@ -121,6 +123,15 @@ namespace phypp {
 #define MAKE_TYPEDEFS(N) \
     using vec##N##cf  = vec_t<N, phypp::complex<float>>; \
     using vec##N##cd  = vec_t<N, phypp::complex<double>>;
+#else
+
+#include <complex>
+
+#define MAKE_TYPEDEFS(N) \
+    using vec##N##cf  = vec_t<N, std::complex<float>>; \
+    using vec##N##cd  = vec_t<N, std::complex<double>>;
+
+#endif
 
 MAKE_TYPEDEFS(1)
 MAKE_TYPEDEFS(2)
