@@ -823,6 +823,8 @@ RUN_INDEX(count);
 RUN_INDEX(fraction_of);
 RUN_INDEX(mean);
 RUN_INDEX(median);
+RUN_INDEX(min);
+RUN_INDEX(max);
 RUN_INDEX(percentile);
 RUN_INDEX(rms);
 RUN_INDEX(stddev);
