@@ -7,22 +7,33 @@
 \usepackage{minted}
 \usepackage{geometry}
 \usepackage{imakeidx}
-\usepackage{xparse}
-\usepackage{hyperref}
-
 \makeindex
+\usepackage[totoc]{idxlayout}
+\usepackage{xparse}
+\usepackage{tikz}
+\usepackage[colorlinks=true,linkcolor=blue,linktoc=page]{hyperref}
 
 \newcommand{\via}{{\it via}\xspace}
 \newcommand{\phypp}{\texttt{phy++}\xspace}
 \newcommand{\cpp}[1]{\texttt{#1}\xspace}
 \newcommand{\stdvec}{\cppinline|std::vector|\xspace}
 
-\NewDocumentCommand\ifun{v}{%
-  \index{#1@\ifunt{#1}}%
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=0.0pt] (char) {#1};}}
+
+\newcommand{\vectorfuncsym}{\circled{$\hspace{-1pt}\mathcal{V}$}\xspace}
+\newcommand{\vectorfunc}{\vectorfuncsym\hspace{2pt}\xspace}
+
+\newcommand{\lapacksym}{\textsc{\small[lapack\small]}}
+\newcommand{\lapack}{\lapacksym\hspace{2pt}\xspace}
+\newcommand{\fftwsym}{\textsc{[fftw]}}
+\newcommand{\fftw}{\fftwsym\hspace{2pt}\xspace}
+
+\NewDocumentCommand\itt{v}{%
+  \index{#1@\ittt{#1}}%
 }
 
-\NewDocumentCommand{\ifunt}{v}{\texttt{#1}}
-
+\NewDocumentCommand{\ittt}{v}{\texttt{#1}}
 
 \newenvironment{advanced}
 {
@@ -46,13 +57,11 @@
 }
 \newenvironment{example}
 {
-    \vspace{0.3cm}\noindent \textbf{Example} \\
-    \noindent\begin{tabular}{p{0.95\textwidth}}
-    \hline\\[-1cm]
+    \vspace{0.3cm}\noindent \textbf{Example} \\[-0.3cm]
+    \rule{\linewidth}{.4pt}\vspace*{-0.45cm}
 }
 {
-    \\[-0.5cm]\hline
-    \end{tabular}
+    \vspace*{-0.65cm}\rule{\linewidth}{.4pt}
 }
 
 \newminted{cpp}{fontsize=\small}
@@ -67,7 +76,7 @@
 
 \chapter{Introduction \label{SEC:intro}}
 
-
+\section{Getting started \label{SEC:start}}
 
 \chapter{Core library \label{SEC:core}}
 % vec.hpp
@@ -83,6 +92,8 @@ Like most advanced C++ libraries, \phypp is essentially \emph{template} based. T
 \begin{itemize}
 \item \cppinline|vec1f|: vector of \cppinline|float|,
 \item \cppinline|vec1d|: vector of \cppinline|double|,
+\item \cppinline|vec1cf|: vector of \cppinline|std::complex<float>|,
+\item \cppinline|vec1cd|: vector of \cppinline|std::complex<double>|,
 \item \cppinline|vec1i|: vector of \cppinline|int| (precisely, \cppinline|int_t = std::ptrdiff_t|),
 \item \cppinline|vec1u|: vector of \cppinline|unsigned int| (precisely, \cppinline|uint_t = std::size_t|),
 \item \cppinline|vec1b|: vector of \cppinline|bool|,
@@ -126,7 +137,7 @@ vec1f z = x + y; // {5,5,5,5}
 \end{cppcode}
 
 \begin{warning}
-The only issue with operator overloading concerns the hat operator \cppinline|^|. In most languages, this operator is used for exponentiation, e.g., \cppinline|4^2 == 16|. However, in C++ this value is actually \cppinline|6|, because the hat operator is the binary XOR (exclusive-or). Even worse, the hat operator in C++ does not have the same \emph{precedence} as in regular mathematics: it has a lower priority than any other mathematical operator. Both these reasons make it unwise to overload the hat operator in \phypp. In order to perform exponentiation, you will have to use a dedicated function such as \cppinline|pow(4,2)| (\ref{SEC:math:pow}).
+The only issue with operator overloading concerns the hat operator \cppinline|^|. In most languages, this operator is used for exponentiation, e.g., \cppinline|4^2 == 16|. However, in C++ this value is actually \cppinline|6|, because the hat operator is the binary XOR (exclusive-or). Even worse, the hat operator in C++ does not have the same \emph{precedence} as in regular mathematics: it has a lower priority than any other mathematical operator. Both these reasons make it unwise to overload the hat operator in \phypp. In order to perform exponentiation, you will have to use a dedicated function such as \cppinline|pow(4,2)| (\ref{SEC:support:math}).
 \end{warning}
 
 \subsection{Multi-dimensional indexing \label{SEC:core:overview:multidim}}
@@ -156,13 +167,15 @@ m[3]; // 4
 \begin{advanced}
 If for some reason you need to use more than 6 dimensions, or if you need to declare a vector of some type which is not covered above, you can always fall back to the full template syntax:
 \begin{cppcode}
+// Need 12 dimensions?
 using vec12f = vec_t<12,float>;
-using vec3cx = vec_t<3,std::complex>;
+// Need 512 bit of floating point precision?
+using vec3f512 = vec_t<3,mpfr::real<512>>;
 \end{cppcode}
 
-The hard limit on the number of dimensions will then depend on your compiler. The C++ standard does not guarantee anything, but you should be able to go as high as 256 on all major compilers. Beyond this, you should probably see a doctor first.
+The hard limit on the number of dimensions will then depend on your compiler (each dimension involves an additional level of template recursion). The C++ standard does not guarantee anything, but you should be able to go as high as 256 on all major compilers. Beyond this, you should probably see a doctor first.
 
-As for the types allowed inside the vector, there is no explicit restriction. However, some features may not be available depending on your type, and you will have to enable these yourself (operator overloading, in particular). Lastly, the \phypp vector shares the same restrictions as the \stdvec regarding the \emph{copyable} and \emph{movable} capabilities of the stored type.
+As for the types allowed inside the vector, there is no explicit restriction. However, some features may obviously not be available depending on the capabilities of your type (e.g., if your type has no \cppinline{operator*}, you will not be able to multiply together vectors of this type). Lastly, the \phypp vector shares the same restrictions as the \stdvec regarding the \emph{copyable} and \emph{movable} capabilities of the stored type.
 \end{advanced}
 
 \subsection{Array indexing \label{SEC:core:overview:array_index}}
@@ -215,8 +228,8 @@ In the rest of this document, \cppinline{Dimension} will usually just be called 
 
 A vector only contains two member variables:
 \begin{itemize}
-\item \cppinline{std::vector<...> data;} \\ This is the underlying \stdvec containing the elements of the vector. It is exposed to the public interface for simplicity, but on most occasions it should \emph{not} be used directly. In fact, it may become part of the private interface in the future, so you should not rely on its existence.
-\item \cppinline{std::array<std::size_t,D> dims;} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign another vector (\ref{SEC:core:vec:constructor}).
+\item \cppinline{std::vector<...> data} \\ This is the underlying \stdvec containing the elements of the vector. It is exposed to the public interface for simplicity, but on most occasions it should \emph{not} be used directly. In fact, it may become part of the private interface in the future, so you should not rely on its existence.
+\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign another vector (\ref{SEC:core:vec:constructor}).
 
 \begin{example}
 \begin{cppcode}
@@ -363,7 +376,7 @@ z = w[id];
 \subsection{Member functions \label{SEC:core:vec:member_fun}}
 
 \begin{itemize}
-\item \cppinline{bool vec_t::empty() const;}
+\item \cppinline{bool vec_t::empty() const}
 
 This function will return \cppinline{true} if this vector contains at least one element, and \cppinline{false} otherwise. In particular, \cppinline{true} will be returned for default constructed vectors, and after a call to \cppinline{vec_t::clear()}.
 
@@ -376,7 +389,7 @@ w.empty(); // false
 \end{cppcode}
 \end{example}
 
-\item \cppinline{std::size_t vec_t::size() const;}
+\item \cppinline{std::size_t vec_t::size() const}
 
 This function will return the total number of elements in this vector. If the vector is empty, then the function returns \cppinline{0}. If the vector is multidimensional, then the function returns the product of all the dimensions.
 
@@ -391,7 +404,7 @@ z.size(); // 6
 \end{cppcode}
 \end{example}
 
-\item \cppinline{void vec_t::resize(...);}
+\item \cppinline{void vec_t::resize(...)}
 
 This function can be used to explicitly change the size of a vector. The parameters it accepts are the same as the dimension constructor (\ref{SEC:core:vec:constructor}), i.e., either integral values for individual dimensions, or an \cppinline{std::array} containing multiple dimensions, or any combination of these. However, the total number of dimensions of the vector must remain unchanged.
 
@@ -410,7 +423,7 @@ w(0,0); // ?
 \end{cppcode}
 \end{example}
 
-\item \cppinline{void vec_t::clear();}
+\item \cppinline{void vec_t::clear()}
 
 This function removes all elements from the vector, and sets all dimensions to zero.
 
@@ -424,7 +437,7 @@ v.dims;    // {0}
 \end{cppcode}
 \end{example}
 
-\item \cppinline{T& vec_t::back();}
+\item \cppinline{T& vec_t::back()}
 
 This function is only available for monodimensional vectors. It returns the last element of the vector. Will crash if called on an empty vector.
 
@@ -436,7 +449,7 @@ v.back() == v[v.size()-1]; // always true
 \end{cppcode}
 \end{example}
 
-\item \cppinline{T& vec_t::front();}
+\item \cppinline{T& vec_t::front()}
 
 This function is only available for monodimensional vectors. It returns the first element of the vector. Will crash if called on an empty vector.
 
@@ -448,7 +461,7 @@ v.front() == v[0]; // always true
 \end{cppcode}
 \end{example}
 
-\item \cppinline{void vec_t::push_back(...);}
+\item \cppinline{void vec_t::push_back(...)}
 
 The behavior of this function is different for monodimensional and multidimensional vectors. For monodimensional vectors, this function appends a new element at the end of the vector, and therefore takes for argument a single value of type \cppinline{T} (or convertible to \cppinline{T}). For multidimensional vectors, this function takes for argument another vector of \cppinline{D-1} dimensions, and whose lengths match the \emph{last} \cppinline{D-1} dimensions of the first vector. This new vector is inserted after the existing elements, and the first dimension of the first vector is increased by one.
 
@@ -463,7 +476,7 @@ w.push_back({7,8});   // error: dimensions do not match, 2 != 3
 \end{cppcode}
 \end{example}
 
-\item \cppinline{void vec_t::reserve(std::size_t);}
+\item \cppinline{void vec_t::reserve(std::size_t)}
 
 This function is used for optimization, and is similar to \cppinline{std::vector::reserve()} (actually, this function is called internally). To understand what this function actually does, one needs to know the internal behavior of \stdvec. By default, the \stdvec only allocates enough memory to hold a few elements. Once the allocated memory is full, \stdvec allocates a larger amount of memory, copies the existing elements inside this new memory, and frees the old memory. This strategy allows virtually unlimited growth of a given vector, and is quite efficiently tuned. However, it is still an expensive operation, and performances can be greatly improved if one knows \emph{in advance} the total number of objects that need to be stored in the vector, so that the right amount of memory is allocated from the beginning, and no copy is required. This function does just that, it tells \stdvec how many elements it \emph{will} (or might) contain at some point, so that the vector can already allocate enough memory. This is also useful if you only have a rough idea of the future number of elements.
 
@@ -486,37 +499,7 @@ for (...) {
 \end{cppcode}
 \end{example}
 
-\item \cppinline{vec1u vec_t::ids(std::size_t) const;}
-
-This is only useful for multidimensional vectors. This function converts a ``flat'' index into an array of multidimensional indices. The \cppinline{vec_t::flat_id} function does the inverse job.
-
-\begin{example}
-\begin{cppcode}
-vec2i v(2,3);
-v.ids(0); // {0,0}
-v.ids(1); // {0,1}
-v.ids(2); // {0,3}
-v.ids(3); // {1,0}
-v[3] == v(1,0); // true
-\end{cppcode}
-\end{example}
-
-\item \cppinline{std::size_t vec_t::flat_id(...) const;}
-
-This is only useful for multidimensional vectors. This function converts a group of multidimensional indices into a ``flat'' index. The \cppinline{vec_t::ids} function does the inverse job.
-
-\begin{example}
-\begin{cppcode}
-vec2i v(2,3);
-v.flat_id(0,0); // 0
-v.flat_id(0,1); // 1
-v.flat_id(0,2); // 2
-v.flat_id(1,0); // 3
-v(1,0) == v[3]; // true
-\end{cppcode}
-\end{example}
-
-\item \cppinline{std::size_t vec_t::pitch(std::size_t) const;}
+\item \cppinline{uint_t vec_t::pitch(uint_t) const}
 
 This is only useful for multidimensional vectors. This function returns the ``pitch'' factor associated to a given dimension. This factor is number of elements in memory that separate two consecutive indices of this dimension. By definition, the pitch factor is \cppinline{1} for the last dimension. For the other dimensions, this is the product of all the other dimensions located between the one considered and the last dimension.
 
@@ -529,7 +512,7 @@ v.pitch(0); // 48 = v.dims[2]*v.dims[1]
 \end{cppcode}
 \end{example}
 
-\item \cppinline{bool vec_t::is_same(const vec_t<D,T>&) const;}
+\item \cppinline{bool vec_t::is_same(const vec_t<D,T>&) const}
 
 This function tests if the provided vector is a view inside this vector.
 
@@ -543,11 +526,11 @@ v.is_same(w[id]); // false
 \end{cppcode}
 \end{example}
 
-\item \cppinline{const vec_t& vec_t::concretize() const;}
+\item \cppinline{const vec_t& vec_t::concretize() const}
 
 This function just returns a reference to this vector, and is only present to mirror the interface of the view class.
 
-\item \cppinline{iterator vec_t::begin();} and \cppinline{iterator vec_t::end();}
+\item \cppinline{iterator vec_t::begin()} and \cppinline{iterator vec_t::end()}
 
 These functions allow iteration over the values of this vector. The only reason one may use these functions explicitly is when using algorithms from the standard C++ library, which often work on a pair of iterators as returned by \cppinline{begin()} and \cppinline{end()}.
 
@@ -712,22 +695,173 @@ This whole section is more advanced than the rest. It is describing the sets of 
 % first
 % last
 
-\chapter{Support libraries}
+\chapter{Support libraries \label{SEC:support}}
 
-In this chapter we describe the set of helper functions that are part of the \phypp support library. These functions are not essential to the use of the \phypp library, but are mostly modular components that one may choose to use or not. All the support functions are sorted into broad categories to help you discover new functions and algorithm. Alternatively, if you know the name of a function and would like to read its documentation, an index is available at the end of this document (\ref{SEC:fun_index}).
+In this chapter we describe the set of helper functions that are part of the \phypp support library. These functions are not essential to the use of the \phypp library, but are mostly modular components that one may choose to use or not. All the support functions are sorted into broad categories to help you discover new functions and algorithm. Alternatively, if you know the name of a function and would like to read its documentation, an index is available at the end of this document.
 
-\section{Generic vector functions}
+Note that, in all this section, the signature of the functions is given in pseudo-code, both for conciseness and readability. In particular, the following rules apply.
+
+\begin{itemize}
+\item The presence of the \vectorfuncsym symbol in front of the signature of the function means that this function is also available in a \emph{vectorized} form. This only applies to functions whose first argument is a scalar (i.e., not a vector). In this case, the vectorized form shares the same signature as the original form, but the first argument is promoted to a vector. Calling the vectorized version is the same as writing a loop to call the original version on each element of the vector. If the original function had a return value, the vectorized form returns a vector whose elements are the return value of each call, corresponding to each element of the input vector. The vectorized version can be faster than writing the loop manually.
+
+\begin{example}
+\begin{cppcode}
+// Suppose this function is marked as vectorized
+bool is_odd(uint_t)
+// It means that there is another function with the
+// same name, but that acts on a vector instead
+vec_t<D,bool> is_odd(vec_t<D,uint_t>)
+
+// It is used like this
+vec1u v = {1,2,3,4,5};
+vec1b b = is_odd(v);
+// ... and is equivalent to
+vec1b b(v.dims);
+for (uint_t i : range(v)) {
+    b[i] = is_odd(v[i]);
+}
+\end{cppcode}
+\end{example}
+
+\item If the function depends on an external library, the name of this library will be written before the signature, for example if LAPACK is needed you will find the symbol \lapacksym.
+
+\item Template parameters are not declared explicitly. They are always written in uppercase, usually with a single character (e.g., \cppinline{T}, \cppinline{D}), or possibly two (e.g., a letter and a number), but never more. Letters \cppinline{T} and \cppinline{U} refer to template \emph{types}, while letters \cppinline{D}, \cppinline{N} or \cppinline{I} refer to template \emph{integers}.
+
+\begin{example}
+\begin{cppcode}
+// Pseudo-code used in this section
+void foo(T)
+// Corresponding C++ code
+template<typename T>
+void foo(T);
+
+// Pseudo-code used in this section
+void foo(vec_t<D,T> v, U u)
+// Corresponding C++ code
+template<std::size_t D, typename T, typename U>
+void foo(vec_t<D,T> v, U u);
+\end{cppcode}
+\end{example}
+
+\item Template parameters are omitted when not relevant to the description of the function. In this case, it is implicitly assumed that the function will work for any type/value of these template parameters.
+
+\begin{example}
+\begin{cppcode}
+// Pseudo-code used in this section
+void sort(vec_t&)
+// Corresponding C++ code
+template<std::size_t D, typename T>
+void sort(vec_t<D,T>&);
+\end{cppcode}
+\end{example}
+
+\item There are only two kinds of arguments: input arguments, and input/output arguments. Input arguments are always spelled as plain types, e.g. \cppinline{T}, even if the actual signature of the function uses a constant reference, an r-value reference or a universal reference. The reason is that this implementation choice does not matter to the end user. What matters is the interface. The input/output parameters are always C++ references, e.g. \cppinline{T&}.
+
+\begin{example}
+\begin{cppcode}
+// Pseudo-code used in this section
+vec1u dims(vec_t)
+// Corresponding C++ code could be either
+template<std::size_t D, typename T>
+vec1u dims(vec_t<D,T>);
+// ... or
+template<std::size_t D, typename T>
+vec1u dims(const vec_t<D,T>&);
+// The only difference is that the first version will
+// always make a copy (or move) of its parameter, while
+// the second may not. This optimization choice depends
+// on the actual code inside the function, and has no
+// consequence on how the function is actually used.
+\end{cppcode}
+\end{example}
+
+\item The ellipsis \cppinline{...} is used to symbolize a list of multiple arguments whose length can vary depending on the context. These arguments are not spelled out explicitly, but the description of the function must make it clear what they are used for. Optionally, a type may be placed before the ellipsis to indicate that all the arguments must be of this same type.
+
+\begin{example}
+\begin{cppcode}
+// Pseudo-code used in this section
+uint_t flat_id(vec_t, ...)
+// Corresponding C++ code
+template<std::size_t D, typename T, typename ... Args>
+uint_t flat_id(vec_t<D,T>, Args&& ...);
+\end{cppcode}
+\end{example}
+
+\item The \cppinline{std} namespace is omitted for common standard types, like \cppinline{std::string} or \cppinline{std::array}.
+
+\begin{example}
+\begin{cppcode}
+// Pseudo-code used in this section
+uint_t length(string)
+// Corresponding C++ code
+uint_t length(const std::string&);
+\end{cppcode}
+\end{example}
+
+\item For the particular case of \cppinline{std::array}, the individual elements inside the array can be named by placing the names inside curly braces after the type of the array.
+
+\begin{example}
+\begin{cppcode}
+// Pseudo-code used in this section
+uint_t distance(array {x,y})
+// Corresponding C++ code
+template<typename T>
+uint_t length(const std::array<T,2>& a) {
+    // x := a[0]
+    // y := a[1]
+}
+\end{cppcode}
+\end{example}
+
+\item If the return type of a function in pseudo-code is \cppinline{auto}, it means that this return value is ``complex'' (usually a structure or a class) and it is not important to know its precise type. The description of the function must therefore make it clear how this return value can be used.
+
+\end{itemize}
+
+With this in mind, it is clear that this chapter focuses on the \emph{interface} that is provided by the library, rather than on the individual function themselves. In fact, a single interface may be composed of many different functions to take care of all the combination of types that the interface supports. If the reader is interested in all these overloads, or is experiencing a particular compiler error that cannot be easily fixed just by looking at the interface, then it is best to look directly into the code of the library. Although less readable than the pseudo-code used in this document, most of the time an effort is made to make the code as clear as possible. However, if a function is too hard to understand, I consider this as a bug that should be reported on the \texttt{github} issue tracker (seriously). Similarly, if you end up doing something wrong with the library, but that the compiler error message is too cryptic or too long, you may also fill in a bug report. Ensuring that clear error messages are sent to the user is a shared responsibility between compiler writers and library authors.
+
+\section{Generic vector functions \label{SEC:support:generic}}
 
 The vector and view classes are useful and complete tools. However, there are a number of tasks that one repeatedly need to do, like generating a sequence of indices, or sorting a vector, and that would be tedious to write each time they are needed. In this section we list these functions and algorithms.
 
 \begin{itemize}
-\item \cppinline|vec_t<D,int_t>  indgen(...)| \ifun{indgen}
 
-\cppinline|vec_t<D,uint_t> uindgen(...)| \ifun{uindgen}
+\item \cppinline{vec1u mult_ids(vec_t v, uint_t i)}
 
-\cppinline|vec_t<D,float>  findgen(...)| \ifun{findgen}
+This is only useful for multidimensional vectors. This function converts a ``flat'' index \cppinline{i} (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector \cppinline{v}. The \cppinline{flat_id} function does the inverse job.
 
-\cppinline|vec_t<D,double> dindgen(...)| \ifun{dindgen}
+\begin{example}
+\begin{cppcode}
+vec2i v(2,3);
+mult_ids(v,0); // {0,0}
+mult_ids(v,1); // {0,1}
+mult_ids(v,2); // {0,3}
+mult_ids(v,3); // {1,0}
+v[3] == v(1,0); // true
+\end{cppcode}
+\end{example}
+
+\item \cppinline{uint_t flat_id(vec_t v, ...)}
+
+This is only useful for multidimensional vectors. This function converts a group of multidimensional indices into a ``flat'' index (\ref{SEC:core:vec:indexing}), following the dimensions of the provided vector \cppinline{v}. The \cppinline{mult_ids} function does the inverse job.
+
+\begin{example}
+\begin{cppcode}
+vec2i v(2,3);
+flat_id(v,0,0); // 0
+flat_id(v,0,1); // 1
+flat_id(v,0,2); // 2
+flat_id(v,1,0); // 3
+v(1,0) == v[3]; // true
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec_t<D,int_t>  indgen(...)| \itt{indgen}
+
+\cppinline|vec_t<D,uint_t> uindgen(...)| \itt{uindgen}
+
+\cppinline|vec_t<D,float>  findgen(...)| \itt{findgen}
+
+\cppinline|vec_t<D,double> dindgen(...)| \itt{dindgen}
 
 These functions will create a new vector, whose dimensions are specified in argument (like in the dimension constructor, \ref{SEC:core:vec:constructor}, or \cppinline{vec_t::resize()}, \ref{SEC:core:vec:member_fun}). After this vector is created, the function will fill it with values that start at \cppinline{0} and increment by steps of \cppinline{1} until the end of the vector.
 
@@ -738,7 +872,7 @@ vec2u w = uindgen(3,2); // {{0,1}, {2,3}, {4,5}}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1u where(const vec_t<D,bool>&)| \ifun{where}
+\item \cppinline|vec1u where(vec_t<D,bool>)| \itt{where}
 
 This function will scan the \cppinline{bool} vector provided in argument, will store the flat indices (\ref{SEC:core:vec:indexing}) of each element which is \cppinline{true}, and will return all these indices in a vector. This is a very useful tool to filter and selectively modify vectors, and probably one of the most used function of the whole library.
 
@@ -764,9 +898,9 @@ w[id]; // {8,6,1,-2,0,5}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|complement(const vec_t& v, const vec1u& id)| \ifun{complement}
+\item \cppinline|vec1u complement(vec_t v, vec1u id)| \itt{complement}
 
-This function works in tandem with \cppinline{where}. Given a vector \cppinline{v} and a set of indices \cppinline{id}, it will return the complementary set of indices inside this vector, i.e., all the indices of \cppinline{v} that are \emph{not} present in \cppinline{id}.
+This function works in tandem with \cppinline{where}. Given a vector \cppinline{v} and a set of flat indices \cppinline{id} (\ref{SEC:core:vec:indexing}), it will return the complementary set of indices inside this vector, i.e., all the indices of \cppinline{v} that are \emph{not} present in \cppinline{id}.
 
 \begin{example}
 \begin{cppcode}
@@ -776,9 +910,9 @@ vec1u cid = complement(v, id); // {0,3}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1u sort(const vec_t&)| \ifun{sort}
+\item \cppinline|vec1u sort(vec_t)| \itt{sort}
 
-\cppinline|void inplace_sort(vec_t&)| \ifun{inplace_sort}
+\cppinline|void inplace_sort(vec_t&)| \itt{inplace_sort}
 
 These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between the two versions is that \cppinline{sort} does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and \cppinline{inplace_sort} directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
 
@@ -797,9 +931,65 @@ v; // {1,3,5,6,7} is sorted
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1u uniq(const vec_t& v)| \ifun{uniq}
+\item \cppinline|bool is_sorted(vec_t)| \itt{is_sorted}
 
-\cppinline|vec1u uniq(const vec_t& v, const vec1u& sid)|
+This function just traverses the whole input vector and checks if its elements are sorted by increasing value.
+
+\begin{example}
+\begin{cppcode}
+// First version
+vec1i v = {1,5,6,3,7};
+is_sorted(v); // false
+inplace_sort(v);
+v; // {1,3,5,6,7}
+is_sorted(v); // true
+\end{cppcode}
+\end{example}
+
+\item \cppinline|uint_t lower_bound(T x, vec_t v)| \itt{lower_bound}
+
+\cppinline|uint_t upper_bound(T x, vec_t v)| \itt{upper_bound}
+
+\cppinline|array<uint_t,2> bounds(T x, vec_t v)| \itt{bounds}
+
+\cppinline|array<uint_t,2> bounds(T x1, U x2, vec_t v)|
+
+These functions use a binary search algorithm to locate the element in the input vector \cppinline{v} that is equal to or closest to the provided value \cppinline{x}. It is important to note that the binary search assumes that the elements in the input vector are \emph{sorted} by increasing value. This algorithm also assumes that the input vector does not contain any NaN value (\ref{SEC:support:math}).
+
+The \cppinline{lower_bound} function locates the last element in \cppinline{v} that is less or equal to \cppinline{x}. If no such element is found, \cppinline{npos} is returned.
+
+The \cppinline{upper_bound} function locates the first element in \cppinline{v} that is greater than \cppinline{x}. If no such element is found, \cppinline{npos} is returned.
+
+The first \cppinline{bounds} function combines what both \cppinline{lower_bound} and \cppinline{upper_bound} do, and returns both indices in an array. The second \cppinline{bounds} function calls \cppinline{lower_bound} to look for \cppinline{x1}, and \cppinline{upper_bound} to look for \cppinline{x2}.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {2,5,9,12,50};
+bounds(0, v);   // {npos,0}
+bounds(9, v);   // {2,3}
+bounds(100, v); // {4,npos}
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec1u equal_range(T x, vec_t v)| \itt{equal_range}
+
+Similarly to \cppinline{lower_bound}, \cppinline{upper_bound} and \cppinline{bounds}, this function uses a binary search algorithm to locate all the values in the input vector \cppinline{v} that are equal to \cppinline{x}. It then returns the flat indices of all these values in a vector. It is important to note that the binary search assumes that the elements in the input vector are \emph{sorted} by increasing value. This algorithm also assumes that the input vector does not contain any NaN value (\ref{SEC:support:math}).
+
+If no such value is found, an empty vector is returned.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {2,2,5,9,9,9,12,50};
+equal_range(9, v); // {3,4,5}
+
+// It's a faster version of
+where(v == 9);
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec1u uniq(vec_t v)| \itt{uniq}
+
+\cppinline|vec1u uniq(vec_t v, vec1u sid)|
 
 This function will traverse the provided vector \cppinline{v} and find all the unique values. It will store the indices of these values (if a value is present more than once inside \cppinline{v}, the index of the first one will be used) and return them inside an index vector. The first version assumes that the values in \cppinline{v} are \emph{sorted} from the smallest to the largest. In the second version, \cppinline{v} may not be sorted, but the second argument \cppinline{id} contains indices that will sort \cppinline{v} (e.g., \cppinline{id} can be the return value of \cppinline{sort(v)}).
 
@@ -817,9 +1007,41 @@ w[u]; // {1,2,4,5,6,7,8}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<1,T> flatten(const vec_t<D,T>&)| \ifun{flatten}
+\item \cppinline|bool astar_find(vec2b m, uint_t& x, y)| \itt{astar_find}
 
-This function transforms a multidimensional vector into a monodimensional vector. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. The \cppinline{reform} function does the inverse job.
+This function uses the $A^\star$ (``A star'') algorithm to look inside a 2D boolean map \cppinline{m} and, starting from the position \cppinline{x} and \cppinline{y} (i.e. \cppinline{m(x,y)}), find the closest point that has a value of \cppinline{true}. Once this position is found, its indices are stored inside \cppinline{x} and \cppinline{y}, and the function returns \cppinline{true}. If no element inside \cppinline{m} is \cppinline{true}, then the function returns \cppinline{false}.
+
+\begin{example}
+\begin{cppcode}
+// Using '@' for true and '.' for false,
+// assume we have the following boolean map,
+// and that we start at the position indicated
+// by 'S', the closest point whose coordinates
+// will be returned by astar_find is indicated
+// by an 'X'
+vec2b m;
+// .................
+// .................
+// .................
+// ...@@@@@.........
+// ...@@@@@.........
+// ...@@@@@.........
+// ...@@@@@.........
+// ...@@@@X.........
+// .............S...
+// .................
+// .................
+
+uint_t x = 13, y = 2;
+astar_find(m, x, y);
+x; // 7
+y; // 3
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec_t<1,T> flatten(vec_t<D,T>)| \itt{flatten}
+
+This function transforms a multidimensional vector into a monodimensional vector. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. The \cppinline{reform} function does the inverse job, and more.
 
 \begin{example}
 \begin{cppcode}
@@ -828,9 +1050,9 @@ vec1i w = flatten(v); // {1,2,3,4,5,6}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<D,T> reform(const vec_t<1,T>&)| \ifun{reform}
+\item \cppinline|vec_t<D1,T> reform(vec_t<D2,T>, ...)| \itt{reform}
 
-This function transforms a monodimensional vector into a multidimensional vector. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. However, the provided dimensions have to generate the same number of elements as the provided vector contains. The \cppinline{flatten} function does the inverse job.
+This function transforms a vector into another vector just by changing its dimensions. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. However, the new dimensions have to generate the same number of elements as the provided vector contains. The \cppinline{flatten} function is a special case of \cppinline{reform}.
 
 \begin{example}
 \begin{cppcode}
@@ -839,7 +1061,7 @@ vec2i w = reform(v, 2, 3); // {{1,2,3}, {4,5,6}}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<1,T> reverse(const vec_t<1,T>&)| \ifun{reverse}
+\item \cppinline|vec_t<1,T> reverse(vec_t<1,T>)| \itt{reverse}
 
 This function will inverse the order of all the elements inside the provided vector.
 
@@ -850,9 +1072,9 @@ vec1i w = reverse(v); // {6,5,4,3,2,1}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<N,T>   replicate(T, ...)| \ifun{replicate}
+\item \cppinline|vec_t<N,T>   replicate(T, ...)| \itt{replicate}
 
-      \cppinline|vec_t<D+N,T> replicate(const vec_t<D,T>&, ...)|
+      \cppinline|vec_t<D+N,T> replicate(vec_t<D,T>, ...)|
 
 
 This function will take the provided scalar (first version) or vector (second version), and replicate it multiple times according to the provided additional parameters, to generate additional dimensions.
@@ -870,9 +1092,9 @@ vec2i z = replicate({1,2}, 3); // error, unfortunately
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<1,T> remove(const vec_t<1,T>& v, const vec1u& id)| \ifun{remove}
+\item \cppinline|vec_t<1,T> remove(vec_t<1,T> v, vec1u id)| \itt{remove}
 
-\cppinline|void inplace_remove(vec_t<1,T>& v, const vec1u& id)| \ifun{inplace_remove}
+\cppinline|void inplace_remove(vec_t<1,T>& v, vec1u id)| \itt{inplace_remove}
 
 These functions will remove the elements in \cppinline{v} that have their indices in \cppinline{id}. The only difference between the first and the second version is that the former will first make a copy of the provided vector, remove elements inside this copy, and return it. The second version modifies directly the provided vector, and is therefore faster.
 
@@ -888,13 +1110,13 @@ v; // {4,2,1}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void append<N>(vec_t<D,T1>& t1, const vec_t<D,T2>& t2)| \ifun{append}
+\item \cppinline|void append<N>(vec_t<D,T1>& t1, vec_t<D,T2> t2)| \itt{append}
 
-\cppinline|void append(vec_t<1,T1>& t1, const vec_t<1,T2>& t2)|
+\cppinline|void append(vec_t<1,T1>& t1, vec_t<1,T2> t2)|
 
-\cppinline|void prepend<N>(vec_t<D,T1>& t1, const vec_t<D,T2>& t2)| \ifun{prepend}
+\cppinline|void prepend<N>(vec_t<D,T1>& t1, vec_t<D,T2> t2)| \itt{prepend}
 
-\cppinline|void prepend(vec_t<1,T1>& t1, const vec_t<1,T2>& t2)|
+\cppinline|void prepend(vec_t<1,T1>& t1, vec_t<1,T2> t2)|
 
 These functions behave similarly to \cppinline{vec_t::push_back}, in that they will add new elements at the end (\cppinline{append}), but also at the beginning (\cppinline{prepend}) of the provided vector. However, when \cppinline{vec_t::push_back} can only add new elements from a vector that is one dimension less than the original vector (or a scalar, for monodimensional vectors), these functions will add new elements from a vector of the \emph{same} dimension. These functions are also more powerful than \cppinline{vec_t::push_back}, because they allow you to choose along which dimension the new elements will be added, through the template parameter \cppinline{N} (note that this parameter is useless and therefore does not exist for monodimensional vectors). The other dimensions must be identical. They are clearly dedicated to a more advanced usage.
 
@@ -919,7 +1141,7 @@ x; // {{5,6,7}, {1,2,0}, {3,4,0}} // x is (3x3)
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<1,T> shift(const vec_t<1,T>& v, int_t n, T d = 0)| \ifun{shift}
+\item \cppinline|vec_t<1,T> shift(vec_t<1,T> v, int_t n, T d = 0)| \itt{shift}
 
 This function will shift the position of the elements inside the provided vector \cppinline{v} by a given amount of indices \cppinline{n}. Elements that would go outside of the bounds of the vector are destroyed. New elements are inserted and default constructed, or assigned the default value \cppinline{d} (optional argument).
 
@@ -933,11 +1155,9 @@ sl; // {3,4,5,99,99};
 \end{cppcode}
 \end{example}
 
-\item \cppinline|bool is_any_of(T1 v1, const vec_t<D2,T2>& v2)| \ifun{is_any_of}
+\item \vectorfunc \cppinline|bool is_any_of(T1 v1, vec_t<D2,T2> v2)| \itt{is_any_of}
 
-\cppinline|vec_t<D1,bool> is_any_of(const vec_t<D1,T1>& v1, const vec_t<D2,T2>& v2)|
-
-This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cppinline{true}, else it returns \cppinline{false}. The second version is just the vectorized version of the first, where \cppinline{is_any_of} is called for each element inside \cppinline{v1}.
+This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cppinline{true}, else it returns \cppinline{false}.
 
 \begin{example}
 \begin{cppcode}
@@ -947,7 +1167,7 @@ vec1b b = is_any_of(v, d); // {true, false, false, false, true}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void match(const vec_t& v1, const vec_t& v2, vec1u& id1, vec1u& id2)| \ifun{match}
+\item \cppinline|void match(vec_t v1, vec_t v2, vec1u& id1, vec1u& id2)| \itt{match}
 
 This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for elements in \cppinline{v2} that have the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Note that, contrary to \cppinline{match_dictionary}, each value in \cppinline{v1} is matched to \emph{at most} one value in \cppinline{v2}, and vice versa. In other words, if \cppinline{v1} or \cppinline{v2} contain duplicates, only the first value will be matched and the others will be ignored. This function is symmetric: the result will be the same if you swap the two input vectors (of course, the output vectors have to be swapped also).
 
@@ -963,7 +1183,7 @@ v[id1] == w[id2]; // always true
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void match_dictionary(const vec_t& v1, const vec_t& v2, vec1u& id1, vec1u& id2)| \ifun{match_dictionary}
+\item \cppinline|void match_dictionary(vec_t v1, vec_t v2, vec1u& id1, vec1u& id2)| \itt{match_dictionary}
 
 This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for an element in \cppinline{v2} that has the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Contrary to \cppinline{match}, each value in \cppinline{v2} can be matched to multiple values in \cppinline{v1}. Therefore this function is not symmetric: the second vector should be considered as a ``dictionary'', hence the name of this function. It is assumed that \cppinline{v2} does not contain any duplicates.
 
@@ -979,7 +1199,7 @@ v[id1] == w[id2]; // always true
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void phypp_check(bool b, ...)| \ifun{phypp_check}
+\item \cppinline|void phypp_check(bool b, ...)| \itt{phypp_check}
 
 This function makes error checking easier. When called, it checks the value of \cppinline{b}. If \cppinline{b} is \cppinline{true}, then nothing happens. However if \cppinline{b} is \cppinline{false}, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the \phypp library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
 
@@ -1004,174 +1224,509 @@ do_stuff(v);
 \end{example}
 \end{itemize}
 
-\section{Parsing command line arguments}
+\section{Parsing command line arguments \label{SEC:support:cmd}}
 % argv.hpp
 
 \begin{itemize}
-\item \cppinline|void read_args(int argc, char* argv[], ...)| \ifun{read_args}
+\item \cppinline|void read_args(int argc, char* argv[], ...)| \itt{read_args}
 \end{itemize}
 
-\section{File input/output}
+\section{File input/output \label{SEC:support:file}}
 % file.hpp
 
 \begin{itemize}
-\item \cppinline|bool file::exists(std::string)| \ifun{file::exists}
-\item \cppinline|bool file::is_older(std::string f1, std::string f2)| \ifun{file::is_older}
-\item \cppinline|vec1s file::list_directories(std::string)| \ifun{file::list_directories}
-\item \cppinline|vec1s file::list_files(std::string)| \ifun{file::list_files}
-\item \cppinline|std::string file::directorize(std::string)| \ifun{file::directorize}
-\item \cppinline|std::string file::get_basename(std::string)| \ifun{file::get_basename}
-\item \cppinline|std::string file::get_directory(std::string)| \ifun{file::get_directory}
-\item \cppinline|bool file::mkdir(std::string)| \ifun{file::mkdir}
-\item \cppinline|void file::read_table(std::string f, uint_t s, ...)| \ifun{file::read_table}
-\item \cppinline|void file::write_table(std::string f, uint_t w, ...)| \ifun{file::write_table}
+\item \vectorfunc \cppinline|bool file::exists(string)| \itt{file::exists}
+\item \cppinline|bool file::is_older(string f1, string f2)| \itt{file::is_older}
+\item \cppinline|vec1s file::list_directories(string)| \itt{file::list_directories}
+\item \cppinline|vec1s file::list_files(string)| \itt{file::list_files}
+\item \vectorfunc \cppinline|string file::directorize(string)| \itt{file::directorize}
+\item \vectorfunc \cppinline|string file::get_basename(string)| \itt{file::get_basename}
+\item \vectorfunc \cppinline|string file::get_directory(string)| \itt{file::get_directory}
+\item \vectorfunc \cppinline|bool file::mkdir(string)| \itt{file::mkdir}
+\item \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
+\item \cppinline|void file::write_table(string f, uint_t w, ...)| \itt{file::write_table}
 
-\cppinline|void file::write_table_csv(std::string f, uint_t w, ...)| \ifun{file::write_table_csv}
+\cppinline|void file::write_table_csv(string f, uint_t w, ...)| \itt{file::write_table_csv}
 
-\cppinline|void file::write_table_hdr(std::string f, uint_t w, vec1s hdr, ...)| \ifun{file::write_table_hdr}
+\cppinline|void file::write_table_hdr(string f, uint_t w, vec1s hdr, ...)| \itt{file::write_table_hdr}
 \end{itemize}
 
-\section{String manipulation}
+\section{String manipulation \label{SEC:support:string}}
 % string.hpp
 
 \begin{itemize}
-\item \cppinline|std::string strn(T)| \ifun{strn}
+\item \cppinline|string strn(T)| \itt{strn}
 
-\cppinline|std::string strn(T v, uint_t n, char fill = '0')|
+\cppinline|string strn(T v, uint_t n, char fill = '0')|
 
-\cppinline|std::string strn_sci(T v)| \ifun{strn_sci}
+\cppinline|string strn_sci(T v)| \itt{strn_sci}
 
-\item \cppinline|vec_<D,std::string> strna(const vec_t<D,T>&)| \ifun{strna}
+\item \cppinline|vec_<D,string> strna(vec_t<D,T>)| \itt{strna}
 
-\cppinline|vec_<D,std::string> strna(const vec_t<D,T>& v, uint_t n, char fill = '0')|
+\cppinline|vec_<D,string> strna(vec_t<D,T> v, uint_t n, char fill = '0')|
 
-\cppinline|vec_<D,std::string> strna_sci(const vec_t<D,T>& v)| \ifun{strna_sci}
+\cppinline|vec_<D,string> strna_sci(vec_t<D,T> v)| \itt{strna_sci}
 
-\item \cppinline|bool from_string(std::string s, T& v)| \ifun{from_string}
+\item \vectorfunc \cppinline|bool from_string(string s, T& v)| \itt{from_string}
 
-\item \cppinline|bool empty(std::string s)| \ifun{empty}
-\item \cppinline|uint_t length(std::string s)| \ifun{length}
+\item \vectorfunc \cppinline|bool empty(string s)| \itt{empty}
+\item \vectorfunc \cppinline|uint_t length(string s)| \itt{length}
 
-\item \cppinline|std::string trim(std::string s, std::string cs)| \ifun{trim}
+\item \vectorfunc \cppinline|string trim(string s, string cs)| \itt{trim}
 
-\item \cppinline|std::string toupper(std::string s)| \ifun{toupper}
+\item \vectorfunc \cppinline|string toupper(string s)| \itt{toupper}
 
-\item \cppinline|std::string tolower(std::string s)| \ifun{tolower}
+\item \vectorfunc \cppinline|string tolower(string s)| \itt{tolower}
 
-\item \cppinline|std::string replace(std::string s, std::string p, std::string r)| \ifun{replace}
+\item \vectorfunc \cppinline|string replace(string s, string p, string r)| \itt{replace}
 
-\item \cppinline|vec1s split(std::string s, std::string p)| \ifun{split}
+\item \cppinline|vec1s split(string s, string p)| \itt{split}
 
-\item \cppinline|vec1s cut(std::string s, uint_t n)| \ifun{cut}
+\item \cppinline|vec1s cut(string s, uint_t n)| \itt{cut}
 
-\item \cppinline|vec1s wrap(std::string s, uint_t w, std::string i = "", bool e = false)| \ifun{wrap}
+\item \cppinline|vec1s wrap(string s, uint_t w, string i = "", bool e = false)| \itt{wrap}
 
-\item \cppinline|std::string collapse(vec_t<D,std::string>)| \ifun{collapse}
+\item \cppinline|string collapse(vec_t<D,string>)| \itt{collapse}
 
-\cppinline|std::string collapse(vec_t<D,std::string> v, std::string s)|
+\cppinline|string collapse(vec_t<D,string> v, string s)|
 
-\item \cppinline|uint_t find(std::string s, std::string p)| \ifun{find}
+\item \vectorfunc \cppinline|uint_t find(string s, string p)| \itt{find}
 
-\item \cppinline|bool match(std::string s, std::string r)| \ifun{match}
+\item \vectorfunc \cppinline|bool match(string s, string r)| \itt{match}
 
-\cppinline|bool match_any_of(std::string s, vec1s r)| \ifun{match_any_of}
+\vectorfunc \cppinline|bool match_any_of(string s, vec1s r)| \itt{match_any_of}
 
-\item \cppinline|bool start_with(std::string s, std::string p)| \ifun{start_with}
+\item \vectorfunc \cppinline|bool start_with(string s, string p)| \itt{start_with}
 
-\cppinline|bool end_with(std::string s, std::string p)| \ifun{end_with}
+\vectorfunc \cppinline|bool end_with(string s, string p)| \itt{end_with}
 
-\item \cppinline|std::string erase_begin(std::string s, std::string p)| \ifun{erase_begin}
+\item \vectorfunc \cppinline|string erase_begin(string s, string p)| \itt{erase_begin}
 
-\cppinline|std::string erase_begin(std::string s, uint_t n)|
+\vectorfunc \cppinline|string erase_begin(string s, uint_t n)|
 
-\cppinline|std::string erase_end(std::string s, std::string p)| \ifun{erase_end}
+\vectorfunc \cppinline|string erase_end(string s, string p)| \itt{erase_end}
 
-\cppinline|std::string erase_end(std::string s, uint_t n)|
+\vectorfunc \cppinline|string erase_end(string s, uint_t n)|
 
-\item \cppinline|std::string keep_start(std::string s, uint_t n = 1)| \ifun{keep_start}
+\item \vectorfunc \cppinline|string keep_start(string s, uint_t n = 1)| \itt{keep_start}
 
-\cppinline|std::string keep_end(std::string s, uint_t n = 1)| \ifun{keep_end}
+\vectorfunc \cppinline|string keep_end(string s, uint_t n = 1)| \itt{keep_end}
 
-\item \cppinline|std::string remove_extension(std::string)| \ifun{remove_extension}
+\item\vectorfunc  \cppinline|string remove_extension(string)| \itt{remove_extension}
 
-\item \cppinline|std::string align_left(std::string s, uint_t w, char f = ' ')| \ifun{align_left}
+\item \vectorfunc \cppinline|string align_left(string s, uint_t w, char f = ' ')| \itt{align_left}
 
-\cppinline|std::string align_center(std::string s, uint_t w, char f = ' ')| \ifun{align_center}
+\vectorfunc \cppinline|string align_center(string s, uint_t w, char f = ' ')| \itt{align_center}
 
-\cppinline|std::string align_right(std::string s, uint_t w, char f = ' ')| \ifun{align_right}
+\vectorfunc \cppinline|string align_right(string s, uint_t w, char f = ' ')| \itt{align_right}
 
-\item \cppinline|uint_t distance(std::string s1, std::string s2)| \ifun{distance}
+\item \vectorfunc \cppinline|uint_t distance(string s1, string s2)| \itt{distance}
 
 \end{itemize}
 
-\section{OS interaction}
+\section{OS interaction \label{SEC:support:os}}
 
 \begin{itemize}
 
-\item \cppinline|std::string system_var(std::string v, std::string d = "")| \ifun{system_var}
+\item \cppinline|string system_var(string v, string d = "")| \itt{system_var}
 
 \end{itemize}
 
-\section{Printing to the terminal}
+\section{Printing to the terminal \label{SEC:support:print}}
 % print.hpp
 
 \begin{itemize}
 
-\item \cppinline|void print(...)| \ifun{print}
+\item \cppinline|void print(...)| \itt{print}
 
-\cppinline|void error(...)| \ifun{error}
+\cppinline|void error(...)| \itt{error}
 
-\cppinline|void warning(...)| \ifun{warning}
+\cppinline|void warning(...)| \itt{warning}
 
-\cppinline|void note(...)| \ifun{note}
+\cppinline|void note(...)| \itt{note}
 
 \end{itemize}
 
-\section{Measuring time}
+\section{Measuring time \label{SEC:support:time}}
 % time.hpp
 
 \begin{itemize}
 
-\item \cppinline|double now()| \ifun{now}
+\item \cppinline|double now()| \itt{now}
 
-\item \cppinline|std::string today()| \ifun{today}
+\item \cppinline|string today()| \itt{today}
 
-\item \cppinline|std::string time_str(double)| \ifun{time_str}
+\item \cppinline|string time_str(double)| \itt{time_str}
 
-\item \cppinline|std::string seconds_str(double)| \ifun{seconds_str}
+\item \cppinline|string seconds_str(double)| \itt{seconds_str}
 
-\item \cppinline|auto progress_start(uint_t)| \ifun{progress_start}
+\item \cppinline|auto progress_start(uint_t)| \itt{progress_start}
 
-\cppinline|void progress(auto p, uint_t m)| \ifun{progress}
+\cppinline|void progress(auto p, uint_t m)| \itt{progress}
 
-\cppinline|void print_progress(auto p, T i, uint_t m)| \ifun{print_progress}
+\cppinline|void print_progress(auto p, T i, uint_t m)| \itt{print_progress}
 
 \end{itemize}
 
-\section{Math and generic algorithms}
+\section{Mathematics \label{SEC:support:math}}
 % math.hpp
 % mpfit.hpp
 
-\section{Parallel execution}
+The mathematics support library is among the largest inside \phypp. It contains many functions, as well as a handful of useful constants. Some functionalities of this library are only available if you have installed the \texttt{fftw} and \texttt{gsl} libraries. If not, the specific functions that depend on these libraries will not be available, or will be slow, but the rest of the library will function properly.
+
+This library provides the following global constants:
+\begin{itemize}
+\item \cppinline{fnan} \itt{fnan} and \cppinline{dnan} \itt{dnan}. These are the \cppinline{float} and \cppinline{double} representation of the ``not-a-number'' (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., \cppinline{2.0 + fnan == fnan}). More troubling, any comparison operation involving a NaN will return \cppinline{false}, e.g., \cppinline{(10.0 < fnan) == false} and \cppinline{(10.0 >= fnan) == false} too. The only notable exception to this rule is that \cppinline{(fnan != fnan) == true}. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as \cppinline{-99}. Using NaN in this case is clearer.
+
+\item \cppinline{fpi} \itt{fpi} and \cppinline{dpi} \itt{dpi}. This is the \cppinline{float} and \cppinline{double} closest representation of the number $\pi = 3.14519...$.
+
+\item \cppinline{finf} \itt{finf} and \cppinline{dinf} \itt{dinf}. This is the \cppinline{float} and \cppinline{double} representation of the positive infinity. The positive infinity is larger than any other finite value.
+\end{itemize}
+
+We now present the functions provided by this support library. One of the responsibilities of this library is to bring vectorized versions of standard mathematical functions that only work for scalar values. Since these functions are fairly common and well known, we will not describe their signature and behavior, and instead just list them here:
+
+\begin{itemize}
+\item exponentiation: \cppinline{sqrt} \itt{sqrt}, \cppinline{pow} \itt{pow},
+\item trigonometry: \cppinline{cos} \itt{cos}, \cppinline{sin} \itt{sin}, \cppinline{tan} \itt{tan}, \cppinline{acos} \itt{acos}, \cppinline{asin} \itt{asin}, \cppinline{atan} \itt{atan}, \cppinline{cosh} \itt{cosh}, \cppinline{sinh} \itt{sinh}, \cppinline{tanh} \itt{tanh}, \cppinline{acosh} \itt{acosh}, \cppinline{asinh} \itt{asinh}, \cppinline{atanh} \itt{atanh},
+\item exponentials and logarithms: \cppinline{exp} \itt{exp}, \cppinline{log} \itt{log}, \cppinline{log2} \itt{log2}, \cppinline{log10} \itt{log10},
+\item special functions: \cppinline{erf} \itt{erf}, \cppinline{erfc} \itt{erfc}, \cppinline{tgamma} \itt{tgamma},
+\item rounding: \cppinline{ceil} \itt{ceil}, \cppinline{floor} \itt{floor}, \cppinline{round} \itt{round},
+\item absolute value: \cppinline{fabs} \itt{fabs}.
+\end{itemize}
+
+We also introduce the functions \cppinline{bessel_j0} \itt{bessel_j0}, \cppinline{bessel_j1} \itt{bessel_j1}, \cppinline{bessel_y0} \itt{bessel_y0}, \cppinline{bessel_y1} \itt{bessel_y1}, \cppinline{bessel_i0} \itt{bessel_i0}, \cppinline{bessel_i1} \itt{bessel_i1}, \cppinline{bessel_k0} \itt{bessel_k0}, \cppinline{bessel_k1} \itt{bessel_k1}. The scalar version of the first four are provided by the C++ standard, while the last four are provided by the \texttt{gsl}.
+
+We now list the other, less common functions provided in this library. These are grouped by sections.
+
+\subsection{Low level mathematics}
+
+\begin{itemize}
+\item \vectorfunc \cppinline|double e10(double)| \itt{e10}
+
+\item \vectorfunc \cppinline|T sqr(T)| \itt{sqr}
+
+\item \vectorfunc \cppinline|T invsqr(T)| \itt{invsqr}
+
+\item \vectorfunc \cppinline|T clamp(T t, U mi, V ma)| \itt{clamp}
+
+\item \vectorfunc \cppinline|bool finite(T)| \itt{finite}
+
+\item \vectorfunc \cppinline|bool nan(T)| \itt{nan}
+
+\item \vectorfunc \cppinline|int_t sign(T)| \itt{sign}
+\end{itemize}
+
+\subsection{Sequences and bins}
+
+\begin{itemize}
+\item \cppinline|vec1u rgen(T)| \itt{rgen}
+
+\cppinline|vec_t<1,T> rgen(T i, U j)|
+
+\cppinline|vec1d rgen(T i, U j, V n)|
+
+\cppinline|vec1d rgen_log(T i, U j, V n)| \itt{rgen_log}
+
+\item \cppinline|vec_t<2,T> make_bins(T mi, T ma)| \itt{make_bins}
+
+\cppinline|vec_t<2,T> make_bins(T mi, T ma, uint_t n)|
+
+\cppinline|vec_t<2,T> make_bins(vec_t<1,T>)|
+
+\item \vectorfunc \cppinline|bool in_bin(T v, vec_t<1,U> b)| \itt{in_bin}
+
+\vectorfunc \cppinline|bool in_bin(T v, vec_t<2,U> b, uint_t ib)|
+
+\vectorfunc \cppinline|bool in_bin_open(T v, vec_t<2,U> b, uint_t ib)| \itt{in_bin_open}
+
+\item \cppinline|vec_t<1,T> bin_center(vec_t<2,T>)| \itt{bin_center}
+\cppinline|T bin_center(vec_t<1,T>)|
+
+\item \cppinline|vec_t<1,T> bin_width(vec_t<2,T>)| \itt{bin_width}
+\cppinline|T bin_width(vec_t<1,T>)|
+\end{itemize}
+
+\subsection{Randomization}
+
+\begin{itemize}
+\item \cppinline|auto make_seed(T)| \itt{make_seed}
+
+\item \cppinline|double randomn(auto seed)| \itt{randomn}
+
+\cppinline|vec_t<N,double> randomn(auto seed, ...)|
+
+\item \cppinline|double randomu(auto seed)| \itt{randomn}
+
+\cppinline|vec_t<N,double> randomu(auto seed, ...)|
+
+\item \cppinline|T randomi(auto seed, T mi, T ma)| \itt{randomi}
+
+\cppinline|vec_t<N,T> randomi(auto seed, T mi, T ma, ...)|
+
+\item \cppinline|T random_pdf(auto seed, vec_t<1,T> x, vec_t<1,U> y, ...)| \itt{random_pdf}
+
+\item \cppinline|bool random_coin(auto seed, double p)| \itt{random_coin}
+
+\cppinline|vec_t<N,bool> random_coin(auto seed, double p, ...)|
+
+\item \cppinline|vec_t shuffle(vec_t, auto seed)| \itt{shuffle}
+
+\cppinline|void inplace_shuffle(vec_t&, auto seed)| \itt{inplace_shuffle}
+\end{itemize}
+
+\subsection{Reduction}
+
+\begin{itemize}
+\item \cppinline|void run_dim_idx(uint_t d, F f, ...)| \itt{run_dim_idx}
+
+\item \cppinline|vec_t<D-1,T> run_dim(vec_t<D,T> v, uint_t d, F f)| \itt{run_dim}
+
+\item \cppinline|T total(vec_t<D,T> v)| \itt{total}
+
+\cppinline|vec_t<D-1,T> partial_total(uint_t d, vec_t<D,T> v)| \itt{partial_total}
+
+\item \cppinline|uint_t count(vec_t<D,bool> v)| \itt{count}
+
+\cppinline|vec_t<D-1,uint_t> partial_count(uint_t d, vec_t<D,bool> v)| \itt{partial_count}
+
+\item \cppinline|uint_t fraction_of(vec_t<D,bool> v)| \itt{fraction_of}
+
+\cppinline|vec_t<D-1,uint_t> partial_fraction_of(uint_t d, vec_t<D,bool> v)| \itt{partial_fraction_of}
+
+\item \cppinline|double mean(vec_t v)| \itt{mean}
+
+\cppinline|vec_t<D-1,double> partial_mean(uint_t d, vec_t<D,T> v)| \itt{partial_mean}
+
+\item \cppinline|T median(vec_t<D,T> v)| \itt{median}
+
+\cppinline|T inplace_median(vec_t<D,T>& v)| \itt{inplace_median}
+
+\cppinline|vec_t<D-1,T> partial_median(uint_t d, vec_t<D,T> v)| \itt{partial_median}
+
+\item \cppinline|T percentile(vec_t<D,T> v, double p)| \itt{percentile}
+
+\cppinline|vec_t<D-1,T> partial_percentile(uint_t d, vec_t<D,T> v, double p)| \itt{partial_percentile}
+
+\cppinline|vec_t<1,T> percentiles(vec_t<D,T> v, double ...)| \itt{percentiles}
+
+\item \cppinline|T min(vec_t<D,T> v)| \itt{min}
+
+\cppinline|T min(vec_t<D,T> v, uint_t& i)|
+
+\cppinline|vec_t<D-1,T> partial_min(uint_t d, vec_t<D,T> v)| \itt{partial_min}
+
+\cppinline|T max(vec_t<D,T> v)| \itt{max}
+
+\cppinline|T max(vec_t<D,T> v, uint_t& i)|
+
+\cppinline|vec_t<D-1,T> partial_max(uint_t d, vec_t<D,T> v)| \itt{partial_max}
+
+\item \cppinline|uint_t min_id(vec_t<D,T> v)| \itt{min_id}
+
+\cppinline|uint_t max_id(vec_t<D,T> v)| \itt{max_id}
+
+\item \cppinline|vec1u histogram(vec_t v, vec_t<2,V> b)| \itt{histogram}
+
+\cppinline|vec_t<1,T2> histogram(vec_t<D,T1> v, vec_t<D,T2> w, vec_t<2,U> b)|
+
+\item \cppinline|vec2u histogram2d(vec_t<D,T1> x, vec_t<D,T2> y, vec_t<2,U1> bx, vec_t<2,U2> by)| \itt{histogram2d}
+
+\item \cppinline|vec_t<D,bool> sigma_clip(vec_t<D,T> v, double pl, double pu)| \itt{sigma_clip}
+
+\item \cppinline|vec_t<D,bool> mad_clip(vec_t<D,T> v, double s)| \itt{mad_clip}
+
+\end{itemize}
+
+\subsection{Interpolation}
+
+\begin{itemize}
+\item \cppinline|double interpolate(double y1, y2, x1, x2, x)| \itt{interpolate}
+
+\cppinline|T interpolate(vec_t<D,T> y, vec_t<D,U> x, V nx)|
+
+\cppinline|vec_t<D2,T> interpolate(vec_t<D1,T> y, vec_t<D1,U> x, vec_t<D2,V> nx)|
+
+\item \cppinline|T bilinear(vec_t<2,T> m, double x, double y)| \itt{bilinear}
+
+\item \cppinline|vec_t<2,T> rebin(vec_t<2,T> m, vec1d mx, vec1d my, vec1d nx, vec1d ny)| \itt{rebin}
+\end{itemize}
+
+\subsection{Calculus}
+
+\begin{itemize}
+\item \cppinline|double derivate1(F f, double x, double e)| \itt{derivate1}
+
+\cppinline|double derivate1(F f, vec1d x, double e, uint_t i)| \itt{derivate1}
+
+\item \cppinline|double derivate2(F f, double x, double e)| \itt{derivate2}
+
+\cppinline|double derivate2(F f, vec1d x, double e, uint_t i)| \itt{derivate2}
+
+\item \cppinline|double integrate_trap(F f, double x, uint_t n)| \itt{integrate_trap}
+
+\cppinline|double integrate(F f, double x, double e = default)| \itt{integrate}
+
+\item \cppinline|double integrate(vec_t<1,T> x, vec_t<1,U> y)| \itt{integrate}
+
+\cppinline|double integrate(vec_t<1,T> x, vec_t<1,U> y, double x0, double x1)|
+
+\cppinline|double integrate(vec_t<2,T> x, vec_t<1,U> y)|
+
+\cppinline|double integrate(vec_t<2,T> x, vec_t<1,U> y, double x0, double x1)|
+
+\end{itemize}
+
+\subsection{Algebra}
+
+\begin{itemize}
+\item \cppinline|vec_t<2,V> mmul(vec_t<2,T> a, vec_t<2,U> b)| \itt{mmul}
+
+\cppinline|vec_t<1,V> mmul(vec_t<2,T> a, vec_t<1,U> b)|
+
+\cppinline|vec_t<1,V> mmul(vec_t<1,T> b, vec_t<2,U> a)|
+
+\item \cppinline|vec_t<2,T> transpose(vec_t<2,T>)| \itt{transpose}
+
+\item \cppinline|vec_t<1,T*> diagonal(vec_t<2,T>)| \itt{diagonal}
+
+\item \cppinline|vec2d identity_matrix(uint_t)| \itt{identity_matrix}
+
+\item \cppinline|vec2d scale_matrix(double sx, double sy)| \itt{scale_matrix}
+
+\cppinline|vec2d scale_matrix(double s)|
+
+\item \cppinline|vec2d translation_matrix(double dx, double dy)| \itt{translation_matrix}
+
+\item \cppinline|vec2d rotation_matrix(double a)| \itt{rotation_matrix}
+
+\item \cppinline|vec1d point2d(double x, double y)| \itt{point2d}
+
+\item \lapack \cppinline|bool invert(vec2d a, vec2d& i)| \itt{invert}
+
+\lapack \cppinline|bool inplace_invert(vec2d&)| \itt{inplace_invert}
+
+\item \lapack \cppinline|bool invert_symmetric(vec2d a, vec2d& i)| \itt{invert_symmetric}
+
+\lapack \cppinline|bool inplace_invert_symmetric(vec2d&)| \itt{inplace_invert_symmetric}
+
+\item \lapack \cppinline|bool solve_symmetric(vec2d a, vec1d b, vec1d& r)| \itt{solve_symmetric}
+
+\lapack \cppinline|bool inplace_solve_symmetric(vec2d& a, vec1d& b)| \itt{inplace_solve_symmetric}
+
+\item \lapack \cppinline|bool eigen_symmetric(vec2d a, vec1d& va, vec1d& ve)| \itt{eigen_symmetric}
+
+\lapack \cppinline|bool inplace_eigen_symmetric(vec2d& a, vec1d& va)| \itt{inplace_eigen_symmetric}
+
+\item \fftw \cppinline|vec2cd fft(vec2d)| \itt{fft}
+
+\fftw \cppinline|vec2d ifft(vec2cd)| \itt{ifft}
+
+\item \cppinline|vec_t<1,W> convolve(vec_t<1,T> x, vec_t<1,U> y, vec_t<1,V> k)| \itt{convolve}
+
+\end{itemize}
+
+\subsection{Fitting}
+
+\begin{itemize}
+\item \cppinline|auto linfit(vec_t y, vec_t e, ...)| \itt{linfit}
+
+\cppinline|auto linfit_pack(vec_t<D,T> y, vec_t<D,U> e, vec_t<D+1,V> x)| \itt{linfit_pack}
+
+\item \cppinline|auto affinefit(vec_t<D,T> y, vec_t<D,U> e, vec_t<D,V> x)| \itt{affinefit}
+
+\item \cppinline|auto mpfit(F d, vec1d p, auto opt = default)| \itt{mpfit}
+
+\item \cppinline|auto mpfitfun(vec_t<D,T> y, vec_t<D,U> e, vec_t<D,V> x, F f, vec1d p, auto opt = default)| \itt{mpfitfun}
+
+\end{itemize}
+
+\subsection{Geometry}
+
+\begin{itemize}
+\item \cppinline|vec1u convex_hull(vec_t<D,T1> x, vec_t<D,T2> y)| \itt{convex_hull}
+
+\item \cppinline|bool is_hull_closed(vec1u h, vec_t<D,T1> hx, vec_t<D,T2> hy)| \itt{is_hull_closed}
+
+\item \cppinline|bool in_convex_hull(T1 x, T2 y, vec1u h, vec_t<D,U1> hx, vec_t<D,U2> hy)| \itt{in_convex_hull}
+
+\cppinline|vec_t<D,bool> in_convex_hull(vec_t<D,T1> x, vec_t<D,T2> y, vec1u h, vec_t<D,U1> hx, vec_t<D,U2> hy)|
+
+\item \cppinline|double convex_hull_distance(T1 x, T2 y, vec1u h, vec_t<D,U1> hx, vec_t<D,U2> hy)| \itt{convex_hull_distance}
+
+\cppinline|vec_t<D,double> convex_hull_distance(vec_t<D,T1> x, vec_t<D,T2> y, vec1u h, vec_t<D,U1> hx, vec_t<D,U2> hy)|
+
+\item \cppinline|double angdistr(double ra1, dec1, ra2, dec2)| \itt{angdistr}
+
+\cppinline|double angdist(double ra1, dec1, ra2, dec2)| \itt{angdist}
+
+\cppinline|vec_t<D,double> angdist(vec_t<D,double> ra1, dec1, ra2, dec2)|
+
+\cppinline|vec_t<D,double> angdist(vec_t<D,double> ra1, dec1, double ra2, dec2)|
+
+\item \cppinline|vec_t<D,bool> angdist_less(vec_t<D,double> ra1, dec1, double ra2, dec2)| \itt{angdist_less}
+
+\item \cppinline|void move_ra_dec(double& ra, dec, double dra, ddec)| \itt{move_ra_dec}
+
+\cppinline|void move_ra_dec(vec_t<D,double>& ra, dec, double dra, ddec)|
+
+\end{itemize}
+
+\subsection{Debug functions}
+
+\begin{itemize}
+\item \cppinline|void data_info(vec_t)| \itt{data_info}
+\item \cppinline|void mprint(vec_t<2,T>)| \itt{mprint}
+\end{itemize}
+
+\section{Parallel execution \label{SEC:support:thread}}
 % thread.hpp
 
 \begin{itemize}
-\item \cppinline|void fork(std::string)| \ifun{fork}
+\item \cppinline|void fork(string)| \itt{fork}
 
-\cppinline|void spawn(std::string)| \ifun{spawn}
+\cppinline|void spawn(string)| \itt{spawn}
 
-\item \cppinline|auto thread::pool(uint_t)| \ifun{thread::pool}
+\item \cppinline|auto thread::pool(uint_t)| \itt{thread::pool}
 
-\item \cppinline|void thread::sleep_for(double)| \ifun{thread::sleep_for}
+\item \cppinline|void thread::sleep_for(double)| \itt{thread::sleep_for}
 \end{itemize}
 
-\section{FITS input/output}
+\section{FITS input/output \label{SEC:support:fits}}
 % fits.hpp
 
-\section{Image processing}
+\section{Image processing \label{SEC:support:image}}
 % image.hpp
 
-\section{Astrophysics}
+\begin{itemize}
+\item \cppinline|vec_t<2,T> enlarge(vec_t<2,T> v, array {l1, l2, u1, u2}, T d = 0)| \itt{enlarge}
+
+\cppinline|vec_t<2,T> enlarge(vec_t<2,T> v, uint_t u, T d = 0)|
+
+\item \cppinline|vec_t<2,T> shrink(vec_t<2,T> v, array {l1, l2, u1, u2})| \itt{shrink}
+
+\cppinline|vec_t<2,T> shrink(vec_t<2,T> v, uint_t u)|
+
+\item \cppinline|void subregion(vec_t<2,T> v, vec1i r, vec1u& rr, vec1u& rs)| \itt{subregion}
+
+\cppinline|void subregion(vec_t<2,T> v, vec1i r, T d = 0)|
+
+\item \cppinline|vec_t<2,T> translate(vec_t<2,T> v, double x, double y, T d = 0)| \itt{translate}
+
+\item \cppinline|vec2d circular_mask(vec1u d, vec1d c, double r)| \itt{circular_mask}
+
+\item \cppinline|vec_t<1,T> radial_profile(vec_t<2,T> m, uint_t n)| \itt{radial_profile}
+
+\item \cppinline|vec_t<2,T> generate_img(array {w,h}, F f)| \itt{generate_img}
+
+\item \cppinline|vec2d gaussian_profile(array {w,h}, double sigma)| \itt{gaussian_profile}
+
+\item \cppinline|vec_t<2,T> convolve2d(vec_t<2,T> m, vec_t<2,U> k)| \itt{convolve2d}
+
+\item \cppinline|vec_t<2,T> boxcar(vec_t<2,T> m, uint_t n, F f)| \itt{boxcar}
+
+\end{itemize}
+
+\section{Astrophysics \label{SEC:support:astro}}
 % astro.hpp
 
 \subsection{Catalog management}
@@ -1186,7 +1741,29 @@ do_stuff(v);
 \subsection{Template fitting}
 % astro/qstack.hpp
 
-\chapter{Function index \label{SEC:fun_index}}
+\chapter{Tools \label{SEC:tool}}
+
+\section{Astrophysics \label{SEC:tool:astro}}
+\subsection{\texttt{angcorrel}} \itt{angcorrel}
+\subsection{\texttt{catinfo}} \itt{catinfo}
+\subsection{\texttt{deg2sex} and \texttt{sex2deg}} \itt{deg2sex} \itt{sex2deg}
+\subsection{\texttt{findsrc}} \itt{findsrc}
+\subsection{\texttt{fluxcube}} \itt{fluxcube}
+\subsection{\texttt{getgal}} \itt{getgal}
+\subsection{\texttt{photinfo}} \itt{photinfo}
+\subsection{\texttt{psffit}} \itt{psffit}
+\subsection{\texttt{qstack2}} \itt{qstack2}
+\subsection{\texttt{qxmatch2}} \itt{qxmatch2}
+\subsection{\texttt{randsrc}} \itt{randsrc}
+\subsection{\texttt{subsrc}} \itt{subsrc}
+
+\section{FITS and ASCII \label{SEC:tool:fits}}
+\subsection{\texttt{fits2ascii}} \itt{fits2ascii}
+\subsection{\texttt{fitstool}} \itt{fitstool}
+\subsection{\texttt{imgtool}} \itt{imgtool}
+\subsection{\texttt{qconvol}} \itt{qconvol}
+\subsection{\texttt{remcol}} \itt{remcol}
+
 
 \printindex
 
