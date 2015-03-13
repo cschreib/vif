@@ -798,7 +798,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("'inplace_solve_symmetric' function");
+        print("'solve_symmetric' function");
         vec1d beta = {1,2,3,4};
         vec2d alpha = identity_matrix(4);
         check(inplace_solve_symmetric(alpha, beta), "1");

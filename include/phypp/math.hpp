@@ -1462,6 +1462,13 @@ bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
 }
 
 template<typename Dummy = void>
+bool solve_symmetric(const vec2d& alpha, const vec1d& beta, vec1d& res) {
+    vec2d a = alpha;
+    res = beta;
+    return inplace_solve_symmetric<Dummy>(a, res);
+}
+
+template<typename Dummy = void>
 bool eigen_symmetric(vec2d& a, vec1d& vals) {
 #ifdef NO_LAPACK
     static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
