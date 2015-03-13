@@ -851,6 +851,8 @@ struct vec_t<0,Type> {};
 
 template<std::size_t Dim, typename Type>
 struct vec_t {
+    static_assert(!std::is_pointer<Type>::value, "library bug: pointer specialization failed");
+
     using effective_type = vec_t;
     using rtype = rtype_t<Type>;
     using dtype = dtype_t<Type>;
