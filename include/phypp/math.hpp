@@ -2374,57 +2374,19 @@ void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
     // The culprit is the cos(dec_old)/cos(dec_new) ratio.
 }
 
-// Find the closest point in a 2D array that satisfies a given criterium
-bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
-    phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
+template<std::size_t D, typename T, typename U>
+void move_ra_dec(vec_t<D,T>& ra, vec_t<Dim,U>& dec, double dra, double ddec) {
+    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match ("
+        ra.dims, " vs ", dec.dims, ")");
 
-    if (x >= map.dims[0]) x = map.dims[0]-1;
-    if (y >= map.dims[1]) y = map.dims[1]-1;
+    dra /= 3600.0;
+    ddec /= 3600.0;
+    const double d2r = dpi/180.0;
 
-    if (map.safe(x,y)) return true;
-
-    using vec_pair = vec_t<1,std::pair<uint_t,uint_t>>;
-    vec_pair open;
-    open.push_back(std::make_pair(x,y));
-
-    vec2b visit(map.dims);
-    visit.safe(x,y) = true;
-
-    bool found = false;
-    while (!open.empty()) {
-        vec_pair old_open = std::move(open);
-
-        for (auto p : old_open) {
-            int_t ox = p.first, oy = p.second;
-
-            for (uint_t d : range(4)) {
-                int_t tnx, tny;
-                if (d == 0) {
-                    tnx = ox;   tny = oy+1;
-                } else if (d == 1) {
-                    tnx = ox+1; tny = oy;
-                } else if (d == 2) {
-                    tnx = ox;   tny = oy-1;
-                } else {
-                    tnx = ox-1; tny = oy;
-                }
-
-                if (tnx < 0 || tny < 0) continue;
-
-                x = tnx, y = tny;
-                if (x >= map.dims[0] || y >= map.dims[1] || visit.safe(x,y)) continue;
-
-                if (!map.safe(x,y)) {
-                    open.push_back(std::make_pair(x,y));
-                    visit.safe(x,y) = true;
-                } else {
-                    return true;
-                }
-            }
-        }
+    for (uint_t i : range(ra)) {
+        ra.safe[i] += dra/cos(d2r*dec.safe[i]);
+        dec.safe[i] += ddec;
     }
-
-    return false;
 }
 
 #endif
