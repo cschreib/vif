@@ -2467,7 +2467,6 @@ uint_t flat_id_(const vec_t<D,T>& v, uint_t ret, cte_t<I>, U i, Args&& ... args)
         std::forward<Args>(args)...);
 }
 
-template<>
 template<std::size_t D, typename T, typename ... Args>
 uint_t flat_id(const vec_t<D,T>& v, Args&& ... args) {
     static_assert(sizeof...(Args) == D, "wrong number of IDs provided");
