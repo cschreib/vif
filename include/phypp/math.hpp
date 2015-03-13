@@ -2383,7 +2383,6 @@ bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
 
     if (map.safe(x,y)) return true;
 
-
     using vec_pair = vec_t<1,std::pair<uint_t,uint_t>>;
     vec_pair open;
     open.push_back(std::make_pair(x,y));
