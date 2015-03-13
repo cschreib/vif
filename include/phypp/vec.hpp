@@ -858,8 +858,20 @@ struct vec_t {
     using dtype = dtype_t<Type>;
     using drtype = dtype_t<Type>;
     using vtype = std::vector<dtype>;
-    using comparator = std::less<dtype>;
     using dim_type = std::array<std::size_t, Dim>;
+    struct comparator {
+        constexpr bool operator() (const dtype& t1, const dtype& t2) {
+            return t1 < t2;
+        }
+        template<typename U>
+        constexpr bool operator() (const dtype& t1, const U& t2) {
+            return t1 < t2;
+        }
+        template<typename U>
+        constexpr bool operator() (const U& t1, const dtype& t2) {
+            return t1 < t2;
+        }
+    };
 
     vtype    data;
     dim_type dims = {{0}};
@@ -1512,13 +1524,24 @@ struct vec_t<Dim,Type*> {
         bool operator() (const dtype* t1, const dtype* t2) {
             return *t1 < *t2;
         }
-        bool operator() (const dtype* t1, const dtype& t2) {
+        template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
+        bool operator() (const dtype* t1, const U& t2) {
             return *t1 < t2;
         }
-        bool operator() (const dtype& t1, const dtype* t2) {
+        template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
+        bool operator() (const U& t1, const dtype* t2) {
             return t1 < *t2;
         }
-        bool operator() (const dtype& t1, const dtype& t2) {
+
+        constexpr bool operator() (const dtype& t1, const dtype& t2) {
+            return t1 < t2;
+        }
+        template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
+        constexpr bool operator() (const dtype& t1, const U& t2) {
+            return t1 < t2;
+        }
+        template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
+        constexpr bool operator() (const U& t1, const dtype& t2) {
             return t1 < t2;
         }
     };
