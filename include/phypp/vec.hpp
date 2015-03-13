@@ -1084,8 +1084,8 @@ struct vec_t {
         return *this;
     }
 
-    vec_t<1, uint_t> ids(uint_t i) const {
-        vec_t<1, uint_t> v(Dim);
+    std::array<uint_t,Dim> ids(uint_t i) const {
+        std::array<uint_t,Dim> v;
         for (uint_t j = 0; j < Dim; ++j) {
             v[Dim-1-j] = i % dims[Dim-1-j];
             i /= dims[Dim-1-j];
