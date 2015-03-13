@@ -2871,6 +2871,124 @@ void inplace_sort(vec_t<Dim,Type>& v) {
     std::stable_sort(v.data.begin(), v.data.end(), typename vec_t<Dim,Type>::comparator());
 }
 
+// Check if a given array is sorted or not
+template<std::size_t Dim, typename Type>
+bool is_sorted(const vec_t<Dim,Type>& v) {
+    for (uint_t i = 0; i < v.size()-1; ++i) {
+        if (v.safe[i] >= v.safe[i+1]) return false;
+    }
+
+    return true;
+}
+
+// Returns the position of the last value in the array that is less than or equal to 'x'.
+// Returns 'npos' if no value satisfy this criterium.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
+template<typename T, std::size_t Dim, typename Type>
+uint_t lower_bound(T x, const vec_t<Dim,Type>& v) {
+    if (v.empty()) return npos;
+
+    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
+        typename vec_t<Dim,Type>::comparator());
+
+    if (iter == v.data.begin()) {
+        return npos;
+    } else {
+        return iter - v.data.begin() - 1;
+    }
+}
+
+// Returns the position of the first value in the array that is greater than 'x'.
+// Returns 'npos' if no value satisfy this criterium.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
+template<typename T, std::size_t Dim, typename Type>
+uint_t upper_bound(T x, const vec_t<Dim,Type>& v) {
+    if (v.empty()) return npos;
+
+    auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
+        typename vec_t<Dim,Type>::comparator());
+
+    if (iter == v.data.end()) {
+        return npos;
+    } else {
+        return iter - v.data.begin();
+    }
+}
+
+// Return the position of the last value in 'v' that is less than or equal to 'x' and
+// the position of the first value in 'v' that is greater than 'x'.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
+template<typename T, std::size_t Dim, typename Type>
+std::array<uint_t,2> bounds(T x, const vec_t<Dim,Type>& v) {
+    std::array<uint_t,2> res;
+
+    if (v.empty()) {
+        res[0] = npos;
+        res[1] = npos;
+    } else {
+        auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
+            typename vec_t<Dim,Type>::comparator());
+
+        if (iter == v.data.end()) {
+            res[0] = v.size() - 1;
+            res[1] = npos;
+        } else if (iter == v.data.begin()) {
+            res[0] = npos;
+            res[1] = 0;
+        } else {
+            res[1] = iter - v.data.begin();
+            res[0] = res[1] - 1;
+        }
+    }
+
+    return res;
+}
+
+// Return the position of the last value in 'v' that is less than or equal to 'x1' and
+// the position of the first value in 'v' that is greater than 'x2'.
+// Note: assumes that:
+//  1) 'v' is sorted and does not contain NaN values,
+//  2) 'x2' is greater than or equal to 'x1'.
+template<typename T, typename U, std::size_t Dim, typename Type>
+std::array<uint_t,2> bounds(T x1, U x2, const vec_t<Dim,Type>& v) {
+    std::array<uint_t,2> res;
+
+    if (v.empty()) {
+        res[0] = npos;
+        res[1] = npos;
+    } else {
+        auto iter = std::upper_bound(v.data.begin(), v.data.end(), x1,
+            typename vec_t<Dim,Type>::comparator());
+
+        if (iter == v.data.begin()) {
+            res[0] = npos;
+        } else {
+            res[0] = iter - v.data.begin() - 1;
+        }
+
+        iter = std::upper_bound(iter, v.data.end(), x2,
+            typename vec_t<1,Type>::comparator());
+
+        if (iter == v.data.end()) {
+            res[1] = npos;
+        } else {
+            res[1] = iter - v.data.begin();
+        }
+    }
+
+    return res;
+}
+
+// Return the indices of all the values in the array that are equal to 'x'.
+// Note: assumes that 'v' is sorted and does not contain NaN values.
+template<typename T, std::size_t Dim, typename Type>
+vec1u equal_range(T x, const vec_t<Dim,Type>& v) {
+    auto res = std::equal_range(v.data.begin(), v.data.end(), x,
+        typename vec_t<Dim,Type>::comparator());
+
+    return uindgen(1 + (res.second - res.first)) + (res.first - v.data.begin());
+}
+
 template<std::size_t Dim, typename Type>
 void inplace_remove(vec_t<Dim,Type>& v, vec1u ids) {
     inplace_sort(ids);
