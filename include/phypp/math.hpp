@@ -129,6 +129,14 @@ vec_t<2,T> make_bins(const vec_t<1,T>& v) {
     return b;
 }
 
+template<typename T, typename B = double>
+bool in_bin(T t, const vec_t<1,B>& b) {
+    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        "vector (expected dims=[2], got dims=[", b.dims, "])");
+
+    return t >= b.safe[0] && t < b.safe[1];
+}
+
 template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
     phypp_check(b.dims[0] == 2, "can only be called on a single bin "
@@ -144,7 +152,17 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
     return res;
 }
 
-template<std::size_t Dim, typename Type, typename B>
+template<typename T, typename B = double>
+bool in_bin(T t, const vec_t<2,B>& b, uint_t ib) {
+    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        "vector (expected dims=[2], got dims=[", b.dims, "])");
+    phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        "(", ib, " vs. ", b.dims[1], ")");
+
+    return t >= b.safe(0,ib) && t < b.safe(1,ib);
+}
+
+template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
@@ -161,7 +179,23 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib)
     return res;
 }
 
-template<std::size_t Dim, typename Type, typename B>
+template<typename T, typename B = double>
+bool in_bin_open(T t, const vec_t<2,B>& b, uint_t ib) {
+    phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        "vector (expected dims=[2], got dims=[", b.dims, "])");
+    phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        "(", ib, " vs. ", b.dims[1], ")");
+
+    if (ib == 0) {
+        return t < b.safe(1,ib);
+    } else if (ib == b.dims[1]-1) {
+        return t >= b.safe(0,ib);
+    } else {
+        return t >= b.safe(0,ib) && t < b.safe(1,ib);
+    }
+}
+
+template<std::size_t Dim, typename Type, typename B = double>
 vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
