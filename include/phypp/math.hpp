@@ -1679,7 +1679,7 @@ struct affinefit_result {
 
 // Perform a simple linear fit 'y = offset + slope*x'
 template<typename TypeX, typename TypeY, std::size_t Dim, typename TypeE>
-affinefit_result affinefit(const TypeX& x, const TypeY& y, const vec_t<Dim,TypeE>& ye) {
+affinefit_result affinefit(const TypeY& y, const vec_t<Dim,TypeE>& ye, const TypeX& x) {
     affinefit_result fr;
     fr.success = true;
 
@@ -1698,25 +1698,9 @@ affinefit_result affinefit(const TypeX& x, const TypeY& y, const vec_t<Dim,TypeE
     return fr;
 }
 
-// Perform a simple linear fit 'y = offset + slope*x'
 template<typename TypeX, typename TypeY, typename TypeE>
-affinefit_result affinefit(const TypeX& x, const TypeY& y, const TypeE& ye) {
-    affinefit_result fr;
-    fr.success = true;
-
-    auto s = n_elements(x)/ye;
-    auto sx = total(x/ye);
-    auto sy = total(y/ye);
-    auto sxx = total(x*x/ye);
-    auto sxy = total(x*y/ye);
-
-    auto delta = s*sxx - sx*sx;
-    fr.offset = (sxx*sy - sx*sxy)/delta;
-    fr.slope = (s*sxy - sx*sy)/delta;
-    fr.offset_err = sqrt(sxx/delta);
-    fr.slope_err = sqrt(s/delta);
-
-    return fr;
+affinefit_result affinefit(const TypeY& y, const TypeE& ye, const TypeX& x) {
+    return affinefit(y, replicate(ye, y.dims), x);
 }
 
 // Returns the position of the last value in the array that is less than or equal to 'x'.

@@ -920,7 +920,7 @@ int main(int argc, char* argv[]) {
         vec1d y = 5*x + 3;
         vec1d ye = y*0 + 1;
 
-        auto fr = affinefit(x, y, ye);
+        auto fr = affinefit(y, ye, x);
         check(fr.slope, "5");
         check(fr.offset, "3");
     }
