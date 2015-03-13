@@ -173,7 +173,7 @@ struct flux_extractor {
         if (psf.dims[0] != cube.dims[1] || psf.dims[1] != cube.dims[2]) {
             int_t hxsize = cube.dims[1]/2;
             int_t hysize = cube.dims[2]/2;
-            vec1i mid = psf_orig.ids(max_id(psf_orig));
+            vec1i mid = mult_ids(psf_orig, max_id(psf_orig));
             psf = subregion(psf_orig, {mid[0]-hxsize, mid[1]-hysize, mid[0]+hxsize, mid[1]+hysize});
 
             if (!update_masks_()) {
@@ -334,7 +334,7 @@ struct logdisp_extractor {
         if (psf.dims[0] != cube.dims[1] || psf.dims[1] != cube.dims[2]) {
             int_t hxsize = cube.dims[1]/2;
             int_t hysize = cube.dims[2]/2;
-            vec1i mid = psf_orig.ids(max_id(psf_orig));
+            vec1i mid = mult_ids(psf_orig, max_id(psf_orig));
             psf = subregion(psf_orig, {mid[0]-hxsize, mid[1]-hysize, mid[0]+hxsize, mid[1]+hysize});
 
             if (!update_masks_()) {

@@ -274,18 +274,18 @@ int main(int argc, char* argv[]) {
         v(_,-1) = replicate(-2,5);
         check(v, "4, 5, -4, -2, 8, 9, -4, -2, 0, 1, -4, -2, -1, -5, -4, -2, 2, 2, 2, -2");
 
-        check(v.flat_id(0,0), "0");
-        check(v.flat_id(0,1), "1");
-        check(v.flat_id(1,0), "4");
-        check(v.flat_id(2,0), "8");
-        check(v.flat_id(2,1), "9");
+        check(flat_id(v,0,0), "0");
+        check(flat_id(v,0,1), "1");
+        check(flat_id(v,1,0), "4");
+        check(flat_id(v,2,0), "8");
+        check(flat_id(v,2,1), "9");
     }
 
     {
         print("Index conversion");
         vec2i v = uindgen(2,3);
         for (uint_t i = 0; i < v.size(); ++i) {
-            auto ids = v.ids(i);
+            vec1u ids = mult_ids(v, i);
             check(v(ids[0], ids[1]), strn(i));
         }
     }
@@ -643,12 +643,12 @@ int main(int argc, char* argv[]) {
 
         vec2d trans = translate(test, 2, 0);
 
-        auto mid = trans.ids(max_id(trans));
+        vec1u mid = mult_ids(trans, max_id(trans));
         check(mid[0], "27");
         check(mid[1], "25");
 
         trans = translate(trans, -2, 0);
-        mid = trans.ids(max_id(trans));
+        mid = mult_ids(trans, max_id(trans));
         check(mid[0], "25");
         check(mid[1], "25");
     }

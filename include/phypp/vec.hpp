@@ -1084,31 +1084,6 @@ struct vec_t {
         return *this;
     }
 
-    std::array<uint_t,Dim> ids(uint_t i) const {
-        std::array<uint_t,Dim> v;
-        for (uint_t j = 0; j < Dim; ++j) {
-            v[Dim-1-j] = i % dims[Dim-1-j];
-            i /= dims[Dim-1-j];
-        }
-
-        return v;
-    }
-
-    uint_t flat_id_(uint_t ret, cte_t<Dim>) const {
-        return ret;
-    }
-
-    template<typename T, std::size_t D, typename ... Args>
-    uint_t flat_id_(uint_t ret, cte_t<D>, T i, Args&& ... args) const {
-        return flat_id_(ret + pitch(D)*to_idx<D>(i), cte_t<D+1>{}, std::forward<Args>(args)...);
-    }
-
-    template<typename ... Args>
-    uint_t flat_id(Args&& ... args) const {
-        static_assert(sizeof...(Args) == Dim, "wrong number of IDs provided");
-        return flat_id_(0, cte_t<0>{}, std::forward<Args>(args)...);
-    }
-
     template<typename T>
     T to_idx_(T ui, cte_t<false>) const {
         phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
@@ -2442,6 +2417,39 @@ template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value
 vec1u dim(const T& t) {
     return {1u};
 }
+
+// Get multi-dim IDs from a flat ID
+template<std::size_t D, typename T>
+vec1u mult_ids(const vec_t<D,T>& v, uint_t i) {
+    vec1u r(D);
+
+    for (uint_t j : range(D)) {
+        r.safe[D-1-j] = i % v.dims[D-1-j];
+        i /= v.dims[D-1-j];
+    }
+
+    return r;
+}
+
+// Get flat ID from multi-dim IDs
+template<std::size_t D, typename T>
+uint_t flat_id_(const vec_t<D,T>& v, uint_t ret, cte_t<D>) {
+    return ret;
+}
+
+template<std::size_t D, typename T, std::size_t I, typename U, typename ... Args>
+uint_t flat_id_(const vec_t<D,T>& v, uint_t ret, cte_t<I>, U i, Args&& ... args) {
+    return flat_id_(v, ret + v.pitch(I)*v.template to_idx<I>(i), cte_t<I+1>{},
+        std::forward<Args>(args)...);
+}
+
+template<>
+template<std::size_t D, typename T, typename ... Args>
+uint_t flat_id(const vec_t<D,T>& v, Args&& ... args) {
+    static_assert(sizeof...(Args) == D, "wrong number of IDs provided");
+    return flat_id_(v, 0, cte_t<0>{}, std::forward<Args>(args)...);
+}
+
 
 template<typename T, typename U, typename ... Args>
 bool same_size(const T& v1, const U& v2) {
