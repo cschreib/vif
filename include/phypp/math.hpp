@@ -1509,7 +1509,7 @@ bool inplace_eigen_symmetric(vec2d& a, vec1d& vals) {
 template<typename Dummy = void>
 bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
     vecs = a;
-    return eigen_symmetric<Dummy>(vecs, vals);
+    return inplace_eigen_symmetric<Dummy>(vecs, vals);
 }
 
 
