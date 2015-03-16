@@ -223,6 +223,32 @@ auto uJy2lsun(const T& z, const U& d, const V& lam, const W& flx) ->
     return factor*flx*d*d/lam;
 }
 
+// Absolute luminosity [Lsun] to absolute magnitude [AB] using rest-frame wavelength
+// 'lam' [um]
+template<typename T, typename U>
+auto lsun2mag(const T& lam, const U& lum, double zp = 23.9) -> decltype(1.0*lam*lum) {
+    const double Mpc = 3.0856e22; // [m/Mpc]
+    const double Lsol = 3.839e26; // [W/Lsol]
+    const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
+    const double c = 2.9979e14;   // [um.s-1]
+    const double d = 10.0/1e6;    // [Mpc]
+    const double factor = uJy*Lsol/(c*4.0*dpi*Mpc*Mpc*d*d);
+    return -2.5*log10(factor*lam*lum) + zp;
+}
+
+// Absolute magnitude [AB] to absolute luminosity [Lsun] using rest-frame wavelength
+// 'lam' [um]
+template<typename T, typename U>
+auto mag2lsun(const T& mag, const U& lum, double zp = 23.9) -> decltype(e10(mag)/lam) {
+    const double Mpc = 3.0856e22; // [m/Mpc]
+    const double Lsol = 3.839e26; // [W/Lsol]
+    const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
+    const double c = 2.9979e14;   // [um.s-1]
+    const double d = 10.0/1e6;    // [Mpc]
+    const double factor = uJy*Lsol/(c*4.0*dpi*Mpc*Mpc*d*d);
+    return e10(0.4*(zp - mag))/factor/lam;
+}
+
 // Flux in uJy to AB magnitude
 template<typename T>
 auto uJy2mag(const T& x, double zp = 23.9) -> decltype(-2.5*log10(x) + zp) {
