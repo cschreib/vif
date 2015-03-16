@@ -1595,7 +1595,8 @@ struct vec_t<Dim,Type*> {
         return *this;
     }
 
-    template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
+    template<typename T, typename enable =
+        typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value || std::is_same<Type,bool>::value>::type>
     vec_t& operator = (const vec_t<Dim,T>& v) {
         static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
             "non-convertible types");
