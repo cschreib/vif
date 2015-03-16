@@ -560,6 +560,30 @@ double fraction_of(const vec_t<Dim,T>& b) {
     return mean(b);
 }
 
+template<std::size_t Dim, typename T, typename U, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<T>, bool>::value &&
+                            std::is_same<rtype_t<U>, bool>::value>::type>
+double fraction_of(const vec_t<Dim,T>& b, const vec_t<Dim,U>& among) {
+    phypp_check(b.dims == among.dims, "incompatible dimensions between count vector and "
+        "among vector (", b.dims, " vs. ", among.dims, ")");
+
+    double total = 0.0;
+    uint_t count = 0;
+    for (uint_t i : range(among)) {
+        if (among.safe[i]) {
+            total += b.safe[i];
+            ++count;
+        }
+    }
+
+    return total/count;
+}
+
+template<typename ... Args>
+std::string percent_of(Args&& ... args) {
+    return strn(round(100.0*fraction_of(std::forward<Args>(args)...)))+"%";
+}
+
 template<std::size_t Dim, typename Type>
 rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
     phypp_check(!v.empty(), "cannot find the median of an empty vector");
