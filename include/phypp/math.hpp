@@ -2375,8 +2375,8 @@ void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
 }
 
 template<std::size_t D, typename T, typename U>
-void move_ra_dec(vec_t<D,T>& ra, vec_t<Dim,U>& dec, double dra, double ddec) {
-    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match ("
+void move_ra_dec(vec_t<D,T>& ra, vec_t<D,U>& dec, double dra, double ddec) {
+    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
         ra.dims, " vs ", dec.dims, ")");
 
     dra /= 3600.0;
