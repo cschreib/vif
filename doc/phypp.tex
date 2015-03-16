@@ -10,6 +10,7 @@
 \makeindex
 \usepackage[totoc]{idxlayout}
 \usepackage{xparse}
+\usepackage{mdframed}
 \usepackage{tikz}
 \usepackage[colorlinks=true,linkcolor=blue,linktoc=page]{hyperref}
 
@@ -35,33 +36,49 @@
 
 \NewDocumentCommand{\ittt}{v}{\texttt{#1}}
 
+\mdfsetup{skipabove=\topskip,skipbelow=\topskip}
+\global\mdfdefinestyle{advanced}{%
+    linecolor=red,linewidth=2pt,%
+    leftmargin=0pt,rightmargin=0pt,%
+    leftline=false,rightline=false,topline=false,%
+    frametitlerule=true, frametitlerulewidth=2pt
+}
+\mdfsetup{skipabove=\topskip,skipbelow=\topskip}
+\global\mdfdefinestyle{warning}{%
+    linecolor=blue,linewidth=2pt,%
+    leftmargin=0pt,rightmargin=0pt,%
+    leftline=false,rightline=false,topline=false,%
+    frametitlerule=true, frametitlerulewidth=2pt
+}
+\mdfsetup{skipabove=\topskip,skipbelow=\topskip}
+\global\mdfdefinestyle{example}{%
+    linecolor=black,linewidth=1pt,%
+    leftmargin=0pt,rightmargin=0pt,%
+    innerleftmargin=0pt,innerrightmargin=0pt,%
+    leftline=false,rightline=false,topline=false,%
+    frametitlerule=true, frametitlerulewidth=1pt
+}
+
 \newenvironment{advanced}
 {
-    \vspace{0.3cm}\noindent \textbf{\color{red} Advanced} \\
-    \noindent\begin{tabular}{p{0.95\textwidth}}
-    \hline\\[-0.3cm]
+    \begin{mdframed}[style=advanced,frametitle={Advanced}]
 }
 {
-    \\[0.2cm]\hline
-    \end{tabular}
+    \end{mdframed}
 }
 \newenvironment{warning}
 {
-    \vspace{0.3cm}\noindent \textbf{\color{blue} Warning} \\
-    \noindent\begin{tabular}{p{0.95\textwidth}}
-    \hline\\[-0.3cm]
+    \begin{mdframed}[style=warning,frametitle={Warning}]
 }
 {
-    \\[0.2cm]\hline
-    \end{tabular}
+    \end{mdframed}
 }
 \newenvironment{example}
 {
-    \vspace{0.3cm}\noindent \textbf{Example} \\[-0.3cm]
-    \rule{\linewidth}{.4pt}\vspace*{-0.45cm}
+    \begin{mdframed}[style=example,frametitle={Example}]
 }
 {
-    \vspace*{-0.65cm}\rule{\linewidth}{.4pt}
+    \end{mdframed}
 }
 
 \newminted{cpp}{fontsize=\small}
