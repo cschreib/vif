@@ -847,11 +847,52 @@ With this in mind, it is clear that this chapter focuses on the \emph{interface}
 
 \section{Generic vector functions \label{SEC:support:generic}}
 
-The vector and view classes are useful and complete tools. However, there are a number of tasks that one repeatedly need to do, like generating a sequence of indices, or sorting a vector, and that would be tedious to write each time they are needed. In this section we list these functions and algorithms.
+The vector and view classes are useful and complete tools. However, there are a number of tasks that one repeatedly need to do, like generating a sequence of indices, or sorting a vector, and that would be tedious to write each time they are needed. For this reason, the \phypp library comes with a large set of utility functions to sort, rearrange, and select data inside vectors. In this section we list these functions and algorithms.
+
+This support library also introduces a global constant called \cppinline{npos}\itt{npos}. This is an unsigned integer whose value is the largest possible integer that the \cppinline{uint_t} type can hold. It is meant to be used as an error value, or the value to return if no normal value would make sense. It is very similar in concept to the \cppinline{std::string::npos} provided by the C++ standard library. In particular, it is worth noting that converting \cppinline{npos} to a \emph{signed} integer produces the value \cppinline{-1}.
+
+We now describe the functions provided by this library.
 
 \begin{itemize}
 
-\item \cppinline{vec1u mult_ids(vec_t v, uint_t i)}
+\item \cppinline{auto range(vec_t v)} \itt{range}
+
+\cppinline{auto range(uint_t n)}
+
+\cppinline{auto range(uint_t i0, uint_t n)}
+
+This function returns a C++ \emph{range}, i.e., an object that can be used inside the C++ range-based \cppinline{for} loop. This range will generate integer values starting from \cppinline{0} (first and second version) or \cppinline{i0} (third version) to \cppinline{v.size()} (first version) or \cppinline{n} (second and third versions), that last value being \emph{excluded} from the range. This nice way of writing an integer \cppinline{for} loop actually runs as fast as (if not faster than) the classical way, and is less error prone.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {4,5,6,8};
+
+// First version
+for (uint_t i : range(v)) {
+    // 'i' goes from 0 to 3
+    v[i] = ...;
+}
+
+// Note that the loop above generates
+// *indices* inside the vector, while:
+for (int i : v) { /* ... */ }
+// ... generates *values* from the vector.
+
+// Second version
+for (uint_t i : range(3)) {
+    // 'i' goes from 0 to 2
+    v[i] = ...;
+}
+
+// Third version
+for (uint_t i : range(1,3)) {
+    // 'i' goes from 1 to 3
+    v[i] = ...;
+}
+\end{cppcode}
+\end{example}
+
+\item \cppinline{vec1u mult_ids(vec_t v, uint_t i)} \itt{mult_ids}
 
 This is only useful for multidimensional vectors. This function converts a ``flat'' index \cppinline{i} (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector \cppinline{v}. The \cppinline{flat_id} function does the inverse job.
 
@@ -866,7 +907,7 @@ v[3] == v(1,0); // true
 \end{cppcode}
 \end{example}
 
-\item \cppinline{uint_t flat_id(vec_t v, ...)}
+\item \cppinline{uint_t flat_id(vec_t v, ...)} \itt{flat_id}
 
 This is only useful for multidimensional vectors. This function converts a group of multidimensional indices into a ``flat'' index (\ref{SEC:core:vec:indexing}), following the dimensions of the provided vector \cppinline{v}. The \cppinline{mult_ids} function does the inverse job.
 
