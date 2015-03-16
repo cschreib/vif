@@ -643,8 +643,17 @@ vec1i v = {1,2,3,4};
 v[_-2] = 12;   // only access the indices 0 to 2
 v[2-_] = 12;   // only access the indices 2 to 3
 v[1-_-2] = 12; // only access the indices 1 to 2
-
 \end{cppcode}
+
+Except for the special case of the placeholder index \cppinline{_}, all the indexing methods described above perform \emph{bound checks} before accessing each element. In other words, the vector class makes sure that each index is smaller than either the total size of the vector (for flat indices) or the length of its corresponding dimension (for multidimensional indices). If this condition is not satisfied, an assertion is raised explaining the problem, and the program is stopped immediately to prevent memory corruption.
+
+\begin{advanced}
+This bound checking has a small but noticeable impact on performances. In most cases, the added security is definitely worth it. Indeed, accessing a vector with an out of bounds index has very unpredictable impacts on the behavior of the program: sometimes it will crash, but most of the time it will not. Memory will be silently corrupted, the problem will be hard to notice, but the consequences can be terrible... Then, identifying the root of the problem to fix it may prove even more challenging. This is why bound checking is enabled by default.
+
+However, there are cases where bound checking is superfluous, for example if we already know \emph{by construction} that the indices we are dealing with will always be valid. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element, then most of the time will be spent iterating from one index to the next and loading the value in the CPU cache, and bound checking can take a significant amount of the total time.
+
+For this reason, the \phypp vector also offers an alternative indexing interface, the \emph{safe} interface, that behaves exactly like the standard interface described above, except that it does not perform bound checking. One may access it using \cppinline{v.safe[i]} for flat indexing, or \cppinline{v.safe(x,y)} for multidimensional indexing, and it can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times.
+\end{advanced}
 
 \subsection{Operators \label{SEC:core:vec:operator}}
 
