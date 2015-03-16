@@ -1720,6 +1720,96 @@ We now list the other, less common functions provided in this library. These are
 \section{FITS input/output \label{SEC:support:fits}}
 % fits.hpp
 
+The FITS (Flexible Image Transport System) format is a general purpose file format developed for astrophysics data. In particular, FITS files can store images with floating point pixel values, image cubes, but also binary data tables with an arbitrary number of columns and rows. Using a meta-data system (FITS keywords), FITS files usually carry a number of important additional informations about their content. E.g., for images files, the mapping between image pixels and sky coordinates (WCS coordinates), or the physical unit of the pixel values.
+
+Storying data tables in binary inside FITS files is a space-efficient and fast way to store and read non-image data. FITS tables come in two fashions: row-oriented and column-oriented tables. In row-oriented tables, all the data about one row (e.g., about one galaxy in the table) is stored contiguously on disk. This means that it is very fast to retrieve all the information about a given object. In column-oriented tables however, a whole column is stored contiguously in memory. This means that it is very fast to read a given column for all the objects in the table. Due to the way the \phypp library is designed, it is more efficient to use the latter format, since a given column of the file will be represented by a single \phypp vector. It also brings the nice advantage of allowing to store columns of different lengths, e.g.~to combine two tables in the same file, or to carry meta-data that would be hard to store in the standard FITS keywords. The column-oriented format is not well known, but most softwares and libraries do support it\footnote{Topcat does. In IDL, column-oriented FITS files are supported by the \cppinline{mrdfits} and \cppinline{mwrfits} procedures.}.
+
+Finally, note that this support library introduces a new type: \cppinline{fits::header} (that we will shorten to \cppinline{header} in the following). This type is used to store the header of any FITS file. For now, it is actually just a raw \cppinline{std::string}, but that might change in the future.
+
+We now describe the various functions offered by this library, split into categories.
+
+\subsection{Generic header functions}
+
+\begin{itemize}
+\item \cppinline|header fits::read_header(string f)| \itt{fits::read_header}
+
+\cppinline|header fits::read_header(string f, uint_t s)|
+
+\item \cppinline|bool fits::getkey(header hdr, string k, T& v)| \itt{fits::getkey}
+
+\item \cppinline|bool fits::setkey(header hdr, string k, T& v, string c = "")| \itt{fits::setkey}
+
+
+\end{itemize}
+
+\subsection{FITS images}
+
+\begin{itemize}
+\item \cppinline|uint_t fits::file_axes(string)| \itt{fits::file_axes}
+
+\item \cppinline|vec1u fits::file_dimensions(string)| \itt{fits::file_dimensions}
+
+\item \cppinline|bool fits::is_cube(string)| \itt{fits::is_cube}
+
+\item \cppinline|bool fits::is_image(string)| \itt{fits::is_image}
+
+\item \cppinline|void fits::read(string f, vec_t& v)| \itt{fits::read}
+
+\cppinline|void fits::read(string f, vec_t& v, header& hdr)|
+
+\cppinline|void fits::read_hdu(string f, vec_t& v, uint_t hdu)| \itt{fits::read_hdu}
+
+\cppinline|void fits::read_hdu(string f, vec_t& v, uint_t hdu, header& hdr)|
+
+\item \cppinline|vec1s fits::read_sectfits(string f)| \itt{fits::read_sectfits}
+
+\item \cppinline|void fits::write(string f, vec_t v)| \itt{fits::write}
+
+\cppinline|void fits::write(string f, vec_t v, header hdr)|
+
+\item \cppinline|void fits::display(string f)| \itt{fits::display}
+
+\cppinline|void fits::display(string r, string g)|
+
+\cppinline|void fits::display(string r, string g, string b)|
+
+\end{itemize}
+
+\subsection{WCS coordinates}
+
+\begin{itemize}
+\item \cppinline|bool fits::make_wcs_header(auto p, header& hdr)| \itt{fits::make_wcs_header}
+
+\cppinline|bool fits::make_wcs_header(vec1s p, header& hdr)|
+
+\item \cppinline|header fits::filter_wcs(header)| \itt{fits::filter_wcs}
+
+\item \cppinline|auto fits::extast(header)| \itt{fits::extast}
+
+\item \cppinline|void fits::ad2xy(auto wcs, vec_t ra, dec, vec_t& x, y)| \itt{fits::ad2xy}
+
+\cppinline|void fits::xy2ad(auto wcs, vec_t ra, dec, vec_t& x, y)| \itt{fits::xy2ad}
+
+\item \cppinline|bool fits::get_pixel_size(string file, double& a)| \itt{fits::get_pixel_size}
+
+\end{itemize}
+
+\subsection{FITS tables}
+
+\begin{itemize}
+\item \cppinline|vec_t<1,auto> fits::read_table_columns(string)| \itt{fits::read_table_columns}
+
+\item \cppinline|void fits::read_table(string f, ...)| \itt{fits::read_table}
+
+\cppinline|void fits::read_table_loose(string f, ...)| \itt{fits::read_table_loose}
+
+\item \cppinline|void fits::write_table(string f, ...)| \itt{fits::write_table}
+
+\cppinline|void fits::update_table(string f, ...)| \itt{fits::update_table}
+
+\end{itemize}
+
+
 \section{Image processing \label{SEC:support:image}}
 % image.hpp
 
