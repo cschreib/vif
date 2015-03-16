@@ -179,6 +179,7 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
 
 template<typename Type>
 vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
+    // TODO: optimize this, really
     vec_t<1, rtype_t<Type>> res(npix);
     uint_t hsx = img.dims[0]/2;
     uint_t hsy = img.dims[1]/2;
