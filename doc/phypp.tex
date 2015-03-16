@@ -118,7 +118,7 @@ Like most advanced C++ libraries, \phypp is essentially \emph{template} based. T
 \item \cppinline|vec1c|: vector of \cppinline|char|.
 \end{itemize}
 
-On top of the \stdvec interface, the \phypp vector adds some extra functionalities. The most important ones are operator overloading, multi-dimensional indexing, and array indexing.
+On top of the \stdvec interface, the \phypp vector adds some extra functionalities. The most important ones are operator overloading, multi-dimensional indexing, and vector views.
 
 \subsection{Operator overloading \label{SEC:core:overview:overloading}}
 
@@ -195,9 +195,9 @@ The hard limit on the number of dimensions will then depend on your compiler (ea
 As for the types allowed inside the vector, there is no explicit restriction. However, some features may obviously not be available depending on the capabilities of your type (e.g., if your type has no \cppinline{operator*}, you will not be able to multiply together vectors of this type). Lastly, the \phypp vector shares the same restrictions as the \stdvec regarding the \emph{copyable} and \emph{movable} capabilities of the stored type.
 \end{advanced}
 
-\subsection{Array indexing \label{SEC:core:overview:array_index}}
+\subsection{Vector views \label{SEC:core:overview:views}}
 
-We have seen that, instead of accessing each element individually, we can use operator overloading to perform simple operations on all the elements of the vector at once: \cppinline|w *= 2|. We can also, like with \stdvec, modify each element individually, knowing their indices: \cppinline|w[2] *= 2|. One last important feature allowed by the \phypp vector is array indexing, which allows us to create a \emph{view} inside an array. Each element of the view is actually a reference to another element in the original array, and modifying the elements of the view actually modifies the values in the original array.
+We have seen that, instead of accessing each element individually, we can use operator overloading to perform simple operations on all the elements of the vector at once: \cppinline|w *= 2|. We can also, like with \stdvec, modify each element individually, knowing their indices: \cppinline|w[2] *= 2|. One last important feature allowed by the \phypp vector is that one can create a \emph{view} inside a vector. Each element of the view is actually a \emph{reference} to an element in the original vector, and modifying the elements of the view actually modifies the elements in the original vector. As you will see later, views actually share most of the interface and capabilities of true vectors, so that most generic codes that work with vectors will also work with views.
 
 \begin{cppcode}
 // Create a simple vector.
@@ -223,7 +223,7 @@ v;         // {99,6,10}
 \end{cppcode}
 
 \begin{warning}
-It is important to note that, since a view keeps \emph{references} to the elements of the original vector, its lifetime must not exceed that of the original vector. Else, it will contain \emph{dangling} references that point to unused memory, and this should be avoided at all cost. In fact, views are not meant to be stored into named variables like in the above example. Most of the time, one will use them as temporary variables, e.g.:
+It is important to note that, since a view keeps references to the elements of the original vector, the lifetime of the view must not exceed that of the original vector. Else, it will contain \emph{dangling references}, i.e.~pointers to unused memory, and this should be avoided at all cost. In fact, views are not meant to be stored into named variables like in the above example. Most of the time, one will use them as temporary variables, e.g.:
 \begin{cppcode}
 vec1f w = {1,2,3,4,5,6};
 vec1u id = {1,2,4};
@@ -245,8 +245,8 @@ In the rest of this document, \cppinline{Dimension} will usually just be called 
 
 A vector only contains two member variables:
 \begin{itemize}
-\item \cppinline{std::vector<...> data} \\ This is the underlying \stdvec containing the elements of the vector. It is exposed to the public interface for simplicity, but on most occasions it should \emph{not} be used directly. In fact, it may become part of the private interface in the future, so you should not rely on its existence.
-\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign another vector (\ref{SEC:core:vec:constructor}).
+\item \cppinline{std::vector<T> data} \\ This is the underlying \stdvec containing the elements of the vector. It is exposed to the public interface for simplicity, but on most occasions it should \emph{not} be used directly. In fact, it may become part of the private interface in the future, so you should not rely on its existence.
+\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content\footnote{This statement is actually a bit bold, but is mostly true. The only reason why this variable is made public is for optimization purposes. On occasions, it can be noticeably faster to manage manually the growth of a vector, and update the dimensions afterwards. This is often done within the core library.}. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign it another vector (\ref{SEC:core:vec:constructor}).
 
 \begin{example}
 \begin{cppcode}
@@ -608,7 +608,7 @@ v[0.1]; // error: can only access using integers
 \end{cppcode}
 \end{example}
 
-As discussed in the overview (\ref{SEC:core:overview:array_index}), one can also use  vector to index another one. This is called array indexing, by opposition to the scalar indexing we have seen just above. Similarly to scalar indexing, array indexing is only allowed by using integers, i.e., \cppinline{vec1u}, \cppinline{vec1i} and their multidimensional counterparts. Again, unsigned integers should be preferred when possible.
+As discussed in the overview (\ref{SEC:core:overview:views}), one can also use  vector to index another one. This is called array indexing, by opposition to the scalar indexing we have seen just above. Similarly to scalar indexing, array indexing is only allowed by using integers, i.e., \cppinline{vec1u}, \cppinline{vec1i} and their multidimensional counterparts. Again, unsigned integers should be preferred when possible.
 
 \begin{example}
 \begin{cppcode}
