@@ -777,67 +777,6 @@ void print_radec(const std::string& file, const vec_t<Dim,TR>& ra, const vec_t<D
     }
 }
 
-template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
-vec1d qxcor(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
-    const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2) {
-    phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
-        ra1.dims, " vs ", dec1.dims, ")");
-    phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
-        ra2.dims, " vs ", dec2.dims, ")");
-
-    const uint_t n1 = n_elements(ra1);
-    const uint_t n2 = n_elements(ra2);
-
-    vec1d res;
-    res.reserve(n1*n2);
-
-    const double d2r = 3.14159265359/180.0;
-    auto dra1  = ra1*d2r;
-    auto ddec1 = dec1*d2r;
-    auto dcdec1 = cos(ddec1);
-    auto dra2  = ra2*d2r;
-    auto ddec2 = dec2*d2r;
-    auto dcdec2 = cos(ddec2);
-
-    for (uint_t i1 : range(n1))
-    for (uint_t i2 : range(n2)) {
-        double sra = sin(0.5*(dra2[i2] - dra1[i1]));
-        double sde = sin(0.5*(ddec2[i2] - ddec1[i1]));
-        double sd = sde*sde + sra*sra*dcdec2[i2]*dcdec1[i1];
-        res.push_back(3600.0*(180.0/3.14159265359)*2*asin(sqrt(sd)));
-    }
-
-    return res;
-}
-
-template<typename TypeR, typename TypeD>
-vec1d qxcor_self(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec) {
-    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
-        ra.dims, " vs ", dec.dims, ")");
-
-    const uint_t n = n_elements(ra);
-
-    vec1d res;
-    if (n < 2) return res;
-
-    res.reserve(n*(n-1));
-
-    const double d2r = 3.14159265359/180.0;
-    auto dra  = ra*d2r;
-    auto ddec = dec*d2r;
-    auto dcdec = cos(ddec);
-
-    for (uint_t i1 : range(n))
-    for (uint_t i2 : range(i1+1, n)) {
-        double sra = sin(0.5*(dra[i2] - dra[i1]));
-        double sde = sin(0.5*(ddec[i2] - ddec[i1]));
-        double sd = sde*sde + sra*sra*dcdec[i2]*dcdec[i1];
-        res.push_back(3600.0*(180.0/3.14159265359)*2*asin(sqrt(sd)));
-    }
-
-    return res;
-}
-
 template<typename Cat>
 vec1s get_band_get_notes_(const Cat& cat, std::false_type) {
     return replicate("?", cat.bands.size());
