@@ -96,8 +96,6 @@ struct template_fit_params {
     bool ulim = false;   // if true, use upper limits to constrain the fit (negative errors)
 };
 
-bool debug = false;
-
 // Note: Errors on the fit are computed by adding a random offset to the measured photometry (upper
 // limits are not touched) according to the provided error. The fit is performed on each of these
 // random realizations and the error on the parameters are computed as the standard deviation of the
