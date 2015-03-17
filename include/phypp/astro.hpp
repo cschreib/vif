@@ -911,14 +911,12 @@ double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1
 }
 
 template<typename TypeL, typename TypeS>
-auto sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) ->
-    vec_t<1,decltype(sed[0]*filter.res[0])> {
-
-    using rtype = decltype(sed[0]*filter.res[0]);
+vec1d sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) {
+    vec1d r;
     const uint_t nsed = sed.dims[0];
-    vec_t<1,rtype> r; r.reserve(nsed);
+    r.reserve(nsed);
 
-    for (uint_t s = 0; s < nsed; ++s) {
+    for (uint_t s : range(nsed)) {
         r.push_back(sed2flux(filter, lam.safe(s,_).concretise(), sed.safe(s,_).concretise()));
     }
 
