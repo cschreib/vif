@@ -246,7 +246,12 @@ In the rest of this document, \cppinline{Dimension} will usually just be called 
 A vector only contains two member variables:
 \begin{itemize}
 \item \cppinline{std::vector<T> data} \\ This is the underlying \stdvec containing the elements of the vector. It is exposed to the public interface for simplicity, but on most occasions it should \emph{not} be used directly. In fact, it may become part of the private interface in the future, so you should not rely on its existence.
-\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content\footnote{This statement is actually a bit bold, but is mostly true. The only reason why this variable is made public is for optimization purposes. On occasions, it can be noticeably faster to manage manually the growth of a vector, and update the dimensions afterwards. This is often done within the core library.}. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign it another vector (\ref{SEC:core:vec:constructor}).
+
+\begin{advanced}
+Concerning \cppinline{bool} vectors. We do not use \cppinline{std::vector<bool>}, since it is a very special case of \stdvec: the C++ standard specifies that the \cppinline{bool} specialization does not store \cppinline{bool} elements, but is actually implemented like a \emph{bit field}. This is essentially to save memory: a \cppinline{bool} in C++ occupies $8$ bits of memory, like a \cppinline{char}, even though it can only carry a single bit of information. This is due to \emph{memory alignment} issues, which are inherent to the CPU architecture (the address of individual values in memory are supposed to be multiples of $8$ bits, or one byte). In a bit field however, $8$ \cppinline{bool}s are stored in a single \cppinline{char}, and bitwise operators are used to read and write individual \cppinline{bool}s. While more memory efficient, it is also slower, and involves a whole machinery to trick the user into thinking that none of this is happening. For this reason, \cppinline{bool} vectors are implemented with \cppinline{std::vector<char>} in \phypp, with one \cppinline{char} containing one \cppinline{bool}. This is completely transparent to the library user though, since \cppinline{char&} is casted into \cppinline{bool&}, and vice versa, at the boundary of the vector interface.
+\end{advanced}
+
+\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content\footnote{This statement is actually a bit bold, but is mostly true. The only reason why this variable is made public is for optimization purposes. On occasions, it can be noticeably faster to manage manually the growth of a vector, and update the dimensions afterwards. This is often done within the core library, but should rarely be done otherwise.}. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign it another vector (\ref{SEC:core:vec:constructor}).
 
 \begin{example}
 \begin{cppcode}
@@ -851,10 +856,11 @@ The vector and view classes are useful and complete tools. However, there are a 
 
 This support library also introduces a global constant called \cppinline{npos}\itt{npos}. This is an unsigned integer whose value is the largest possible integer that the \cppinline{uint_t} type can hold. It is meant to be used as an error value, or the value to return if no normal value would make sense. It is very similar in concept to the \cppinline{std::string::npos} provided by the C++ standard library. In particular, it is worth noting that converting \cppinline{npos} to a \emph{signed} integer produces the value \cppinline{-1}.
 
-We now describe the functions provided by this library.
+We now describe the functions provided by this library, sorted by categories.
+
+\subsection{Range-based iteration}
 
 \begin{itemize}
-
 \item \cppinline{auto range(vec_t v)} \itt{range}
 
 \cppinline{auto range(uint_t n)}
@@ -891,7 +897,11 @@ for (uint_t i : range(1,3)) {
 }
 \end{cppcode}
 \end{example}
+\end{itemize}
 
+\subsection{Index manipulation}
+
+\begin{itemize}
 \item \cppinline{vec1u mult_ids(vec_t v, uint_t i)} \itt{mult_ids}
 
 This is only useful for multidimensional vectors. This function converts a ``flat'' index \cppinline{i} (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector \cppinline{v}. The \cppinline{flat_id} function does the inverse job.
@@ -921,7 +931,11 @@ flat_id(v,1,0); // 3
 v(1,0) == v[3]; // true
 \end{cppcode}
 \end{example}
+\end{itemize}
 
+\subsection{Integer sequences}
+
+\begin{itemize}
 \item \cppinline|vec_t<D,int_t>  indgen(...)| \itt{indgen}
 
 \cppinline|vec_t<D,uint_t> uindgen(...)| \itt{uindgen}
@@ -938,7 +952,76 @@ vec1i v = indgen(5);    // {0,1,2,3,4}
 vec2u w = uindgen(3,2); // {{0,1}, {2,3}, {4,5}}
 \end{cppcode}
 \end{example}
+\end{itemize}
 
+\subsection{Rearranging elements}
+
+\begin{itemize}
+\item \cppinline|vec1u sort(vec_t)| \itt{sort}
+
+\cppinline|void inplace_sort(vec_t&)| \itt{inplace_sort}
+
+These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between the two versions is that \cppinline{sort} does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and \cppinline{inplace_sort} directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
+
+\begin{example}
+\begin{cppcode}
+// First version
+vec1i v = {1,5,6,3,7};
+vec1u id = sort(v); // {0,3,1,2,4}
+v[id]; // {1,3,5,6,7} is sorted
+// now, id can also be used to modify the order of
+// another vector of the same dimensions
+
+// Second version
+inplace_sort(v);
+v; // {1,3,5,6,7} is sorted
+\end{cppcode}
+\end{example}
+
+\item \cppinline|bool is_sorted(vec_t)| \itt{is_sorted}
+
+This function just traverses the whole input vector and checks if its elements are sorted by increasing value.
+
+\begin{example}
+\begin{cppcode}
+// First version
+vec1i v = {1,5,6,3,7};
+is_sorted(v); // false
+inplace_sort(v);
+v; // {1,3,5,6,7}
+is_sorted(v); // true
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec_t<1,T> reverse(vec_t<1,T>)| \itt{reverse}
+
+This function will inverse the order of all the elements inside the provided vector.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {1,2,3,4,5,6};
+vec1i w = reverse(v); // {6,5,4,3,2,1}
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec_t<1,T> shift(vec_t<1,T> v, int_t n, T d = 0)| \itt{shift}
+
+This function will shift the position of the elements inside the provided vector \cppinline{v} by a given amount of indices \cppinline{n}. Elements that would go outside of the bounds of the vector are destroyed. New elements are inserted and default constructed, or assigned the default value \cppinline{d} (optional argument).
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {1,2,3,4,5};
+vec1i sr = shift(v, 2);
+sr; // {0,0,1,2,3}
+vec1i sl = shift(v, -2, 99);
+sl; // {3,4,5,99,99};
+\end{cppcode}
+\end{example}
+\end{itemize}
+
+\subsection{Finding elements}
+
+\begin{itemize}
 \item \cppinline|vec1u where(vec_t<D,bool>)| \itt{where}
 
 This function will scan the \cppinline{bool} vector provided in argument, will store the flat indices (\ref{SEC:core:vec:indexing}) of each element which is \cppinline{true}, and will return all these indices in a vector. This is a very useful tool to filter and selectively modify vectors, and probably one of the most used function of the whole library.
@@ -974,42 +1057,6 @@ This function works in tandem with \cppinline{where}. Given a vector \cppinline{
 vec1i v = {1,5,6,3,7};
 vec1u id = where(v > 4); // {1,2,4}
 vec1u cid = complement(v, id); // {0,3}
-\end{cppcode}
-\end{example}
-
-\item \cppinline|vec1u sort(vec_t)| \itt{sort}
-
-\cppinline|void inplace_sort(vec_t&)| \itt{inplace_sort}
-
-These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between the two versions is that \cppinline{sort} does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and \cppinline{inplace_sort} directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
-
-\begin{example}
-\begin{cppcode}
-// First version
-vec1i v = {1,5,6,3,7};
-vec1u id = sort(v); // {0,3,1,2,4}
-v[id]; // {1,3,5,6,7} is sorted
-// now, id can also be used to modify the order of
-// another vector of the same dimensions
-
-// Second version
-inplace_sort(v);
-v; // {1,3,5,6,7} is sorted
-\end{cppcode}
-\end{example}
-
-\item \cppinline|bool is_sorted(vec_t)| \itt{is_sorted}
-
-This function just traverses the whole input vector and checks if its elements are sorted by increasing value.
-
-\begin{example}
-\begin{cppcode}
-// First version
-vec1i v = {1,5,6,3,7};
-is_sorted(v); // false
-inplace_sort(v);
-v; // {1,3,5,6,7}
-is_sorted(v); // true
 \end{cppcode}
 \end{example}
 
@@ -1074,6 +1121,50 @@ w[u]; // {1,2,4,5,6,7,8}
 \end{cppcode}
 \end{example}
 
+\item \vectorfunc \cppinline|bool is_any_of(T1 v1, vec_t<D2,T2> v2)| \itt{is_any_of}
+
+This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cppinline{true}, else it returns \cppinline{false}.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {7,4,2,1,6};
+vec1i d = {5,6,7};
+vec1b b = is_any_of(v, d); // {true, false, false, false, true}
+\end{cppcode}
+\end{example}
+
+\item \cppinline|void match(vec_t v1, vec_t v2, vec1u& id1, vec1u& id2)| \itt{match}
+
+This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for elements in \cppinline{v2} that have the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Note that, contrary to \cppinline{match_dictionary}, each value in \cppinline{v1} is matched to \emph{at most} one value in \cppinline{v2}, and vice versa. In other words, if \cppinline{v1} or \cppinline{v2} contain duplicates, only the first value will be matched and the others will be ignored. This function is symmetric: the result will be the same if you swap the two input vectors (of course, the output vectors have to be swapped also).
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {7,4,2,1,6};
+vec1i w = {2,6,5,3};
+vec1u id1, id2;
+match(v, w, id1, id2);
+id1; // {2,4}
+id2; // {0,1}
+v[id1] == w[id2]; // always true
+\end{cppcode}
+\end{example}
+
+\item \cppinline|void match_dictionary(vec_t v1, vec_t v2, vec1u& id1, vec1u& id2)| \itt{match_dictionary}
+
+This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for an element in \cppinline{v2} that has the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Contrary to \cppinline{match}, each value in \cppinline{v2} can be matched to multiple values in \cppinline{v1}. Therefore this function is not symmetric: the second vector should be considered as a ``dictionary'', hence the name of this function. It is assumed that \cppinline{v2} does not contain any duplicates.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {7,6,2,1,6};
+vec1i w = {2,6,5,3};
+vec1u id1, id2;
+match_dictionary(v, w, id1, id2);
+id1; // {1,2,4}
+id2; // {1,0,1}
+v[id1] == w[id2]; // always true
+\end{cppcode}
+\end{example}
+
 \item \cppinline|bool astar_find(vec2b m, uint_t& x, y)| \itt{astar_find}
 
 This function uses the $A^\star$ (``A star'') algorithm to look inside a 2D boolean map \cppinline{m} and, starting from the position \cppinline{x} and \cppinline{y} (i.e. \cppinline{m(x,y)}), find the closest point that has a value of \cppinline{true}. Once this position is found, its indices are stored inside \cppinline{x} and \cppinline{y}, and the function returns \cppinline{true}. If no element inside \cppinline{m} is \cppinline{true}, then the function returns \cppinline{false}.
@@ -1105,7 +1196,11 @@ x; // 7
 y; // 3
 \end{cppcode}
 \end{example}
+\end{itemize}
 
+\subsection{Modifying dimensions}
+
+\begin{itemize}
 \item \cppinline|vec_t<1,T> flatten(vec_t<D,T>)| \itt{flatten}
 
 This function transforms a multidimensional vector into a monodimensional vector. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. The \cppinline{reform} function does the inverse job, and more.
@@ -1128,17 +1223,6 @@ vec2i w = reform(v, 2, 3); // {{1,2,3}, {4,5,6}}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_t<1,T> reverse(vec_t<1,T>)| \itt{reverse}
-
-This function will inverse the order of all the elements inside the provided vector.
-
-\begin{example}
-\begin{cppcode}
-vec1i v = {1,2,3,4,5,6};
-vec1i w = reverse(v); // {6,5,4,3,2,1}
-\end{cppcode}
-\end{example}
-
 \item \cppinline|vec_t<N,T>   replicate(T, ...)| \itt{replicate}
 
       \cppinline|vec_t<D+N,T> replicate(vec_t<D,T>, ...)|
@@ -1158,7 +1242,11 @@ vec2i z = replicate(vec1i{1,2}, 3); // {{1,2},{1,2},{1,2}} 3 times {1,2}
 vec2i z = replicate({1,2}, 3); // error, unfortunately
 \end{cppcode}
 \end{example}
+\end{itemize}
 
+\subsection{Adding/removing elements}
+
+\begin{itemize}
 \item \cppinline|vec_t<1,T> remove(vec_t<1,T> v, vec1u id)| \itt{remove}
 
 \cppinline|void inplace_remove(vec_t<1,T>& v, vec1u id)| \itt{inplace_remove}
@@ -1207,65 +1295,11 @@ prepend<0>(x, z);
 x; // {{5,6,7}, {1,2,0}, {3,4,0}} // x is (3x3)
 \end{cppcode}
 \end{example}
+\end{itemize}
 
-\item \cppinline|vec_t<1,T> shift(vec_t<1,T> v, int_t n, T d = 0)| \itt{shift}
+\subsection{Error checking}
 
-This function will shift the position of the elements inside the provided vector \cppinline{v} by a given amount of indices \cppinline{n}. Elements that would go outside of the bounds of the vector are destroyed. New elements are inserted and default constructed, or assigned the default value \cppinline{d} (optional argument).
-
-\begin{example}
-\begin{cppcode}
-vec1i v = {1,2,3,4,5};
-vec1i sr = shift(v, 2);
-sr; // {0,0,1,2,3}
-vec1i sl = shift(v, -2, 99);
-sl; // {3,4,5,99,99};
-\end{cppcode}
-\end{example}
-
-\item \vectorfunc \cppinline|bool is_any_of(T1 v1, vec_t<D2,T2> v2)| \itt{is_any_of}
-
-This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cppinline{true}, else it returns \cppinline{false}.
-
-\begin{example}
-\begin{cppcode}
-vec1i v = {7,4,2,1,6};
-vec1i d = {5,6,7};
-vec1b b = is_any_of(v, d); // {true, false, false, false, true}
-\end{cppcode}
-\end{example}
-
-\item \cppinline|void match(vec_t v1, vec_t v2, vec1u& id1, vec1u& id2)| \itt{match}
-
-This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for elements in \cppinline{v2} that have the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Note that, contrary to \cppinline{match_dictionary}, each value in \cppinline{v1} is matched to \emph{at most} one value in \cppinline{v2}, and vice versa. In other words, if \cppinline{v1} or \cppinline{v2} contain duplicates, only the first value will be matched and the others will be ignored. This function is symmetric: the result will be the same if you swap the two input vectors (of course, the output vectors have to be swapped also).
-
-\begin{example}
-\begin{cppcode}
-vec1i v = {7,4,2,1,6};
-vec1i w = {2,6,5,3};
-vec1u id1, id2;
-match(v, w, id1, id2);
-id1; // {2,4}
-id2; // {0,1}
-v[id1] == w[id2]; // always true
-\end{cppcode}
-\end{example}
-
-\item \cppinline|void match_dictionary(vec_t v1, vec_t v2, vec1u& id1, vec1u& id2)| \itt{match_dictionary}
-
-This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for an element in \cppinline{v2} that has the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Contrary to \cppinline{match}, each value in \cppinline{v2} can be matched to multiple values in \cppinline{v1}. Therefore this function is not symmetric: the second vector should be considered as a ``dictionary'', hence the name of this function. It is assumed that \cppinline{v2} does not contain any duplicates.
-
-\begin{example}
-\begin{cppcode}
-vec1i v = {7,6,2,1,6};
-vec1i w = {2,6,5,3};
-vec1u id1, id2;
-match_dictionary(v, w, id1, id2);
-id1; // {1,2,4}
-id2; // {1,0,1}
-v[id1] == w[id2]; // always true
-\end{cppcode}
-\end{example}
-
+\begin{itemize}
 \item \cppinline|void phypp_check(bool b, ...)| \itt{phypp_check}
 
 This function makes error checking easier. When called, it checks the value of \cppinline{b}. If \cppinline{b} is \cppinline{true}, then nothing happens. However if \cppinline{b} is \cppinline{false}, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the \phypp library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
@@ -1443,25 +1477,25 @@ The mathematics support library is among the largest inside \phypp. It contains 
 
 This library provides the following global constants:
 \begin{itemize}
-\item \cppinline{fnan} \itt{fnan} and \cppinline{dnan} \itt{dnan}. These are the \cppinline{float} and \cppinline{double} representation of the ``not-a-number'' (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., \cppinline{2.0 + fnan == fnan}). More troubling, any comparison operation involving a NaN will return \cppinline{false}, e.g., \cppinline{(10.0 < fnan) == false} and \cppinline{(10.0 >= fnan) == false} too. The only notable exception to this rule is that \cppinline{(fnan != fnan) == true}. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as \cppinline{-99}. Using NaN in this case is clearer.
+\item \cppinline{fnan}\itt{fnan} and \cppinline{dnan}\itt{dnan}. These are the \cppinline{float} and \cppinline{double} representation of the ``not-a-number'' (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., \cppinline{2.0 + fnan == fnan}). More troubling, any comparison operation involving a NaN will return \cppinline{false}, e.g., \cppinline{(10.0 < fnan) == false} and \cppinline{(10.0 >= fnan) == false} too. The only notable exception to this rule is that \cppinline{(fnan != fnan) == true}. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as \cppinline{-99}. Using NaN in this case is clearer.
 
-\item \cppinline{fpi} \itt{fpi} and \cppinline{dpi} \itt{dpi}. This is the \cppinline{float} and \cppinline{double} closest representation of the number $\pi = 3.14519...$.
+\item \cppinline{fpi}\itt{fpi} and \cppinline{dpi}\itt{dpi}. This is the \cppinline{float} and \cppinline{double} closest representation of the number $\pi = 3.14519...$.
 
-\item \cppinline{finf} \itt{finf} and \cppinline{dinf} \itt{dinf}. This is the \cppinline{float} and \cppinline{double} representation of the positive infinity. The positive infinity is larger than any other finite value.
+\item \cppinline{finf}\itt{finf} and \cppinline{dinf}\itt{dinf}. This is the \cppinline{float} and \cppinline{double} representation of the positive infinity. The positive infinity is larger than any other finite value.
 \end{itemize}
 
 We now present the functions provided by this support library. One of the responsibilities of this library is to bring vectorized versions of standard mathematical functions that only work for scalar values. Since these functions are fairly common and well known, we will not describe their signature and behavior, and instead just list them here:
 
 \begin{itemize}
-\item exponentiation: \cppinline{sqrt} \itt{sqrt}, \cppinline{pow} \itt{pow},
-\item trigonometry: \cppinline{cos} \itt{cos}, \cppinline{sin} \itt{sin}, \cppinline{tan} \itt{tan}, \cppinline{acos} \itt{acos}, \cppinline{asin} \itt{asin}, \cppinline{atan} \itt{atan}, \cppinline{cosh} \itt{cosh}, \cppinline{sinh} \itt{sinh}, \cppinline{tanh} \itt{tanh}, \cppinline{acosh} \itt{acosh}, \cppinline{asinh} \itt{asinh}, \cppinline{atanh} \itt{atanh},
-\item exponentials and logarithms: \cppinline{exp} \itt{exp}, \cppinline{log} \itt{log}, \cppinline{log2} \itt{log2}, \cppinline{log10} \itt{log10},
-\item special functions: \cppinline{erf} \itt{erf}, \cppinline{erfc} \itt{erfc}, \cppinline{tgamma} \itt{tgamma},
-\item rounding: \cppinline{ceil} \itt{ceil}, \cppinline{floor} \itt{floor}, \cppinline{round} \itt{round},
-\item absolute value: \cppinline{fabs} \itt{fabs}.
+\item exponentiation: \cppinline{sqrt}\itt{sqrt}, \cppinline{pow}\itt{pow},
+\item trigonometry: \cppinline{cos}\itt{cos}, \cppinline{sin}\itt{sin}, \cppinline{tan}\itt{tan}, \cppinline{acos}\itt{acos}, \cppinline{asin}\itt{asin}, \cppinline{atan}\itt{atan}, \cppinline{cosh}\itt{cosh}, \cppinline{sinh}\itt{sinh}, \cppinline{tanh}\itt{tanh}, \cppinline{acosh}\itt{acosh}, \cppinline{asinh}\itt{asinh}, \cppinline{atanh}\itt{atanh},
+\item exponentials and logarithms: \cppinline{exp}\itt{exp}, \cppinline{log}\itt{log}, \cppinline{log2}\itt{log2}, \cppinline{log10}\itt{log10},
+\item special functions: \cppinline{erf}\itt{erf}, \cppinline{erfc}\itt{erfc}, \cppinline{tgamma}\itt{tgamma},
+\item rounding: \cppinline{ceil}\itt{ceil}, \cppinline{floor}\itt{floor}, \cppinline{round}\itt{round},
+\item absolute value: \cppinline{fabs}\itt{fabs}.
 \end{itemize}
 
-We also introduce the functions \cppinline{bessel_j0} \itt{bessel_j0}, \cppinline{bessel_j1} \itt{bessel_j1}, \cppinline{bessel_y0} \itt{bessel_y0}, \cppinline{bessel_y1} \itt{bessel_y1}, \cppinline{bessel_i0} \itt{bessel_i0}, \cppinline{bessel_i1} \itt{bessel_i1}, \cppinline{bessel_k0} \itt{bessel_k0}, \cppinline{bessel_k1} \itt{bessel_k1}. The scalar version of the first four are provided by the C++ standard, while the last four are provided by the \texttt{gsl}.
+We also introduce the functions \cppinline{bessel_j0}\itt{bessel_j0}, \cppinline{bessel_j1}\itt{bessel_j1}, \cppinline{bessel_y0}\itt{bessel_y0}, \cppinline{bessel_y1}\itt{bessel_y1}, \cppinline{bessel_i0}\itt{bessel_i0}, \cppinline{bessel_i1}\itt{bessel_i1}, \cppinline{bessel_k0}\itt{bessel_k0}, \cppinline{bessel_k1}\itt{bessel_k1}. The scalar version of the first four are provided by the C++ standard, while the last four are provided by the \texttt{gsl}.
 
 We now list the other, less common functions provided in this library. These are grouped by sections.
 
@@ -1880,23 +1914,145 @@ We now describe the various functions offered by this library, split into catego
 \item \cppinline|vec_t<2,T> convolve2d(vec_t<2,T> m, vec_t<2,U> k)| \itt{convolve2d}
 
 \item \cppinline|vec_t<2,T> boxcar(vec_t<2,T> m, uint_t n, F f)| \itt{boxcar}
-
 \end{itemize}
 
 \section{Astrophysics \label{SEC:support:astro}}
 % astro.hpp
 
+\subsection{PSF fitting}
+
+\begin{itemize}
+\item \cppinline|bool make_psf(array<uint_t> {w, h}, double x0, y0, string model, vec2d& psf)| \itt{make_psf}
+
+\item \cppinline|auto psffit(vec_t<2,T> m, vec_t<2,U> e, vec_t<2,V> psf, vec1i pos)| \itt{psffit}
+
+\cppinline|auto psffit(vec_t<2,T> m, vec_t<2,U> e, vec_t<2,V> psf)|
+\end{itemize}
+
+\subsection{Cosmology}
+
+\begin{itemize}
+\item \cppinline|auto get_cosmo()| \itt{get_cosmo}
+
+\cppinline|auto cosmo_wmap()| \itt{cosmo_wmap}
+
+\cppinline|auto cosmo_std()| \itt{cosmo_std}
+
+\item \vectorfunc \cppinline|T lumdist(T z, auto cosmo)| \itt{lumdist}
+
+\item \vectorfunc \cppinline|T lookback_time(T z, auto cosmo)| \itt{lookback_time}
+
+\item \vectorfunc \cppinline|T vuniverse(T z, auto cosmo)| \itt{vuniverse}
+\end{itemize}
+
+\subsection{Fluxes, magnitudes and luminosities}
+
+\begin{itemize}
+\item \cppinline|X lsun2uJy(T z, U d, V lam, W lum)| \itt{lsun2uJy}
+
+\cppinline|X uJy2lsun(T z, U d, V lam, W lum)| \itt{uJy2lsun}
+
+\item \cppinline|W lsun2mag(T lam, U lum, double zp = 23.9)| \itt{lsun2mag}
+
+\cppinline|W mag2lsun(T lam, U lum, double zp = 23.9)| \itt{mag2lsun}
+
+\item \cppinline|U uJy2mag(T flx, double zp = 23.9)| \itt{uJy2mag}
+
+\cppinline|U mag2uJy(T mag, double zp = 23.9)| \itt{mag2uJy}
+
+\item \cppinline|auto read_filter_db(string)| \itt{read_filter_db}
+
+\item \cppinline|auto get_filter(auto db, string name)| \itt{get_filter}
+
+\cppinline|auto get_filters(auto db, vec1s names)| \itt{get_filters}
+
+\item \cppinline|double sed2flux(auto fil, vec_t<1,T> lam, vec_t<1,U> sed)| \itt{sed2flux}
+
+\cppinline|vec1d sed2flux(auto fil, vec_t<2,T> lam, vec_t<2,U> sed)|
+
+\item \cppinline|double sed_convert(auto from, auto to, double z, d, vec_t<1,T> lam, vec_t<1,U> sed)| \itt{sed_convert}
+
+\item \cppinline|double lir_8_1000(vec_t<1,T> lam, vec_t<1,U> sed)| \itt{lir_8_1000}
+\end{itemize}
+
+\subsection{Sky coordinates}
+
+\begin{itemize}
+\item \cppinline|double field_area_hull(vec1u hull, vec_t<D,double> ra, dec)| \itt{field_area_hull}
+
+\cppinline|double field_area_hull(vec_t<D,double> ra, dec)|
+
+\item \cppinline|double field_area_h2d(vec_t<D,double> ra, dec)| \itt{field_area_h2d}
+
+\item \cppinline|double field_area(vec_t<D,double> ra, dec)| \itt{field_area}
+
+\item \cppinline|vec1d angcorrel(vec_t<D1,double> ra, dec, vec_t<D2,double> rra, rdec, vec_t<2,T> b)| \itt{angcorrel}
+
+\item \cppinline|auto randpos_uniform(auto seed, vec1d rra, rdec, F in, vec_t<D,double>& ra, dec, auto options = default)| \itt{randpos_uniform}
+
+\item \cppinline|auto randpos_power_circle(auto seed, double ra0, dec0, r0, vec_t<D,double>& ra, dec, auto options = default)| \itt{randpos_power_circle}
+
+\item \cppinline|auto randpos_power(auto seed, vec1u h, vec_t<D1,double> hra, hdec, vec_t<D2,double>& ra, dec, auto options = default)| \itt{randpos_power}
+
+\item \vectorfunc \cppinline|bool sex2deg(string sra, sdec, double& ra, dec)| \itt{sex2deg}
+
+\vectorfunc \cppinline|void deg2sex(double ra, dec, string& sra, sdec)| \itt{deg2sex}
+
+\item \vectorfunc \cppinline|auto qxmatch(vec1d ra1, dec1, ra2, dec2, auto options = default)| \itt{qxmatch}
+
+\item \vectorfunc \cppinline|vec2d qdist(vec1d ra, dec, auto options = default)| \itt{qdist}
+\end{itemize}
+
 \subsection{Catalog management}
 % astro/catalog_merge.hpp
 
-\subsection{Position cross-matching}
-% astro/qxmatch.hpp
+\begin{itemize}
+\item \cppinline|bool get_band(auto cat, string band, uint_t& b)| \itt{get_band}
+
+\cppinline|bool get_band(auto cat, string band, string note, uint_t& b)| \itt{get_band}
+\end{itemize}
 
 \subsection{Image stacking}
 % astro/qstack.hpp
 
+\begin{itemize}
+\item \cppinline|bool pick_sources(vec_t<2,T> m, vec1d x, y, uint_t hs, vec_t<3,T>& c, vec1u& ids)| \itt{pick_sources}
+
+\item \cppinline|auto qstack(vec1d ra, dec, string ff, uint_t hs, vec_t<3,T>& fc, vec1u& i, auto options = default)| \itt{qstack}
+
+\cppinline|auto qstack(vec1d ra, dec, string ff, fw, uint_t hs, vec_t<3,T>& fc, wc, vec1u& i, auto options = default)|
+
+\item \cppinline|auto qstack_mean(vec_t<3,T> fc)| \itt{qstack_mean}
+
+\cppinline|auto qstack_mean(vec_t<3,T> fc, wc)|
+
+\item \cppinline|auto qstack_median(vec_t<3,T> fc)| \itt{qstack_median}
+
+\item \cppinline|void qstack_bootstrap(vec_t<3,T> fc, uint_t nb, ns, auto seed, F f)| \itt{qstack_bootstrap}
+
+\cppinline|void qstack_bootstrap(vec_t<3,T> fc, wc, uint_t nb, ns, auto seed, F f)|
+
+\cppinline|void qstack_bootstrap(uint_t nb, ns, auto seed, F f, ...)|
+
+\item \cppinline|vec_t<3,T> qstack_mean_bootstrap(vec_t<3,T> fc, uint_t nb, ns, auto seed)| \itt{qstack_mean_bootstrap}
+
+\cppinline|vec_t<3,T> qstack_mean_bootstrap(vec_t<3,T> fc, wc, uint_t nb, ns, auto seed)|
+
+\item \cppinline|vec_t<3,T> qstack_median_bootstrap(vec_t<3,T> fc, uint_t nb, ns, auto seed)| \itt{qstack_median_bootstrap}
+\end{itemize}
+
 \subsection{Template fitting}
 % astro/qstack.hpp
+
+\begin{itemize}
+\item \cppinline|vec2d template_observed(auto lib, double z, d, auto filters)| \itt{template_observed}
+
+\cppinline|vec2d template_observed(auto lib, vec1d z, d, auto filters)|
+
+\item \vectorfunc \cppinline|double limweight(double)| \itt{limweight}
+
+\item \cppinline|auto template_fit(auto lib, auto seed, T z, d, vec1d flux, err, auto filters, auto options = default)| \itt{template_fit}
+\end{itemize}
 
 \chapter{Tools \label{SEC:tool}}
 
