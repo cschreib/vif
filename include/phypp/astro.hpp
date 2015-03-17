@@ -347,13 +347,6 @@ double field_area(const TX& ra, const TY& dec) {
     return field_area_h2d(ra, dec);
 }
 
-// Compute the area covered by a field given a set of source coordinates [deg^2].
-// Coordinates are assumed to be given in degrees.
-template<typename T>
-double field_area(const T& t) {
-    return field_area(t.ra, t.dec);
-}
-
 // Compute 2 point angular correlation function of a data set with positions 'ra' and 'dec'
 // against a set of random positions uniformly drawn in the same region of space 'rra' and
 // 'rdec'. For good results, there must be at least as many random positions as there are
