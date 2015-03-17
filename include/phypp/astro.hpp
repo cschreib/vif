@@ -852,6 +852,7 @@ void pick_sources(const vec_t<2,Type>& img, const vec1d& x, const vec1d& y,
             continue;
         }
 
+        // TODO: optimize this using subsrc?
         auto cut = img(x[i]+r, y[i]+r).concretise();
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
