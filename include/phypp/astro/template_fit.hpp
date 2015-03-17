@@ -54,42 +54,6 @@ vec2d template_observed(const TypeLib& lib, const vec_t<1,TypeZ>& z, const vec_t
     return flux;
 }
 
-template<typename TypeLib, typename TypeFi, typename TypeZ, typename TypeD>
-vec2d template_observed(const TypeLib& lib, const vec_t<2,TypeZ>& z, const vec_t<1,TypeD>& d,
-    const vec_t<1,TypeFi>& filters) {
-
-    phypp_check(z.dims[1] == d.dims[0],
-        "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
-
-    vec2d rflam = lib.lam*(1.0 + mean(z));
-    vec2d rfsed = dblarr(lib.sed.dims);
-
-    // Combine the SEDs of each source to build an effective "redshift convolved" SED in the
-    // observed frame
-    double weight = 0.0;
-    for (uint_t i = 0; i < z.dims[1]; ++i) {
-        auto tlam = lib.lam*(1.0 + z[i]);
-        auto tsed = z(1,i)*lsun2uJy(z(0,i), d[i], lib.lam, lib.sed);
-        for (uint_t j = 0; j < lib.sed.dims[0]; ++j) {
-            rfsed(j,_) += interpolate(tsed(j,_), tlam(j,_), rflam(j,_));
-        }
-
-        weight += z(1,i);
-    }
-
-    rfsed /= weight;
-
-    // Convolve each SED with the response curve of the filters
-    const uint_t nsed = rfsed.dims[0];
-    const uint_t nfilter = filters.size();
-    vec2d flux = dblarr(nsed, nfilter);
-    for (uint_t f = 0; f < nfilter; ++f) {
-        flux(_,f) = sed2flux(filters[f], rflam, rfsed);
-    }
-
-    return flux;
-}
-
 // Return the weight of an upper limit in a chi2 merit function.
 // Note that the analytical relation is numerically imprecise, and an asymptotic expression should
 // be used below -3. This function contains this approximation, which introduces at most an error of
