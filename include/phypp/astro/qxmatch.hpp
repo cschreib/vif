@@ -151,18 +151,17 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
         ra2.dims, " vs ", dec2.dims, ")");
 
-    const double d2r = dpi/180.0;
-    auto dra1  = ra1*d2r;
-    auto ddec1 = dec1*d2r;
-    auto dcdec1 = cos(ddec1);
-    auto dra2  = ra2*d2r;
-    auto ddec2 = dec2*d2r;
-    auto dcdec2 = cos(ddec2);
+    // Make sure we are dealing with finite coordinates...
+    phypp_check(count(!finite(ra1) || !finite(dec1)) == 0, "first RA and Dec coordinates "
+        "contain invalid values (infinite or NaN)");
+    phypp_check(count(!finite(ra2) || !finite(dec2)) == 0, "second RA and Dec coordinates "
+        "contain invalid values (infinite or NaN)");
+
+    // Make sure that the requested number of matches is valid
+    uint_t nth = clamp(params.nth, 1u, npos);
 
     const uint_t n1 = ra1.size();
     const uint_t n2 = ra2.size();
-
-    uint_t nth = clamp(params.nth, 1u, npos);
 
     res.id = replicate(npos, nth, n1);
     res.d  = replicate(dinf, nth, n1);
@@ -173,8 +172,16 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
     }
 
     if (ra1.empty() || ra2.empty()) {
-        return;
+        return res;
     }
+
+    const double d2r = dpi/180.0;
+    auto dra1  = ra1*d2r;
+    auto ddec1 = dec1*d2r;
+    auto dcdec1 = cos(ddec1);
+    auto dra2  = ra2*d2r;
+    auto ddec2 = dec2*d2r;
+    auto dcdec2 = cos(ddec2);
 
     auto distance_proxy = [&](uint_t i, uint_t j) {
         // Note that this is not the 'true' distance in arseconds, but this is
@@ -185,6 +192,12 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         double sde = sin(0.5*(ddec2.safe[j] - ddec1.safe[i]));
         return sde*sde + sra*sra*dcdec2.safe[j]*dcdec1.safe[i];
     };
+
+    if (!params.brute_force && ra2.size() < 10) {
+        // The bucket algorithm was requested, but there are too few objects to
+        // cross match to. The brute force algorithm is likely to be the fastest.
+        params.brute_force = false;
+    }
 
     if (!params.brute_force) {
         // Get bounds of the fields
@@ -202,7 +215,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
         vec1d hx = vec1d{rra2[0],  rra2[0],  rra2[1],  rra2[1]};
         vec1d hy = vec1d{rdec2[0], rdec2[1], rdec2[0], rdec2[1]};
         double area2 = field_area_hull(hx, hy);
-        double cell_size = 3600.0*sqrt(area2)/nc2;
+        double cell_size = std::max(3600.0*sqrt(area2)/nc2, 1.0);
 
         // Be careful that RA and Dec are spherical coordinates
         double dra = cell_size/fabs(cos(mean(rdec2)*dpi/180.0))/3600.0;
