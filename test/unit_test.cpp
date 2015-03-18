@@ -1181,7 +1181,7 @@ int main(int argc, char* argv[]) {
         cat.hull = convex_hull(cat.ra, cat.dec);
         fits::write_table("out/hull.fits", ftable(cat.ra, cat.dec, cat.hull));
 
-        print(field_area(cat));
+        print(field_area(cat.ra, cat.dec));
 
         check(in_convex_hull(mean(cat.ra), mean(cat.dec), cat.hull, cat.ra, cat.dec), "1");
         check(in_convex_hull(2*mean(cat.ra), 2*mean(cat.dec), cat.hull, cat.ra, cat.dec), "0");
