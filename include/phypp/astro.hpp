@@ -239,7 +239,7 @@ auto lsun2mag(const T& lam, const U& lum, double zp = 23.9) -> decltype(1.0*lam*
 // Absolute magnitude [AB] to absolute luminosity [Lsun] using rest-frame wavelength
 // 'lam' [um]
 template<typename T, typename U>
-auto mag2lsun(const T& mag, const U& lum, double zp = 23.9) -> decltype(e10(mag)/lam) {
+auto mag2lsun(const T& lam, const T& mag, double zp = 23.9) -> decltype(e10(mag)/lam) {
     const double Mpc = 3.0856e22; // [m/Mpc]
     const double Lsol = 3.839e26; // [W/Lsol]
     const double uJy = 1.0e32;    // [uJy/(W.m-2.Hz-1)]
