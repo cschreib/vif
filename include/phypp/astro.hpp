@@ -606,7 +606,7 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
     }
 
     // Trim catalog to match the input number of sources
-    vec1u fids = shuffle(idi, seed)[uindgen(options.nsrc)];
+    vec1u fids = shuffle(seed, idi)[uindgen(options.nsrc)];
     ra = ra[fids];
     dec = dec[fids];
 
@@ -663,7 +663,7 @@ randpos_status randpos_power(TSeed& seed,
         return status;
     }
 
-    vec1u fids = shuffle(idi, seed)[uindgen(options.nsrc)];
+    vec1u fids = shuffle(seed, idi)[uindgen(options.nsrc)];
     ra = ra[fids];
     dec = dec[fids];
 
