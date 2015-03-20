@@ -81,25 +81,25 @@ struct mpfit_options {
     bool nocovar = false;  // do not compute errors and covariance matrix (faster)
 };
 
-// Numerically stable sqrt(total(sqr(vec)))
-double mpfit_enorm(const vec1d& vec) {
+// Numerically stable sqrt(total(sqr(v)))
+double mpfit_enorm(const vec1d& v) {
     const double dwarf = sqrt(std::numeric_limits<double>::min()*1.5)*10.0;
     const double giant = sqrt(std::numeric_limits<double>::max())*0.1;
 
-    double mx = std::max(fabs(min(vec)), fabs(max(vec)));
+    double mx = std::max(fabs(min(v)), fabs(max(v)));
     if (mx == 0.0) return 0.0;
 
-    if (mx > giant/vec.size() || mx < dwarf*vec.size()) {
+    if (mx > giant/v.size() || mx < dwarf*v.size()) {
         double res = 0.0;
-        for (uint_t i : range(vec)) {
-            res += (vec[i]/mx)*(vec[i]/mx);
+        for (uint_t i : range(v)) {
+            res += (v[i]/mx)*(v[i]/mx);
         }
 
         return mx*sqrt(res);
     } else {
         double res = 0.0;
-        for (uint_t i : range(vec)) {
-            res += vec[i]*vec[i];
+        for (uint_t i : range(v)) {
+            res += v[i]*v[i];
         }
 
         return sqrt(res);

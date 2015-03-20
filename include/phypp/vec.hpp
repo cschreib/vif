@@ -1262,16 +1262,16 @@ struct vec_t {
     }
 
     struct safe_proxy {
-        vec_t& vec;
+        vec_t& parent;
 
         vec_t& get_vec_() {
             return *reinterpret_cast<vec_t*>(
                 reinterpret_cast<char*>(this) - offsetof(vec_t, safe));
         }
 
-        safe_proxy() : vec(get_vec_()) {}
-        safe_proxy(const safe_proxy&) : vec(get_vec_()) {}
-        safe_proxy(safe_proxy&&) : vec(get_vec_()) {}
+        safe_proxy() : parent(get_vec_()) {}
+        safe_proxy(const safe_proxy&) : parent(get_vec_()) {}
+        safe_proxy(safe_proxy&&) : parent(get_vec_()) {}
 
         safe_proxy& operator=(const safe_proxy&) { return *this; }
         safe_proxy& operator=(safe_proxy&&) { return *this; }
@@ -1281,18 +1281,18 @@ struct vec_t {
         }
 
         const Type& operator [] (uint_t i) const {
-            return reinterpret_cast<const Type&>(vec.data[i]);
+            return reinterpret_cast<const Type&>(parent.data[i]);
         }
 
         template<typename T, typename enable =
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
-            vec_t<1,Type*> v(vec_ref_tag, vec);
+            vec_t<1,Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+                v.data[j] = ptr<Type>(parent.data[i.safe[j]]);
             }
             return v;
         }
@@ -1301,11 +1301,11 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
-            vec_t<1,Type*> v(vec_ref_tag, vec);
+            vec_t<1,Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+                v.data[j] = ptr<Type>(parent.data[i.safe[j]]);
             }
             return v;
         }
@@ -1314,11 +1314,11 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
-            vec_t<1,const Type*> v(vec_ref_tag, vec);
+            vec_t<1,const Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+                v.data[j] = ptr<Type>(parent.data[i.safe[j]]);
             }
             return v;
         }
@@ -1327,45 +1327,45 @@ struct vec_t {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
-            vec_t<1,const Type*> v(vec_ref_tag, vec);
+            vec_t<1,const Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = ptr<Type>(vec.data[i.safe[j]]);
+                v.data[j] = ptr<Type>(parent.data[i.safe[j]]);
             }
             return v;
         }
 
         vec_t<1,Type*> operator [] (full_range_t rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,Type*> operator [] (const left_range_t& rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,Type*> operator [] (const right_range_t& rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,Type*> operator [] (const left_right_range_t& rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (full_range_t rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (const left_range_t& rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (const right_range_t& rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (const left_right_range_t& rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         template<typename ... Args>
@@ -1373,7 +1373,7 @@ struct vec_t {
             typename vec_access::helper<false, false, Dim, Type, Args...>::type {
             static_assert(vec_access::accessed_dim<Args...>::value == Dim,
                 "wrong number of indices for this vector");
-            return vec_access::helper<false, false, Dim, Type, Args...>::access(vec, i...);
+            return vec_access::helper<false, false, Dim, Type, Args...>::access(parent, i...);
         }
 
         template<typename ... Args>
@@ -1381,7 +1381,7 @@ struct vec_t {
             typename vec_access::helper<false, true, Dim, Type, Args...>::type {
             static_assert(vec_access::accessed_dim<Args...>::value == Dim,
                 "wrong number of indices for this vector");
-            return vec_access::helper<false, true, Dim, Type, Args...>::access(vec, i...);
+            return vec_access::helper<false, true, Dim, Type, Args...>::access(parent, i...);
         }
     } safe;
 
@@ -1819,16 +1819,16 @@ struct vec_t<Dim,Type*> {
     }
 
     struct safe_proxy {
-        vec_t& vec;
+        vec_t& parent;
 
         vec_t& get_vec_() {
             return *reinterpret_cast<vec_t*>(
                 reinterpret_cast<char*>(this) - offsetof(vec_t, safe));
         }
 
-        safe_proxy() : vec(get_vec_()) {}
-        safe_proxy(const safe_proxy&) : vec(get_vec_()) {}
-        safe_proxy(safe_proxy&&) : vec(get_vec_()) {}
+        safe_proxy() : parent(get_vec_()) {}
+        safe_proxy(const safe_proxy&) : parent(get_vec_()) {}
+        safe_proxy(safe_proxy&&) : parent(get_vec_()) {}
 
         safe_proxy& operator=(const safe_proxy&) { return *this; }
         safe_proxy& operator=(safe_proxy&&) { return *this; }
@@ -1838,18 +1838,18 @@ struct vec_t<Dim,Type*> {
         }
 
         const Type& operator [] (uint_t i) const {
-            return *vec.data[i];
+            return *parent.data[i];
         }
 
         template<typename T, typename enable =
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T>& i) {
-            vec_t<1,Type*> v(vec_ref_tag, vec.parent);
+            vec_t<1,Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = vec.data[i.safe[j]];
+                v.data[j] = parent.data[i.safe[j]];
             }
             return v;
         }
@@ -1858,11 +1858,11 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,Type*> operator [] (const vec_t<1,T*>& i) {
-            vec_t<1,Type*> v(vec_ref_tag, vec.parent);
+            vec_t<1,Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = vec.data[i.safe[j]];
+                v.data[j] = parent.data[i.safe[j]];
             }
             return v;
         }
@@ -1871,11 +1871,11 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T>& i) const {
-            vec_t<1,const Type*> v(vec_ref_tag, vec.parent);
+            vec_t<1,const Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = vec.data[i.safe[j]];
+                v.data[j] = parent.data[i.safe[j]];
             }
             return v;
         }
@@ -1884,45 +1884,45 @@ struct vec_t<Dim,Type*> {
             typename std::enable_if<std::is_integral<T>::value &&
                                     std::is_unsigned<T>::value>::type>
         vec_t<1,const Type*> operator [] (const vec_t<1,T*>& i) const {
-            vec_t<1,const Type*> v(vec_ref_tag, vec.parent);
+            vec_t<1,const Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
             for (uint_t j = 0; j < i.data.size(); ++j) {
-                v.data[j] = vec.data[i.safe[j]];
+                v.data[j] = parent.data[i.safe[j]];
             }
             return v;
         }
 
         vec_t<1,Type*> operator [] (full_range_t rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,Type*> operator [] (const left_range_t& rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,Type*> operator [] (const right_range_t& rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,Type*> operator [] (const left_right_range_t& rng) {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (full_range_t rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (const left_range_t& rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (const right_range_t& rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         vec_t<1,const Type*> operator [] (const left_right_range_t& rng) const {
-            return vec_access::bracket_access(vec, rng);
+            return vec_access::bracket_access(parent, rng);
         }
 
         template<typename ... Args>
@@ -1930,7 +1930,7 @@ struct vec_t<Dim,Type*> {
             typename vec_access::helper<false, false, Dim, Type*, Args...>::type {
             static_assert(vec_access::accessed_dim<Args...>::value == Dim,
                 "wrong number of indices for this vector");
-            return vec_access::helper<false, false, Dim, Type*, Args...>::access(vec, i...);
+            return vec_access::helper<false, false, Dim, Type*, Args...>::access(parent, i...);
         }
 
         template<typename ... Args>
@@ -1938,7 +1938,7 @@ struct vec_t<Dim,Type*> {
             typename vec_access::helper<false, true, Dim, Type*, Args...>::type {
             static_assert(vec_access::accessed_dim<Args...>::value == Dim,
                 "wrong number of indices for this vector");
-            return vec_access::helper<false, true, Dim, Type*, Args...>::access(vec, i...);
+            return vec_access::helper<false, true, Dim, Type*, Args...>::access(parent, i...);
         }
     } safe;
 
@@ -2831,29 +2831,29 @@ template<std::size_t Dim, typename Type = double, typename ... Args>
 vec_t<Dim+dim_total<Args...>::value, rtype_t<Type>>
     replicate(const vec_t<Dim,Type>& t, Args&& ... args) {
     static const std::size_t FDim = Dim+dim_total<Args...>::value;
-    vec_t<FDim, rtype_t<Type>> vec(std::forward<Args>(args)..., t.dims);
+    vec_t<FDim, rtype_t<Type>> v(std::forward<Args>(args)..., t.dims);
 
     std::size_t pitch = t.size();
-    std::size_t n = vec.size()/pitch;
+    std::size_t n = v.size()/pitch;
     for (uint_t i = 0; i < n; ++i) {
         for (uint_t j = 0; j < pitch; ++j) {
-            vec.safe[i*pitch + j] = t.safe[j];
+            v.safe[i*pitch + j] = t.safe[j];
         }
     }
 
-    return vec;
+    return v;
 }
 
 template<typename Type, typename ... Args>
 vec_t<dim_total<Args...>::value, vec_type<Type>> replicate(const Type& t, Args&& ... args) {
     static const std::size_t FDim = dim_total<Args...>::value;
-    vec_t<FDim, vec_type<Type>> vec(std::forward<Args>(args)...);
+    vec_t<FDim, vec_type<Type>> v(std::forward<Args>(args)...);
 
-    for (auto& e : vec) {
+    for (auto& e : v) {
         e = t;
     }
 
-    return vec;
+    return v;
 }
 
 template<std::size_t Dim, typename Type>
