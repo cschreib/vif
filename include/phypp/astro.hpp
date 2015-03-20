@@ -20,11 +20,11 @@ struct psffit_result {
 };
 
 template<typename TypeM, typename TypeE = TypeM, typename TypeP = TypeM>
-psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& terr,
-    const vec_t<2,TypeP>& psf, const vec1i& pos) {
+psffit_result psffit(const vec<2,TypeM>& img, const vec<2,TypeE>& terr,
+    const vec<2,TypeP>& psf, const vec1i& pos) {
 
-    using img_type = typename vec_t<2,TypeM>::effective_type;
-    using err_type = typename vec_t<2,TypeE>::effective_type;
+    using img_type = typename vec<2,TypeM>::effective_type;
+    using err_type = typename vec<2,TypeE>::effective_type;
     static const auto max_error = std::numeric_limits<rtype_t<TypeE>>::max();
 
     int_t hx = psf.dims[1]/2, hy = psf.dims[0]/2;
@@ -54,18 +54,18 @@ psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& terr,
 }
 
 template<typename TypeM, typename TypeE = TypeM, typename TypeP = TypeM>
-psffit_result psffit(const vec_t<2,TypeM>& img, const vec_t<2,TypeE>& err, const vec_t<2,TypeP>& psf) {
+psffit_result psffit(const vec<2,TypeM>& img, const vec<2,TypeE>& err, const vec<2,TypeP>& psf) {
     return psffit(img, err, psf, {img.dims[0]/2, img.dims[1]/2});
 }
 
 template<typename TypeM, typename TypeE, typename TypeP = TypeM>
-psffit_result psffit(const vec_t<2,TypeM>& img, const TypeE& err, const vec_t<2,TypeP>& psf) {
-    vec_t<2,TypeE> terr = arr<TypeE>(1,1) + err;
+psffit_result psffit(const vec<2,TypeM>& img, const TypeE& err, const vec<2,TypeP>& psf) {
+    vec<2,TypeE> terr = arr<TypeE>(1,1) + err;
     return psffit(img, terr, psf, {img.dims[0]/2, img.dims[1]/2});
 }
 
 template<typename TypeM, typename TypeP = TypeM>
-void srcsub(vec_t<2,TypeM>& img, const vec_t<2,TypeP>& psf, double flux, const vec1i& pos) {
+void srcsub(vec<2,TypeM>& img, const vec<2,TypeP>& psf, double flux, const vec1i& pos) {
     int_t hx = psf.dims[1]/2, hy = psf.dims[0]/2;
 
     vec1i rr, rs;
@@ -74,7 +74,7 @@ void srcsub(vec_t<2,TypeM>& img, const vec_t<2,TypeP>& psf, double flux, const v
 }
 
 template<typename TypeM, typename TypeP = TypeM>
-void srcsub(vec_t<2,TypeM>& img, const vec_t<2,TypeP>& psf, double flux) {
+void srcsub(vec<2,TypeM>& img, const vec<2,TypeP>& psf, double flux) {
     srcsub(img, psf, flux, {img.dims[0]/2, img.dims[1]/2});
 }
 
@@ -160,10 +160,10 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
 // argument to the vectorization macro.
 #define VECTORIZE_INTERPOL(name, npt) \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    typename vec_t<Dim,Type>::effective_type name(const vec_t<Dim,Type>& z, const Args& ... args) { \
+    typename vec<Dim,Type>::effective_type name(const vec<Dim,Type>& z, const Args& ... args) { \
         if (z.size() < 2*npt) { \
             using rtype = rtype_t<Type>; \
-            vec_t<Dim,rtype> r = z; \
+            vec<Dim,rtype> r = z; \
             for (auto& t : r) { \
                 t = name(t, args...); \
             } \
@@ -175,11 +175,11 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
             auto tz = e10(rgen(log10(mi), log10(ma), npt)); \
             prepend(tz, {0.0}); \
             using rtype = rtype_t<Type>; \
-            vec_t<1,rtype> td = arr<rtype>(tz.dims); \
+            vec<1,rtype> td = arr<rtype>(tz.dims); \
             for (uint_t i : range(tz)) { \
                 td[i] = name(tz[i], args...); \
             } \
-            vec_t<Dim,rtype> r(z.dims); \
+            vec<Dim,rtype> r(z.dims); \
             r[idz] = interpolate(td, tz, z[idz]); \
             idz = where(z <= 0); \
             r[idz] = name(0.0, args...); \
@@ -355,8 +355,8 @@ double field_area(const TX& ra, const TY& dec) {
 // Uses the Landy-Szalay estimator, computed with a brute force approach.
 template<std::size_t N1, typename TR1, typename TD1,
     std::size_t N2, typename TR2, typename TD2, typename TB>
-vec1d angcorrel(const vec_t<N1,TR1>& ra, const vec_t<N1,TD1>& dec,
-    const vec_t<N2,TR2>& rra, const vec_t<N2,TD2>& rdec, const vec_t<2,TB>& bins) {
+vec1d angcorrel(const vec<N1,TR1>& ra, const vec<N1,TD1>& dec,
+    const vec<N2,TR2>& rra, const vec<N2,TD2>& rdec, const vec<2,TB>& bins) {
     phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match for the "
         "input catalog (", ra.dims, " vs ", dec.dims, ")");
     phypp_check(rra.dims == rdec.dims, "RA and Dec dimensions do not match for the "
@@ -398,7 +398,7 @@ struct randpos_uniform_options {
 
 template<std::size_t N1, typename TR1, typename TD1, typename TSeed, typename F>
 randpos_status randpos_uniform(TSeed& seed, vec1d rra, vec1d rdec, F&& in_region,
-    vec_t<N1,TR1>& ra, vec_t<N1,TD1>& dec, randpos_uniform_options options) {
+    vec<N1,TR1>& ra, vec<N1,TD1>& dec, randpos_uniform_options options) {
 
     randpos_status status;
 
@@ -442,7 +442,7 @@ struct randpos_power_options {
 
 template<std::size_t N1, typename TR1, typename TD1, typename TSeed>
 randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double r0,
-    vec_t<N1,TR1>& ra, vec_t<N1,TD1>& dec, randpos_power_options options) {
+    vec<N1,TR1>& ra, vec<N1,TD1>& dec, randpos_power_options options) {
 
     randpos_status status;
 
@@ -616,8 +616,8 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
 template<std::size_t N1, typename TR1, typename TD1,
     std::size_t N2, typename TR2, typename TD2, typename TSeed>
 randpos_status randpos_power(TSeed& seed,
-    const vec1u& hull, const vec_t<N2,TR2>& hra, const vec_t<N2,TD2>& hdec,
-    vec_t<N1,TR1>& ra, vec_t<N1,TD1>& dec, randpos_power_options options) {
+    const vec1u& hull, const vec<N2,TR2>& hra, const vec<N2,TD2>& hdec,
+    vec<N1,TR1>& ra, vec<N1,TD1>& dec, randpos_power_options options) {
 
     randpos_status status;
 
@@ -702,15 +702,15 @@ bool sex2deg(const std::string& sra, const std::string& sdec, double& ra, double
 }
 
 template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-vec_t<Dim,bool> sex2deg(const vec_t<Dim,TSR>& sra, const vec_t<Dim,TSD>& sdec,
-    vec_t<Dim,TR>& ra, vec_t<Dim,TD>& dec) {
+vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec,
+    vec<Dim,TR>& ra, vec<Dim,TD>& dec) {
 
     phypp_check(sra.size() == sdec.size(), "RA and Dec dimensions do not match (",
         sra.dims, " vs ", sdec.dims, ")");
 
     ra.resize(sra.dims);
     dec.resize(sra.dims);
-    vec_t<Dim,bool> res(sra.dims);
+    vec<Dim,bool> res(sra.dims);
     for (uint_t i : range(sra)) {
         res[i] = sex2deg(sra[i], sdec[i], ra[i], dec[i]);
     }
@@ -757,7 +757,7 @@ void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
 }
 
 template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-void deg2sex(const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec, vec_t<Dim,TSR>& sra, vec_t<Dim,TSD>& sdec) {
+void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, vec<Dim,TSR>& sra, vec<Dim,TSD>& sdec) {
     phypp_check(ra.size() == dec.size(), "RA and Dec dimensions do not match (",
         ra.dims, " vs ", dec.dims, ")");
 
@@ -769,7 +769,7 @@ void deg2sex(const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec, vec_t<Dim,TSR>& 
 }
 
 template<std::size_t Dim, typename TR, typename TD>
-void print_radec(const std::string& file, const vec_t<Dim,TR>& ra, const vec_t<Dim,TD>& dec) {
+void print_radec(const std::string& file, const vec<Dim,TR>& ra, const vec<Dim,TD>& dec) {
     std::ofstream f(file);
 
     for (uint_t i : range(ra)) {
@@ -836,8 +836,8 @@ bool get_band(const Cat& cat, const std::string& band, const std::string& note_,
 }
 
 template<typename Type>
-void pick_sources(const vec_t<2,Type>& img, const vec1d& x, const vec1d& y,
-    int_t hsize, vec_t<3,rtype_t<Type>>& cube, vec1u& ids) {
+void pick_sources(const vec<2,Type>& img, const vec1d& x, const vec1d& y,
+    int_t hsize, vec<3,rtype_t<Type>>& cube, vec1u& ids) {
 
     uint_t width = img.dims[0];
     uint_t height = img.dims[1];
@@ -878,7 +878,7 @@ struct filter_t {
 // normalized to unit integral (i.e. integrate(lam, res) == 1).
 
 template<typename TypeL, typename TypeS>
-double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
+double sed2flux(const filter_t& filter, const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
     uint_t nflam = filter.lam.size();
 
     auto bnd = bounds(filter.lam.safe[0], filter.lam.safe[nflam-1], lam);
@@ -911,7 +911,7 @@ double sed2flux(const filter_t& filter, const vec_t<1,TypeL>& lam, const vec_t<1
 }
 
 template<typename TypeL, typename TypeS>
-vec1d sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,TypeS>& sed) {
+vec1d sed2flux(const filter_t& filter, const vec<2,TypeL>& lam, const vec<2,TypeS>& sed) {
     vec1d r;
     const uint_t nsed = sed.dims[0];
     r.reserve(nsed);
@@ -925,7 +925,7 @@ vec1d sed2flux(const filter_t& filter, const vec_t<2,TypeL>& lam, const vec_t<2,
 
 template<typename TypeL, typename TypeS>
 double sed_convert(const filter_t& from, const filter_t& to, double z, double d,
-    const vec_t<1,TypeL>& lam, const vec_t<1,TypeS>& sed) {
+    const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
 
     vec1d rflam = lam*(1.0 + z);
     vec1d rfsed = lsun2uJy(z, d, lam, sed);
@@ -937,7 +937,7 @@ double sed_convert(const filter_t& from, const filter_t& to, double z, double d,
 
 // Compute the LIR luminosity of a rest-frame SED (8um to 1000um).
 template<typename TL, typename TS>
-double lir_8_1000(const vec_t<1,TL>& lam, const vec_t<1,TS>& sed) {
+double lir_8_1000(const vec<1,TL>& lam, const vec<1,TS>& sed) {
     uint_t s = lower_bound(8.0, lam);
     uint_t e = upper_bound(1000.0, lam);
     if (s == npos || e == npos) return dnan;
@@ -1002,7 +1002,7 @@ bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
     return true;
 }
 
-using filter_bank_t = vec_t<1, filter_t>;
+using filter_bank_t = vec<1, filter_t>;
 using filter_db_t = std::map<std::string, std::string>;
 
 filter_db_t read_filter_db(const std::string& filename) {
@@ -1061,7 +1061,7 @@ filter_t get_filter(const filter_db_t& db, const std::string& str) {
 }
 
 template<typename Type = std::string>
-filter_bank_t get_filters(const filter_db_t& db, const vec_t<1,Type>& str) {
+filter_bank_t get_filters(const filter_db_t& db, const vec<1,Type>& str) {
     filter_bank_t fils;
     for (auto& s : str) {
         fils.push_back(get_filter(db, s));

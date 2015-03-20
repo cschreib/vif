@@ -87,20 +87,20 @@ struct catalog_t {
 
     template<std::size_t Dim, typename T, typename U, typename V,
         typename enable = typename std::enable_if<Dim != 1>::type>
-    void merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def);
+    void merge(vec<Dim,T>& in, const vec<Dim,U>& out, const V& def);
 
     template<typename T, typename U, typename V>
-    void merge(vec_t<1,T>& in, const U& out, const V& def);
+    void merge(vec<1,T>& in, const U& out, const V& def);
 
     template<typename T, typename U, typename V>
-    void merge(vec_t<1,T>& in, const vec_t<1,U>& out, const V& def);
+    void merge(vec<1,T>& in, const vec<1,U>& out, const V& def);
 
     template<std::size_t Dim, typename T, typename U, typename V,
         typename enable = typename std::enable_if<Dim != 1>::type>
-    void merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def, const std::string& com);
+    void merge(vec<Dim,T>& in, const vec<Dim,U>& out, const V& def, const std::string& com);
 
     template<typename T, typename U, typename V>
-    void merge(vec_t<1,T>& in, const U& out, const V& def, const std::string& com);
+    void merge(vec<1,T>& in, const U& out, const V& def, const std::string& com);
 
     template<typename T, typename U, typename V>
     void merge(T& in, const U& out, const V& def);
@@ -296,7 +296,7 @@ public :
 };
 
 template<std::size_t Dim, typename T, typename U, typename V, typename enable>
-void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def) {
+void catalog_t::merge(vec<Dim,T>& in, const vec<Dim,U>& out, const V& def) {
     phypp_check(in.empty(), name+": merging twice into the same variable");
     in.dims = out.dims;
     in.dims[0] = pool.ngal;
@@ -306,21 +306,21 @@ void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def) {
 }
 
 template<typename T, typename U, typename V>
-void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def) {
+void catalog_t::merge(vec<1,T>& in, const U& out, const V& def) {
     phypp_check(in.empty(), name+": merging twice into the same variable");
     in = replicate(def, pool.ngal);
     in[idm] = out;
 }
 
 template<typename T, typename U, typename V>
-void catalog_t::merge(vec_t<1,T>& in, const vec_t<1,U>& out, const V& def) {
+void catalog_t::merge(vec<1,T>& in, const vec<1,U>& out, const V& def) {
     phypp_check(in.empty(), name+": merging twice into the same variable");
     in = replicate(def, pool.ngal);
     in[idm] = out[idi];
 }
 
 template<std::size_t Dim, typename T, typename U, typename V, typename enable>
-void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def,
+void catalog_t::merge(vec<Dim,T>& in, const vec<Dim,U>& out, const V& def,
     const std::string& com) {
     merge(in, out, def);
 
@@ -332,7 +332,7 @@ void catalog_t::merge(vec_t<Dim,T>& in, const vec_t<Dim,U>& out, const V& def,
 }
 
 template<typename T, typename U, typename V>
-void catalog_t::merge(vec_t<1,T>& in, const U& out, const V& def, const std::string& com) {
+void catalog_t::merge(vec<1,T>& in, const U& out, const V& def, const std::string& com) {
     merge(in, out, def);
 
     #ifdef NO_REFLECTION

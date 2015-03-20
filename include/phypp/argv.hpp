@@ -8,26 +8,26 @@
 #define arg_list(...) #__VA_ARGS__, __VA_ARGS__
 
 template<typename T, typename U,
-    typename enable = typename std::enable_if<!std::is_same<T, vec_t<1,std::string>>::value>::type>
+    typename enable = typename std::enable_if<!std::is_same<T, vec<1,std::string>>::value>::type>
 bool read_args_n2T_(T& t, const U& u) {
     t = u;
     return true;
 }
 
 template<typename T,
-    typename enable = typename std::enable_if<!std::is_same<T, vec_t<1,std::string>>::value>::type>
+    typename enable = typename std::enable_if<!std::is_same<T, vec<1,std::string>>::value>::type>
 bool read_args_n2T_(T& t, const std::string& s) {
     return from_string(s, t);
 }
 
 template<typename U>
-bool read_args_n2T_(vec_t<1,std::string>& t, const U& u) {
+bool read_args_n2T_(vec<1,std::string>& t, const U& u) {
     t = strn(u);
     return true;
 }
 
 template<typename U>
-bool read_args_n2T_(vec_t<1,std::string>& t, const std::string& u) {
+bool read_args_n2T_(vec<1,std::string>& t, const std::string& u) {
     t = u;
     return true;
 }
@@ -66,7 +66,7 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
 }
 
 template<typename T>
-void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, vec_t<1,T>& t) {
+void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, vec<1,T>& t) {
     auto p = arg.find_first_of('=');
     if (p == arg.npos) {
         if (arg != name) {

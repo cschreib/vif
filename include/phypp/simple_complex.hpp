@@ -121,15 +121,15 @@ namespace phypp {
 }
 
 #define MAKE_TYPEDEFS(N) \
-    using vec##N##cf  = vec_t<N, phypp::complex<float>>; \
-    using vec##N##cd  = vec_t<N, phypp::complex<double>>;
+    using vec##N##cf  = vec<N, phypp::complex<float>>; \
+    using vec##N##cd  = vec<N, phypp::complex<double>>;
 #else
 
 #include <complex>
 
 #define MAKE_TYPEDEFS(N) \
-    using vec##N##cf  = vec_t<N, std::complex<float>>; \
-    using vec##N##cd  = vec_t<N, std::complex<double>>;
+    using vec##N##cf  = vec<N, std::complex<float>>; \
+    using vec##N##cd  = vec<N, std::complex<double>>;
 
 #endif
 

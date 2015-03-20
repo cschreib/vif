@@ -30,7 +30,7 @@ namespace qstack_impl {
             // Get the dimensions of the image
             int naxis = 0;
             fits_get_img_dim(fptr, &naxis, &status);
-            vec_t<1,long> naxes(naxis);
+            vec<1,long> naxes(naxis);
             fits_get_img_size(fptr, naxis, naxes.data.data(), &status);
             bool is2D = naxis == 2;
             if (is2D) {
@@ -85,7 +85,7 @@ struct qstack_output {
 
 template<typename Type>
 qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filename,
-    uint_t hsize, vec_t<3,Type>& cube, vec1u& ids, qstack_params params = qstack_params()) {
+    uint_t hsize, vec<3,Type>& cube, vec1u& ids, qstack_params params = qstack_params()) {
 
     phypp_check(file::exists(filename), "cannot stack on inexistant file '"+filename+"'");
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
@@ -144,7 +144,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
 
             found[i] = true;
 
-            vec_t<2,Type> cut(2*hsize+1, 2*hsize+1);
+            vec<2,Type> cut(2*hsize+1, 2*hsize+1);
 
             Type null = fnan;
             int anynul = 0;
@@ -176,7 +176,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
 
 template<typename Type>
 qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile,
-    const std::string& wfile, uint_t hsize, vec_t<3,Type>& cube, vec_t<3,Type>& wcube,
+    const std::string& wfile, uint_t hsize, vec<3,Type>& cube, vec<3,Type>& wcube,
     vec1u& ids, qstack_params params = qstack_params()) {
 
     phypp_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
@@ -220,7 +220,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
     // Get the dimensions of the image
     int naxis = 0;
     fits_get_img_dim(fptr, &naxis, &status);
-    vec_t<1,long> naxes(naxis);
+    vec<1,long> naxes(naxis);
     fits_get_img_size(fptr, naxis, naxes.data.data(), &status);
     bool is2D = naxis == 2;
     long width, height;
@@ -242,7 +242,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
 
     phypp_check(is2D, "cannot stack on image cubes (image dimensions: "+strn(naxes)+")");
 
-    vec_t<1,long> wnaxes(naxis);
+    vec<1,long> wnaxes(naxis);
     fits_get_img_size(wfptr, naxis, wnaxes.data.data(), &status);
     phypp_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
 
@@ -282,8 +282,8 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
             continue;
         }
 
-        vec_t<2,Type> cut(2*hsize+1, 2*hsize+1);
-        vec_t<2,Type> wcut(2*hsize+1, 2*hsize+1);
+        vec<2,Type> cut(2*hsize+1, 2*hsize+1);
+        vec<2,Type> wcut(2*hsize+1, 2*hsize+1);
 
         Type null = fnan;
         int anynul = 0;
@@ -320,22 +320,22 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> qstack_mean(const vec_t<3,Type>& fcube) {
+vec<2,rtype_t<Type>> qstack_mean(const vec<3,Type>& fcube) {
     return partial_mean(0, fcube);
 }
 
 template<typename TypeF, typename TypeW>
-vec_t<2,rtype_t<TypeF>> qstack_mean(const vec_t<3,TypeF>& fcube, const vec_t<3,TypeW>& wcube) {
+vec<2,rtype_t<TypeF>> qstack_mean(const vec<3,TypeF>& fcube, const vec<3,TypeW>& wcube) {
     return partial_total(0, fcube*wcube)/partial_total(0, wcube);
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> qstack_median(const vec_t<3,Type>& fcube) {
+vec<2,rtype_t<Type>> qstack_median(const vec<3,Type>& fcube) {
     return partial_median(0, fcube);
 }
 
 template<typename Type, typename TypeS, typename F>
-void qstack_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
+void qstack_bootstrap(const vec<3,Type>& fcube, uint_t nbstrap,
     uint_t nsel, TypeS& seed, F&& func) {
 
     for (uint_t i = 0; i < nbstrap; ++i) {
@@ -346,7 +346,7 @@ void qstack_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
 }
 
 template<typename TypeF, typename TypeW, typename TypeS, typename F>
-void qstack_bootstrap(const vec_t<3,TypeF>& fcube, const vec_t<3,TypeW>& wcube, uint_t nbstrap,
+void qstack_bootstrap(const vec<3,TypeF>& fcube, const vec<3,TypeW>& wcube, uint_t nbstrap,
     uint_t nsel, TypeS& seed, F&& func) {
 
     for (uint_t i = 0; i < nbstrap; ++i) {
@@ -358,12 +358,12 @@ void qstack_bootstrap(const vec_t<3,TypeF>& fcube, const vec_t<3,TypeW>& wcube, 
 }
 
 template<typename Type>
-vec_t<3,rtype_t<Type>> qstack_bootstrap_apply_id_(const vec1u& ids, const vec_t<3,Type>& cube) {
+vec<3,rtype_t<Type>> qstack_bootstrap_apply_id_(const vec1u& ids, const vec<3,Type>& cube) {
     return cube(ids,_,_).concretise();
 }
 
 template<typename Type, typename ... Args>
-uint_t qstack_bootstrap_get_size_(const vec_t<3,Type>& cube, const Args& ... cubes) {
+uint_t qstack_bootstrap_get_size_(const vec<3,Type>& cube, const Args& ... cubes) {
     return cube.dims[0];
 }
 
@@ -377,10 +377,10 @@ void qstack_bootstrap(uint_t nbstrap, uint_t nsel, TypeS& seed, F&& func, const 
 }
 
 template<typename Type, typename TypeS>
-vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
+vec<3,rtype_t<Type>> qstack_mean_bootstrap(const vec<3,Type>& fcube, uint_t nbstrap,
     uint_t nsel, TypeS& seed) {
 
-    vec_t<3,rtype_t<Type>> bs;
+    vec<3,rtype_t<Type>> bs;
     bs.reserve(nbstrap*fcube.dims[1]*fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
         vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
@@ -391,10 +391,10 @@ vec_t<3,rtype_t<Type>> qstack_mean_bootstrap(const vec_t<3,Type>& fcube, uint_t 
 }
 
 template<typename TypeF, typename TypeW, typename TypeS>
-vec_t<3,rtype_t<TypeF>> qstack_mean_bootstrap(const vec_t<3,TypeF>& fcube,
-    const vec_t<3,TypeW>& wcube, uint_t nbstrap, uint_t nsel, TypeS& seed) {
+vec<3,rtype_t<TypeF>> qstack_mean_bootstrap(const vec<3,TypeF>& fcube,
+    const vec<3,TypeW>& wcube, uint_t nbstrap, uint_t nsel, TypeS& seed) {
 
-    vec_t<3,rtype_t<TypeF>> bs;
+    vec<3,rtype_t<TypeF>> bs;
     bs.reserve(nbstrap*fcube.dims[1]*fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
         vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);
@@ -405,10 +405,10 @@ vec_t<3,rtype_t<TypeF>> qstack_mean_bootstrap(const vec_t<3,TypeF>& fcube,
 }
 
 template<typename Type, typename TypeS>
-vec_t<3,rtype_t<Type>> qstack_median_bootstrap(const vec_t<3,Type>& fcube, uint_t nbstrap,
+vec<3,rtype_t<Type>> qstack_median_bootstrap(const vec<3,Type>& fcube, uint_t nbstrap,
     uint_t nsel, TypeS& seed) {
 
-    vec_t<3,rtype_t<Type>> bs;
+    vec<3,rtype_t<Type>> bs;
     bs.reserve(nbstrap*fcube.dims[1]*fcube.dims[2]);
     for (uint_t i = 0; i < nbstrap; ++i) {
         vec1u ids = randomi(seed, 0, fcube.dims[0]-1, nsel);

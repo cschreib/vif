@@ -5,7 +5,7 @@
 #include "phypp/variadic.hpp"
 
 template<std::size_t Dim, typename Type>
-struct vec_t;
+struct vec;
 
 using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;
@@ -239,7 +239,7 @@ namespace reflex {
     struct enabled<T*> : std::false_type {};
 
     template<std::size_t D, typename T>
-    struct enabled<vec_t<D,T>> : std::false_type {};
+    struct enabled<vec<D,T>> : std::false_type {};
 
     template<std::size_t D, typename T>
     struct enabled<std::array<T,D>> : std::false_type {};

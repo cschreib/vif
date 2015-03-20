@@ -16,42 +16,42 @@ void test_is_vec() {
     // Metaprogramming
     vec1u r;
 
-    assert_is_vec<vec_t<1,T>>();
-    assert_is_vec<vec_t<2,T>>();
-    assert_is_vec<vec_t<3,T>>();
-    assert_is_vec<vec_t<4,T>>();
+    assert_is_vec<vec<1,T>>();
+    assert_is_vec<vec<2,T>>();
+    assert_is_vec<vec<3,T>>();
+    assert_is_vec<vec<4,T>>();
 
-    assert_is_vec<decltype(vec_t<1,T>()(_))>();
-    assert_is_vec<decltype(vec_t<1,T>()(r))>();
-    assert_is_vec<decltype(vec_t<1,T>()[_])>();
-    assert_is_vec<decltype(vec_t<1,T>()[r])>();
-    assert_is_vec<decltype(vec_t<2,T>()[_])>();
-    assert_is_vec<decltype(vec_t<2,T>()[r])>();
+    assert_is_vec<decltype(vec<1,T>()(_))>();
+    assert_is_vec<decltype(vec<1,T>()(r))>();
+    assert_is_vec<decltype(vec<1,T>()[_])>();
+    assert_is_vec<decltype(vec<1,T>()[r])>();
+    assert_is_vec<decltype(vec<2,T>()[_])>();
+    assert_is_vec<decltype(vec<2,T>()[r])>();
 
-    assert_is_vec<decltype(vec_t<2,T>()(_,0))>();
-    assert_is_vec<decltype(vec_t<2,T>()(r,0))>();
-    assert_is_vec<decltype(vec_t<2,T>()(0,_))>();
-    assert_is_vec<decltype(vec_t<2,T>()(0,r))>();
+    assert_is_vec<decltype(vec<2,T>()(_,0))>();
+    assert_is_vec<decltype(vec<2,T>()(r,0))>();
+    assert_is_vec<decltype(vec<2,T>()(0,_))>();
+    assert_is_vec<decltype(vec<2,T>()(0,r))>();
 
-    assert_is_vec<decltype(vec_t<3,T>()(_,_,0))>();
-    assert_is_vec<decltype(vec_t<3,T>()(r,_,0))>();
-    assert_is_vec<decltype(vec_t<3,T>()(_,r,0))>();
-    assert_is_vec<decltype(vec_t<3,T>()(r,r,0))>();
-    assert_is_vec<decltype(vec_t<3,T>()(_,0,_))>();
-    assert_is_vec<decltype(vec_t<3,T>()(r,0,_))>();
-    assert_is_vec<decltype(vec_t<3,T>()(_,0,r))>();
-    assert_is_vec<decltype(vec_t<3,T>()(r,0,r))>();
-    assert_is_vec<decltype(vec_t<3,T>()(0,_,_))>();
-    assert_is_vec<decltype(vec_t<3,T>()(0,r,_))>();
-    assert_is_vec<decltype(vec_t<3,T>()(0,_,r))>();
-    assert_is_vec<decltype(vec_t<3,T>()(0,r,r))>();
+    assert_is_vec<decltype(vec<3,T>()(_,_,0))>();
+    assert_is_vec<decltype(vec<3,T>()(r,_,0))>();
+    assert_is_vec<decltype(vec<3,T>()(_,r,0))>();
+    assert_is_vec<decltype(vec<3,T>()(r,r,0))>();
+    assert_is_vec<decltype(vec<3,T>()(_,0,_))>();
+    assert_is_vec<decltype(vec<3,T>()(r,0,_))>();
+    assert_is_vec<decltype(vec<3,T>()(_,0,r))>();
+    assert_is_vec<decltype(vec<3,T>()(r,0,r))>();
+    assert_is_vec<decltype(vec<3,T>()(0,_,_))>();
+    assert_is_vec<decltype(vec<3,T>()(0,r,_))>();
+    assert_is_vec<decltype(vec<3,T>()(0,_,r))>();
+    assert_is_vec<decltype(vec<3,T>()(0,r,r))>();
 
     assert_not_is_vec<T>();
     assert_not_is_vec<std::vector<T>>();
-    assert_not_is_vec<decltype(vec_t<1,T>()(0))>();
-    assert_not_is_vec<decltype(vec_t<2,T>()[0])>();
-    assert_not_is_vec<decltype(vec_t<2,T>()(0,0))>();
-    assert_not_is_vec<decltype(vec_t<3,T>()(0,0,0))>();
+    assert_not_is_vec<decltype(vec<1,T>()(0))>();
+    assert_not_is_vec<decltype(vec<2,T>()[0])>();
+    assert_not_is_vec<decltype(vec<2,T>()(0,0))>();
+    assert_not_is_vec<decltype(vec<3,T>()(0,0,0))>();
 }
 
 template<typename T, std::size_t D>
@@ -64,35 +64,35 @@ void test_vec_dim() {
     // Metaprogramming
     vec1u r;
 
-    assert_vec_dim<vec_t<1,T>,1>();
-    assert_vec_dim<vec_t<2,T>,2>();
-    assert_vec_dim<vec_t<3,T>,3>();
+    assert_vec_dim<vec<1,T>,1>();
+    assert_vec_dim<vec<2,T>,2>();
+    assert_vec_dim<vec<3,T>,3>();
 
-    assert_vec_dim<decltype(vec_t<1,T>()(_)),1>();
-    assert_vec_dim<decltype(vec_t<1,T>()(r)),1>();
-    assert_vec_dim<decltype(vec_t<1,T>()[_]),1>();
-    assert_vec_dim<decltype(vec_t<1,T>()[r]),1>();
-    assert_vec_dim<decltype(vec_t<2,T>()[_]),1>();
-    assert_vec_dim<decltype(vec_t<2,T>()[r]),1>();
-    assert_vec_dim<decltype(vec_t<3,T>()[_]),1>();
-    assert_vec_dim<decltype(vec_t<3,T>()[r]),1>();
-    assert_vec_dim<decltype(vec_t<2,T>()(_,0)),1>();
-    assert_vec_dim<decltype(vec_t<2,T>()(r,0)),1>();
-    assert_vec_dim<decltype(vec_t<2,T>()(0,_)),1>();
-    assert_vec_dim<decltype(vec_t<2,T>()(0,r)),1>();
+    assert_vec_dim<decltype(vec<1,T>()(_)),1>();
+    assert_vec_dim<decltype(vec<1,T>()(r)),1>();
+    assert_vec_dim<decltype(vec<1,T>()[_]),1>();
+    assert_vec_dim<decltype(vec<1,T>()[r]),1>();
+    assert_vec_dim<decltype(vec<2,T>()[_]),1>();
+    assert_vec_dim<decltype(vec<2,T>()[r]),1>();
+    assert_vec_dim<decltype(vec<3,T>()[_]),1>();
+    assert_vec_dim<decltype(vec<3,T>()[r]),1>();
+    assert_vec_dim<decltype(vec<2,T>()(_,0)),1>();
+    assert_vec_dim<decltype(vec<2,T>()(r,0)),1>();
+    assert_vec_dim<decltype(vec<2,T>()(0,_)),1>();
+    assert_vec_dim<decltype(vec<2,T>()(0,r)),1>();
 
-    assert_vec_dim<decltype(vec_t<3,T>()(_,_,0)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(r,_,0)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(_,r,0)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(r,r,0)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(_,0,_)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(r,0,_)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(_,0,r)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(r,0,r)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(0,_,_)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(0,r,_)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(0,_,r)),2>();
-    assert_vec_dim<decltype(vec_t<3,T>()(0,r,r)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(_,_,0)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(r,_,0)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(_,r,0)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(r,r,0)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(_,0,_)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(r,0,_)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(_,0,r)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(r,0,r)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(0,_,_)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(0,r,_)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(0,_,r)),2>();
+    assert_vec_dim<decltype(vec<3,T>()(0,r,r)),2>();
 
     assert_vec_dim<T,0>();
     assert_vec_dim<std::vector<T>,0>();
@@ -159,9 +159,9 @@ void test_vec_constructor() {
 
     {
         // Default constructor
-        vec_t<1,T> v01;
-        vec_t<2,T> v02;
-        vec_t<3,T> v03;
+        vec<1,T> v01;
+        vec<2,T> v02;
+        vec<3,T> v03;
 
         check(v01.dims[0], 0u);
         check(v02.dims[0], 0u);
@@ -190,9 +190,9 @@ void test_vec_constructor() {
         const uint_t dr  = 3u;
 
         vec1u r(dr);
-        vec_t<1,T> v1(d1);
-        vec_t<2,T> v2(d21,d22);
-        vec_t<3,T> v3(d31,d32,d33);
+        vec<1,T> v1(d1);
+        vec<2,T> v2(d21,d22);
+        vec<3,T> v3(d31,d32,d33);
 
         check(v1.dims[0], d1);
         check(v2.dims[0], d21);
@@ -314,7 +314,7 @@ void test_vec_constructor() {
 
     {
         // Initializer list constructor
-        vec_t<1,T> v1({gen[0], gen[1], gen[2], gen[3], gen[4]});
+        vec<1,T> v1({gen[0], gen[1], gen[2], gen[3], gen[4]});
         check(v1.dims[0], 5u);
         check(v1.size(),  5u);
         check(v1.empty(), false);
@@ -322,12 +322,12 @@ void test_vec_constructor() {
             check(v1[i], gen[i]);
         }
 
-        vec_t<1,T> v1e({});
+        vec<1,T> v1e({});
         check(v1e.dims[0], 0u);
         check(v1e.size(),  0u);
         check(v1e.empty(), true);
 
-        vec_t<2,T> v2({
+        vec<2,T> v2({
             {gen[0], gen[1]},
             {gen[2], gen[3]},
             {gen[4], gen[5]}
@@ -344,13 +344,13 @@ void test_vec_constructor() {
             check(v2(i,j), gen[i*2+j]);
         }
 
-        vec_t<2,T> v2e({});
+        vec<2,T> v2e({});
         check(v2e.dims[0], 0u);
         check(v2e.dims[1], 0u);
         check(v2e.size(),  0u);
         check(v2e.empty(), true);
 
-        vec_t<3,T> v3({{
+        vec<3,T> v3({{
             {gen[0],  gen[1]},
             {gen[2],  gen[3]},
             {gen[4],  gen[5]}
@@ -373,7 +373,7 @@ void test_vec_constructor() {
             check(v3(i,j,k), gen[i*3*2+j*2+k]);
         }
 
-        vec_t<3,T> v3e({});
+        vec<3,T> v3e({});
         check(v3e.dims[0], 0u);
         check(v3e.dims[1], 0u);
         check(v3e.dims[2], 0u);
@@ -390,13 +390,13 @@ void test_vec_constructor() {
         const uint_t d32 = 7u;
         const uint_t d33 = 15u;
 
-        vec_t<1,T> v1(d1);
-        vec_t<2,T> v2(d21,d22);
-        vec_t<3,T> v3(d31,d32,d33);
+        vec<1,T> v1(d1);
+        vec<2,T> v2(d21,d22);
+        vec<3,T> v3(d31,d32,d33);
 
-        vec_t<1,T> nv1(std::move(v1));
-        vec_t<2,T> nv2(std::move(v2));
-        vec_t<3,T> nv3(std::move(v3));
+        vec<1,T> nv1(std::move(v1));
+        vec<2,T> nv2(std::move(v2));
+        vec<3,T> nv3(std::move(v3));
 
         check(nv1.dims[0], d1);
         check(v1.dims[0],  0u);
@@ -439,12 +439,12 @@ void test_vec_constructor() {
 
     {
         // Move constructor (with actual values)
-        vec_t<1,T> w1({gen[0], gen[1], gen[2], gen[3]});
-        vec_t<2,T> w2({
+        vec<1,T> w1({gen[0], gen[1], gen[2], gen[3]});
+        vec<2,T> w2({
             {gen[0], gen[1], gen[2]},
             {gen[3], gen[4], gen[5]}
         });
-        vec_t<3,T> w3({{
+        vec<3,T> w3({{
             {gen[0],  gen[1]},
             {gen[2],  gen[3]},
             {gen[4],  gen[5]}
@@ -454,9 +454,9 @@ void test_vec_constructor() {
             {gen[10], gen[11]}
         }});
 
-        vec_t<1,T> nw1(std::move(w1));
-        vec_t<2,T> nw2(std::move(w2));
-        vec_t<3,T> nw3(std::move(w3));
+        vec<1,T> nw1(std::move(w1));
+        vec<2,T> nw2(std::move(w2));
+        vec<3,T> nw3(std::move(w3));
 
         for (uint_t i = 0; i < 4; ++i) {
             check(nw1[i], gen[i]);
@@ -478,13 +478,13 @@ void test_vec_constructor() {
         const uint_t d32 = 7u;
         const uint_t d33 = 15u;
 
-        vec_t<1,T> v1(d1);
-        vec_t<2,T> v2(d21,d22);
-        vec_t<3,T> v3(d31,d32,d33);
+        vec<1,T> v1(d1);
+        vec<2,T> v2(d21,d22);
+        vec<3,T> v3(d31,d32,d33);
 
-        vec_t<1,T> nv1(v1);
-        vec_t<2,T> nv2(v2);
-        vec_t<3,T> nv3(v3);
+        vec<1,T> nv1(v1);
+        vec<2,T> nv2(v2);
+        vec<3,T> nv3(v3);
 
         check(nv1.dims[0], d1);
         check(v1.dims[0],  d1);
@@ -525,12 +525,12 @@ void test_vec_constructor() {
 
     {
         // Copy constructor (with actual values)
-        vec_t<1,T> w1({gen[0], gen[1], gen[2], gen[3]});
-        vec_t<2,T> w2({
+        vec<1,T> w1({gen[0], gen[1], gen[2], gen[3]});
+        vec<2,T> w2({
             {gen[0], gen[1], gen[2]},
             {gen[3], gen[4], gen[5]}
         });
-        vec_t<3,T> w3({{
+        vec<3,T> w3({{
             {gen[0],  gen[1]},
             {gen[2],  gen[3]},
             {gen[4],  gen[5]}
@@ -540,9 +540,9 @@ void test_vec_constructor() {
             {gen[10], gen[11]}
         }});
 
-        vec_t<1,T> nw1(w1);
-        vec_t<2,T> nw2(w2);
-        vec_t<3,T> nw3(w3);
+        vec<1,T> nw1(w1);
+        vec<2,T> nw2(w2);
+        vec<3,T> nw3(w3);
 
         for (uint_t i : range(w1)) {
             check(nw1[i], w1[i]);
@@ -567,13 +567,13 @@ void test_vec_index() {
 
     const generator<T> gen;
 
-    vec_t<2,T> v = {
+    vec<2,T> v = {
         {gen[0], gen[1], gen[2], gen[3]},
         {gen[4], gen[5], gen[6], gen[7]}
     };
 
     {
-        vec_t<2,T> v1 = v;
+        vec<2,T> v1 = v;
 
         // Pure integer index
         for (uint_t i = 0; i < 8; ++i) {
@@ -600,7 +600,7 @@ void test_vec_index() {
         check(v1[7],   gen[11]);
         check(v1(1,3), gen[11]);
 
-        vec_t<2,T> tv = {
+        vec<2,T> tv = {
             {gen[9], gen[1], gen[2],  gen[3]},
             {gen[4], gen[5], gen[10], gen[11]}
         };
@@ -608,16 +608,16 @@ void test_vec_index() {
     }
 
     {
-        vec_t<2,T> v1 = v;
+        vec<2,T> v1 = v;
 
         // Placeholder index
-        vec_t<1,T> sv0 = {gen[0], gen[1], gen[2], gen[3], gen[4], gen[5], gen[6], gen[7]};
-        vec_t<1,T> sv1 = {gen[0], gen[1], gen[2], gen[3]};
-        vec_t<1,T> sv2 = {gen[4], gen[5], gen[6], gen[7]};
-        vec_t<1,T> sv3 = {gen[0], gen[4]};
-        vec_t<1,T> sv4 = {gen[1], gen[5]};
-        vec_t<1,T> sv5 = {gen[2], gen[6]};
-        vec_t<1,T> sv6 = {gen[3], gen[7]};
+        vec<1,T> sv0 = {gen[0], gen[1], gen[2], gen[3], gen[4], gen[5], gen[6], gen[7]};
+        vec<1,T> sv1 = {gen[0], gen[1], gen[2], gen[3]};
+        vec<1,T> sv2 = {gen[4], gen[5], gen[6], gen[7]};
+        vec<1,T> sv3 = {gen[0], gen[4]};
+        vec<1,T> sv4 = {gen[1], gen[5]};
+        vec<1,T> sv5 = {gen[2], gen[6]};
+        vec<1,T> sv6 = {gen[3], gen[7]};
 
         check(v1[_],   sv0);
         check(v1(0,_), sv1);
@@ -634,7 +634,7 @@ void test_vec_index() {
         v1(1,_) = sv1;
         check(v1(1,_), sv1);
 
-        vec_t<2,T> tv = {
+        vec<2,T> tv = {
             {gen[4], gen[5], gen[6], gen[7]},
             {gen[0], gen[1], gen[2], gen[3]}
         };
@@ -670,25 +670,25 @@ void test_vec_index() {
     }
 
     {
-        vec_t<2,T> v1 = v;
+        vec<2,T> v1 = v;
 
         // Vector index
         vec1u r1 = {0,1,2,3};
         vec1u r2 = {1,0};
 
-        vec_t<1,T> sv0 = {gen[1], gen[0]};
-        vec_t<1,T> sv1 = {gen[0], gen[1], gen[2], gen[3]};
-        vec_t<1,T> sv2 = {gen[5], gen[4]};
-        vec_t<1,T> sv3 = {gen[4], gen[5], gen[6], gen[7]};
-        vec_t<1,T> sv4 = {gen[4], gen[0]};
-        vec_t<1,T> sv5 = {gen[5], gen[1]};
-        vec_t<1,T> sv6 = {gen[6], gen[2]};
-        vec_t<1,T> sv7 = {gen[7], gen[3]};
-        vec_t<2,T> sv8 = {
+        vec<1,T> sv0 = {gen[1], gen[0]};
+        vec<1,T> sv1 = {gen[0], gen[1], gen[2], gen[3]};
+        vec<1,T> sv2 = {gen[5], gen[4]};
+        vec<1,T> sv3 = {gen[4], gen[5], gen[6], gen[7]};
+        vec<1,T> sv4 = {gen[4], gen[0]};
+        vec<1,T> sv5 = {gen[5], gen[1]};
+        vec<1,T> sv6 = {gen[6], gen[2]};
+        vec<1,T> sv7 = {gen[7], gen[3]};
+        vec<2,T> sv8 = {
             {gen[5], gen[4]},
             {gen[1], gen[0]}
         };
-        vec_t<2,T> sv9 = {
+        vec<2,T> sv9 = {
             {gen[4], gen[5], gen[6], gen[7]},
             {gen[0], gen[1], gen[2], gen[3]}
         };
@@ -726,6 +726,180 @@ void test_vec_index() {
         check(v1, v);
 
         v1(vec1u{1,0},_) = v1(vec1u{0,1},_);
+        check(v1, sv9);
+    }
+
+    print("> ", tested - failed - (old_tested - old_failed), "/", tested - old_tested," passed");
+}
+
+template<typename T>
+void test_vec_safe_index() {
+    print("test_vec_safe_index...");
+
+    uint_t old_tested = tested;
+    uint_t old_failed = failed;
+
+    const generator<T> gen;
+
+    vec<2,T> v = {
+        {gen[0], gen[1], gen[2], gen[3]},
+        {gen[4], gen[5], gen[6], gen[7]}
+    };
+
+    {
+        vec<2,T> v1 = v;
+
+        // Pure integer index
+        for (uint_t i = 0; i < 8; ++i) {
+            check(v1.safe[i], gen[i]);
+        }
+        for (uint_t i = 0; i < 2; ++i)
+        for (uint_t j = 0; j < 4; ++j) {
+            check(v1.safe(i,j), gen[i*4+j]);
+        }
+
+        v1.safe[0] = gen[8];
+        check(v1.safe[0],   gen[8]);
+        check(v1.safe(0,0), gen[8]);
+
+        v1.safe(0,0) = gen[9];
+        check(v1.safe[0],   gen[9]);
+        check(v1.safe(0,0), gen[9]);
+
+        v1.safe(1,2) = gen[10];
+        check(v1.safe[6],   gen[10]);
+        check(v1.safe(1,2), gen[10]);
+
+        v1.safe(1,3) = gen[11];
+        check(v1.safe[7],   gen[11]);
+        check(v1.safe(1,3), gen[11]);
+
+        vec<2,T> tv = {
+            {gen[9], gen[1], gen[2],  gen[3]},
+            {gen[4], gen[5], gen[10], gen[11]}
+        };
+        check(v1, tv);
+    }
+
+    {
+        vec<2,T> v1 = v;
+
+        // Placeholder index
+        vec<1,T> sv0 = {gen[0], gen[1], gen[2], gen[3], gen[4], gen[5], gen[6], gen[7]};
+        vec<1,T> sv1 = {gen[0], gen[1], gen[2], gen[3]};
+        vec<1,T> sv2 = {gen[4], gen[5], gen[6], gen[7]};
+        vec<1,T> sv3 = {gen[0], gen[4]};
+        vec<1,T> sv4 = {gen[1], gen[5]};
+        vec<1,T> sv5 = {gen[2], gen[6]};
+        vec<1,T> sv6 = {gen[3], gen[7]};
+
+        check(v1.safe[_],   sv0);
+        check(v1.safe(0,_), sv1);
+        check(v1.safe(1,_), sv2);
+        check(v1.safe(_,0), sv3);
+        check(v1.safe(_,1), sv4);
+        check(v1.safe(_,2), sv5);
+        check(v1.safe(_,3), sv6);
+        check(v1.safe(_,_), v1);
+
+        v1.safe(0,_) = sv2;
+        check(v1.safe(0,_), sv2);
+
+        v1.safe(1,_) = sv1;
+        check(v1.safe(1,_), sv1);
+
+        vec<2,T> tv = {
+            {gen[4], gen[5], gen[6], gen[7]},
+            {gen[0], gen[1], gen[2], gen[3]}
+        };
+        check(v1, tv);
+
+        v1.safe(0,_) = v1.safe(1,_);
+        tv = {
+            {gen[0], gen[1], gen[2], gen[3]},
+            {gen[0], gen[1], gen[2], gen[3]}
+        };
+        check(v1, tv);
+
+        v1.safe(1,_) = v.safe(1,_);
+        check(v1, v);
+
+        v1.safe(_,0) = sv4;
+        check(v1.safe(_,0), sv4);
+
+        v1.safe(_,1) = sv5;
+        check(v1.safe(_,1), sv5);
+
+        v1.safe(_,2) = sv6;
+        check(v1.safe(_,2), sv6);
+
+        v1.safe(_,3) = sv3;
+        check(v1.safe(_,3), sv3);
+
+        tv = {
+            {gen[1], gen[2], gen[3], gen[0]},
+            {gen[5], gen[6], gen[7], gen[4]}
+        };
+        check(v1, tv);
+    }
+
+    {
+        vec<2,T> v1 = v;
+
+        // Vector index
+        vec1u r1 = {0,1,2,3};
+        vec1u r2 = {1,0};
+
+        vec<1,T> sv0 = {gen[1], gen[0]};
+        vec<1,T> sv1 = {gen[0], gen[1], gen[2], gen[3]};
+        vec<1,T> sv2 = {gen[5], gen[4]};
+        vec<1,T> sv3 = {gen[4], gen[5], gen[6], gen[7]};
+        vec<1,T> sv4 = {gen[4], gen[0]};
+        vec<1,T> sv5 = {gen[5], gen[1]};
+        vec<1,T> sv6 = {gen[6], gen[2]};
+        vec<1,T> sv7 = {gen[7], gen[3]};
+        vec<2,T> sv8 = {
+            {gen[5], gen[4]},
+            {gen[1], gen[0]}
+        };
+        vec<2,T> sv9 = {
+            {gen[4], gen[5], gen[6], gen[7]},
+            {gen[0], gen[1], gen[2], gen[3]}
+        };
+
+        check(v1.safe(0,r2),  sv0);
+        check(v1.safe(0,r1),  sv1);
+        check(v1.safe(1,r2),  sv2);
+        check(v1.safe(1,r1),  sv3);
+        check(v1.safe(r2,0),  sv4);
+        check(v1.safe(r2,1),  sv5);
+        check(v1.safe(r2,2),  sv6);
+        check(v1.safe(r2,3),  sv7);
+        check(v1.safe(r2,r2), sv8);
+        check(v1.safe(r2,r1), sv9);
+
+        v1.safe(0,r1) = sv3;
+        check(v1.safe(0,r1), sv3);
+
+        v1.safe(1,r1) = sv1;
+        check(v1.safe(1,r1), sv1);
+        check(v1, sv9);
+
+        v1.safe(r2,0) = sv4;
+        check(v1.safe(r2,0), sv4);
+
+        v1.safe(r2,1) = sv5;
+        check(v1.safe(r2,1), sv5);
+
+        v1.safe(r2,2) = sv6;
+        check(v1.safe(r2,2), sv6);
+
+        v1.safe(r2,3) = sv7;
+        check(v1.safe(r2,3), sv7);
+
+        check(v1, v);
+
+        v1.safe(vec1u{1,0},_) = v1.safe(vec1u{0,1},_);
         check(v1, sv9);
     }
 
@@ -827,17 +1001,28 @@ void test_vec_operator() {
 
 template<typename T>
 void test() {
+    print("#########################");
+    print("testing vec<"+pretty_type(T())+">");
+    print("#########################");
     test_is_vec<T>();
     test_vec_dim<T>();
     test_vec_constructor<T>();
     test_vec_index<T>();
+    test_vec_safe_index<T>();
     test_vec_assign<T>();
     test_vec_convert<T>();
     test_vec_iterator<T>();
     test_vec_operator<T>();
+    print(" ");
 }
 
 int main(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "line") {
+            check_show_line = true;
+        }
+    }
+
     test<uint_t>();
     test<float>();
     test<double>();

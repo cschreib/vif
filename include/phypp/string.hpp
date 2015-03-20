@@ -68,8 +68,8 @@ std::string strn(const T& t, std::size_t n, char fill = '0') {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v) {
-    vec_t<Dim,std::string> s = strarr(v.dims);
+vec<Dim,std::string> strna(const vec<Dim,Type>& v) {
+    vec<Dim,std::string> s = strarr(v.dims);
     for (uint_t i : range(v)) {
         s.data[i] = strn(v.safe[i]);
     }
@@ -78,8 +78,8 @@ vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,std::string> strna(const vec_t<Dim,Type>& v, std::size_t n, char fill = '0') {
-    vec_t<Dim,std::string> s = strarr(v.dims);
+vec<Dim,std::string> strna(const vec<Dim,Type>& v, std::size_t n, char fill = '0') {
+    vec<Dim,std::string> s = strarr(v.dims);
     for (uint_t i : range(v)) {
         s.data[i] = strn(v.safe[i], n, fill);
     }
@@ -96,8 +96,8 @@ std::string strn_sci(const T& t) {
 
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,std::string> strna_sci(const vec_t<Dim,Type>& v) {
-    vec_t<Dim,std::string> s = strarr(v.dims);
+vec<Dim,std::string> strna_sci(const vec<Dim,Type>& v) {
+    vec<Dim,std::string> s = strarr(v.dims);
     for (uint_t i : range(v)) {
         s.data[i] = strn_sci(v.safe[i]);
     }
@@ -112,8 +112,8 @@ bool from_string(const std::string& s, T& t) {
 }
 
 template<std::size_t Dim, typename T>
-vec_t<Dim,bool> from_string(const vec_t<Dim,std::string>& s, vec_t<Dim,T>& t) {
-    vec_t<Dim,bool> res(s.dims);
+vec<Dim,bool> from_string(const vec<Dim,std::string>& s, vec<Dim,T>& t) {
+    vec<Dim,bool> res(s.dims);
     t.resize(s.dims);
     for (uint_t i : range(s)) {
         res.safe[i] = from_string(s.safe[i], t.safe[i]);
@@ -123,8 +123,8 @@ vec_t<Dim,bool> from_string(const vec_t<Dim,std::string>& s, vec_t<Dim,T>& t) {
 }
 
 template<std::size_t Dim, typename T>
-vec_t<Dim,bool> from_string(const vec_t<Dim,std::string*>& s, vec_t<Dim,T>& t) {
-    vec_t<Dim,bool> res(s.dims);
+vec<Dim,bool> from_string(const vec<Dim,std::string*>& s, vec<Dim,T>& t) {
+    vec<Dim,bool> res(s.dims);
     t.resize(s.dims);
     for (uint_t i : range(s)) {
         res.safe[i] = from_string(s.safe[i], t.safe[i]);
@@ -270,10 +270,10 @@ bool match(const std::string& ts, const std::string& regex) {
 
 template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
     std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
-vec_t<Dim,bool> match(const vec_t<Dim,Type>& v, const std::string& regex) {
+vec<Dim,bool> match(const vec<Dim,Type>& v, const std::string& regex) {
     regex_t re;
     build_regex_(regex, re);
-    vec_t<Dim,bool> r(v.dims);
+    vec<Dim,bool> r(v.dims);
     for (uint_t i = 0; i < v.size(); ++i) {
         r.safe[i] = match_(v.safe[i], regex, re);
     }
@@ -407,10 +407,10 @@ std::string remove_extension(std::string s) {
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
             std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type> \
-    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
-        vec_t<Dim,decltype(name(v[0], args...))> { \
+    auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
+        vec<Dim,decltype(name(v[0], args...))> { \
         using ntype = decltype(name(v[0], args...)); \
-        vec_t<Dim,ntype> r = arr<ntype>(v.dims); \
+        vec<Dim,ntype> r = arr<ntype>(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             r.safe[i] = name(v.safe[i], args...); \
         } \
@@ -536,7 +536,7 @@ namespace format {
 
 template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
     std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
-std::string collapse(const vec_t<Dim,Type>& v) {
+std::string collapse(const vec<Dim,Type>& v) {
     std::string r;
     for (auto& s : v) {
         r += s;
@@ -547,7 +547,7 @@ std::string collapse(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
     std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
-std::string collapse(const vec_t<Dim,Type>& v, const std::string& sep) {
+std::string collapse(const vec<Dim,Type>& v, const std::string& sep) {
     std::string r;
     bool first = true;
     for (auto& s : v) {

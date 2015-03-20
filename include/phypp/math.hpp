@@ -48,17 +48,17 @@ vec1u rgen(T n) {
 
 // Create a range with integer step from i to j (inclusive)
 template<typename T, typename U>
-vec_t<1,T> rgen(T i, U j) {
+vec<1,T> rgen(T i, U j) {
     if (i < T(j)) {
         uint_t n = j-i+1;
-        vec_t<1,T> v(n);
+        vec<1,T> v(n);
         for (uint_t k : range(n)) {
             v.safe[k] = i+k;
         }
         return v;
     } else {
         uint_t n = i-j+1;
-        vec_t<1,T> v(n);
+        vec<1,T> v(n);
         for (uint_t k : range(n)) {
             v.safe[k] = i-k;
         }
@@ -102,13 +102,13 @@ vec1d rgen_log(T i, U j, V n) {
 }
 
 template<typename T>
-vec_t<2,T> make_bins(T mi, T ma) {
+vec<2,T> make_bins(T mi, T ma) {
     return {{mi}, {ma}};
 }
 
 template<typename T>
-vec_t<2,T> make_bins(T mi, T ma, uint_t n) {
-    vec_t<2,T> b(2,n);
+vec<2,T> make_bins(T mi, T ma, uint_t n) {
+    vec<2,T> b(2,n);
     T d = (ma - mi)/n;
     for (uint_t i : range(n)) {
         b.safe(0,i) = mi + i*d;
@@ -119,8 +119,8 @@ vec_t<2,T> make_bins(T mi, T ma, uint_t n) {
 }
 
 template<typename T = double>
-vec_t<2,T> make_bins(const vec_t<1,T>& v) {
-    vec_t<2,T> b(2, v.size()-1);
+vec<2,T> make_bins(const vec<1,T>& v) {
+    vec<2,T> b(2, v.size()-1);
     for (uint_t i : range(b.dims[1])) {
         b.safe(0,i) = v.safe[i];
         b.safe(1,i) = v.safe[i+1];
@@ -130,7 +130,7 @@ vec_t<2,T> make_bins(const vec_t<1,T>& v) {
 }
 
 template<typename T, typename B = double>
-bool in_bin(T t, const vec_t<1,B>& b) {
+bool in_bin(T t, const vec<1,B>& b) {
     phypp_check(b.dims[0] == 2, "can only be called on a single bin "
         "vector (expected dims=[2], got dims=[", b.dims, "])");
 
@@ -138,13 +138,13 @@ bool in_bin(T t, const vec_t<1,B>& b) {
 }
 
 template<std::size_t Dim, typename Type, typename B = double>
-vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
+vec<Dim,bool> in_bin(const vec<Dim,Type>& v, const vec<1,B>& b) {
     phypp_check(b.dims[0] == 2, "can only be called on a single bin "
         "vector (expected dims=[2], got dims=[", b.dims, "])");
 
     auto low = b.safe[0];
     auto up  = b.safe[1];
-    vec_t<Dim,bool> res(v.dims);
+    vec<Dim,bool> res(v.dims);
     for (uint_t i : range(v)) {
         res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
     }
@@ -153,7 +153,7 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<1,B>& b) {
 }
 
 template<typename T, typename B = double>
-bool in_bin(T t, const vec_t<2,B>& b, uint_t ib) {
+bool in_bin(T t, const vec<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "can only be called on a single bin "
         "vector (expected dims=[2], got dims=[", b.dims, "])");
     phypp_check(ib < b.dims[1], "bin index is out of bounds ",
@@ -163,7 +163,7 @@ bool in_bin(T t, const vec_t<2,B>& b, uint_t ib) {
 }
 
 template<std::size_t Dim, typename Type, typename B = double>
-vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
+vec<Dim,bool> in_bin(const vec<Dim,Type>& v, const vec<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
     phypp_check(ib < b.dims[1], "bin index is out of bounds ",
@@ -171,7 +171,7 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib)
 
     auto low = b.safe(0,ib);
     auto up  = b.safe(1,ib);
-    vec_t<Dim,bool> res(v.dims);
+    vec<Dim,bool> res(v.dims);
     for (uint_t i : range(v)) {
         res.safe[i] = v.safe[i] >= low && v.safe[i] < up;
     }
@@ -180,7 +180,7 @@ vec_t<Dim,bool> in_bin(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib)
 }
 
 template<typename T, typename B = double>
-bool in_bin_open(T t, const vec_t<2,B>& b, uint_t ib) {
+bool in_bin_open(T t, const vec<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "can only be called on a single bin "
         "vector (expected dims=[2], got dims=[", b.dims, "])");
     phypp_check(ib < b.dims[1], "bin index is out of bounds ",
@@ -196,7 +196,7 @@ bool in_bin_open(T t, const vec_t<2,B>& b, uint_t ib) {
 }
 
 template<std::size_t Dim, typename Type, typename B = double>
-vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_t ib) {
+vec<Dim,bool> in_bin_open(const vec<Dim,Type>& v, const vec<2,B>& b, uint_t ib) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
     phypp_check(ib < b.dims[1], "bin index is out of bounds ",
@@ -204,7 +204,7 @@ vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_
 
     auto low = b.safe(0,ib);
     auto up  = b.safe(1,ib);
-    vec_t<Dim,bool> res(v.dims);
+    vec<Dim,bool> res(v.dims);
     if (ib == 0) {
         for (uint_t i : range(v)) {
             res.safe[i] = v.safe[i] < up;
@@ -223,7 +223,7 @@ vec_t<Dim,bool> in_bin_open(const vec_t<Dim,Type>& v, const vec_t<2,B>& b, uint_
 }
 
 template<typename Type>
-auto bin_center(const vec_t<2,Type>& b) -> vec_t<1,decltype(0.5*b[0])> {
+auto bin_center(const vec<2,Type>& b) -> vec<1,decltype(0.5*b[0])> {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
 
@@ -231,7 +231,7 @@ auto bin_center(const vec_t<2,Type>& b) -> vec_t<1,decltype(0.5*b[0])> {
 }
 
 template<typename Type>
-auto bin_center(const vec_t<1,Type>& b) -> vec_t<1,decltype(0.5*b[0])> {
+auto bin_center(const vec<1,Type>& b) -> vec<1,decltype(0.5*b[0])> {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=2, got dims=", b.dims, ")");
 
@@ -239,7 +239,7 @@ auto bin_center(const vec_t<1,Type>& b) -> vec_t<1,decltype(0.5*b[0])> {
 }
 
 template<typename Type>
-vec_t<1,rtype_t<Type>> bin_width(const vec_t<2,Type>& b) {
+vec<1,rtype_t<Type>> bin_width(const vec<2,Type>& b) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=[2, ...], got dims=[", b.dims, "])");
 
@@ -247,7 +247,7 @@ vec_t<1,rtype_t<Type>> bin_width(const vec_t<2,Type>& b) {
 }
 
 template<typename Type>
-rtype_t<Type> bin_width(const vec_t<1,Type>& b) {
+rtype_t<Type> bin_width(const vec<1,Type>& b) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=2, got dims=", b.dims, ")");
 
@@ -260,8 +260,8 @@ bool finite(const T& t) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,bool> finite(const vec_t<Dim,Type>& v) {
-    vec_t<Dim,bool> r(v.dims);
+vec<Dim,bool> finite(const vec<Dim,Type>& v) {
+    vec<Dim,bool> r(v.dims);
     for (uint_t i : range(v)) {
         r.safe[i] = std::isfinite(v.safe[i]);
     }
@@ -275,8 +275,8 @@ bool nan(const T& t) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,bool> nan(const vec_t<Dim,Type>& v) {
-    vec_t<Dim,bool> r(v.dims);
+vec<Dim,bool> nan(const vec<Dim,Type>& v) {
+    vec<Dim,bool> r(v.dims);
     for (uint_t i : range(v)) {
         r.safe[i] = std::isnan(v.safe[i]);
     }
@@ -298,8 +298,8 @@ double randomn(T& seed) {
 }
 
 template<typename T, typename ... Args>
-vec_t<dim_total<Args...>::value,double> randomn(T& seed, Args&& ... args) {
-    vec_t<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
+vec<dim_total<Args...>::value,double> randomn(T& seed, Args&& ... args) {
+    vec<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
     std::normal_distribution<double> distribution(0.0, 1.0);
     for (uint_t i : range(v)) {
         v.safe[i] = distribution(seed);
@@ -315,8 +315,8 @@ double randomu(T& seed) {
 }
 
 template<typename T, typename ... Args>
-vec_t<dim_total<Args...>::value,double> randomu(T& seed, Args&& ... args) {
-    vec_t<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
+vec<dim_total<Args...>::value,double> randomu(T& seed, Args&& ... args) {
+    vec<dim_total<Args...>::value,double> v(std::forward<Args>(args)...);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
     for (uint_t i : range(v)) {
         v.safe[i] = distribution(seed);
@@ -334,20 +334,20 @@ auto randomi(T& seed, TMi mi, TMa ma) -> decltype(mi + ma) {
 
 template<typename T, typename TMi, typename TMa, typename ... Args>
 auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) ->
-    vec_t<dim_total<Args...>::value,decltype(mi+ma)> {
+    vec<dim_total<Args...>::value,decltype(mi+ma)> {
     auto v = randomu(seed, std::forward<Args>(args)...);
     using rtype = decltype(mi + ma);
-    return vec_t<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
+    return vec<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
 }
 
 template<typename T, typename TypeX, typename TypeY, typename ... Args>
-vec_t<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec_t<1,TypeX>& px,
-    const vec_t<1,TypeY>& py, Args&& ... args) {
+vec<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec<1,TypeX>& px,
+    const vec<1,TypeY>& py, Args&& ... args) {
 
     // TODO: make an alternative version for integers using std::discrete_distribution.
 
     using rtype = rtype_t<TypeX>;
-    vec_t<dim_total<Args...>::value,rtype> v(std::forward<Args>(args)...);
+    vec<dim_total<Args...>::value,rtype> v(std::forward<Args>(args)...);
     std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
     for (uint_t i : range(v)) {
         v.safe[i] = distribution(seed);
@@ -363,8 +363,8 @@ bool random_coin(T& seed, double prob) {
 }
 
 template<typename T, typename ... Args>
-vec_t<dim_total<Args...>::value,bool> random_coin(T& seed, double prob, Args&& ... args) {
-    vec_t<dim_total<Args...>::value,bool> v(std::forward<Args>(args)...);
+vec<dim_total<Args...>::value,bool> random_coin(T& seed, double prob, Args&& ... args) {
+    vec<dim_total<Args...>::value,bool> v(std::forward<Args>(args)...);
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
     for (uint_t i : range(v)) {
@@ -375,21 +375,21 @@ vec_t<dim_total<Args...>::value,bool> random_coin(T& seed, double prob, Args&& .
 }
 
 template<std::size_t Dim, typename Type, typename T>
-void inplace_shuffle(T& seed, vec_t<Dim,Type>& v) {
+void inplace_shuffle(T& seed, vec<Dim,Type>& v) {
     std::shuffle(v.begin(), v.end(), seed);
 }
 
 template<std::size_t Dim, typename Type, typename T>
-vec_t<Dim,Type> shuffle(T& seed, vec_t<Dim,Type> v) {
+vec<Dim,Type> shuffle(T& seed, vec<Dim,Type> v) {
     inplace_shuffle(seed, v);
     return v;
 }
 
 template<typename F, F f, std::size_t Dim, typename Type, typename ... Args>
-auto run_index_(const vec_t<Dim,Type>& v, const Args& ... args, uint_t dim) ->
-vec_t<Dim-1,typename return_type<F>::type> {
+auto run_index_(const vec<Dim,Type>& v, const Args& ... args, uint_t dim) ->
+vec<Dim-1,typename return_type<F>::type> {
 
-    vec_t<Dim-1,typename return_type<F>::type> r;
+    vec<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
         r.dims[i] = v.dims[i];
     }
@@ -426,7 +426,7 @@ vec_t<Dim-1,typename return_type<F>::type> {
 //  Final recipe:
 //      ((u/mpitch)*dim[d] + i)*mpitch + (u%mpitch)
 
-    vec_t<1,rtype_t<Type>> tmp(v.dims[dim]);
+    vec<1,rtype_t<Type>> tmp(v.dims[dim]);
     for (uint_t i = 0; i < r.size(); ++i) {
         uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
         for (uint_t j = 0; j < v.dims[dim]; ++j) {
@@ -443,7 +443,7 @@ vec_t<Dim-1,typename return_type<F>::type> {
 // Note: the slice provided to the function is mutable. It is allowed to modify its elements or
 // swap them, but the slice should never be resized. No check will be performed.
 template<typename F, std::size_t Dim, typename Type>
-void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
+void run_dim_idx(const vec<Dim,Type>& v, uint_t dim, F&& func) {
     uint_t nint = v.dims[dim];
     uint_t np = v.size()/nint;
     uint_t mpitch = 1;
@@ -451,7 +451,7 @@ void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
         mpitch *= v.dims[i];
     }
 
-    vec_t<1,rtype_t<Type>> tmp(nint);
+    vec<1,rtype_t<Type>> tmp(nint);
     for (uint_t i = 0; i < np; ++i) {
         uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
         for (uint_t j = 0; j < nint; ++j) {
@@ -463,12 +463,12 @@ void run_dim_idx(const vec_t<Dim,Type>& v, uint_t dim, F&& func) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<1,rtype_t<Type>> run_dim_idx_apply_ids_(const vec1u& ids, const vec_t<Dim,Type>& v) {
+vec<1,rtype_t<Type>> run_dim_idx_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v) {
     return v.safe[ids].concretise();
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-std::array<uint_t,Dim> run_dim_idx_get_dim_(const vec_t<Dim,Type>& v, const Args& ... vs) {
+std::array<uint_t,Dim> run_dim_idx_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
     return v.dims;
 }
 
@@ -497,10 +497,10 @@ void run_dim_idx(uint_t dim, F&& func, const Args& ... vs) {
 }
 
 template<typename F, std::size_t Dim, typename Type>
-auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) ->
-    vec_t<Dim-1,typename return_type<F>::type> {
+auto run_dim(const vec<Dim,Type>& v, uint_t dim, F&& func) ->
+    vec<Dim-1,typename return_type<F>::type> {
 
-    vec_t<Dim-1,typename return_type<F>::type> r;
+    vec<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
         r.dims[i] = v.dims[i];
     }
@@ -510,7 +510,7 @@ auto run_dim(const vec_t<Dim,Type>& v, uint_t dim, F&& func) ->
 
     r.resize();
 
-    run_dim_idx(v, dim, [&](uint_t i, vec_t<1, rtype_t<Type>>& tv) {
+    run_dim_idx(v, dim, [&](uint_t i, vec<1, rtype_t<Type>>& tv) {
         r[i] = func(tv);
     });
 
@@ -523,7 +523,7 @@ using total_return_type = typename std::conditional<std::is_integral<T>::value,
     double>::type;
 
 template<std::size_t Dim, typename Type>
-total_return_type<rtype_t<Type>> total(const vec_t<Dim,Type>& v) {
+total_return_type<rtype_t<Type>> total(const vec<Dim,Type>& v) {
     total_return_type<rtype_t<Type>> total = 0;
     for (auto& t : v) {
         total += t;
@@ -535,7 +535,7 @@ total_return_type<rtype_t<Type>> total(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type, typename enable =
     typename std::enable_if<std::is_same<rtype_t<Type>, bool>::value>::type>
-uint_t count(const vec_t<Dim,Type>& v) {
+uint_t count(const vec<Dim,Type>& v) {
     uint_t n = 0u;
     for (bool b : v) {
         if (b) ++n;
@@ -545,7 +545,7 @@ uint_t count(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-double mean(const vec_t<Dim,Type>& v) {
+double mean(const vec<Dim,Type>& v) {
     double total = 0.0;
     for (auto& t : v) {
         total += t;
@@ -556,14 +556,14 @@ double mean(const vec_t<Dim,Type>& v) {
 
 template<std::size_t Dim, typename T, typename enable =
     typename std::enable_if<std::is_same<rtype_t<T>, bool>::value>::type>
-double fraction_of(const vec_t<Dim,T>& b) {
+double fraction_of(const vec<Dim,T>& b) {
     return mean(b);
 }
 
 template<std::size_t Dim, typename T, typename U, typename enable =
     typename std::enable_if<std::is_same<rtype_t<T>, bool>::value &&
                             std::is_same<rtype_t<U>, bool>::value>::type>
-double fraction_of(const vec_t<Dim,T>& b, const vec_t<Dim,U>& among) {
+double fraction_of(const vec<Dim,T>& b, const vec<Dim,U>& among) {
     phypp_check(b.dims == among.dims, "incompatible dimensions between count vector and "
         "among vector (", b.dims, " vs. ", among.dims, ")");
 
@@ -585,10 +585,10 @@ std::string percent_of(Args&& ... args) {
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
+rtype_t<Type> inplace_median(vec<Dim,Type>& v) {
     phypp_check(!v.empty(), "cannot find the median of an empty vector");
 
-    using vtype = typename vec_t<Dim,Type>::vtype;
+    using vtype = typename vec<Dim,Type>::vtype;
     using dtype = typename vtype::value_type;
 
     uint_t nwrong = 0;
@@ -611,29 +611,29 @@ rtype_t<Type> inplace_median(vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> median(vec_t<Dim,Type> v) {
+rtype_t<Type> median(vec<Dim,Type> v) {
     return inplace_median(v);
 }
 
 template<std::size_t Dim, typename Type, typename U>
-rtype_t<Type> percentile(const vec_t<Dim,Type>& v, const U& u) {
+rtype_t<Type> percentile(const vec<Dim,Type>& v, const U& u) {
     phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
     vec1u ok = where(finite(v));
     if (ok.empty()) return 0;
 
     // TODO: use same algorithm than median
-    typename vec_t<1,Type>::effective_type t = v.safe[ok];
+    typename vec<1,Type>::effective_type t = v.safe[ok];
     std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     return *(t.begin() + offset);
 }
 
 template<std::size_t Dim, typename Type>
-void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t) {}
+void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t) {}
 
 template<std::size_t Dim, typename Type, typename U, typename ... Args>
-void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, const Args& ... args) {
+void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t, const U& u, const Args& ... args) {
     std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());
     r.safe[i] = *(t.begin() + offset);
@@ -643,22 +643,22 @@ void percentiles_(vec_t<1,Type>& r, uint_t i, vec_t<Dim,Type>& t, const U& u, co
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-typename vec_t<1,Type>::effective_type percentiles(const vec_t<Dim,Type>& v, const Args& ... args) {
+typename vec<1,Type>::effective_type percentiles(const vec<Dim,Type>& v, const Args& ... args) {
     phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
     vec1u ok = where(finite(v));
-    typename vec_t<1,Type>::effective_type t;
+    typename vec<1,Type>::effective_type t;
     if (ok.empty()) return t;
     t = v.safe[ok];
 
-    typename vec_t<1,Type>::effective_type r = arr<rtype_t<Type>>(sizeof...(Args));
+    typename vec<1,Type>::effective_type r = arr<rtype_t<Type>>(sizeof...(Args));
     percentiles_(r, 0, t, args...);
 
     return r;
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double percu = fnan) {
+vec<Dim,bool> sigma_clip(const vec<Dim,Type>& v, double percl = 0.15, double percu = fnan) {
     if (percl > 0.5) percl = 1.0 - percl;
     if (percl < 0.0) percl = 0.0;
 
@@ -675,7 +675,7 @@ vec_t<Dim,bool> sigma_clip(const vec_t<Dim,Type>& v, double percl = 0.15, double
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,bool> mad_clip(const vec_t<Dim,Type>& tv, double sigma) {
+vec<Dim,bool> mad_clip(const vec<Dim,Type>& tv, double sigma) {
     auto v = tv.concretise();
     auto med = inplace_median(v);
     auto mad = median(fabs(v - med));
@@ -683,7 +683,7 @@ vec_t<Dim,bool> mad_clip(const vec_t<Dim,Type>& tv, double sigma) {
 }
 
 template<std::size_t Dim, typename Type>
-typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
+typename vec<Dim,Type>::const_iterator min_(const vec<Dim,Type>& v) {
     phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
 
     auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
@@ -697,7 +697,7 @@ typename vec_t<Dim,Type>::const_iterator min_(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-typename vec_t<Dim,Type>::const_iterator max_(const vec_t<Dim,Type>& v) {
+typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
     phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
 
     auto iter = std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
@@ -711,45 +711,45 @@ typename vec_t<Dim,Type>::const_iterator max_(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> min(const vec_t<Dim,Type>& v) {
+rtype_t<Type> min(const vec<Dim,Type>& v) {
     return *min_(v);
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> max(const vec_t<Dim,Type>& v) {
+rtype_t<Type> max(const vec<Dim,Type>& v) {
     return *max_(v);
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> min(const vec_t<Dim,Type>& v, uint_t& id) {
+rtype_t<Type> min(const vec<Dim,Type>& v, uint_t& id) {
     auto iter = min_(v);
     id = iter - v.begin();
     return *iter;
 }
 
 template<std::size_t Dim, typename Type>
-rtype_t<Type> max(const vec_t<Dim,Type>& v, uint_t& id) {
+rtype_t<Type> max(const vec<Dim,Type>& v, uint_t& id) {
     auto iter = max_(v);
     id = iter - v.begin();
     return *iter;
 }
 
 template<std::size_t Dim, typename Type>
-uint_t min_id(const vec_t<Dim,Type>& v) {
+uint_t min_id(const vec<Dim,Type>& v) {
     return min_(v) - v.begin();
 }
 
 template<std::size_t Dim, typename Type>
-uint_t max_id(const vec_t<Dim,Type>& v) {
+uint_t max_id(const vec<Dim,Type>& v) {
     return max_(v) - v.begin();
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
-vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
+vec<Dim,rtype_t<Type1>> min(const vec<Dim,Type1>& v1, const vec<Dim,Type2>& v2) {
     phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions "
         "(", v1.dims, " vs. ", v2.dims, ")");
 
-    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+    vec<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
         r.safe[i] = std::min<decltype(v1[0]*v2[0])>(v1.safe[i], v2.safe[i]);
     }
@@ -757,11 +757,11 @@ vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
-vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>& v2) {
+vec<Dim,rtype_t<Type1>> max(const vec<Dim,Type1>& v1, const vec<Dim,Type2>& v2) {
     phypp_check(v1.dims == v2.dims, "max: incompatible vector dimensions "
         "(", v1.dims, " vs. ", v2.dims, ")");
 
-    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+    vec<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
         r.safe[i] = std::max<decltype(v1[0]*v2[0])>(v1.safe[i], v2.safe[i]);
     }
@@ -769,8 +769,8 @@ vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const vec_t<Dim,Type2>
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
-vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const Type2& v2) {
-    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+vec<Dim,rtype_t<Type1>> min(const vec<Dim,Type1>& v1, const Type2& v2) {
+    vec<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
         r.safe[i] = std::min<decltype(v1[0]*v2)>(v1.safe[i], v2);
     }
@@ -778,8 +778,8 @@ vec_t<Dim,rtype_t<Type1>> min(const vec_t<Dim,Type1>& v1, const Type2& v2) {
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
-vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const Type2& v2) {
-    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
+vec<Dim,rtype_t<Type1>> max(const vec<Dim,Type1>& v1, const Type2& v2) {
+    vec<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v1.dims);
     for (uint_t i = 0; i < v1.size(); ++i) {
         r.safe[i] = std::max<decltype(v1[0]*v2)>(v1.safe[i], v2);
     }
@@ -787,8 +787,8 @@ vec_t<Dim,rtype_t<Type1>> max(const vec_t<Dim,Type1>& v1, const Type2& v2) {
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
-vec_t<Dim,rtype_t<Type1>> min(const Type1& v1, const vec_t<Dim,Type2>& v2) {
-    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
+vec<Dim,rtype_t<Type1>> min(const Type1& v1, const vec<Dim,Type2>& v2) {
+    vec<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
     for (uint_t i = 0; i < v2.size(); ++i) {
         r.safe[i] = std::min<decltype(v1*v2[0])>(v1, v2.safe[i]);
     }
@@ -796,8 +796,8 @@ vec_t<Dim,rtype_t<Type1>> min(const Type1& v1, const vec_t<Dim,Type2>& v2) {
 }
 
 template<std::size_t Dim, typename Type1, typename Type2>
-vec_t<Dim,rtype_t<Type1>> max(const Type1& v1, const vec_t<Dim,Type2>& v2) {
-    vec_t<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
+vec<Dim,rtype_t<Type1>> max(const Type1& v1, const vec<Dim,Type2>& v2) {
+    vec<Dim,rtype_t<Type1>> r = arr<rtype_t<Type1>>(v2.dims);
     for (uint_t i = 0; i < v2.size(); ++i) {
         r.safe[i] = std::max<decltype(v1*v2[0])>(v1, v2.safe[i]);
     }
@@ -805,7 +805,7 @@ vec_t<Dim,rtype_t<Type1>> max(const Type1& v1, const vec_t<Dim,Type2>& v2) {
 }
 
 template<std::size_t Dim, typename Type>
-double rms(const vec_t<Dim,Type>& v) {
+double rms(const vec<Dim,Type>& v) {
     double sum = 0;
     for (auto& t : v) {
         sum += t*t;
@@ -815,29 +815,29 @@ double rms(const vec_t<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-double stddev(const vec_t<Dim,Type>& v) {
+double stddev(const vec<Dim,Type>& v) {
     return rms(v - mean(v));
 }
 
 template<std::size_t Dim, typename Type>
-double mad(const vec_t<Dim,Type>& v) {
+double mad(const vec<Dim,Type>& v) {
     return median(fabs(v - median(v)));
 }
 
 #define RUN_INDEX(func) \
     struct func ## _run_index_wrapper_ { \
         template<typename T, typename ... Args> \
-        static auto run(const vec_t<1,T>& v, Args&& ... args) -> \
+        static auto run(const vec<1,T>& v, Args&& ... args) -> \
         decltype(func(v, std::forward<Args>(args)...)) { \
             return func(v, std::forward<Args>(args)...); \
         } \
     }; \
     \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto partial_ ## func (uint_t dim, const vec_t<Dim,Type>& v, Args&& ... args) -> \
-    vec_t<Dim-1, decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
-        using fptr = decltype(func(std::declval<vec_t<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
-            (*)(const vec_t<1,rtype_t<Type>>&, Args&& ...); \
+    auto partial_ ## func (uint_t dim, const vec<Dim,Type>& v, Args&& ... args) -> \
+    vec<Dim-1, decltype(func(std::declval<vec<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
+        using fptr = decltype(func(std::declval<vec<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
+            (*)(const vec<1,rtype_t<Type>>&, Args&& ...); \
         using wrapper = func ## _run_index_wrapper_; \
         return run_index_<fptr, &wrapper::run<rtype_t<Type>, Args...>>(v, dim); \
     }
@@ -857,12 +857,12 @@ RUN_INDEX(mad);
 #undef RUN_INDEX
 
 template<std::size_t Dim, typename Type, typename TypeB>
-vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
+vec1u histogram(const vec<Dim,Type>& data, const vec<2,TypeB>& bins) {
     phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
         "dims=[2,...], got dims=[", bins.dims, "])");
 
     using rtype = rtype_t<Type>;
-    vec_t<Dim,rtype> tmp = data;
+    vec<Dim,rtype> tmp = data;
 
     uint_t nbin = bins.dims[1];
     vec1u counts(nbin);
@@ -883,8 +883,8 @@ vec1u histogram(const vec_t<Dim,Type>& data, const vec_t<2,TypeB>& bins) {
 }
 
 template<std::size_t Dim, typename Type, typename TypeB, typename TypeW>
-vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,TypeW>& weight,
-    const vec_t<2,TypeB>& bins) {
+vec<1,rtype_t<TypeW>> histogram(const vec<Dim,Type>& data, const vec<Dim,TypeW>& weight,
+    const vec<2,TypeB>& bins) {
     phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
         "dims=[2, ...], got dims=[", bins.dims, "])");
     phypp_check(data.dims == weight.dims, "incompatible dimensions for data and weight "
@@ -893,7 +893,7 @@ vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,T
     vec1u tmp = uindgen(data.size());
 
     uint_t nbin = bins.dims[1];
-    vec_t<1,rtype_t<TypeW>> counts(nbin);
+    vec<1,rtype_t<TypeW>> counts(nbin);
 
     auto first = tmp.data.begin();
     for (uint_t i : range(nbin)) {
@@ -912,8 +912,8 @@ vec_t<1,rtype_t<TypeW>> histogram(const vec_t<Dim,Type>& data, const vec_t<Dim,T
 }
 
 template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX, typename TypeBY>
-vec2u histogram2d(const vec_t<Dim,TypeX>& x, const vec_t<Dim,TypeY>& y,
-    const vec_t<2,TypeBX>& xbins, const vec_t<2,TypeBY>& ybins) {
+vec2u histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
+    const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins) {
 
     phypp_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
         "dims=[2, ...], got dims=[", xbins.dims, "])");
@@ -956,12 +956,12 @@ vec2u histogram2d(const vec_t<Dim,TypeX>& x, const vec_t<Dim,TypeY>& y,
 }
 
 template<std::size_t Dim, typename Type>
-void data_info_(const vec_t<Dim,Type>& v) {
+void data_info_(const vec<Dim,Type>& v) {
     vec1u idok = where(finite(v));
     print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
     if (idok.size() == 0) return;
 
-    vec_t<1,rtype_t<Type>> tv = v.safe[idok];
+    vec<1,rtype_t<Type>> tv = v.safe[idok];
 
     print(" min : ", min(tv));
     print(" 15% : ", percentile(tv, 0.15));
@@ -983,8 +983,8 @@ auto sign(const T& t) -> decltype(2*(t > 0) - 1) {
 
 template<std::size_t Dim, typename Type, typename U,
     typename enable = typename std::enable_if<!is_vec<U>::value>::type>
-auto pow(const U& u, const vec_t<Dim,Type>& v) -> vec_t<Dim, decltype(pow(u,v(0)))> {
-    vec_t<Dim, decltype(pow(u,v(0)))> r = v;
+auto pow(const U& u, const vec<Dim,Type>& v) -> vec<Dim, decltype(pow(u,v(0)))> {
+    vec<Dim, decltype(pow(u,v(0)))> r = v;
     for (auto& t : r) {
         t = pow(u, t);
     }
@@ -992,9 +992,9 @@ auto pow(const U& u, const vec_t<Dim,Type>& v) -> vec_t<Dim, decltype(pow(u,v(0)
 }
 
 template<std::size_t Dim, typename Type, typename U>
-auto pow(const U& u, vec_t<Dim,Type>&& v) -> typename std::enable_if<!is_vec<U>::value &&
+auto pow(const U& u, vec<Dim,Type>&& v) -> typename std::enable_if<!is_vec<U>::value &&
     !std::is_pointer<Type>::value && std::is_same<decltype(pow(u,v(0))), Type>::value,
-    vec_t<Dim,Type>>::type {
+    vec<Dim,Type>>::type {
     for (auto& t : v) {
         t = pow(u, t);
     }
@@ -1013,19 +1013,19 @@ auto invsqr(T t) -> decltype(1.0/(t*t)) {
 
 #define VECTORIZE(name) \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
-        vec_t<Dim,decltype(name(v[0], args...))> { \
+    auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
+        vec<Dim,decltype(name(v[0], args...))> { \
         using ntype = decltype(name(v[0], args...)); \
-        vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
+        vec<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
         for (auto& t : v.data) { \
             r.data.push_back(name(dref<Type>(t), args...)); \
         } \
         return r; \
     } \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto name(vec_t<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
+    auto name(vec<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
         !std::is_pointer<Type>::value && std::is_same<decltype(name(v[0], args...)), Type>::value, \
-        vec_t<Dim,Type>>::type { \
+        vec<Dim,Type>>::type { \
         for (auto& t : v) { \
             t = name(t, args...); \
         } \
@@ -1034,19 +1034,19 @@ auto invsqr(T t) -> decltype(1.0/(t*t)) {
 
 #define VECTORIZE_REN(name, orig) \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
-        vec_t<Dim,decltype(orig(v[0], args...))> { \
+    auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
+        vec<Dim,decltype(orig(v[0], args...))> { \
         using ntype = decltype(orig(v[0], args...)); \
-        vec_t<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
+        vec<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
         for (auto& t : v.data) { \
             r.data.push_back(orig(dref<Type>(t), args...)); \
         } \
         return r; \
     } \
     template<std::size_t Dim, typename Type, typename ... Args> \
-    auto name(vec_t<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
+    auto name(vec<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
         !std::is_pointer<Type>::value && std::is_same<decltype(orig(v[0], args...)), Type>::value, \
-        vec_t<Dim,Type>>::type { \
+        vec<Dim,Type>>::type { \
         for (auto& t : v) { \
             t = orig(t, args...); \
         } \
@@ -1188,7 +1188,7 @@ auto derivate2(F func, const vec1d& x, double ep, uint_t ip1, uint_t ip2) -> dec
 }
 
 template<typename TypeA, typename TypeB>
-auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(a(0,0)*b(0,0))> {
+auto mmul(const vec<2,TypeA>& a, const vec<2,TypeB>& b) -> vec<2,decltype(a(0,0)*b(0,0))> {
     phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrices "
         "(", a.dims, " x ", b.dims, ")");
 
@@ -1198,7 +1198,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(
     const uint_t n = a.dims[0];
     const uint_t m = b.dims[1];
 
-    vec_t<2,ntype_t> r(n,m);
+    vec<2,ntype_t> r(n,m);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t j = 0; j < m; ++j)
     for (uint_t k = 0; k < o; ++k) {
@@ -1209,7 +1209,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<2,TypeB>& b) -> vec_t<2,decltype(
 }
 
 template<typename TypeA, typename TypeB>
-auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
+auto mmul(const vec<2,TypeA>& a, const vec<1,TypeB>& b) -> vec<1,decltype(a(0,0)*b(0,0))> {
     phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrix by vector "
         "(", a.dims, " x ", b.dims, ")");
 
@@ -1218,7 +1218,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
     using ntype_t = decltype(a(0,0)*b(0,0));
     const uint_t n = a.dims[0];
 
-    vec_t<1,ntype_t> r(n);
+    vec<1,ntype_t> r(n);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
         r.safe(i) += a.safe(i,k)*b.safe(k);
@@ -1228,7 +1228,7 @@ auto mmul(const vec_t<2,TypeA>& a, const vec_t<1,TypeB>& b) -> vec_t<1,decltype(
 }
 
 template<typename TypeA, typename TypeB>
-auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(a(0,0)*b(0,0))> {
+auto mmul(const vec<1,TypeB>& b, const vec<2,TypeA>& a) -> vec<1,decltype(a(0,0)*b(0,0))> {
     phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying vector by matrix "
         "(", a.dims, " x ", b.dims, ")");
 
@@ -1237,7 +1237,7 @@ auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(
     using ntype_t = decltype(a(0,0)*b(0,0));
     const uint_t n = a.dims[1];
 
-    vec_t<1,ntype_t> r = arr<ntype_t>(n);
+    vec<1,ntype_t> r = arr<ntype_t>(n);
     for (uint_t i = 0; i < n; ++i)
     for (uint_t k = 0; k < o; ++k) {
         r.safe(i) += b.safe(k)*a.safe(k,i);
@@ -1247,7 +1247,7 @@ auto mmul(const vec_t<1,TypeB>& b, const vec_t<2,TypeA>& a) -> vec_t<1,decltype(
 }
 
 template<typename Type>
-void mprint(const vec_t<2,Type>& m) {
+void mprint(const vec<2,Type>& m) {
     for (uint_t i = 0; i < m.dims[0]; ++i) {
         for (uint_t j = 0; j < m.dims[1]; ++j) {
             if (j != 0) std::cout << ", ";
@@ -1261,8 +1261,8 @@ void mprint(const vec_t<2,Type>& m) {
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> transpose(const vec_t<2,Type>& v) {
-    vec_t<2,rtype_t<Type>> r(v.dims);
+vec<2,rtype_t<Type>> transpose(const vec<2,Type>& v) {
+    vec<2,rtype_t<Type>> r(v.dims);
     std::swap(r.dims[0], r.dims[1]);
 
     for (uint_t i : range(r.size())) {
@@ -1280,7 +1280,7 @@ vec_t<2,rtype_t<Type>> transpose(const vec_t<2,Type>& v) {
 }
 
 template<typename Type>
-auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
+auto diagonal(const vec<2,Type>& v) -> decltype(v(_,0)) {
     phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
         v.dims, ")");
 
@@ -1295,7 +1295,7 @@ auto diagonal(const vec_t<2,Type>& v) -> decltype(v(_,0)) {
 }
 
 template<typename Type>
-auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
+auto diagonal(vec<2,Type>& v) -> decltype(v(_,0)) {
     phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
         v.dims, ")");
 
@@ -1310,15 +1310,15 @@ auto diagonal(vec_t<2,Type>& v) -> decltype(v(_,0)) {
 }
 
 template<typename Type = double>
-vec_t<2,Type> identity_matrix(uint_t dim) {
-    vec_t<2,Type> m(dim, dim);
+vec<2,Type> identity_matrix(uint_t dim) {
+    vec<2,Type> m(dim, dim);
     diagonal(m) = 1;
     return m;
 }
 
 template<typename TX, typename TY>
-auto scale_matrix(const TX& sx, const TY& sy) -> vec_t<2,decltype(sx*sy)> {
-    vec_t<2,decltype(sx*sy)> m(3, 3);
+auto scale_matrix(const TX& sx, const TY& sy) -> vec<2,decltype(sx*sy)> {
+    vec<2,decltype(sx*sy)> m(3, 3);
     m.safe(0,0) = sx;
     m.safe(1,1) = sy;
     m.safe(2,2) = 1;
@@ -1326,8 +1326,8 @@ auto scale_matrix(const TX& sx, const TY& sy) -> vec_t<2,decltype(sx*sy)> {
 }
 
 template<typename T>
-vec_t<2,T> scale_matrix(const T& s) {
-    vec_t<2,T> m(3, 3);
+vec<2,T> scale_matrix(const T& s) {
+    vec<2,T> m(3, 3);
     m.safe(0,0) = s;
     m.safe(1,1) = s;
     m.safe(2,2) = 1;
@@ -1335,8 +1335,8 @@ vec_t<2,T> scale_matrix(const T& s) {
 }
 
 template<typename TX, typename TY>
-auto translation_matrix(const TX& tx, const TY& ty) -> vec_t<2,decltype(tx*ty)> {
-    vec_t<2,decltype(tx*ty)> m(3, 3);
+auto translation_matrix(const TX& tx, const TY& ty) -> vec<2,decltype(tx*ty)> {
+    vec<2,decltype(tx*ty)> m(3, 3);
     diagonal(m) = 1;
     m.safe(0,2) = tx;
     m.safe(1,2) = ty;
@@ -1344,8 +1344,8 @@ auto translation_matrix(const TX& tx, const TY& ty) -> vec_t<2,decltype(tx*ty)> 
 }
 
 template<typename A>
-auto rotation_matrix(const A& a) -> vec_t<2,decltype(cos(a))> {
-    vec_t<2,decltype(cos(a))> m(3, 3);
+auto rotation_matrix(const A& a) -> vec<2,decltype(cos(a))> {
+    vec<2,decltype(cos(a))> m(3, 3);
     auto ca = cos(a), sa = sin(a);
     m.safe(0,0) = m.safe(1,1) = ca;
     m.safe(0,1) = -sa;
@@ -1355,8 +1355,8 @@ auto rotation_matrix(const A& a) -> vec_t<2,decltype(cos(a))> {
 }
 
 template<typename TX, typename TY>
-auto point2d(const TX& x, const TY& y) -> vec_t<1,decltype(x*y)> {
-    return vec_t<1,decltype(x*y)>{x, y, 1};
+auto point2d(const TX& x, const TY& y) -> vec<1,decltype(x*y)> {
+    return vec<1,decltype(x*y)>{x, y, 1};
 }
 
 // LAPACK functions
@@ -1386,7 +1386,7 @@ bool inplace_invert(vec2d& i) {
     int lda = n;
     int info;
 
-    vec_t<1,int> ipiv(n);
+    vec<1,int> ipiv(n);
     dgetrf_(&n, &n, i.data.data(), &lda, ipiv.data.data(), &info);
     if (info < 0) {
         return false;
@@ -1404,7 +1404,7 @@ bool inplace_invert(vec2d& i) {
 }
 
 template<typename TypeA>
-bool invert(const vec_t<2,TypeA>& a, vec2d& i) {
+bool invert(const vec<2,TypeA>& a, vec2d& i) {
     i = a;
     return inplace_invert<TypeA>(i);
 }
@@ -1428,7 +1428,7 @@ bool inplace_invert_symmetric(vec2d& i) {
     // the Lapack User Guide.
 
     vec1d work(lw);
-    vec_t<1,int> ipiv(n);
+    vec<1,int> ipiv(n);
 
     dsytrf_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
     if (info < 0) {
@@ -1445,7 +1445,7 @@ bool inplace_invert_symmetric(vec2d& i) {
 }
 
 template<typename TypeA>
-bool invert_symmetric(const vec_t<2,TypeA>& a, vec2d& i) {
+bool invert_symmetric(const vec<2,TypeA>& a, vec2d& i) {
     i = a;
     return inplace_invert_symmetric<TypeA>(i);
 }
@@ -1473,7 +1473,7 @@ bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
     // the Lapack User Guide.
 
     vec1d work(lw);
-    vec_t<1,int> ipiv(n);
+    vec<1,int> ipiv(n);
 
     dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
         &ldb, work.data.data(), &lw, &info);
@@ -1542,7 +1542,7 @@ bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
 
 
 template<typename Type>
-void symmetrize(vec_t<2,Type>& alpha) {
+void symmetrize(vec<2,Type>& alpha) {
     phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
         alpha.dims, ")");
 
@@ -1665,8 +1665,8 @@ linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
 }
 
 template<std::size_t Dim, typename TypeY, typename TypeE, typename TypeX>
-linfit_result linfit_pack(const vec_t<Dim,TypeY>& y, const vec_t<Dim,TypeE>& ye,
-    const vec_t<Dim+1,TypeX>& x) {
+linfit_result linfit_pack(const vec<Dim,TypeY>& y, const vec<Dim,TypeE>& ye,
+    const vec<Dim+1,TypeX>& x) {
     bool good = true;
     for (uint_t i : range(Dim)) {
         if (x.dims[i+1] != ye.dims[i] || x.dims[i+1] != y.dims[i]) {
@@ -1703,7 +1703,7 @@ struct affinefit_result {
 
 // Perform a simple linear fit 'y = offset + slope*x'
 template<typename TypeX, typename TypeY, std::size_t Dim, typename TypeE>
-affinefit_result affinefit(const TypeY& y, const vec_t<Dim,TypeE>& ye, const TypeX& x) {
+affinefit_result affinefit(const TypeY& y, const vec<Dim,TypeE>& ye, const TypeX& x) {
     affinefit_result fr;
     fr.success = true;
 
@@ -1737,8 +1737,8 @@ double interpolate(double y1, double y2, double x1, double x2, double x) {
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
 template<std::size_t DI = 1, std::size_t DX = 1, typename TypeX2 = double, typename TypeY = double,
     typename TypeX1 = double>
-auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_t<DX,TypeX2>& nx) ->
-    vec_t<DX,decltype(y[0]*x[0])> {
+auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeX1>& x, const vec<DX,TypeX2>& nx) ->
+    vec<DX,decltype(y[0]*x[0])> {
 
     using rtypey = rtype_t<TypeY>;
     using rtypex = rtype_t<TypeX1>;
@@ -1749,7 +1749,7 @@ auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_
         "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
     uint_t nmax = x.size();
-    vec_t<DX,decltype(y[0]*x[0])> r; r.reserve(nx.size());
+    vec<DX,decltype(y[0]*x[0])> r; r.reserve(nx.size());
     for (auto& tx : nx) {
         uint_t low = lower_bound(tx, x);
 
@@ -1780,7 +1780,7 @@ auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX1>& x, const vec_
 // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
 template<std::size_t DI, typename TypeY = double, typename TypeX = double, typename T = double,
     typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX>& x, const T& nx) ->
+auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeX>& x, const T& nx) ->
     decltype(y[0]*x[0]) {
 
     using rtypey = rtype_t<TypeY>;
@@ -1813,7 +1813,7 @@ auto interpolate(const vec_t<DI,TypeY>& y, const vec_t<DI,TypeX>& x, const T& nx
 }
 
 template<typename Type>
-rtype_t<Type> bilinear(const vec_t<2,Type>& map, double x, double y) {
+rtype_t<Type> bilinear(const vec<2,Type>& map, double x, double y) {
     int_t tix = floor(x);
     int_t tiy = floor(y);
     double dx = x - tix;
@@ -1843,7 +1843,7 @@ rtype_t<Type> bilinear(const vec_t<2,Type>& map, double x, double y) {
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> rebin(const vec_t<2,Type>& map, const vec1d& mx,
+vec<2,rtype_t<Type>> rebin(const vec<2,Type>& map, const vec1d& mx,
     const vec1d& my, const vec1d& x, const vec1d& y) {
 
     phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
@@ -1851,7 +1851,7 @@ vec_t<2,rtype_t<Type>> rebin(const vec_t<2,Type>& map, const vec1d& mx,
     phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
         " vs. ", my.size(), ")");
 
-    vec_t<2,rtype_t<Type>> v(x.size(), y.size());
+    vec<2,rtype_t<Type>> v(x.size(), y.size());
 
     vec1d ux = interpolate(dindgen(mx.size()), mx, x);
     vec1d uy = interpolate(dindgen(my.size()), my, y);
@@ -1865,7 +1865,7 @@ vec_t<2,rtype_t<Type>> rebin(const vec_t<2,Type>& map, const vec1d& mx,
 }
 
 template<typename TypeX, typename TypeY>
-auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y)
+auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y)
     -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
     phypp_check(x.size() == y.size(),
@@ -1880,7 +1880,7 @@ auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y)
 }
 
 template<typename TypeX, typename TypeY>
-auto integrate(const vec_t<2,TypeX>& x, const vec_t<1,TypeY>& y)
+auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y)
     -> decltype(y[0]*(x[1]-x[0])) {
 
     phypp_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
@@ -1897,7 +1897,7 @@ auto integrate(const vec_t<2,TypeX>& x, const vec_t<1,TypeY>& y)
 }
 
 template<typename TypeX, typename TypeY>
-auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y, double x0, double x1)
+auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y, double x0, double x1)
     -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
     phypp_check(x.size() == y.size(),
@@ -1931,7 +1931,7 @@ auto integrate(const vec_t<1,TypeX>& x, const vec_t<1,TypeY>& y, double x0, doub
 }
 
 template<typename TypeX, typename TypeY>
-auto integrate(const vec_t<2,TypeX>& x, const vec_t<1,TypeY>& y, double x0, double x1)
+auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y, double x0, double x1)
     -> decltype(y[0]*(x[1]-x[0])) {
 
     phypp_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
@@ -2045,8 +2045,8 @@ vec2d ifft(const vec2cd& v) {
 
 // Perform the convolution of two 1D arrays, assuming that they are based on the same 'x' coordinate
 template<typename TypeX, typename TypeY1, typename TypeY2>
-auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,TypeY2>& y2) ->
-    vec_t<1,decltype(x[0]*y1[0]*y2[0])> {
+auto convolve(const vec<1,TypeX>& x, const vec<1,TypeY1>& y1, const vec<1,TypeY2>& y2) ->
+    vec<1,decltype(x[0]*y1[0]*y2[0])> {
 
     phypp_check(x.dims == y1.dims, "incompatible dimensions for X and Y1 "
         "(", x.dims, " vs. ", y1.dims, ")");
@@ -2055,7 +2055,7 @@ auto convolve(const vec_t<1,TypeX>& x, const vec_t<1,TypeY1>& y1, const vec_t<1,
     phypp_check(x.size() > 3, "convolve needs arrays of at least 3 elements to work "
         "(got ", x.size(), ")");
 
-    vec_t<1,decltype(x[0]*y1[0]*y2[0])> r(x.size());
+    vec<1,decltype(x[0]*y1[0]*y2[0])> r(x.size());
     for (uint_t i = 0; i < x.size(); ++i) {
         auto dx = x.safe[i];
         if (i == 0) dx = x.safe[i+1] - dx;
@@ -2145,7 +2145,7 @@ bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, 
 }
 
 template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
-vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
+vec<Dim,bool> in_convex_hull(const vec<Dim,TX>& x, const vec<Dim,TY>& y, const vec1u& hull,
     const THX& hx, const THY& hy) {
 
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
@@ -2156,7 +2156,7 @@ vec_t<Dim,bool> in_convex_hull(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, c
     uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
-    vec_t<Dim,bool> res = replicate(true, x.dims);
+    vec<Dim,bool> res = replicate(true, x.dims);
     for (uint_t i = 0; i < hull.size()-1; ++i) {
         uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
         for (uint_t p = 0; p < x.size(); ++p) {
@@ -2237,8 +2237,8 @@ auto convex_hull_distance(const TX& x, const TY& y, const vec1u& hull,
 // Compute the signed distance of a set of points with respect to the provided convex
 // hull. Positive distances mean that the point lies inside the hull.
 template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
-auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const vec1u& hull,
-    const THX& hx, const THY& hy) -> vec_t<Dim, decltype(sqrt(x[0]*y[0]))> {
+auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y, const vec1u& hull,
+    const THX& hx, const THY& hy) -> vec<Dim, decltype(sqrt(x[0]*y[0]))> {
 
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
         "(", x.dims, " vs. ", y.dims, ")");
@@ -2248,8 +2248,8 @@ auto convex_hull_distance(const vec_t<Dim,TX>& x, const vec_t<Dim,TY>& y, const 
     uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
     bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
 
-    vec_t<Dim,decltype(sqrt(x[0]*y[0]))> res = replicate(finf, x.dims);
-    vec_t<Dim,bool> inhull = replicate(true, x.dims);
+    vec<Dim,decltype(sqrt(x[0]*y[0]))> res = replicate(finf, x.dims);
+    vec<Dim,bool> inhull = replicate(true, x.dims);
 
     for (uint_t i = 0; i < hull.size()-1; ++i) {
         uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
@@ -2324,8 +2324,8 @@ double angdist(double tra1, double tdec1, double tra2, double tdec2) {
 // Compute the angular distance between two RA/Dec positions [arcsec].
 // Assumes that RA & Dec coordinates are in degrees.
 template<std::size_t N, typename TR1, typename TD1, typename TR2, typename TD2>
-vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
-    const vec_t<N,TR2>& tra2, const vec_t<N,TD2>& tdec2) {
+vec<N,double> angdist(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
+    const vec<N,TR2>& tra2, const vec<N,TD2>& tdec2) {
     phypp_check(tra1.dims == tdec1.dims, "first RA and Dec dimensions do not match (",
         tra1.dims, " vs ", tdec1.dims, ")");
     phypp_check(tra2.dims == tdec2.dims, "second RA and Dec dimensions do not match (",
@@ -2333,7 +2333,7 @@ vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     phypp_check(tra1.dims == tra2.dims, "position sets dimensions do not match (",
         tra1.dims, " vs ", tra2.dims, ")");
 
-    vec_t<N,double> res(tra1.dims);
+    vec<N,double> res(tra1.dims);
     for (uint_t i : range(tra1)) {
         res.safe[i] = angdist(tra1.safe[i], tdec1.safe[i], tra2.safe[i], tdec2.safe[i]);
     }
@@ -2344,12 +2344,12 @@ vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 // Compute the angular distance between two RA/Dec positions [arcsec].
 // Assumes that RA & Dec coordinates are in degrees.
 template<std::size_t N, typename TR1, typename TD1>
-vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
+vec<N,double> angdist(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
     double tra2, double tdec2) {
     phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
         tra1.dims, " vs ", tdec1.dims, ")");
 
-    vec_t<N,double> res(tra1.dims);
+    vec<N,double> res(tra1.dims);
     for (uint_t i : range(tra1)) {
         res.safe[i] = angdist(tra1.safe[i], tdec1.safe[i], tra2, tdec2);
     }
@@ -2360,7 +2360,7 @@ vec_t<N,double> angdist(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
 // Compute the angular distance between two RA/Dec positions [arcsec].
 // Assumes that RA & Dec coordinates are in degrees.
 template<std::size_t N, typename TR1, typename TD1>
-vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
+vec<N,bool> angdist_less(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
     double tra2, double tdec2, double radius) {
     phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
         tra1.dims, " vs ", tdec1.dims, ")");
@@ -2369,7 +2369,7 @@ vec_t<N,bool> angdist_less(const vec_t<N,TR1>& tra1, const vec_t<N,TD1>& tdec1,
     const double rrad = d2r*radius/3600.0;
     const double crad = sqr(sin(rrad/2.0));
 
-    vec_t<N,bool> res(tra1.dims);
+    vec<N,bool> res(tra1.dims);
     for (uint_t i : range(tra1)) {
         double ra1 = d2r*tra1.safe[i], ra2 = d2r*tra2;
         double dec1 = d2r*tdec1.safe[i], dec2 = d2r*tdec2;
@@ -2399,7 +2399,7 @@ void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
 }
 
 template<std::size_t D, typename T, typename U>
-void move_ra_dec(vec_t<D,T>& ra, vec_t<D,U>& dec, double dra, double ddec) {
+void move_ra_dec(vec<D,T>& ra, vec<D,U>& dec, double dra, double ddec) {
     phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
         ra.dims, " vs ", dec.dims, ")");
 

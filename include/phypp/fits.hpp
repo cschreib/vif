@@ -200,7 +200,7 @@ namespace fits {
 
 #ifndef NO_CCFITS
     template<typename THDU, std::size_t Dim, typename Type>
-    void read_impl__(THDU& hdu, vec_t<Dim, Type>& v, std::string& hdr) {
+    void read_impl__(THDU& hdu, vec<Dim, Type>& v, std::string& hdr) {
         phypp_check_fits(hdu.axes() == Dim, "FITS file does not match array dimensions ("+
             strn(hdu.axes())+" vs "+strn(Dim)+")");
 
@@ -227,7 +227,7 @@ namespace fits {
 
     // Load the content of a FITS file into an array.
     template<std::size_t Dim, typename Type>
-    void read(const std::string& name, vec_t<Dim, Type>& v, fits::header& hdr) {
+    void read(const std::string& name, vec<Dim, Type>& v, fits::header& hdr) {
 #ifdef NO_CCFITS
         static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
             "please enable the CCfits library to use this function");
@@ -262,14 +262,14 @@ namespace fits {
     }
 
     template<std::size_t Dim, typename Type>
-    void read(const std::string& name, vec_t<Dim, Type>& v) {
+    void read(const std::string& name, vec<Dim, Type>& v) {
         std::string hdr;
         read(name, v, hdr);
     }
 
     // Load the content of a FITS file into an array.
     template<std::size_t Dim, typename Type>
-    void read_hdu(const std::string& name, vec_t<Dim, Type>& v, uint_t hdu, fits::header& hdr) {
+    void read_hdu(const std::string& name, vec<Dim, Type>& v, uint_t hdu, fits::header& hdr) {
 #ifdef NO_CCFITS
         static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
             "please enable the CCfits library to use this function");
@@ -292,14 +292,14 @@ namespace fits {
     }
 
     template<std::size_t Dim, typename Type>
-    void read_hdu(const std::string& name, vec_t<Dim, Type>& v, uint_t hdu) {
+    void read_hdu(const std::string& name, vec<Dim, Type>& v, uint_t hdu) {
         std::string hdr;
         read_hdu(name, v, hdu, hdr);
     }
 
     template<std::size_t Dim = 2, typename Type = double>
-    vec_t<Dim, Type> read(const std::string& name) {
-        vec_t<Dim, Type> v;
+    vec<Dim, Type> read(const std::string& name) {
+        vec<Dim, Type> v;
         read(name, v);
         return v;
     }
@@ -764,8 +764,8 @@ namespace fits {
     }
 
     template<typename T = double, typename U = double, typename V, typename W>
-    void ad2xy(const fits::wcs& w, const vec_t<1,T>& ra, const vec_t<1,U>& dec,
-        vec_t<1,V>& x, vec_t<1,W>& y) {
+    void ad2xy(const fits::wcs& w, const vec<1,T>& ra, const vec<1,U>& dec,
+        vec<1,V>& x, vec<1,W>& y) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -798,8 +798,8 @@ namespace fits {
     }
 
     template<typename T = double, typename U = double, typename V, typename W>
-    void xy2ad(const fits::wcs& w, const vec_t<1,T>& x, const vec_t<1,U>& y,
-        vec_t<1,V>& ra, vec_t<1,W>& dec) {
+    void xy2ad(const fits::wcs& w, const vec<1,T>& x, const vec<1,U>& y,
+        vec<1,V>& ra, vec<1,W>& dec) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -942,7 +942,7 @@ namespace fits {
 
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
-    void write(const std::string& name, const vec_t<Dim,Type>& v, const fits::header& hdr) {
+    void write(const std::string& name, const vec<Dim,Type>& v, const fits::header& hdr) {
 #ifdef NO_CCFITS
         static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
             "please enable the CCfits library to use this function");
@@ -972,7 +972,7 @@ namespace fits {
     }
 
     template<std::size_t Dim, typename Type>
-    void write(const std::string& name, const vec_t<Dim,Type>& v) {
+    void write(const std::string& name, const vec<Dim,Type>& v) {
         write(name, v, "");
     }
 
@@ -986,8 +986,8 @@ namespace fits {
         uint_t length = 1;
     };
 
-    vec_t<1,column_info> read_table_columns(const std::string& filename) {
-        vec_t<1,column_info> cols;
+    vec<1,column_info> read_table_columns(const std::string& filename) {
+        vec<1,column_info> cols;
 
         fitsfile* fptr;
         int status = 0;
@@ -1023,7 +1023,7 @@ namespace fits {
 
                 switch (type) {
                 case 'B' : {
-                    vec_t<1,char> v(repeat);
+                    vec<1,char> v(repeat);
                     char def = traits<char>::def();
                     int null;
                     fits_read_col(fptr, traits<char>::ttype, c+1, 1, 1, repeat,
@@ -1106,7 +1106,7 @@ namespace fits {
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
     void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
-        vec_t<Dim,Type>& v, bool loose = false) {
+        vec<Dim,Type>& v, bool loose = false) {
 
         int id, status = 0;
         std::string colname = toupper(tcolname);
@@ -1169,7 +1169,7 @@ namespace fits {
 
     template<std::size_t Dim>
     void read_table_impl_(fitsfile* fptr, const std::string& tcolname,
-        vec_t<Dim,std::string>& v, bool loose = false) {
+        vec<Dim,std::string>& v, bool loose = false) {
 
         int id, status = 0;
         std::string colname = toupper(tcolname);
@@ -1444,7 +1444,7 @@ namespace fits {
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
-        const vec_t<Dim,Type>& v) {
+        const vec<Dim,Type>& v) {
 
         std::string tform = strn(n_elements(v))+traits<Type>::tform;
         int status = 0;
@@ -1460,7 +1460,7 @@ namespace fits {
         fits_write_tdim(fptr, id, Dim, dims.data(), &status);
 
         fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, n_elements(v),
-            const_cast<typename vec_t<Dim,Type>::dtype*>(v.data.data()), &status);
+            const_cast<typename vec<Dim,Type>::dtype*>(v.data.data()), &status);
 
         ++id;
     }
@@ -1482,7 +1482,7 @@ namespace fits {
 
     template<std::size_t Dim>
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
-        const vec_t<Dim,std::string>& v) {
+        const vec<Dim,std::string>& v) {
 
         std::size_t nmax = 0;
         for (auto& s : v) {

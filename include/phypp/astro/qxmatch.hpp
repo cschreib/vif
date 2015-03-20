@@ -45,7 +45,7 @@ qxmatch_res qxmatch(const C1& cat1, qxmatch_params params = qxmatch_params{}) {
 }
 
 template<typename TypeR1, typename TypeD1>
-qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
+qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
     qxmatch_params params = qxmatch_params{}) {
     params.self = true;
     return qxmatch(ra1, dec1, ra1, dec1, params);
@@ -140,8 +140,8 @@ namespace qxmatch_impl {
 }
 
 template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
-qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
-    const vec_t<1,TypeR2>& ra2, const vec_t<1,TypeD2>& dec2,
+qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
+    const vec<1,TypeR2>& ra2, const vec<1,TypeD2>& dec2,
     qxmatch_params params = qxmatch_params{}) {
 
     qxmatch_res res;
@@ -237,7 +237,7 @@ qxmatch_res qxmatch(const vec_t<1,TypeR1>& ra1, const vec_t<1,TypeD1>& dec1,
             std::vector<uint_t> ids2;
         };
 
-        vec_t<2,bucket_t> buckets(nra, ndec);
+        vec<2,bucket_t> buckets(nra, ndec);
 
         // Fill the buckets
         vec1u idx1 = floor((ra1 - rra[0])/dra);
@@ -631,7 +631,7 @@ struct qdist_params {
 };
 
 template<typename TypeR, typename TypeD>
-vec2d qdist(const vec_t<1,TypeR>& ra, const vec_t<1,TypeD>& dec,
+vec2d qdist(const vec<1,TypeR>& ra, const vec<1,TypeD>& dec,
     qdist_params params = qdist_params{}) {
     vec2d ret(ra.size(), ra.size());
 

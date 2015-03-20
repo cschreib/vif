@@ -170,12 +170,12 @@ void merge_elements_(T& t, const U& u, const vec1u& ids) {
 }
 
 template<typename T, typename U>
-void merge_elements_(vec_t<1,T>& t, const vec_t<1,U>& u, const vec1u& ids) {
+void merge_elements_(vec<1,T>& t, const vec<1,U>& u, const vec1u& ids) {
     t = u[ids];
 }
 
 template<typename T, typename U>
-void merge_elements_(vec_t<2,T>& t, const vec_t<2,U>& u, const vec1u& ids) {
+void merge_elements_(vec<2,T>& t, const vec<2,U>& u, const vec1u& ids) {
     t = u(ids,_);
 }
 

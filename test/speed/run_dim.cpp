@@ -2,8 +2,8 @@
 
 namespace speed_test {
     template<std::size_t Dim, typename Type>
-    vec_t<Dim-1,rtype_t<Type>> median1(const vec_t<Dim,Type>& v, uint_t dim) {
-        using fptr = rtype_t<Type> (*)(vec_t<1,rtype_t<Type>>);
+    vec<Dim-1,rtype_t<Type>> median1(const vec<Dim,Type>& v, uint_t dim) {
+        using fptr = rtype_t<Type> (*)(vec<1,rtype_t<Type>>);
         return run_index_<fptr, &median<1,rtype_t<Type>>>(v, dim);
     }
 
@@ -97,8 +97,8 @@ namespace std {
 
 namespace speed_test {
     template<std::size_t Dim, typename Type>
-    vec_t<Dim-1,rtype_t<Type>> median2(vec_t<Dim,Type> v, uint_t dim) {
-        vec_t<Dim-1,rtype_t<Type>> r;
+    vec<Dim-1,rtype_t<Type>> median2(vec<Dim,Type> v, uint_t dim) {
+        vec<Dim-1,rtype_t<Type>> r;
         for (uint_t i = 0; i < dim; ++i) {
             r.dims[i] = v.dims[i];
         }

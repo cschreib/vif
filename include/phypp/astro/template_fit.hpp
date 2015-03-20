@@ -4,10 +4,8 @@
 #include "phypp/astro.hpp"
 #include "phypp/mpfit.hpp"
 
-template<typename TypeLib, typename TypeFi>
-vec2d template_observed(const TypeLib& lib, double z, double d,
-    const vec_t<1,TypeFi>& filters) {
-
+template<typename TLib, typename TFi>
+vec2d template_observed(const TLib& lib, double z, double d, const vec<1,TFi>& filters) {
     // Move each SED to the observed frame
     vec2d rflam = lib.lam*(1.0 + z);
     vec2d rfsed = lsun2uJy(z, d, lib.lam, lib.sed);
@@ -23,9 +21,9 @@ vec2d template_observed(const TypeLib& lib, double z, double d,
     return flux;
 }
 
-template<typename TypeLib, typename TypeFi, typename TypeZ, typename TypeD>
-vec2d template_observed(const TypeLib& lib, const vec_t<1,TypeZ>& z, const vec_t<1,TypeD>& d,
-    const vec_t<1,TypeFi>& filters) {
+template<typename TLib, typename TFi, typename TZ, typename TD>
+vec2d template_observed(const TLib& lib, const vec<1,TZ>& z, const vec<1,TD>& d,
+    const vec<1,TFi>& filters) {
 
     phypp_check(z.size() == d.size(),
         "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
@@ -71,7 +69,7 @@ double limweight(double d) {
 }
 
 template<std::size_t Dim, typename Type>
-vec_t<Dim,Type> limweight(vec_t<Dim,Type> d) {
+vec<Dim,Type> limweight(vec<Dim,Type> d) {
     for (auto& x : d) {
         x = limweight(x);
     }
@@ -122,11 +120,11 @@ struct template_fit_params {
 // simulation). In this case, L should be considered as an upper limit, and the uncertainty on the
 // measurement E fed as the "error" on the limit (actually this is the error on the fact that the
 // flux is indeed below this limit, assuming gausssian statistics).
-template<typename TypeLib, typename TypeFi, typename TypeSeed,
-    typename TypeZ, typename TypeD>
-template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ& z,
-   const TypeD& d, vec1d flux, vec1d err,
-   const vec_t<1,TypeFi>& filters, template_fit_params params = template_fit_params()) {
+template<typename TLib, typename TFi, typename TypeSeed,
+    typename TZ, typename TD>
+template_fit_res_t template_fit(const TLib& lib, TypeSeed& seed, const TZ& z,
+   const TD& d, vec1d flux, vec1d err,
+   const vec<1,TFi>& filters, template_fit_params params = template_fit_params()) {
 
     template_fit_res_t res;
     res.flux = template_observed(lib, z, d, filters);
@@ -178,7 +176,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ&
                 auto fsim = flux;
                 fsim[idm] += randomn(seed, idm.size());
 
-                vec_t<1,ttype> amp(nsed), chi2(nsed);
+                vec<1,ttype> amp(nsed), chi2(nsed);
                 for (uint_t i = 0; i < nsed; ++i) {
                     vec1d model = res.flux(i,_);
                     auto lres = linfit(fsim[idm], 1.0, model[idm]);
@@ -234,7 +232,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ&
                 auto fsim = flux;
                 fsim[idm] += randomn(seed, idm.size());
 
-                vec_t<1,ttype> chi2(nsed);
+                vec<1,ttype> chi2(nsed);
                 for (uint_t i = 0; i < nsed; ++i) {
                     auto deviate = fsim - res.flux(i,_);
                     chi2[i] = total(sqr(deviate[idm])) + total(limweight(deviate[idu]));
@@ -272,7 +270,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ&
         // Compute chi2 & renormalization factor
         auto weight = invsqr(err);
 
-        vec_t<1,ttype> tmp1(nsed), tmp2(nsed);
+        vec<1,ttype> tmp1(nsed), tmp2(nsed);
         for (uint_t i = 0; i < nsed; ++i) {
             auto tmp = res.flux(i,_);
             tmp1[i] = total(weight*flux*tmp);
@@ -303,7 +301,7 @@ template_fit_res_t template_fit(const TypeLib& lib, TypeSeed& seed, const TypeZ&
             }
 
             auto amp = tmp1/tmp2;
-            vec_t<1,ttype> chi2;
+            vec<1,ttype> chi2;
             if (params.renorm) {
                 tmp1 *= amp;
                 chi2 = total(weight*fsim*fsim) - tmp1;

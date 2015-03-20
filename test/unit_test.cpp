@@ -33,34 +33,34 @@ int main(int argc, char* argv[]) {
             const float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,false,3,float,int_t,placeholder_t,int_t>::type,
-            vec_t<1,float*>>::value, "wrong type of indexed array");
+            vec<1,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,true,3,const float,int_t,placeholder_t,int_t>::type,
-            vec_t<1,const float*>>::value, "wrong type of indexed array");
+            vec<1,const float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,false,3,float,int_t,placeholder_t,int_t>::type,
-            vec_t<1,float*>>::value, "wrong type of indexed array");
+            vec<1,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,false,3,float,placeholder_t,placeholder_t,placeholder_t>::type,
-            vec_t<3,float*>>::value, "wrong type of indexed array");
+            vec<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<true,false,3,float,vec_t<1, int_t>,placeholder_t,placeholder_t>::type,
-            vec_t<3,float*>>::value, "wrong type of indexed array");
+            vec_access::helper<true,false,3,float,vec<1, int_t>,placeholder_t,placeholder_t>::type,
+            vec<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<true,false,3,float,vec_t<1, int_t>,placeholder_t,int_t>::type,
-            vec_t<2,float*>>::value, "wrong type of indexed array");
+            vec_access::helper<true,false,3,float,vec<1, int_t>,placeholder_t,int_t>::type,
+            vec<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            vec_access::helper<true,false,3,float,vec_t<1, int_t>,placeholder_t,int_t>::type,
-            vec_t<2,float*>>::value, "wrong type of indexed array");
+            vec_access::helper<true,false,3,float,vec<1, int_t>,placeholder_t,int_t>::type,
+            vec<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,false,3,float,repeated_value<3,placeholder_t>>::type,
-            vec_t<3,float*>>::value, "wrong type of indexed array");
+            vec<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,false,3,float,repeated_value<2,placeholder_t>,int_t>::type,
-            vec_t<2,float*>>::value, "wrong type of indexed array");
+            vec<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
             vec_access::helper<true,false,3,float,int_t,repeated_value<2,placeholder_t>>::type,
-            vec_t<2,float*>>::value, "wrong type of indexed array");
+            vec<2,float*>>::value, "wrong type of indexed array");
     }
 
     {

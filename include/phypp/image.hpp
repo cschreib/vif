@@ -5,10 +5,10 @@
 #include "phypp/math.hpp"
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, const std::array<uint_t,4> upix,
+vec<2,rtype_t<Type>> enlarge(const vec<2,Type>& v, const std::array<uint_t,4> upix,
     const rtype_t<Type>& def = 0.0) {
 
-    vec_t<2,rtype_t<Type>> r = replicate(def,
+    vec<2,rtype_t<Type>> r = replicate(def,
         v.dims[0]+upix[0]+upix[2], v.dims[1]+upix[1]+upix[3]);
 
     for (uint_t x : range(v.dims[0]))
@@ -20,18 +20,18 @@ vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, const std::array<uint_t,4
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> enlarge(const vec_t<2,Type>& v, uint_t upix,
+vec<2,rtype_t<Type>> enlarge(const vec<2,Type>& v, uint_t upix,
     const rtype_t<Type>& def = 0.0) {
     return enlarge(v, {{upix, upix, upix, upix}}, def);
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4> upix) {
+vec<2,rtype_t<Type>> shrink(const vec<2,Type>& v, const std::array<uint_t,4> upix) {
     if (upix[0]+upix[2] >= v.dims[0] || upix[1]+upix[3] >= v.dims[1]) {
-        return vec_t<2,rtype_t<Type>>();
+        return vec<2,rtype_t<Type>>();
     }
 
-    vec_t<2,rtype_t<Type>> r(v.dims[0]-upix[0]-upix[2], v.dims[1]-upix[1]-upix[3]);
+    vec<2,rtype_t<Type>> r(v.dims[0]-upix[0]-upix[2], v.dims[1]-upix[1]-upix[3]);
 
     for (uint_t x : range(r.dims[0]))
     for (uint_t y : range(r.dims[1])) {
@@ -42,7 +42,7 @@ vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, const std::array<uint_t,4>
 }
 
 template<typename Type>
-vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix) {
+vec<2,rtype_t<Type>> shrink(const vec<2,Type>& v, uint_t upix) {
     return shrink(v, {{upix, upix, upix, upix}});
 }
 
@@ -53,7 +53,7 @@ vec_t<2,rtype_t<Type>> shrink(const vec_t<2,Type>& v, uint_t upix) {
 // out of the image boundaries. In particular, the index vectors will be empty if there is
 // no overlap between the image and the requested region.
 template<typename TypeV, typename TypeR = int_t>
-void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1u& rr, vec1u& rs) {
+void subregion(const vec<2,TypeV>& v, const vec<1,TypeR>& reg, vec1u& rr, vec1u& rs) {
     phypp_check(reg.size() == 4, "invalid region parameter "
         "(expected 4 components, got ", reg.size(), ")");
 
@@ -101,14 +101,14 @@ void subregion(const vec_t<2,TypeV>& v, const vec_t<1,TypeR>& reg, vec1u& rr, ve
 }
 
 template<typename TypeV, typename TypeR = int_t>
-typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
-    const vec_t<1,TypeR>& reg, const typename vec_t<2,TypeV>::rtype& def = 0.0) {
+typename vec<2,TypeV>::effective_type subregion(const vec<2,TypeV>& v,
+    const vec<1,TypeR>& reg, const typename vec<2,TypeV>::rtype& def = 0.0) {
 
     vec1u rr, rs;
     subregion(v, reg, rr, rs);
 
     int_t nx = reg(2)-reg(0)+1, ny = reg(3)-reg(1)+1;
-    vec_t<2,rtype_t<TypeV>> sub = replicate(rtype_t<TypeV>(def), nx, ny);
+    vec<2,rtype_t<TypeV>> sub = replicate(rtype_t<TypeV>(def), nx, ny);
 
     sub.safe[rs] = v.safe[rr];
 
@@ -116,10 +116,10 @@ typename vec_t<2,TypeV>::effective_type subregion(const vec_t<2,TypeV>& v,
 }
 
 template<typename TypeV, typename TypeD = double>
-typename vec_t<2,TypeV>::effective_type translate(const vec_t<2,TypeV>& v, double dx, double dy,
-    const typename vec_t<2,TypeV>::rtype& def = 0.0) {
+typename vec<2,TypeV>::effective_type translate(const vec<2,TypeV>& v, double dx, double dy,
+    const typename vec<2,TypeV>::rtype& def = 0.0) {
 
-    vec_t<2,rtype_t<TypeV>> trs = replicate(rtype_t<TypeV>(def), v.dims);
+    vec<2,rtype_t<TypeV>> trs = replicate(rtype_t<TypeV>(def), v.dims);
     for (uint_t x : range(v.dims[0]))
     for (uint_t y : range(v.dims[1])) {
         double tx = x - dx;
@@ -178,9 +178,9 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
 }
 
 template<typename Type>
-vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
+vec<1, rtype_t<Type>> radial_profile(const vec<2,Type>& img, uint_t npix) {
     // TODO: optimize this, really
-    vec_t<1, rtype_t<Type>> res(npix);
+    vec<1, rtype_t<Type>> res(npix);
     uint_t hsx = img.dims[0]/2;
     uint_t hsy = img.dims[1]/2;
     res[0] = img(hsx,hsy);
@@ -194,8 +194,8 @@ vec_t<1, rtype_t<Type>> radial_profile(const vec_t<2,Type>& img, uint_t npix) {
 }
 
 template<typename F>
-auto generate_img(const std::array<uint_t,2>& dims, F&& expr) -> vec_t<2,decltype(expr(0,0))> {
-    vec_t<2,decltype(expr(0,0))> img(dims);
+auto generate_img(const std::array<uint_t,2>& dims, F&& expr) -> vec<2,decltype(expr(0,0))> {
+    vec<2,decltype(expr(0,0))> img(dims);
     for (uint_t x : range(img.dims[0]))
     for (uint_t y : range(img.dims[1])) {
         img.safe(x,y) = expr(x,y);
@@ -213,15 +213,15 @@ vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
 // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
 // Naive loop implementation: this is slow but simple and reliable.
 template<typename TypeY1, typename TypeY2>
-auto convolve2d_naive(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
-    vec_t<2,decltype(map[0]*kernel[0])> {
+auto convolve2d_naive(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel) ->
+    vec<2,decltype(map[0]*kernel[0])> {
     phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
         "kernel must have odd dimensions (", kernel.dims, ")");
 
     uint_t hxsize = kernel.dims[0]/2;
     uint_t hysize = kernel.dims[1]/2;
 
-    vec_t<2,decltype(map[0]*kernel[0])> r(map.dims);
+    vec<2,decltype(map[0]*kernel[0])> r(map.dims);
     for (uint_t kx = 0; kx < kernel.dims[0]; ++kx)
     for (uint_t ky = 0; ky < kernel.dims[1]; ++ky) {
         const auto kw = kernel.safe(kx, ky);
@@ -244,8 +244,8 @@ auto convolve2d_naive(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel)
 // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
 // Note: If the FFTW library is not used, falls back to convolve2d_naive().
 template<typename TypeY1, typename TypeY2>
-auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
-    vec_t<2,decltype(map[0]*kernel[0])> {
+auto convolve2d(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel) ->
+    vec<2,decltype(map[0]*kernel[0])> {
 #ifdef NO_FFTW
     return convolve2d_naive(map, kernel);
 #else
@@ -284,10 +284,10 @@ auto convolve2d(const vec_t<2,TypeY1>& map, const vec_t<2,TypeY2>& kernel) ->
 }
 
 template<typename T, typename F>
-auto boxcar(const vec_t<2,T>& img, uint_t hsize, F&& func) ->
-    vec_t<2,decltype(func(flatten(img)))> {
+auto boxcar(const vec<2,T>& img, uint_t hsize, F&& func) ->
+    vec<2,decltype(func(flatten(img)))> {
 
-    vec_t<2,decltype(func(flatten(img)))> res(img.dims);
+    vec<2,decltype(func(flatten(img)))> res(img.dims);
     for (uint_t x = 0; x < img.dims[0]; ++x)
     for (uint_t y = 0; y < img.dims[1]; ++y) {
         uint_t x0 = x >= hsize ? x - hsize : 0;
@@ -295,7 +295,7 @@ auto boxcar(const vec_t<2,T>& img, uint_t hsize, F&& func) ->
         uint_t y0 = y >= hsize ? y - hsize : 0;
         uint_t y1 = y < img.dims[1]-hsize ? y + hsize : img.dims[1]-1;
 
-        vec_t<1,rtype_t<T>> tmp;
+        vec<1,rtype_t<T>> tmp;
         tmp.reserve((x1-x0)*(y1-y0));
         for (uint_t tx = x0; tx <= x1; ++tx)
         for (uint_t ty = y0; ty <= y1; ++ty) {

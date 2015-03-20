@@ -307,10 +307,10 @@ namespace file {
     template<std::size_t Dim, typename Type, typename ... Args, \
         typename enable = typename std::enable_if< \
             std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type> \
-    auto name(const vec_t<Dim,Type>& v, const Args& ... args) -> \
-        vec_t<Dim,decltype(name(v[0], args...))> { \
+    auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
+        vec<Dim,decltype(name(v[0], args...))> { \
         using ntype = decltype(name(v[0], args...)); \
-        vec_t<Dim,ntype> r = arr<ntype>(v.dims); \
+        vec<Dim,ntype> r = arr<ntype>(v.dims); \
         for (uint_t i = 0; i < v.size(); ++i) { \
             r.safe[i] = name(v.safe[i], args...); \
         } \
@@ -335,14 +335,14 @@ namespace file {
     void read_table_resize_(std::size_t n) {}
 
     template<typename T, typename ... Args>
-    void read_table_resize_(std::size_t n, vec_t<1,T>& v, Args& ... args);
+    void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args);
     template<typename U, typename ... VArgs, typename ... Args>
     void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args);
     template<typename ... Args>
     void read_table_resize_(std::size_t n, placeholder_t, Args& ... args);
 
     template<typename T, typename ... Args>
-    void read_table_resize_(std::size_t n, vec_t<1,T>& v, Args& ... args) {
+    void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args) {
         v = arr<T>(n);
         read_table_resize_(n, args...);
     }
@@ -350,12 +350,12 @@ namespace file {
     void read_table_resize_cols_(std::size_t n, std::size_t m) {}
 
     template<typename Type, typename ... VArgs>
-    void read_table_resize_cols_(std::size_t n, std::size_t m, vec_t<2,Type>& v, VArgs&... args);
+    void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args);
     template<typename ... VArgs>
     void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args);
 
     template<typename Type, typename ... VArgs>
-    void read_table_resize_cols_(std::size_t n, std::size_t m, vec_t<2,Type>& v, VArgs&... args) {
+    void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args) {
         v = arr<Type>(n, m);
         read_table_resize_cols_(n, m, args...);
     }
@@ -451,14 +451,14 @@ namespace file {
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
 
     template<typename T, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec_t<1,T>& v, Args& ... args);
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args);
     template<typename U, typename ... VArgs, typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
     template<typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args);
 
     template<typename T, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec_t<1,T>& v, Args& ... args) {
+    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
         std::string fb;
         if (!read_value_(fs, v[i], fb)) {
             phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
@@ -471,12 +471,12 @@ namespace file {
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
 
     template<typename T, typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec_t<2,T>& v, VArgs&... args);
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
     template<typename ... VArgs>
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args);
 
     template<typename T, typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec_t<2,T>& v, VArgs&... args) {
+    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
         std::string fb;
         if (!read_value_(fs, v(i,k), fb)) {
             phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
@@ -568,7 +568,7 @@ namespace file {
     void write_table_phypp_check_size_(std::size_t n, std::size_t i) {}
 
     template<std::size_t Dim, typename Type, typename ... Args>
-    void write_table_phypp_check_size_(std::size_t& n, std::size_t i, const vec_t<Dim,Type>& v,
+    void write_table_phypp_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
         const Args& ... args) {
 
         if (n == 0) {
@@ -588,11 +588,11 @@ namespace file {
 
     template<typename Type, typename ... Args>
     void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j, const vec_t<2,Type>& v, const Args& ... args);
+        std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args);
 
     template<typename Type, typename ... Args>
     void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j, const vec_t<1,Type>& v, const Args& ... args) {
+        std::size_t i, std::size_t j, const vec<1,Type>& v, const Args& ... args) {
 
         if (j == 0) {
             file << std::string(sep.size(), ' ');
@@ -612,7 +612,7 @@ namespace file {
 
     template<typename Type, typename ... Args>
     void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j, const vec_t<2,Type>& v, const Args& ... args) {
+        std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
 
         for (uint_t k = 0; k < v.dims[1]; ++k) {
             if (j == 0) {
