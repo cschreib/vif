@@ -179,6 +179,16 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
     const std::string& wfile, uint_t hsize, vec<3,Type>& cube, vec<3,Type>& wcube,
     vec1u& ids, qstack_params params = qstack_params()) {
 
+    qstack_output out;
+    if (params.save_offsets) {
+        out.dx.reserve(ra.size());
+        out.dy.reserve(ra.size());
+    }
+
+    if (params.save_section) {
+        out.sect.reserve(ra.size());
+    }
+
     phypp_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
     phypp_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
     phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
@@ -197,7 +207,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
         // are extracted in the other (could only keep the union of the two, WIP)
         phypp_check(nsci == nwht, "some sources are covered on '", ffile, "' but not '", wfile, "'");
 
-        return;
+        return out;
     }
 
     // Open the FITS file
@@ -261,16 +271,6 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
     cube.reserve(cube.size() + (2*hsize+1)*(2*hsize+1)*ra.size());
     wcube.reserve(wcube.size() + (2*hsize+1)*(2*hsize+1)*ra.size());
     ids.reserve(ids.size() + ra.size());
-
-    qstack_output out;
-    if (params.save_offsets) {
-        out.dx.reserve(ra.size());
-        out.dy.reserve(ra.size());
-    }
-
-    if (params.save_section) {
-        out.sect.reserve(ra.size());
-    }
 
     // Loop over all sources
     for (uint_t i = 0; i < ra.size(); ++i) {
