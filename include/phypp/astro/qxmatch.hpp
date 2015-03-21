@@ -33,24 +33,6 @@ struct qxmatch_params {
     bool no_mirror = false;
 };
 
-template<typename C1, typename C2,
-    typename enable = typename std::enable_if<!is_vec<C1>::value>::type>
-qxmatch_res qxmatch(const C1& cat1, const C2& cat2, qxmatch_params params = qxmatch_params{}) {
-    return qxmatch(cat1.ra, cat1.dec, cat2.ra, cat2.dec, params);
-}
-
-template<typename C1, typename enable = typename std::enable_if<!is_vec<C1>::value>::type>
-qxmatch_res qxmatch(const C1& cat1, qxmatch_params params = qxmatch_params{}) {
-    return qxmatch(cat1.ra, cat1.dec, params);
-}
-
-template<typename TypeR1, typename TypeD1>
-qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
-    qxmatch_params params = qxmatch_params{}) {
-    params.self = true;
-    return qxmatch(ra1, dec1, ra1, dec1, params);
-}
-
 namespace qxmatch_impl {
     struct depth_cache {
         struct depth_t {
@@ -582,6 +564,24 @@ qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
     }
 
     return res;
+}
+
+template<typename C1, typename C2,
+    typename enable = typename std::enable_if<!is_vec<C1>::value>::type>
+qxmatch_res qxmatch(const C1& cat1, const C2& cat2, qxmatch_params params = qxmatch_params{}) {
+    return qxmatch(cat1.ra, cat1.dec, cat2.ra, cat2.dec, params);
+}
+
+template<typename C1, typename enable = typename std::enable_if<!is_vec<C1>::value>::type>
+qxmatch_res qxmatch(const C1& cat1, qxmatch_params params = qxmatch_params{}) {
+    return qxmatch(cat1.ra, cat1.dec, params);
+}
+
+template<typename TypeR1, typename TypeD1>
+qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
+    qxmatch_params params = qxmatch_params{}) {
+    params.self = true;
+    return qxmatch(ra1, dec1, ra1, dec1, params);
 }
 
 struct id_pair {
