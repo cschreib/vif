@@ -142,7 +142,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
 
             if (params.verbose) progress(pg);
 
-            found[i] = true;
+            found[i] = true;
 
             vec<2,Type> cut(2*hsize+1, 2*hsize+1);
 
