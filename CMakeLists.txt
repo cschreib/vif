@@ -198,7 +198,7 @@ file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TMP_DIR=/tmp/\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${REFGEN_ADD_COMPILER_FLAGS}\"\n\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -isystem ${CLANG_SYSTEM_INCLUDE} -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${REFGEN_ADD_COMPILER_FLAGS}\"\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
 
