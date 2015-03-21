@@ -644,7 +644,6 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
         fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
-        bool table = false;
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         if (naxis == 0) {
@@ -652,7 +651,6 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
             fits_open_table(&fptr, file.c_str(), READWRITE, &status);
             fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
             if (verbose) print("loaded table file");
-            table = true;
         } else {
             if (verbose) print("loaded image file");
         }
@@ -803,7 +801,6 @@ bool remove_keyword(int argc, char* argv[], const std::string& file) {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
         fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
-        bool table = false;
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         if (naxis == 0) {
@@ -811,7 +808,6 @@ bool remove_keyword(int argc, char* argv[], const std::string& file) {
             fits_open_table(&fptr, file.c_str(), READWRITE, &status);
             fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
             if (verbose) print("loaded table file");
-            table = true;
         } else {
             if (verbose) print("loaded image file");
         }
@@ -862,7 +858,6 @@ bool make_2d(int argc, char* argv[], const std::string& file) {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
         fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
-        bool table = false;
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         if (naxis < 2) {
