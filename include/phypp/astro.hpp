@@ -94,6 +94,15 @@ cosmo_t cosmo_wmap() {
     return c;
 }
 
+cosmo_t cosmo_plank() {
+    cosmo_t c;
+    c.H0 = 67.8;
+    c.wL = 0.692;
+    c.wm = 0.308;
+    c.wk = 0.0;
+    return c;
+}
+
 cosmo_t cosmo_std() {
     cosmo_t c;
     c.H0 = 70.0;
@@ -106,6 +115,8 @@ cosmo_t cosmo_std() {
 cosmo_t get_cosmo(const std::string& name) {
     if (name == "wmap") {
         return cosmo_wmap();
+    } else if (name == "plank") {
+        return cosmo_plank();
     } else if (name == "std") {
         return cosmo_std();
     } else {
@@ -114,6 +125,10 @@ cosmo_t get_cosmo(const std::string& name) {
             strn(c.wL)+", omega_matter="+strn(c.wm)+", omega_rad="+strn(c.wk)+")");
         return c;
     }
+}
+
+vec1s cosmo_list() {
+    return {"std", "wmap", "plank"};
 }
 
 // Luminosity distance [Mpc] as a function of redshift 'z'.
