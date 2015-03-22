@@ -12,25 +12,25 @@ NEXT_IS_OUTPUT=0
 
 for arg in "$@"; do
     if [ $NEXT_IS_OUTPUT -eq 1 ]; then
-        OUTPUT=$arg
+        OUTPUT="$arg"
         NEXT_IS_OUTPUT=0
     else
-        if [ $arg = "debug" ]; then
+        if [ "$arg" = "debug" ]; then
             DEBUG=1
-        elif [ $arg = "optimize" ]; then
+        elif [ "$arg" = "optimize" ]; then
             OPTIMIZE=1
-        elif [ $arg = "profile" ]; then
+        elif [ "$arg" = "profile" ]; then
             PROFILE=1
-        elif [ $arg = "time" ]; then
+        elif [ "$arg" = "time" ]; then
             TIME=1
-        elif [ $arg = "-o" ]; then
+        elif [ "$arg" = "-o" ]; then
             NEXT_IS_OUTPUT=1
         else
             if [ -n "$FILE" ]; then
                 echo error: cannot compile multiple files at the same time
                 exit 1
             fi
-            FILE=$arg
+            FILE="$arg"
         fi
     fi
 done
@@ -40,11 +40,14 @@ if [ $NEXT_IS_OUTPUT -eq 1 ]; then
     exit 1
 fi
 
+FILE_DIR="$(dirname "$FILE")"
+PROG="$(basename "$FILE" .cpp)"
+
 if [ -z "$OUTPUT" ]; then
-    OUTPUT=$(dirname $FILE)/$(basename $FILE .cpp)
+    OUTPUT="$FILE_DIR"/"$PROG"
 fi
 
-OPTIONS="-I$(dirname $FILE) $PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS"
+OPTIONS="$PHYPP_INCLUDE_DIR $PHYPP_COMPILER_FLAGS"
 if [ $DEBUG -eq 1 ]; then
     OPTIONS="$OPTIONS $PHYPP_COMPILER_DEBUG_FLAGS"
 fi
@@ -56,16 +59,15 @@ if [ $PROFILE -eq 1 ]; then
 fi
 
 T="$(date +%s%N)"
-PROG="$(basename $FILE .cpp)"
 
 if [ $PHYPP_DISABLE_REFLECTION -eq 0 ]; then
-    TMP_OUTPUT=${PHYPP_TEMP_DIR}/._reflex_$(basename $FILE)
+    TMP_OUTPUT="${PHYPP_TEMP_DIR}/._reflex_$(basename "$FILE")"
 
     # Parse file and generate reflection data
     if [ $PHYPP_SHOW_CMD -eq 1 ]; then
-        echo $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+        echo $PHYPP_REFGEN "$FILE" "$TMP_OUTPUT" -I"$FILE_DIR" $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
     fi
-    $PHYPP_REFGEN $FILE $TMP_OUTPUT $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
+    $PHYPP_REFGEN "$FILE" "$TMP_OUTPUT" -I"$FILE_DIR" $PHYPP_INCLUDE_DIR $PHYPP_REFGEN_FLAGS
 
     if [ $? -ne 0 ]; then
         echo phy++: program \'$PROG\' FAILED to compile
@@ -80,14 +82,14 @@ if [ $PHYPP_DISABLE_REFLECTION -eq 0 ]; then
             "$((S/60%60))" "$((S%60))" "${M}"
     fi
 else
-    TMP_OUTPUT=$FILE
+    TMP_OUTPUT="$FILE"
 fi
 
 # Compile the generated file to build the final executable
 if [ $PHYPP_SHOW_CMD -eq 1 ]; then
-    echo $PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
+    echo $PHYPP_COMPILER "$TMP_OUTPUT" -I"$FILE_DIR" $OPTIONS -o "$OUTPUT"
 fi
-$PHYPP_COMPILER $TMP_OUTPUT $OPTIONS -o $OUTPUT
+$PHYPP_COMPILER "$TMP_OUTPUT" -I"$FILE_DIR" $OPTIONS -o "$OUTPUT"
 
 if [ $? -ne 0 ]; then
     echo phy++: program \'$PROG\' FAILED to compile
