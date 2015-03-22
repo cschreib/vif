@@ -231,7 +231,7 @@ auto bin_center(const vec<2,Type>& b) -> vec<1,decltype(0.5*b[0])> {
 }
 
 template<typename Type>
-auto bin_center(const vec<1,Type>& b) -> vec<1,decltype(0.5*b[0])> {
+auto bin_center(const vec<1,Type>& b) -> decltype(0.5*b[0]) {
     phypp_check(b.dims[0] == 2, "B is not a bin vector "
         "(expected dims=2, got dims=", b.dims, ")");
 
