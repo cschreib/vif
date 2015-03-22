@@ -663,6 +663,30 @@ namespace file {
         }
     }
 
+    struct macroed_t {};
+    #define ftable(...) file::macroed_t(), #__VA_ARGS__, __VA_ARGS__
+
+    std::string bake_macroed_name(const std::string& s) {
+        std::string t = trim(s);
+        auto p = t.find_first_of('.');
+        if (p != t.npos) {
+            t = t.substr(p+1);
+        }
+        return t;
+    }
+
+    template<typename ... Args>
+    void write_table_hdr(const std::string& filename, std::size_t cwidth, macroed_t,
+        const std::string& names, const Args& ... args) {
+
+        vec1s vnames = split(names.substr(names.find_first_of(')')+1), ",");
+        for (auto& s : vnames) {
+            s = file::bake_macroed_name(s);
+        }
+
+        write_table_hdr(filename, cwidth, vnames, args...);
+    }
+
     template<typename ... Args>
     void write_table_csv(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;

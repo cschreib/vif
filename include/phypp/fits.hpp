@@ -1090,16 +1090,8 @@ namespace fits {
         return cols;
     }
 
-    struct macroed_t {};
-    #define ftable(...) fits::macroed_t(), #__VA_ARGS__, __VA_ARGS__
-
     std::string bake_macroed_name(const std::string& s) {
-        std::string t = toupper(trim(s));
-        auto p = t.find_first_of('.');
-        if (p != t.npos) {
-            t = t.substr(p+1);
-        }
-        return t;
+        return toupper(file::bake_macroed_name(s));
     }
 
     // Load the content of a FITS file into a set of arrays.
@@ -1338,20 +1330,20 @@ namespace fits {
         }
     }
 
-    void read_table_(macroed_t, fitsfile* fptr, const std::string& names) {}
+    void read_table_(file::macroed_t, fitsfile* fptr, const std::string& names) {}
 
     template<typename T, typename ... Args>
-    void read_table_(macroed_t, fitsfile* fptr, const std::string& names, T& v, Args&& ... args) {
+    void read_table_(file::macroed_t, fitsfile* fptr, const std::string& names, T& v, Args&& ... args) {
         std::size_t pos = names.find_first_of(',');
         read_table_impl_(fptr, bake_macroed_name(names.substr(0, pos)), v);
 
         if (pos != names.npos) {
-            read_table_(macroed_t(), fptr, names.substr(pos+1), std::forward<Args>(args)...);
+            read_table_(file::macroed_t(), fptr, names.substr(pos+1), std::forward<Args>(args)...);
         }
     }
 
     template<typename ... Args>
-    void read_table(const std::string& filename, macroed_t,
+    void read_table(const std::string& filename, file::macroed_t,
         const std::string& names, Args&& ... args) {
 
         fitsfile* fptr;
@@ -1366,7 +1358,7 @@ namespace fits {
             phypp_check_fits(sizeof...(Args) <= std::size_t(ncol), "too few collumns in this FITS "
                 "file  ("+strn(ncol)+" vs "+strn(sizeof...(Args))+")");
 
-            read_table_(macroed_t(), fptr, names, std::forward<Args>(args)...);
+            read_table_(file::macroed_t(), fptr, names, std::forward<Args>(args)...);
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
@@ -1602,22 +1594,22 @@ namespace fits {
         }
     }
 
-    void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names) {}
+    void write_table_(file::macroed_t, fitsfile* fptr, int id, const std::string& names) {}
 
     template<typename T, typename ... Args>
-    void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names,
+    void write_table_(file::macroed_t, fitsfile* fptr, int id, const std::string& names,
         const T& v, Args&& ... args) {
 
         std::size_t pos = names.find_first_of(',');
         write_table_impl_(fptr, id, bake_macroed_name(names.substr(0, pos)), v);
 
         if (pos != names.npos) {
-            write_table_(macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
+            write_table_(file::macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
         }
     }
 
     template<typename T, typename ... Args>
-    void write_table_(macroed_t, fitsfile* fptr, int id, const std::string& names,
+    void write_table_(file::macroed_t, fitsfile* fptr, int id, const std::string& names,
         const named_t<T>& v, Args&& ... args) {
 
         write_table_impl_(fptr, id, v.name, v.obj);
@@ -1626,12 +1618,12 @@ namespace fits {
         pos = names.find_first_of(',', pos);
 
         if (pos != names.npos) {
-            write_table_(macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
+            write_table_(file::macroed_t(), fptr, id, names.substr(pos+1), std::forward<Args>(args)...);
         }
     }
 
     template<typename ... Args>
-    void write_table(const std::string& filename, macroed_t,
+    void write_table(const std::string& filename, file::macroed_t,
         const std::string& names, Args&& ... args) {
 
         fitsfile* fptr;
@@ -1643,7 +1635,7 @@ namespace fits {
 
             fits_create_tbl(fptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
-            write_table_(macroed_t(), fptr, 1, names, std::forward<Args>(args)...);
+            write_table_(file::macroed_t(), fptr, 1, names, std::forward<Args>(args)...);
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
@@ -1713,7 +1705,7 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void remove_columns_(macroed_t, fitsfile* fptr, const std::string& names, const Args& ... args) {
+    void remove_columns_(file::macroed_t, fitsfile* fptr, const std::string& names, const Args& ... args) {
         vec1s vnames = split(names.substr(names.find_first_of(')')+1), ",");
         for (auto& s : vnames) {
             s = bake_macroed_name(s);
@@ -1747,7 +1739,7 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void update_table(const std::string& filename, macroed_t,
+    void update_table(const std::string& filename, file::macroed_t,
         const std::string& names, Args&& ... args) {
 
         fitsfile* fptr;
@@ -1757,11 +1749,11 @@ namespace fits {
             fits_open_table(&fptr, filename.c_str(), READWRITE, &status);
             phypp_check_cfitsio(status, "cannot open file");
 
-            remove_columns_(macroed_t(), fptr, names, std::forward<Args>(args)...);
+            remove_columns_(file::macroed_t(), fptr, names, std::forward<Args>(args)...);
 
             int ncol;
             fits_get_num_cols(fptr, &ncol, &status);
-            write_table_(macroed_t(), fptr, ncol+1, names, std::forward<Args>(args)...);
+            write_table_(file::macroed_t(), fptr, ncol+1, names, std::forward<Args>(args)...);
 
             fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
