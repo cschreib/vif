@@ -26,6 +26,7 @@ The library itself relies only on standard C++11, and a couple of well-known lib
  - create a new C++ file (foobar.cpp for example)
  - write some code:
 
+```cpp
     // Include the phy++ headers
     #include <phypp.hpp>
 
@@ -40,14 +41,24 @@ The library itself relies only on standard C++11, and a couple of well-known lib
         print(sqrt(v));
         return 0;
     }
+`̀`
 
  - invoke the phy++ compiler from the directory where the source code is
-   located: phy++ foobar n=20
+   located:
+
+```bash
+   phy++ foobar n=20
+```
+
  - the program will compile and run automatically (if no compiler error
    occurred)
  - alternatively, you may also just compile the program using the cphy++
-   compiler: cphy++ foobar.cpp
-   and run the program yourself afterwards: ./foobar n=20
+   compiler and run the program yourself afterwards:
+
+```bash
+   cphy++ foobar.cpp
+   ./foobar n=20
+```
 
 # The different phy++ compilers
 
