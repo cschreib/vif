@@ -41,7 +41,7 @@ The library itself relies only on standard C++11, and a couple of well-known lib
         print(sqrt(v));
         return 0;
     }
-`̀`
+```
 
  - invoke the phy++ compiler from the directory where the source code is
    located:
