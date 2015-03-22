@@ -1,5 +1,6 @@
 \documentclass[12pt]{report}
 
+\usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{txfonts}
 \usepackage{xcolor}
@@ -11,11 +12,16 @@
 \usepackage[totoc]{idxlayout}
 \usepackage{xparse}
 \usepackage{mdframed}
+\usepackage{footnote}
 \usepackage{tikz}
 \usepackage[colorlinks=true,linkcolor=blue,linktoc=page]{hyperref}
 
+\makesavenoteenv{tabular}
+\makesavenoteenv{table}
+
 \newcommand{\via}{{\it via}\xspace}
-\newcommand{\phypp}{\texttt{phy++}\xspace}
+% \newcommand{\phypp}{\texttt{phy++}\xspace}
+\newcommand{\phypp}{\textit{phy}$_{\text{++}}$\xspace}
 \newcommand{\cpp}[1]{\texttt{#1}\xspace}
 \newcommand{\stdvec}{\cppinline|std::vector|\xspace}
 
@@ -29,6 +35,10 @@
 \newcommand{\lapack}{\lapacksym\hspace{2pt}\xspace}
 \newcommand{\fftwsym}{\textsc{[fftw]}}
 \newcommand{\fftw}{\fftwsym\hspace{2pt}\xspace}
+
+\newcommand{\stwork}{works}
+\newcommand{\sthwork}{half-working}
+\newcommand{\stnwork}{not working}
 
 \NewDocumentCommand\itt{v}{%
   \index{#1@\ittt{#1}}%
@@ -86,16 +96,103 @@
 \newminted{bash}{fontsize=\small}
 \newmintinline{bash}{fontsize=\small}
 
+\newcommand{\footlabel}[2]{\footnote{\label{#1}#2}}
+\newcommand{\footref}[1]{\textsuperscript{\ref{#1}}}
+
+\DeclareFixedFont{\titlefont}{T1}{ppl}{b}{it}{0.5in}
+
 \begin{document}
+\begin{titlepage}
+
+{\noindent \Huge \textbf{\phypp} \Large v1.0 \\[0.6cm]} \par
+\noindent
+\vspace{2cm}
 \begin{center}
-\Large \bf \phypp v1.0
+\Huge \textbf{Reference manual}
 \end{center}
+\null\vfill
+\vspace*{1cm}
+\hfill
+\begin{minipage}{0.35\linewidth}
+    \begin{flushright}
+        \large Corentin Schreiber \\
+        \today
+    \end{flushright}
+\end{minipage}
+%
+\begin{minipage}{0.02\linewidth}
+    \rule{1pt}{40pt}
+\end{minipage}
+\end{titlepage}
 
 \tableofcontents
 
 \chapter{Introduction \label{SEC:intro}}
 
-\section{Getting started \label{SEC:start}}
+\section{Description of the library \label{SEC:intro:overview}}
+
+\subsection{Overview}
+
+\phypp is a set of library and tools built to provide user-friendly vector data manipulation, as offered in interpreted languages like IDL\footnote{\url{http://www.exelisvis.com/ProductsServices/IDL.aspx}}, its open source clone GDL\footnote{\url{http://gnudatalanguage.sourceforge.net/}}, or \texttt{python} \& \texttt{numpy}\footnote{\url{http://www.numpy.org/}}, but with the added benefit of C++: increased robustness, and optimal speed.
+
+Since the beginning, C++ has always been good at performances, being a compiled language, but also thanks to its philosophy\footnote{``You only pay for what you ask for". Good C++ code is supposed to be light, to do the least amount of work to solve a given task. Sadly, not all library writers adhere to this philosophy, and there are many examples of C++ libraries which are \emph{bloated} with tons of features and whose performances are sub-optimal.}. But its main disadvantage is its \emph{complexity}: it contains \emph{almost} the whole C language, plus all the layers that were added on top of it, one year after another, starting from classes, exceptions, then templates. The end result is that it is a challenging task to master all the aspects of this language.
+
+But the good news is: you do not have to master all of C++, and for your sanity you probably should not. Indeed, there is an infinity of self-sufficient \emph{sub-languages} made out of a subset C++. In particular, modern programs only use a fraction of the whole language\footnote{The reason why the remaining fraction is still in the language is for backward compatibility: a C++ program written in 1998 should still compile today. Only on rare occasions is backward compatibility violated.}, e.g., leaving aside most of what was inherited from C (arrays, raw pointers, explicit memory management, etc.). A special class of such sub-languages are those that are tailored specifically to address a given task, as opposed to being open to any purpose. These are called \emph{domain-specific languages} (DSL), and only require learning a few of C++'s rules and concepts, plus the rules introduced by the DSL itself\footnote{The difference between a DSL and a library is that the library provides a set of functions and/or types to solve a given problem, while the DSL does all this \emph{and} introduces a new syntax to do it conveniently.}. The \phypp library is an example of such domain-specific languages, its domain being vector data manipulation.
+
+In short, the idea that the above paragraphs are meant to convey is that, although C++ is a very complex language, it is only necessary to learn a fraction of it to be able to use \phypp correctly. For example, you will find in \ref{SEC:instro:qstart:new} a self-consistent tutorial to get started with the library that does not require any preliminary knowledge of C++. Of course, the more you will know about C++, the more you will be able to take advantage of all the features of \phypp and develop extensions.
+
+\subsection{Why write a new C++ library?}
+
+The immediate goal of \phypp is to provide a syntax as close as possible to that of IDL. IDL is an interpreted language that is widely used in the scientific community, in particular in astrophysics. Born in the late 1970s, this language provides intuitive manipulation of large arrays of data using vectorized operations: applying an operation on a given array does not require the user to write a loop to iterate over its elements and apply the operation. This leads to very concise code that easy to write and read. Unfortunately, IDL suffers from a number of problems. I will start with the \emph{political} and \emph{ethical} problems.
+\begin{itemize}
+\item It is a proprietary, mostly\footnote{The procedures from the IDL library that are written in IDL language are actually open-source, but all the procedures written in native language are compiled and only the binary is provided.} closed-source program. This means that IDL is a black box and that people using have no choice but to rely on the IDL developers for writing accurate code. While there is an extensive documentation, the algorithms used by the procedures are not always described. This is hardly acceptable for scientific code.
+\item IDL, like C++, combines several languages into one: a functional language and an object-oriented language. It also contains a huge support library providing many features (having used IDL for more than two years, I could not list them all). For this reason, and because it is proprietary, maintaining this language and adding new features costs a lot of money to its owner, Exelis. This money, in turn, is provided by science labs all around the world, who pay a yearly fee for a bunch of IDL licenses. This is totally fine in itself, but the fact is that most IDL users I have seen only make use of a small sub-set of IDL, one that has barely evolved in twenty years. In this context, the price that is paid is not justified.
+\item On top of that, the licensing model is that of \emph{floating} licenses: only a fixed, maximum number of simultaneously running IDL instance is allowed in the whole lab. With the now common budget restrictions in research, labs typically buy fewer licenses than there are users. Even worse, it is often needed to run multiple instances of IDL on a single computer, e.g., when working on two projects simultaneously. This will consume two licenses, even though there is a single user. This leads to silly situations, typically when approaching specific deadlines (e.g., deadlines for requesting observing time on large telescopes) where everyone needs to use IDL at the same time, but there is not enough license available. Even worse, we have seen cases in our lab of users being unable to run IDL on their new shiny computer because of incompatibility, not with IDL itself, but with the licensing software. Lastly, it should be noted that this licensing model relies on having network connection with a license server. This means that one cannot use IDL while traveling unless a proper SSH tunneling is in place.
+\end{itemize}
+
+These issues can be solved by switching to one of the free and open-source alternatives, like GDL. The downside is that these implementations are lacking behind IDL in terms of features, as some useful functions are still to be implemented. Worse, some functions cannot \emph{legally} be implemented because they would violate IDL's copyright.
+
+That's only half of the story. Indeed, IDL also suffers from technical issues. I will list below the most important ones.
+\begin{itemize}
+\item Designed in the 1970s, IDL was born in an era where the available RAM was scarce, and that great care had to be taken to consume as few bytes of memory as possible. For this reason, the default integer type in IDL is a \cppinline{short}, i.e., it occupies only two bytes in memory, while most languages (including some that are older than IDL itself) encode their integers on four bytes by default. The biggest issue with this choice is that the largest number one can store in a \cppinline{short} is \cppinline{32768}. Being the default integer type, this creates quite a few surprises to the unexperienced user, and will fool even the expert from time to time.
+\item IDL is an interpreted language, meaning that the code you write is continuously read and interpreted by the IDL executable. While this is not an issue if you make good use of vectorization (the art of writing IDL code), performances are severely degraded onces you write loops explicitly, because the content of the loop has to be \emph{interpreted} and then \emph{executed} on each iteration. And this is sometimes unavoidable.
+\item Like many interpreted languages, IDL is dynamically typed. This means that the type of a variable can change from one line to another, and that a variable containing a string can be assigned a number. While sometimes convenient, this comes at a cost: performance. And the fact is that in most IDL programs this feature is not used.
+\item But worse than dynamic typing, and this is my main concern, variables in IDL are not \emph{declared} before they are used. This means that if you do a typo in the name of one of your variables, chances are that the code will still run. Indeed, IDL cannot know that this was not intended, and will think that you want to create a new variable. It will then do its best to carry on, and the result will be unpredictable. This, together with the fact that variables are almost not \emph{scoped} (i.e., a variable created inside a \cppinline{for} loop is still valid outside of the loop) makes it very easy to write confusing and buggy code. The most frightening part is that, in a good fraction of the cases, the output will be meaningful, and you can go on with your calculation never realizing that something went wrong. And publish that.
+\end{itemize}
+
+Switching to more modern interpreted languages like \texttt{python} would solve a few of these issues, in particular the first one. But the other items on this list are unfortunately inherent to most interpreted languages\footnote{The best counter example is probably Java.}. To avoid these traps, the only solution today is to use \emph{statically typed}, compiled languages, like Fortran, C and C++. While it is the fastest language of all, few languages as harder to read than Fortran (although things are definitely getting better since Fortran 90). C is impractical to use because it has not been developed with user-friendliness in mind, and no mechanism exist to improve that. C++ on the other hand, with all its disadvantages, is probably the best fit thanks to its unlimited capacity for adaptation. And it also happens to be the language I am most familiar with.
+
+Now, there are already some libraries in C++ that are addressing the topic of vector data manipulation. One can cite \href{http://eigen.tuxfamily.org}{Eigen} or the more recent \href{https://code.google.com/p/blaze-lib/}{blaze-lib}. These are wonderful libraries that have inspired \phypp in some way, but their issue is that they are more oriented toward algebra, meaning that they have vectors and matrices, but no data type for arrays of higher dimensions (i.e., tensors\footnote{Eigen actually has a tensor module, but it is unsupported.}).
+
+Therefore, seeing that a gap had to be filled, \phypp was created.
+
+\section{Supported systems \label{SEC:intro:supported}}
+
+The combination of operating systems and compilers on which this library has been tested is reported in the following table. If you have issues and your system is reported in this table as working, then there is probably something wrong in your configuration (e.g., a missing library). If you are using a system combination that is not listed here: if you managed to get it to work, please drop me an email and I will add it to the list; else, if you failed to compile or run programs with the library, please open a new issue on \texttt{github}\footnote{\url{https://github.com/cschreib/phypp/issues}} and we will try to get it fixed together.
+
+\vspace*{0.5cm}
+\begin{minipage}{\textwidth}
+\begin{center}
+\begin{tabular}{cccc}
+\hline \hline
+Operating system & Compiler & Status & Notes \\ \hline
+Linux Mint 15 & gcc-4.8   & \stwork & \footlabel{foot:lm15}{\texttt{libclang} in the repository is too old. Use a more recent version from \href{https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm}{ppa:h-rayflood/llvm}.} \\
+ --           & clang-3.3 & \stwork & \footref{foot:lm15} \\
+Linux Mint 17 & gcc-4.8   & \stwork & \footlabel{foot:lm17}{\texttt{libclang} in the repository crashes on valid C++ code. Fixed in \texttt{libclang-3.5}.} \\
+ --           & clang-3.3 & \stwork & \footref{foot:lm17} \\
+ --           & clang-3.4 & \stwork & \footref{foot:lm17} \\
+ --           & clang-3.5 & \stwork & \footref{foot:lm17} \\
+\hline
+\end{tabular}
+\end{center}
+\end{minipage}
+
+\section{Installing \label{SEC:intro:installing}}
+
+\section{Quick-start guide \label{SEC:instro:qstart}}
+\subsection{For users new to C++ \label{SEC:instro:qstart:new}}
+\subsection{For users familiar with C++ \label{SEC:instro:qstart:fami}}
+
 
 \chapter{Core library \label{SEC:core}}
 % vec.hpp
