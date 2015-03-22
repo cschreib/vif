@@ -1,7 +1,6 @@
-What is phy++ ?
-===============
+# What is phy++ ?
 
-phy++ is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like [IDL] or its open source clone GDL [2], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
+phy++ is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like [IDL] or its open source clone [GDL], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
 
  - multidimensional arrays with overloaded mathematical operators and
    mathematical functions, providing easy manipulation of tabulated data
@@ -16,14 +15,13 @@ Currently, the only drawback of using this library instead of IDL/GDL is that, a
 
 The library itself relies only on standard C++11, and a couple of well-known libraries (see INSTALL). A few features require compile-time reflection, which is not [yet] part of the C++ standard, so a small tool ('refgen') is used to fill the gap. These features are non-essential though, so reflection can be completely disabled if not needed.
 
-[IDL] http://www.exelisvis.com/ProductsServices/IDL.aspx
-[GDL] http://gnudatalanguage.sourceforge.net/
-[cling] http://root.cern.ch/drupal/content/cling
+[IDL]: http://www.exelisvis.com/ProductsServices/IDL.aspx
+[GDL]: http://gnudatalanguage.sourceforge.net/
+[cling]: http://root.cern.ch/drupal/content/cling
 [yet]: https://groups.google.com/a/isocpp.org/forum/#!forum/reflection
 
 
-Using the 'phypp' library
-=========================
+# Using the 'phypp' library
 
  - create a new C++ file (foobar.cpp for example)
  - write some code:
@@ -51,9 +49,7 @@ Using the 'phypp' library
    compiler: cphy++ foobar.cpp
    and run the program yourself afterwards: ./foobar n=20
 
-
-The different phy++ compilers
-=============================
+# The different phy++ compilers
 
 Internally, the "phy++ compilers" use your favorite C++ compiler to compile C++
 files into binary executables. The various compilers listed below are merely
