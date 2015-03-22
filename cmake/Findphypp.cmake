@@ -22,23 +22,29 @@ if(NOT PHYPP_FOUND)
     set(PHYPP_INCLUDE_DIRS ${PHYPP_INCLUDE_DIR})
 endif(NOT PHYPP_FOUND)
 
+# Function to compile a phy++ program in CMake
 function(add_phypp_target CPP_FILE_NAME)
+    # Generate binary name from c++ file
     get_filename_component(FILE_BASE ${CPP_FILE_NAME} NAME_WE)
 
+    # Define the command to generate the binary file
     if(CMAKE_BUILD_TYPE MATCHES Debug)
-        add_custom_command(OUTPUT ${FILE_BASE} VERBATIM COMMAND
-            ${PHYPP_COMPILER} debug ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME} -o ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}
+        add_custom_command(OUTPUT ${FILE_BASE}-make VERBATIM COMMAND
+            ${PHYPP_COMPILER} debug ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME} -o ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}-make
             DEPENDS ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME} ${PHYPP_HEADERS})
     else()
-        add_custom_command(OUTPUT ${FILE_BASE} VERBATIM COMMAND
-            ${PHYPP_COMPILER} optimize ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME} -o ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}
+        add_custom_command(OUTPUT ${FILE_BASE}-make VERBATIM COMMAND
+            ${PHYPP_COMPILER} optimize ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME} -o ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}-make
             DEPENDS ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME} ${PHYPP_HEADERS})
     endif()
 
+    # Create a target that will call this command
     add_custom_target(${FILE_BASE} ALL DEPENDS
         ${PROJECT_SOURCE_DIR}/${CPP_FILE_NAME}
-        ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}
+        ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}-make
         ${PHYPP_HEADERS})
 
-    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE} DESTINATION bin COMPONENT tools)
+    # Specify installation of the binary
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${FILE_BASE}-make
+        DESTINATION bin RENAME ${FILE_BASE})
 endfunction()
