@@ -1,10 +1,8 @@
 What is phy++ ?
 ===============
 
-phy++ is a set of library and tools built to provide user friendly data
-manipulation as offered in interpreted languages like IDL [1] or its open source
-clone GDL [2], but with the added benefit of C++, i.e. increased robustness and
-speed. The library offers the following features:
+phy++ is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like [IDL] or its open source clone GDL [2], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
+
  - multidimensional arrays with overloaded mathematical operators and
    mathematical functions, providing easy manipulation of tabulated data
  - a whole library of general purpose functions to modify and analyze these data
@@ -14,23 +12,14 @@ speed. The library offers the following features:
    PSF fitting, unit conversions, catalog cross-matching, ...
  - a full featured plot module to output graphs in EPS format (WIP)
 
-Currently, the only drawback of using this library instead of IDL/GDL is that,
-at the time of writing, there is no stable and full featured C++ interpreter
-(although cling [3] is a promising candidate). This means that it is impossible
-to do "real-time" testing of code, and that any program must be recompiled
-whenever a change is made. This issue can be partly solved by making use of
-command line arguments to quickly modify the behavior of a program.
+Currently, the only drawback of using this library instead of IDL/GDL is that, at the time of writing, there is no stable and full featured C++ interpreter (although [cling] is a promising candidate). This means that it is impossible to do "real-time" testing of code, and that any program must be recompiled whenever a change is made. This issue can be partly solved by making use of command line arguments to quickly modify the behavior of a program.
 
-The library itself relies only on standard C++11, and a couple of well-known
-libraries (see INSTALL). A few features require compile-time reflection, which
-is not yet part of the C++ standard [4], so a small tool ('refgen') is used to
-fill the gap. These features are non-essential though, so reflection can be
-completely disabled if not needed.
+The library itself relies only on standard C++11, and a couple of well-known libraries (see INSTALL). A few features require compile-time reflection, which is not [yet] part of the C++ standard, so a small tool ('refgen') is used to fill the gap. These features are non-essential though, so reflection can be completely disabled if not needed.
 
-[1]: http://www.exelisvis.com/ProductsServices/IDL.aspx
-[2]: http://gnudatalanguage.sourceforge.net/
-[3]: http://root.cern.ch/drupal/content/cling
-[4]: https://groups.google.com/a/isocpp.org/forum/#!forum/reflection
+[IDL] http://www.exelisvis.com/ProductsServices/IDL.aspx
+[GDL] http://gnudatalanguage.sourceforge.net/
+[cling] http://root.cern.ch/drupal/content/cling
+[yet]: https://groups.google.com/a/isocpp.org/forum/#!forum/reflection
 
 
 Using the 'phypp' library
