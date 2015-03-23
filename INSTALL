@@ -4,15 +4,16 @@ Pre-requisites
 1) You must have a recent compiler to compile C++ code. Either 'clang' (>= 3.3)
    or 'gcc' (>= 4.8) will do.
 
-2) You should have 'cmake' installed.
+2) You should have 'cmake' installed (see Appendix below for instructions on how
+   to install it).
 
-3) You must have the following libraries installed: 'cfitsio', 'CCfits',
-   'wcslib', 'lapack', 'libclang'. See "Appendix: installing dependencies"
-   below for instructions on how to install these libraries for different
-   operating systems.
+3) You must have the following library installed: 'cfitsio' (see Appendix below
+   for instructions on how to install this library).
 
-4) Installing also the 'gsl', 'fftw' and 'tcmalloc' libraries is recommended but
-   not mandatory.
+4) Installing also the 'CCfits', 'wcslib', 'lapack', 'libclang', 'gsl', 'fftw'
+   and 'tcmalloc' libraries is not mandatory, but recommended to use all the
+   features of the phy++ library (see Appendix below for instructions on how to
+   install these libraries).
 
 5) Installing the GNU debugger 'gdb' is recommended but not mandatory.
 
@@ -23,27 +24,53 @@ Install the 'phy++' library with CMake
 1) Make a new directory called 'build' inside the main phy++ directory and
    navigate to it using a terminal.
 
-2) In this directory, call 'cmake ../'. If you have properly installed all the
-   required libraries, CMake will find them and configure the project
-   accordingly.
+2) In this directory, call 'cmake ../'.
+   If you have properly installed all the required libraries, CMake will find
+   them and configure the project accordingly.
 
-3) Build the library by calling 'make'.
+   If you have installed some dependencies in non-standard directories, the
+   CMake script will not be able to find them. Therefore you need to specify
+   the install directory manually for each of these libraries. To do so, just
+   add the following command line arguments to the 'cmake ../' command:
+
+    - for cfitsio: -DCFITSIO_ROOT_DIR=...
+    - for CCfits: -DCCFITS_ROOT_DIR=...
+    - for wcslib: -DWCSLIB_ROOT_DIR=...
+    - for lapack: I don't know
+    - for libclang: -DCLANG_ROOT=...
+    - for gsl: -DGSL_DIR=...
+    - for fftw: -DFFTW_ROOT=...
+    - for tcmalloc: -DTCMALLOC_ROOT_DIR=...
+
+   The '...' have to be replaced by the path to where the library was
+   installed, i.e. it must contain the "include" and "lib" folders in which
+   phy++ will look for headers and shared libraries, respectively.
+
+   For example, if cfitsio was installed in /opt/local/share/cfitsio/, then
+   you will have to call 'cmake' using:
+
+   cmake ../ -DCFITSIO_ROOT_DIR=/opt/local/share/cfitsio/
+
+3) Build the library by calling 'make' (will do nothing if reflection is
+   disabled and/or libclang was not found).
 
 4) Install the library by calling 'sudo make install'.
 
 5) As the install script suggests, you should then source the ".phypprc" file
-   that was just created in your home directory so that the phy++ configuration
+   that was just created in your home directory, so that the phy++ configuration
    is loaded in all your terminals. This can be done by adding a line in your
-   ".bashrc" file containing "source /path/to/your/home/dir/.phypprc".
+   ".bashrc" file containing "source ~/.phypprc".
 
-6) You may then build the phy++ tools. Inside the 'build' directory, create a
-   new directory called 'tools' and navigate to it.
+6) You may then build the phy++ tools. Inside the 'build' directory, navigate to
+   the 'tools' directory.
    Note: if you are still in the same terminal session, you will need to either
    close it and open a new one, or source the phy++ configuration:
-   'source /path/to/your/home/dir/.phypprc'
+   'source ~/.phypprc'
 
 7) Invoque cmake again, this time pointing to the tools directory:
-   'cmake ../tools/'.
+   'cmake ../../tools/'. Like in point 2) above, you may need to manually
+   specify the location of some dependencies if they were not installed in
+   standard paths.
 
 8) Build and install, using 'make' then 'sudo make install'.
 
