@@ -151,7 +151,7 @@ else()
 
     list(GET CCFITS_LIBRARIES 0 CCFITS_LIB)
     get_filename_component(CCFITS_LIB_DIR ${CCFITS_LIB} PATH)
-    set(DEPENDENCIES_LIBS "${DEPENDENCIES_LIBS} -L${CCFITS_LIB}")
+    set(DEPENDENCIES_LIBS "${DEPENDENCIES_LIBS} -L${CCFITS_LIB_DIR}")
 endif()
 
 # handle conditional WCSLib support
