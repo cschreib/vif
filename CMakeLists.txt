@@ -81,6 +81,7 @@ find_package(CCFITS)
 set(PHYPP_ADD_COMPILER_FLAGS "")
 set(REFGEN_ADD_COMPILER_FLAGS "")
 set(PHYPP_ADD_OPT_COMPILER_FLAGS "")
+set(DEPENDENCIES_INCLUDES "")
 
 # handle conditional reflection support
 if (NOT CLANG_FOUND AND NOT NO_REFLECTION)
@@ -122,6 +123,7 @@ if (NOT GSL_FOUND OR NO_GSL OR NO_LAPACK)
     set(REFGEN_ADD_COMPILER_FLAGS "${REFGEN_ADD_COMPILER_FLAGS} -DNO_GSL")
 else()
     set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lgsl")
+    set(DEPENDENCIES_INCLUDES "${DEPENDENCIES_INCLUDES} -I${GSL_INCLUDE_DIR}")
 endif()
 
 # handle conditional WCSLib support
@@ -137,6 +139,7 @@ if (NOT CCFITS_FOUND OR NO_CCFITS)
     set(REFGEN_ADD_COMPILER_FLAGS "${REFGEN_ADD_COMPILER_FLAGS} -DNO_CCFITS")
 else()
     set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lCCfits")
+    set(DEPENDENCIES_INCLUDES "${DEPENDENCIES_INCLUDES} -I${CCFITS_INCLUDE_DIR}")
 endif()
 
 # handle conditional WCSLib support
@@ -152,6 +155,7 @@ if (NOT WCSLIB_FOUND OR NO_WCSLIB)
     set(REFGEN_ADD_COMPILER_FLAGS "${REFGEN_ADD_COMPILER_FLAGS} -DNO_WCSLIB")
 else()
     set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lwcs")
+    set(DEPENDENCIES_INCLUDES "${DEPENDENCIES_INCLUDES} -I${WCSLIB_INCLUDE_DIR}")
 endif()
 
 # handle conditional FFTW support
@@ -167,6 +171,7 @@ if (NOT FFTW_FOUND OR NO_FFTW)
     set(REFGEN_ADD_COMPILER_FLAGS "${REFGEN_ADD_COMPILER_FLAGS} -DNO_FFTW")
 else()
     set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lfftw3")
+    set(DEPENDENCIES_INCLUDES "${DEPENDENCIES_INCLUDES} -I${FFTW_INCLUDES}")
 endif()
 
 # handle conditional Google perftools support
@@ -186,6 +191,10 @@ if (NOT NO_REFLECTION)
     set(NO_REFLECTION 0)
 endif()
 
+# handle cftsio (mandatory for now, will make it optional later)
+set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lcfitsio")
+set(DEPENDENCIES_INCLUDES "${DEPENDENCIES_INCLUDES} -I${CFITSIO_INCLUDES}")
+
 # build configuration
 set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
 set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
@@ -203,19 +212,19 @@ file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TMP_DIR=/tmp/\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\n")
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=/tmp/\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -isystem ${CLANG_SYSTEM_INCLUDE} -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${REFGEN_ADD_COMPILER_FLAGS}\"\n\n")
+file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -isystem ${CLANG_SYSTEM_INCLUDE} -ferror-limit=5 -std=c++11 -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${DEPENDENCIES_INCLUDES} ${REFGEN_ADD_COMPILER_FLAGS}\"\n\n")
 
 file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=${CMAKE_CXX_COMPILER}\n")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++11 -lstdc++ -lcfitsio -Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-ferror-limit=5 -std=c++11 -lstdc++ --Weverything -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-unused-parameter -Wno-sign-conversion -Wno-conversion -Wno-missing-prototypes -Wno-padded -Wno-float-equal -Wno-unused-variable -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-variable-declarations -Wno-weak-vtables ${DEPENDENCIES_INCLUDES} ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
     if (PROFILER_LIBRARY)
         file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++11 -lstdc++ -lcfitsio -Wall ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-fmax-errors=5 -std=c++11 -lstdc++ -Wall ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=-g\n")
     file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
     if (PROFILER_LIBRARY)
