@@ -91,6 +91,7 @@ if (NO_REFLECTION)
     message("note: the clang library has been disabled: reflection of C++ structures will not be possible, but apart from that the library will function properly")
 endif()
 if (NOT CLANG_FOUND OR NO_REFLECTION)
+    set(NO_REFLECTION 1)
     add_definitions(-DNO_REFLECTION)
     set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -DNO_REFLECTION")
 endif()
@@ -187,8 +188,8 @@ endif()
 
 # build the refgen tool
 if (NOT NO_REFLECTION)
-    add_subdirectory(tools/refgen)
     set(NO_REFLECTION 0)
+    add_subdirectory(tools/refgen)
 endif()
 
 # handle cftsio (mandatory for now, will make it optional later)
