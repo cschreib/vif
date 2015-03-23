@@ -20,18 +20,22 @@ if(GSL_INCLUDE_DIR OR GSL_CONFIG_EXECUTABLE)
   set(GSL_FIND_QUIETLY 1)
 endif()
 
+if(NOT DEFINED GSL_DIR)
+  set(GSL_DIR $ENV{GSL_DIR})
+endif()
+
 # Windows, but not for Cygwin and MSys where gsl-config is available
 if( WIN32 AND NOT CYGWIN AND NOT MSYS )
   # look for headers
   find_path( GSL_INCLUDE_DIR
     NAMES gsl/gsl_cdf.h gsl/gsl_randist.h
-    PATHS $ENV{GSL_DIR}/include ${GSL_DIR}/include
+    PATHS ${GSL_DIR}/include
     )
   if( GSL_INCLUDE_DIR )
     # look for gsl library
     find_library( GSL_LIBRARY
       NAMES gsl
-      PATHS $ENV{GSL_DIR}/lib ${GSL_DIR}/lib
+      PATHS ${GSL_DIR}/lib
       )
     if( GSL_LIBRARY )
       set( GSL_INCLUDE_DIRS ${GSL_INCLUDE_DIR} )
@@ -42,7 +46,7 @@ if( WIN32 AND NOT CYGWIN AND NOT MSYS )
     # look for gsl cblas library
     find_library( GSL_CBLAS_LIBRARY
       NAMES gslcblas
-      PATHS $ENV{GSL_DIR}/lib ${GSL_DIR}/lib
+      PATHS ${GSL_DIR}/lib
       )
     if( GSL_CBLAS_LIBRARY )
       set( GSL_CBLAS_FOUND ON )
@@ -60,7 +64,6 @@ if( WIN32 AND NOT CYGWIN AND NOT MSYS )
 else( WIN32 AND NOT CYGWIN AND NOT MSYS )
   if( UNIX OR MSYS )
     find_program( GSL_CONFIG_EXECUTABLE gsl-config
-      $ENV{GSL_DIR}/bin
       ${GSL_DIR}/bin
       /usr/bin/
       /usr/local/bin
