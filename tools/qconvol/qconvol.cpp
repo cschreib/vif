@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
         if (nk % 2 == 0) ++nk;
 
         beam = gaussian_profile({{nk,nk}}, radius);
+        beam /= total(beam);
     }
 
     vec2d img;
