@@ -360,7 +360,39 @@ namespace fits {
         }
     }
 
-    fits::header read_header(const std::string& filename, uint_t sect) {
+    fits::header read_header_hdu(const std::string& filename, uint_t hdu) {
+        fitsfile* fptr;
+        int status = 0;
+
+        try {
+            fits_open_file(&fptr, filename.c_str(), READONLY, &status);
+            fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+
+            int nhdu = 0;
+            fits_get_num_hdus(fptr, &nhdu, &status);
+            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this FITS file "
+                "(", hdu, " vs. ", nhdu, ")");
+
+            fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
+
+            // Read the header as a string
+            char* hstr = nullptr;
+            int nkeys  = 0;
+            fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+            fits::header hdr = hstr;
+            free(hstr);
+
+            fits_close_file(fptr, &status);
+            return hdr;
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
+            error(e.msg);
+            throw;
+        }
+    }
+
+    fits::header read_header_sectfits(const std::string& filename, uint_t sect) {
         if (end_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
             phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
