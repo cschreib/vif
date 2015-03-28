@@ -778,6 +778,7 @@ dt {
   font-family: 'OpenSansRegular', "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: normal;
   float: right;
+  margin-left: 10px;
   margin-right: 10px;
   font-size: 11px;
 }
