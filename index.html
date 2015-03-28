@@ -41,7 +41,7 @@
         <h1>
 <a name="what-is-phy" class="anchor" href="#what-is-phy"><span class="octicon octicon-link"></span></a>What is phy++?</h1>
 
-<p>phy++ is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like IDL <a href="http://www.exelisvis.com/ProductsServices/IDL.aspx">1</a> or its open source clone GDL <a href="http://gnudatalanguage.sourceforge.net/">2</a>, but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:</p>
+<p>phy++ is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like <a href="http://www.exelisvis.com/ProductsServices/IDL.aspx">IDL</a> or its open source clone <a href="http://gnudatalanguage.sourceforge.net/">GDL</a>, but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:</p>
 
 <ul>
 <li>multidimensional arrays with overloaded mathematical operators and mathematical functions, providing easy manipulation of tabulated data</li>
@@ -50,10 +50,10 @@
 <li>an ASCII module allowing read/write operations on ASCII tables</li>
 <li>an astrophysics module providing tools such as cosmological calculations, PSF fitting, unit conversions, catalog cross-matching, ...</li>
 <li>a full featured plot module to output graphs in EPS format (WIP)</li>
-</ul><p>Currently, the only drawback of using this library instead of IDL/GDL is that, at the time of writing, there is no stable and full featured C++ interpreter (although cling <a href="http://root.cern.ch/drupal/content/cling">3</a> is a promising candidate). This means that it is impossible to do "real-time" testing of code, and that any program must be recompiled
+</ul><p>Currently, the only drawback of using this library instead of IDL/GDL is that, at the time of writing, there is no stable and full featured C++ interpreter (although <a href="http://root.cern.ch/drupal/content/cling">cling</a> is a promising candidate). This means that it is impossible to do "real-time" testing of code, and that any program must be recompiled
 whenever a change is made. This issue can be partly solved by making use of command line arguments to quickly modify the behavior of a program.</p>
 
-<p>The library itself relies on standard C++11, and a small tool (<em>refgen</em>) is used to parse the source code to generate necessary data for compile-time reflection which is not yet <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">4</a> part of the C++ standard.</p>
+<p>The library itself relies only on standard C++11, plus a couple of optinal well-known libraries. A few features require compile-time reflection, which is not <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">yet</a> part of the C++ standard, so a small tool ('refgen') is used to fill the gap. These features are non-essential though, so reflection can be completely disabled if not needed.</p>
 
 <h1>
 <a name="how-to-use-it" class="anchor" href="#how-to-use-it"><span class="octicon octicon-link"></span></a>How to use it?</h1>
@@ -92,6 +92,8 @@ whenever a change is made. This issue can be partly solved by making use of comm
 <li>... then run the program yourself afterwards:</li>
 </ul><div class="highlight highlight-bash"><pre><span class="o">./</span>foobar <span class="nv">n</span><span class="o">=</span><span class="mi">20</span
 </pre></div>
+
+<p>More detailed explanations are available in the <a href="https://github.com/cschreib/phypp/blob/master/doc/phypp.pdf">documentation</a>.</p>
 
 <h1>
 <a name="how-to-get-it" class="anchor" href="#how-to-get-it"><span class="octicon octicon-link"></span></a>How to get it?</h1>
