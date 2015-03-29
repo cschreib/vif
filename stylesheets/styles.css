@@ -636,6 +636,12 @@ code {
   border-radius: 2px;
 }
 
+inlinecode {
+  font-family: "Lucida Sans", Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
+  color: #efefef;
+  font-size: 13px;
+}
+
 pre {
   padding: 8px 15px;
   background: #191919;
