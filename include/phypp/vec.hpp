@@ -3180,24 +3180,24 @@ bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
 // Print a vector into a stream.
 template<typename O, std::size_t Dim, typename Type, typename enable = typename std::enable_if<!std::is_same<Type, bool>::value>::type>
 O& operator << (O& o, const vec<Dim,Type>& v) {
-    o << '[';
+    o << '{';
     for (uint_t i = 0; i < v.data.size(); ++i) {
         if (i != 0) o << ", ";
         o << v.safe[i];
     }
-    o << ']';
+    o << '}';
 
     return o;
 }
 
 template<typename O, std::size_t Dim>
 O& operator << (O& o, const vec<Dim,bool>& v) {
-    o << '[';
+    o << '{';
     for (uint_t i = 0; i < v.data.size(); ++i) {
         if (i != 0) o << ", ";
         o << bool(v.safe[i]);
     }
-    o << ']';
+    o << '}';
 
     return o;
 }
