@@ -124,7 +124,7 @@ const std::array<int_t,20> generator<int_t>::list = {{
 
 template<>
 const std::array<float,20> generator<float>::list = {{
-    (float)cos(1.0f), (float)sin(2.0f), (float)exp(1.0f), (float)log(2.0f),
+    float(cos(1.0f)), float(sin(2.0f)), float(exp(1.0f)), float(log(2.0f)),
     fpi,   0.0f, -1.0f,  fnan, +finf, -finf,
     1.0f, -2.0f,  3.0f, -4.0f,  5.0f, -6.0f, 7.0f, -8.0f, 9.0f, 1e6f
 }};
