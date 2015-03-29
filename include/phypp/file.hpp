@@ -449,9 +449,12 @@ namespace file {
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
         std::string fb;
         if (!read_value_(fs, v[i], fb)) {
-            phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
-            phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
-                strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
+            if (fb.empty()) {
+                phypp_check(false, "cannot extract value from file, too few columns on line l."+strn(i+1));
+            } else {
+                phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
+                    strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+            }
         }
         read_table_(fs, i, ++j, args...);
     }
@@ -467,9 +470,12 @@ namespace file {
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
         std::string fb;
         if (!read_value_(fs, v(i,k), fb)) {
-            phypp_check(!fs.eof(), "cannot extract value from file, too few columns");
-            phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
-                strn(i)+":"+strn(j)+" (expected '"+std::string(typeid(T).name())+"'):\n"+fs.str());
+            if (fb.empty()) {
+                phypp_check(false, "cannot extract value from file, too few columns on line l."+strn(i+1));
+            } else {
+                phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
+                    strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+            }
         }
         read_table_cols_(fs, i, ++j, k, args...);
     }
@@ -478,8 +484,8 @@ namespace file {
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
         std::string s;
         if (!(fs >> s)) {
-            phypp_check(!fs.eof(), "cannot extract value at l."+strn(i)+":"+strn(j)+" from file, "
-                "too few columns");
+            phypp_check(!fs.eof(), "cannot extract value from file, "
+                "too few columns on line l."+strn(i+1));
         }
         read_table_cols_(fs, i, ++j, k, args...);
     }
@@ -501,8 +507,8 @@ namespace file {
 
     template<typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
-        phypp_check(!fs.eof(), "cannot extract value at l."+strn(i)+":"+strn(j)+" from file, "
-            "too few columns");
+        phypp_check(!fs.eof(), "cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
+            "too few columns on line l."+strn(i+1));
         std::string s;
         fs >> s;
         read_table_(fs, i, ++j, args...);
