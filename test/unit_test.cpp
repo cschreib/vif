@@ -1,7 +1,7 @@
 #include <phypp.hpp>
 
 #define check(t, s) { \
-    std::string st = trim(strn(t), "[]"); \
+    std::string st = strn(t); \
     if (st == s) print("  checked: "+st); \
     else         print("  failed: "+std::string(#t)+" = "+st+" != "+s); \
     assert(st == s); \
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     {
         print("Default initialization of array");
         vec1u t = uintarr(3);
-        check(t, "0, 0, 0");
+        check(t, "{0, 0, 0}");
     }
 
     {
@@ -100,51 +100,51 @@ int main(int argc, char* argv[]) {
     {
         print("Index generation 'indgen'");
         vec1f v = findgen(7);
-        check(v, "0, 1, 2, 3, 4, 5, 6");
+        check(v, "{0, 1, 2, 3, 4, 5, 6}");
 
         print("Direct data access (single index)");
         check(v[1], "1");
         check(v(1), "1");
         print("Range index '_'");
-        check(v[_], "0, 1, 2, 3, 4, 5, 6");
+        check(v[_], "{0, 1, 2, 3, 4, 5, 6}");
         print("Range index '3-_'");
-        check(v[3-_], "3, 4, 5, 6");
+        check(v[3-_], "{3, 4, 5, 6}");
         print("Range index '_-3'");
-        check(v[_-3], "0, 1, 2, 3");
+        check(v[_-3], "{0, 1, 2, 3}");
         print("Range index '2-_-4'");
-        check(v[2-_-4], "2, 3, 4");
+        check(v[2-_-4], "{2, 3, 4}");
 
         print("Basic math");
-        check(2*v, "0, 2, 4, 6, 8, 10, 12");
-        check(pow(2,v), "1, 2, 4, 8, 16, 32, 64");
+        check(2*v, "{0, 2, 4, 6, 8, 10, 12}");
+        check(pow(2,v), "{1, 2, 4, 8, 16, 32, 64}");
 
         print("'rgen' function");
         vec1d v1 = rgen(0, 5, 11);
-        check(v1, "0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5");
+        check(v1, "{0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5}");
         vec1u v2 = rgen(0, 5);
-        check(v2, "0, 1, 2, 3, 4, 5");
+        check(v2, "{0, 1, 2, 3, 4, 5}");
         vec1u i = rgen(5, 2);
-        check(i, "5, 4, 3, 2");
+        check(i, "{5, 4, 3, 2}");
 
         print("Index array");
-        check((2*v)[i], "10, 8, 6, 4");
-        check(2*v[i], "10, 8, 6, 4");
+        check((2*v)[i], "{10, 8, 6, 4}");
+        check(2*v[i], "{10, 8, 6, 4}");
         v[i] = dindgen(4);
-        check(v, "0, 1, 3, 2, 1, 0, 6");
+        check(v, "{0, 1, 3, 2, 1, 0, 6}");
         v[rgen(4,6)] = v[rgen(2,0)];
-        check(v, "0, 1, 3, 2, 3, 1, 0");
+        check(v, "{0, 1, 3, 2, 3, 1, 0}");
         v[i] *= 2;
-        check(v, "0, 1, 6, 4, 6, 2, 0");
+        check(v, "{0, 1, 6, 4, 6, 2, 0}");
         v[i] += indgen(4);
-        check(v, "0, 1, 9, 6, 7, 2, 0");
+        check(v, "{0, 1, 9, 6, 7, 2, 0}");
         v[rgen(0,6)] = v[rgen(6,0)];
-        check(v, "0, 2, 7, 6, 9, 1, 0");
-        check(v[rgen(1,4)][rgen(1,2)], "7, 6");
+        check(v, "{0, 2, 7, 6, 9, 1, 0}");
+        check(v[rgen(1,4)][rgen(1,2)], "{7, 6}");
         v(1) = 3;
-        check(v, "0, 3, 7, 6, 9, 1, 0");
+        check(v, "{0, 3, 7, 6, 9, 1, 0}");
         check(v(3), "6");
         v[rgen(0,6)](0) = 1;
-        check(v, "1, 3, 7, 6, 9, 1, 0");
+        check(v, "{1, 3, 7, 6, 9, 1, 0}");
 
         print("Negative indices");
         check(v[-1], "0");
@@ -157,122 +157,122 @@ int main(int argc, char* argv[]) {
         b1 = false;
         bool& b2 = v[1];
         b2 = true;
-        check(v, "0, 1, 1, 0");
+        check(v, "{0, 1, 1, 0}");
     }
 
     {
         print("Initialization list");
         vec1f tv = {44, 55, 66, 77};
-        check(tv.dims, "4");
+        check(tv.dims, "{4}");
         check(n_elements(tv), "4");
-        check(tv, "44, 55, 66, 77");
+        check(tv, "{44, 55, 66, 77}");
     }
 
     {
         print("String array");
         vec1s w = {"gn", "gs", "uds", "cosmos"};
-        check(w, "gn, gs, uds, cosmos");
+        check(w, "{gn, gs, uds, cosmos}");
     }
 
     {
         print("Boolean logic");
         vec1i i = indgen(5);
         vec1b b = (i == 3 || i == 1);
-        check(b, "0, 1, 0, 1, 0");
-        check(!b, "1, 0, 1, 0, 1");
+        check(b, "{0, 1, 0, 1, 0}");
+        check(!b, "{1, 0, 1, 0, 1}");
 
         print("'where' function");
         vec1u id = where(b);
-        check(id, "1, 3");
+        check(id, "{1, 3}");
 
         print("'complement' function");
         vec1u cid = complement(b, id);
-        check(cid, "0, 2, 4");
+        check(cid, "{0, 2, 4}");
 
         print("'is_any_of' function");
-        check(where(is_any_of(i, {3, 1})), "1, 3");
+        check(where(is_any_of(i, {3, 1})), "{1, 3}");
     }
 
     {
         print("'flatten' & 'reform' functions");
         vec2u v = {{1,2,3}, {4,5,6}};
         vec1u fv = flatten(v);
-        check(fv.dims, strn(v.size()));
-        check(fv, "1, 2, 3, 4, 5, 6");
+        check(fv.dims, "{"+strn(v.size())+"}");
+        check(fv, "{1, 2, 3, 4, 5, 6}");
         vec2u rv = reform(v, 3, 2);
-        check(rv.dims, "3, 2");
-        check(rv, "1, 2, 3, 4, 5, 6");
+        check(rv.dims, "{3, 2}");
+        check(rv, "{1, 2, 3, 4, 5, 6}");
     }
 
     {
         print("'reverse' function");
         vec1i i = indgen(5);
-        check(reverse(i), "4, 3, 2, 1, 0");
+        check(reverse(i), "{4, 3, 2, 1, 0}");
     }
 
     {
         print("'remove' function");
         vec1i i = indgen(10);
         vec1i di = remove(i, {1,2,5,6,7,9});
-        check(di, "0, 3, 4, 8");
-        check(di.dims, "4");
+        check(di, "{0, 3, 4, 8}");
+        check(di.dims, "{4}");
         vec2u u = {{0,1,2},{3,4,5},{6,7,8},{9,10,11},{12,13,14}};
         vec2u du = remove(u, {0,1,3});
-        check(du, "6, 7, 8, 12, 13, 14");
-        check(du.dims, "2, 3");
+        check(du, "{6, 7, 8, 12, 13, 14}");
+        check(du.dims, "{2, 3}");
     }
 
     {
         print("2 dimensional array & multiple indices '(i,j)'");
         vec2d u = dindgen(3,2);
-        check(u, "0, 1, 2, 3, 4, 5");
-        check(u.dims, "3, 2");
+        check(u, "{0, 1, 2, 3, 4, 5}");
+        check(u.dims, "{3, 2}");
         check(u(0,1), "1");
         check(u(1,1), "3");
         check(u(2,1), "5");
 
         u(1,0) = 9;
         u(2,1) = 10;
-        check(u, "0, 1, 9, 3, 4, 10");
+        check(u, "{0, 1, 9, 3, 4, 10}");
 
         vec2d tu = {{5,8},{4,5},{1,2}};
-        check(tu.dims, "3, 2");
+        check(tu.dims, "{3, 2}");
         check(tu.data.size(), "6");
-        check(tu, "5, 8, 4, 5, 1, 2");
+        check(tu, "{5, 8, 4, 5, 1, 2}");
         check(tu(1,1), "5");
         tu(1-_-2,0-_-1) = {{1,2},{3,4}};
-        check(tu, "5, 8, 1, 2, 3, 4");
+        check(tu, "{5, 8, 1, 2, 3, 4}");
 
         vec2i v = {{4,5,6,7}, {8,9,5,2}, {7,8,2,0}, {-1, -5, -6, -7}, {-4,1,-2,5}};
-        check(v(_,_).dims, "5, 4");
-        check(v(_,0).dims, "5");
-        check(v(0,_).dims, "4");
-        check(v(1-_-2,1-_-3).dims, "2, 3");
-        check(v(rgen(1,2),rgen(1,3)).dims, "2, 3");
-        check(v(rgen(1,2),0).dims, "2");
-        check(v(0,rgen(1,3)).dims, "3");
+        check(v(_,_).dims, "{5, 4}");
+        check(v(_,0).dims, "{5}");
+        check(v(0,_).dims, "{4}");
+        check(v(1-_-2,1-_-3).dims, "{2, 3}");
+        check(v(rgen(1,2),rgen(1,3)).dims, "{2, 3}");
+        check(v(rgen(1,2),0).dims, "{2}");
+        check(v(0,rgen(1,3)).dims, "{3}");
 
-        check(v(_,_).dims, "5, 4");
-        check(v(_,0).dims, "5");
-        check(v(0,_).dims, "4");
-        check(v(rgen(1,2),rgen(1,3)).dims, "2, 3");
-        check(v(rgen(1,2),0).dims, "2");
-        check(v(0,rgen(1,3)).dims, "3");
+        check(v(_,_).dims, "{5, 4}");
+        check(v(_,0).dims, "{5}");
+        check(v(0,_).dims, "{4}");
+        check(v(rgen(1,2),rgen(1,3)).dims, "{2, 3}");
+        check(v(rgen(1,2),0).dims, "{2}");
+        check(v(0,rgen(1,3)).dims, "{3}");
 
-        check(v(1,_), "8, 9, 5, 2");
-        check(v(2,rgen(1,2)), "8, 2");
-        check(v(_,1), "5, 9, 8, -5, 1");
+        check(v(1,_), "{8, 9, 5, 2}");
+        check(v(2,rgen(1,2)), "{8, 2}");
+        check(v(_,1), "{5, 9, 8, -5, 1}");
 
         v(2,_) = indgen(4);
-        check(v, "4, 5, 6, 7, 8, 9, 5, 2, 0, 1, 2, 3, -1, -5, -6, -7, -4, 1, -2, 5");
+        check(v, "{4, 5, 6, 7, 8, 9, 5, 2, 0, 1, 2, 3, -1, -5, -6, -7, -4, 1, -2, 5}");
         v(_,2) = {-4, -4, -4, -4, -4};
-        check(v, "4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, -4, 1, -4, 5");
+        check(v, "{4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, -4, 1, -4, 5}");
 
         v(-1,_) = replicate(2,4);
-        check(v, "4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, 2, 2, 2, 2");
+        check(v, "{4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, 2, 2, 2, 2}");
 
         v(_,-1) = replicate(-2,5);
-        check(v, "4, 5, -4, -2, 8, 9, -4, -2, 0, 1, -4, -2, -1, -5, -4, -2, 2, 2, 2, -2");
+        check(v, "{4, 5, -4, -2, 8, 9, -4, -2, 0, 1, -4, -2, -1, -5, -4, -2, 2, 2, 2, -2}");
 
         check(flat_id(v,0,0), "0");
         check(flat_id(v,0,1), "1");
@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
         print("FITS image loading");
         vec2d v; fits::header hdr;
         fits::read("data/image.fits", v, hdr);
-        check(v.dims, "161, 161");
+        check(v.dims, "{161, 161}");
         check(float(v(80,79)), "0.0191503");
         check(hdr.size()/80, "9");
 
@@ -323,7 +323,7 @@ int main(int argc, char* argv[]) {
         check(n_elements(id1), "79003");
         check(n_elements(id2), "79003");
         check(n_elements(id3), "79003");
-        check(id1(indgen(10)), "43881, 43881, 43881, 43881, 43548, 43881, 43881, 43881, 43820, 43881");
+        check(id1(indgen(10)), "{43881, 43881, 43881, 43881, 43548, 43881, 43881, 43881, 43820, 43881}");
 
         print("FITS table writing");
         fits::write_table("out/table_saved.fits", ftable(id1, id2, id3));
@@ -382,8 +382,8 @@ int main(int argc, char* argv[]) {
 
         vec1u id1, id2;
         match(t1, t2, id1, id2);
-        check(id1, "5, 3, 1");
-        check(id2, "0, 2, 4");
+        check(id1, "{5, 3, 1}");
+        check(id2, "{0, 2, 4}");
     }
 
     {
@@ -396,8 +396,8 @@ int main(int argc, char* argv[]) {
         vec1u ids = sort(id1);
         id1 = id1[ids]; id2 = id2[ids];
 
-        check(id1, "1, 2, 4, 6");
-        check(id2, "4, 2, 2, 0");
+        check(id1, "{1, 2, 4, 6}");
+        check(id2, "{4, 2, 2, 0}");
     }
 
     {
@@ -405,39 +405,39 @@ int main(int argc, char* argv[]) {
         vec1d t = {1,2,3,4,5,5,8,9,6,fnan,5,7,4};
         vec2i bins = {{0,2,5,8,10}, {2,5,8,10,12}};
         vec1u counts = histogram(t, bins);
-        check(counts, "1, 4, 5, 2, 0");
+        check(counts, "{1, 4, 5, 2, 0}");
 
         vec1d w = replicate(1.0, t.size());
         counts = histogram(t, w, bins);
-        check(counts, "1, 4, 5, 2, 0");
+        check(counts, "{1, 4, 5, 2, 0}");
 
         w[0] = 5;
         vec1d wcounts = histogram(t, w, bins);
-        check(wcounts, "5, 4, 5, 2, 0");
+        check(wcounts, "{5, 4, 5, 2, 0}");
 
         w[0] = 1; w[1] = 5;
         wcounts = histogram(t, w, bins);
-        check(wcounts, "1, 8, 5, 2, 0");
+        check(wcounts, "{1, 8, 5, 2, 0}");
 
         w[1] = 1; w[5] = 5;
         wcounts = histogram(t, w, bins);
-        check(wcounts, "1, 4, 9, 2, 0");
+        check(wcounts, "{1, 4, 9, 2, 0}");
 
         w[5] = 1; w[7] = 5;
         wcounts = histogram(t, w, bins);
-        check(wcounts, "1, 4, 5, 6, 0");
+        check(wcounts, "{1, 4, 5, 6, 0}");
 
         w[7] = 1; w[9] = 5;
         wcounts = histogram(t, w, bins);
-        check(wcounts, "1, 4, 5, 2, 0");
+        check(wcounts, "{1, 4, 5, 2, 0}");
     }
 
     {
         print("ASCII table loading");
         vec1i i1, i2;
         file::read_table("data/table.txt", 2, i1, i2);
-        check(i1, "0, 1, 2, 3, 4");
-        check(i2, "0, 1, 3, 5, 9");
+        check(i1, "{0, 1, 2, 3, 4}");
+        check(i2, "{0, 1, 3, 5, 9}");
 
         vec1i i2b;
         file::read_table("data/table.txt", 2, _, i2b);
@@ -484,7 +484,7 @@ int main(int argc, char* argv[]) {
     {
         print("'clamp' function");
         vec1f f = {-1,0,1,2,3,4,5,6,finf,fnan};
-        check(clamp(f, 1, 4), "1, 1, 1, 2, 3, 4, 4, 4, 4, nan");
+        check(clamp(f, 1, 4), "{1, 1, 1, 2, 3, 4, 4, 4, 4, nan}");
     }
 
     {
@@ -507,7 +507,7 @@ int main(int argc, char* argv[]) {
         print(pi);
         check(fabs(p1 + 1.0) < 1.0/sqrt(ntry), "1");
         check(fabs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
-        check(percentiles(r, 0.158, 0.842) == pi, "1, 1");
+        check(percentiles(r, 0.158, 0.842) == pi, "{1, 1}");
     }
 
     {
@@ -532,14 +532,14 @@ int main(int argc, char* argv[]) {
     {
         print("'partial_mean' and 'partial_median' for 2-d array");
         vec2d v = {{1,2,3},{4,5,6},{7,8,9}};
-        check(partial_mean(0,v), "4, 5, 6");
-        check(partial_mean(1,v), "2, 5, 8");
-        check(partial_median(0,v), "4, 5, 6");
-        check(partial_median(1,v), "2, 5, 8");
-        check(partial_min(0,v), "1, 2, 3");
-        check(partial_min(1,v), "1, 4, 7");
-        check(partial_max(0,v), "7, 8, 9");
-        check(partial_max(1,v), "3, 6, 9");
+        check(partial_mean(0,v), "{4, 5, 6}");
+        check(partial_mean(1,v), "{2, 5, 8}");
+        check(partial_median(0,v), "{4, 5, 6}");
+        check(partial_median(1,v), "{2, 5, 8}");
+        check(partial_min(0,v), "{1, 2, 3}");
+        check(partial_min(1,v), "{1, 4, 7}");
+        check(partial_max(0,v), "{7, 8, 9}");
+        check(partial_max(1,v), "{3, 6, 9}");
     }
 
     {
@@ -566,12 +566,12 @@ int main(int argc, char* argv[]) {
     {
         print("'replicate' function");
         vec1i v = replicate(3, 5);
-        check(v.dims, "5");
-        check(v, "3, 3, 3, 3, 3");
+        check(v.dims, "{5}");
+        check(v, "{3, 3, 3, 3, 3}");
         v[uindgen(2)] = indgen(2)+1;
         vec2i v2 = replicate(v[uindgen(2)], 3);
-        check(v2, "1, 2, 1, 2, 1, 2");
-        check(v2.dims, "3, 2");
+        check(v2, "{1, 2, 1, 2, 1, 2}");
+        check(v2.dims, "{3, 2}");
     }
 
     {
@@ -661,12 +661,12 @@ int main(int argc, char* argv[]) {
         print("'push_back' function");
         vec1i i = {0,1,2,4,-1};
         i.push_back(3);
-        check(i, "0, 1, 2, 4, -1, 3");
+        check(i, "{0, 1, 2, 4, -1, 3}");
 
         vec2i j = {{1, 2}, {3, 4}};
         j.push_back({5, 6});
-        check(j.dims, "3, 2");
-        check(j, "1, 2, 3, 4, 5, 6");
+        check(j.dims, "{3, 2}");
+        check(j, "{1, 2, 3, 4, 5, 6}");
     }
 
     {
@@ -674,9 +674,9 @@ int main(int argc, char* argv[]) {
         vec1i v = {0, 5, 2};
         vec1i w = {4, 1, 3};
         append(v, w);
-        check(v, "0, 5, 2, 4, 1, 3");
+        check(v, "{0, 5, 2, 4, 1, 3}");
         prepend(v, w);
-        check(v, "4, 1, 3, 0, 5, 2, 4, 1, 3");
+        check(v, "{4, 1, 3, 0, 5, 2, 4, 1, 3}");
     }
 
     {
@@ -684,17 +684,17 @@ int main(int argc, char* argv[]) {
         vec2i v = {{0,1,2}, {5,6,8}};
         vec2i w = {{5,5,5}};
         append<0>(v, w);
-        check(v(0,_), "0, 1, 2");
-        check(v(1,_), "5, 6, 8");
-        check(v(2,_), "5, 5, 5");
+        check(v(0,_), "{0, 1, 2}");
+        check(v(1,_), "{5, 6, 8}");
+        check(v(2,_), "{5, 5, 5}");
     }
 
     {
         print("'shift' function");
         vec1i v = indgen(6);
-        check(shift(v, -2), "2, 3, 4, 5, 0, 0");
-        check(shift(v, +2), "0, 0, 0, 1, 2, 3");
-        check(shift(v, 100), "0, 0, 0, 0, 0, 0");
+        check(shift(v, -2), "{2, 3, 4, 5, 0, 0}");
+        check(shift(v, +2), "{0, 0, 0, 1, 2, 3}");
+        check(shift(v, 100), "{0, 0, 0, 0, 0, 0}");
     }
 
     {
@@ -751,7 +751,7 @@ int main(int argc, char* argv[]) {
 
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
         diagonal(sq) *= 5;
-        check(sq, "5, 1, 1, 1, 5, 1, 1, 1, 5");
+        check(sq, "{5, 1, 1, 1, 5, 1, 1, 1, 5}");
 
         vec2d id2 = identity_matrix(3);
         check(rms(id2 - id) < 1e-10, "1");
@@ -763,26 +763,26 @@ int main(int argc, char* argv[]) {
         print("Matrix 'translation_matrix', 'scale_matrix', 'rotation_matrix'");
         double x = 5, y = 2;
         vec1d p = point2d(x, y);
-        check(p, "5, 2, 1");
+        check(p, "{5, 2, 1}");
 
         vec2d tm = identity_matrix(3);
 
         vec2d m = translation_matrix(2,3);
         vec1d tp = mmul(m, p);
         tm = mmul(m, tm);
-        check(tp, "7, 5, 1");
+        check(tp, "{7, 5, 1}");
 
         m = scale_matrix(2,3);
         tp = mmul(m, tp);
         tm = mmul(m, tm);
-        check(tp, "14, 15, 1");
+        check(tp, "{14, 15, 1}");
 
         m = rotation_matrix(dpi/2);
         tp = mmul(m, tp);
         tm = mmul(m, tm);
-        check(tp, "-15, 14, 1");
+        check(tp, "{-15, 14, 1}");
 
-        check(mmul(tm, p), "-15, 14, 1");
+        check(mmul(tm, p), "{-15, 14, 1}");
     }
 
 #ifndef NO_LAPACK
@@ -802,7 +802,7 @@ int main(int argc, char* argv[]) {
         vec1d beta = {1,2,3,4};
         vec2d alpha = identity_matrix(4);
         check(inplace_solve_symmetric(alpha, beta), "1");
-        check(beta, "1, 2, 3, 4");
+        check(beta, "{1, 2, 3, 4}");
 
         // x + 2*y = b1
         // 2*x + y = b2
@@ -929,8 +929,8 @@ int main(int argc, char* argv[]) {
         print("'sort' function");
         vec1i v = {6,2,4,3,1,5};
         vec1i sid = sort(v);
-        check(sid, "4, 1, 3, 2, 5, 0");
-        check(v[sid], "1, 2, 3, 4, 5, 6");
+        check(sid, "{4, 1, 3, 2, 5, 0}");
+        check(v[sid], "{1, 2, 3, 4, 5, 6}");
     }
 
     {
@@ -938,20 +938,20 @@ int main(int argc, char* argv[]) {
         vec2i v = {{5,0}, {4,1}, {1,2}, {2,3}};
         vec1i sid = sort(v(_,0));
         v(_,_) = v(sid,_);
-        check(v, "1, 2, 2, 3, 4, 1, 5, 0");
+        check(v, "{1, 2, 2, 3, 4, 1, 5, 0}");
     }
 
     {
         print("'uniq' function");
         vec1i v = {0,1,1,1,2,2,3,5,5,6};
         vec1i id = uniq(v);
-        check(id, "0, 1, 4, 6, 7, 9");
+        check(id, "{0, 1, 4, 6, 7, 9}");
 
         auto seed = make_seed(42);
         inplace_shuffle(seed, v);
         vec1i sid = sort(v);
         vec1i id2 = uniq(v, sid);
-        check(v[id2], "0, 1, 2, 3, 5, 6");
+        check(v[id2], "{0, 1, 2, 3, 5, 6}");
     }
 
     {
@@ -967,8 +967,8 @@ int main(int argc, char* argv[]) {
         f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, -finf, -1.5f};
         check(!finite(min(f)), "1"); check(max(f), "4.45");
         vec1f f2 = {1.0f, 5.0f, -1.0f, fnan, 12.0f, 6.0, -1e6};
-        check(max(f, f2), "2, 5, -1, 0, 12, 6, -1.5");
-        check(min(f, f2), "1, 3, -1, 0, 4.45, -inf, -1e+06");
+        check(max(f, f2), "{2, 5, -1, 0, 12, 6, -1.5}");
+        check(min(f, f2), "{1, 3, -1, 0, 4.45, -inf, -1e+06}");
         f = {fnan, fnan};
         check(max(f), strn(fnan));
     }
@@ -986,16 +986,16 @@ int main(int argc, char* argv[]) {
         print("'replace' & 'split'");
         vec1s s = {"/home/dir/", "/bin//ds9", "ls"};
         s = replace(s, "/", ":");
-        check(s, ":home:dir:, :bin::ds9, ls");
+        check(s, "{:home:dir:, :bin::ds9, ls}");
 
         vec1s t = split(s[0], ":");
-        check(t, ", home, dir, ");
+        check(t, "{, home, dir, }");
     }
 
     {
         print("string 'match' regex");
         vec1s s = {"[u]=5", "[v]=2", "plop", "3=[c]", "5]=[b"};
-        check(match(s, "\\[.\\]"), "1, 1, 0, 1, 0");
+        check(match(s, "\\[.\\]"), "{1, 1, 0, 1, 0}");
     }
 
     {
@@ -1078,7 +1078,7 @@ int main(int argc, char* argv[]) {
         double lam_obs = 160.0;
         auto lsun = uJy2lsun(z, d, lam_obs, jy);
         double lam_rf = lam_obs/(1.0 + z);
-        check(jy == lsun2uJy(z, d, lam_rf, lsun), "1");
+        check(jy == lsun2uJy(z, d, lam_rf, lsun), "{1}");
     }
 
 #ifndef NO_REFLECTION
@@ -1093,7 +1093,7 @@ int main(int argc, char* argv[]) {
             } k;
         } str;
 
-        check(str, "{ i=5, j=[0, 1, 2], k={ u=-1, v=2 } }");
+        check(str, "{ i=5, j={0, 1, 2}, k={ u=-1, v=2 } }");
     }
     {
         print("Reflection: save & write a structure");

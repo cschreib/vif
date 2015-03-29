@@ -14,10 +14,12 @@
 namespace std {
     template<typename O, typename T, std::size_t N>
     O& operator << (O& o, const std::array<T,N>& v) {
+        o << "{";
         for (uint_t i : range(N)) {
             if (i != 0) o << ", ";
             o << v[i];
         }
+        o << "}";
 
         return o;
     }
