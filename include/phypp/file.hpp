@@ -559,10 +559,10 @@ namespace file {
         }
     }
 
-    void write_table_phypp_check_size_(std::size_t n, std::size_t i) {}
+    void write_table_check_size_(std::size_t n, std::size_t i) {}
 
     template<std::size_t Dim, typename Type, typename ... Args>
-    void write_table_phypp_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
+    void write_table_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
         const Args& ... args) {
 
         if (n == 0) {
@@ -572,7 +572,7 @@ namespace file {
         phypp_check(v.dims[0] == n, "incorrect dimension for column "+strn(i)+" ("+
             strn(v.dims[0])+" vs "+strn(n)+")");
 
-        write_table_phypp_check_size_(n, i+1, args...);
+        write_table_check_size_(n, i+1, args...);
     }
 
     void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
@@ -630,9 +630,11 @@ namespace file {
     template<typename ... Args>
     void write_table(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;
-        write_table_phypp_check_size_(n, t, args...);
+        write_table_check_size_(n, t, args...);
 
         std::ofstream file(filename);
+        phypp_check(file.is_open(), "could not open file "+filename+" to write data");
+
         for (std::size_t i = 0; i < n; ++i) {
             write_table_do_(file, cwidth, "", i, 0, args...);
         }
@@ -643,9 +645,10 @@ namespace file {
         const Args& ... args) {
 
         std::size_t n = 0, t = 0;
-        write_table_phypp_check_size_(n, t, args...);
+        write_table_check_size_(n, t, args...);
 
         std::ofstream file(filename);
+        phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
         // Write header
         std::string hdr = collapse(align_right(nhdr, cwidth));
@@ -696,7 +699,6 @@ namespace file {
     template<typename ... Args>
     void write_table_hdr(const std::string& filename, std::size_t cwidth, macroed_t,
         const std::string& names, const Args& ... args) {
-
         vec1s vnames = split(names.substr(names.find_first_of(')')+1), ",");
         for (auto& s : vnames) {
             s = file::bake_macroed_name(s);
@@ -710,9 +712,11 @@ namespace file {
     template<typename ... Args>
     void write_table_csv(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;
-        write_table_phypp_check_size_(n, t,args...);
+        write_table_check_size_(n, t,args...);
 
         std::ofstream file(filename);
+        phypp_check(file.is_open(), "could not open file "+filename+" to write data");
+
         for (std::size_t i = 0; i < n; ++i) {
             write_table_do_(file, cwidth, ",", i, 0, args...);
         }
