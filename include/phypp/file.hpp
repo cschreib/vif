@@ -669,6 +669,30 @@ namespace file {
         return t;
     }
 
+    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i) {}
+
+    template<typename T, typename ... Args>
+    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args);
+    template<typename T, typename ... Args>
+    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args);
+
+    template<typename T, typename ... Args>
+    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args) {
+        write_table_hdr_fix_2d_(vnames, i+1, args...);
+    }
+
+    template<typename T, typename ... Args>
+    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args) {
+        std::string base = vnames[i];
+
+        vec1s ncols = base+"_"+strna(uindgen(v.dims[1])+1);
+        vnames.data.insert(vnames.data.begin()+i+1, ncols.begin()+1, ncols.end());
+        vnames[i] = ncols[0];
+        vnames.dims[0] += v.dims[1]-1;
+
+        write_table_hdr_fix_2d_(vnames, i+v.dims[1], args...);
+    }
+
     template<typename ... Args>
     void write_table_hdr(const std::string& filename, std::size_t cwidth, macroed_t,
         const std::string& names, const Args& ... args) {
@@ -677,6 +701,8 @@ namespace file {
         for (auto& s : vnames) {
             s = file::bake_macroed_name(s);
         }
+
+        write_table_hdr_fix_2d_(vnames, 0, args...);
 
         write_table_hdr(filename, cwidth, vnames, args...);
     }
