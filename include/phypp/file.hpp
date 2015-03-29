@@ -394,8 +394,8 @@ namespace file {
         return true;
     }
 
-    template<typename I>
-    bool read_value_(I& in, double& v, std::string& fallback) {
+    template<typename I, typename T>
+    bool read_value_float_(I& in, T& v, std::string& fallback) {
         // std::istream will fail to extract a float/double value where the string is
         // 'INF', 'NAN', 'NULL', or any other text
         auto pos = in.tellg();
@@ -428,24 +428,12 @@ namespace file {
 
     template<typename I>
     bool read_value_(I& in, float& v, std::string& fallback) {
-        // std::istream will fail to excract a float value if the exponent is too large
-        // To fix this, we first try with float, and on failure, try again with double.
-        // If exctraction is successful, then we just assign the double to the float, making it
-        // infinite, else there is another error.
-        auto pos = in.tellg();
-        if (!(in >> v)) {
-            in.clear();
-            in.seekg(pos);
-            double d;
-            if (!read_value_(in, d, fallback)) {
-                return false;
-            } else {
-                v = d;
-                return true;
-            }
-        }
+        return read_value_float_(in, v, fallback);
+    }
 
-        return true;
+    template<typename I>
+    bool read_value_(I& in, double& v, std::string& fallback) {
+        return read_value_float_(in, v, fallback);
     }
 
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
