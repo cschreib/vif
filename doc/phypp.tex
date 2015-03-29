@@ -1581,7 +1581,7 @@ Now we will call instead
 \section{File input/output \label{SEC:support:file}}
 % file.hpp
 
-\subsection{File system}
+\subsection{File system \label{SEC:support:file:system}}
 
 This section describes the function provided by the \phypp library that are related to file system management, i.e., getting informations, creating or copying files and directories. All paths can be either absolute, or relative to the working directory.
 
@@ -1698,7 +1698,7 @@ This function creates a new directory whose path is given in argument and return
 
 \end{itemize}
 
-\subsection{ASCII table input/output}
+\subsection{ASCII table input/output \label{SEC:support:file:ascii}}
 
 \begin{itemize}
 \item \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
@@ -1833,6 +1833,71 @@ Finally, note that it is possible to mix together vectors and \cppinline{_} in t
 \cppinline|void file::write_table_csv(string f, uint_t w, ...)| \itt{file::write_table_csv}
 
 \cppinline|void file::write_table_hdr(string f, uint_t w, ...)| \itt{file::write_table_hdr}
+
+This collection of functions will write the data contained inside one of multiple vectors into a file \cppinline{f}, in human-readable ``ASCII'' format\footnote{This is simple and convenient for small files, but if the volume of data is huge, consider instead using binary FITS files (\ref{SEC:support:fits:table}). This will be both faster to read and write, and will also occupy less space on your disk.}. The data is written in separate columns, with a fixed width of \cppinline{w} characters. Spaces are used to fill the empty space between columns.
+
+The first two functions in the list will just write all the data, and nothing else. The difference between the two is that the second version uses the ``CSV'' format (comma-separated values), i.e., appends a comma after each value. Apart from this, the functions behave the same: after the column width \cppinline{w}, the following arguments can be any number of 1D vectors. They must contain the same number of elements. 2D vectors are also allowed, in which case, by convention, the first dimension is considered as the ``row'' dimension, and the second is the ``column'' dimension.
+
+Note that this function will only create the \emph{file}. If the path \cppinline{f} given in argument contains directories that do not exist, the function will fail. You have to create them yourself beforehand.
+
+For example, imagine we want to save the following data into a file:
+\begin{cppcode}
+    // Some arbitrary data
+    vec1u id = {1,2,3,4,5};
+    vec1i x = {125,568,9852,12,-51};
+    vec1i y = {-56,157,2,99,1024};
+    vec2f flux(5,2);
+    flux(_,0) = {0.0, 1.2, 5.6, 9.5, 1.5};
+    flux(_,1) = {9.6, 0.0, 4.5, 0.0, 0.0};
+\end{cppcode}
+
+We can use this function to create an ASCII table:
+\begin{cppcode}
+    // Write these in a file
+    file::write_table("some/path/to/a_table.dat", 8,
+        id, x, y, flux
+    );
+\end{cppcode}
+
+The content of the file will be:
+\begin{bashcode}
+       1     125     -56       0     9.6
+       2     568     157     1.2       0
+       3    9852       2     5.6     4.5
+       4      12      99     9.5       0
+       5     -51    1024     1.5       0
+\end{bashcode}
+
+Sometimes it is desirable to also add some information in the file about what kind of data is stored in each column. This is usually done with a \emph{header}, i.e., a couple of lines at the beginning of the file containing information about what the file contains, among other things. This can be done easily using the third function in the list above, \cppinline{file::write_table_hdr()}. Usage is fairly simple:
+\begin{cppcode}
+    // Write these in a file
+    file::write_table_hdr("some/path/to/a_table.dat", 8,
+        {"id", "x", "y", "flux_1", "flux_2"},
+        id, x, y, flux
+    );
+\end{cppcode}
+
+The resulting file is:
+\begin{bashcode}
+#     id       x       y  flux_1  flux_2
+#
+       1     125     -56       0     9.6
+       2     568     157     1.2       0
+       3    9852       2     5.6     4.5
+       4      12      99     9.5       0
+       5     -51    1024     1.5       0
+\end{bashcode}
+
+However it can be tedious to write the name of the columns manually, especially when they match closely the names of the vectors in the C++ code. For this reason, another way to write the above file is to use an alternative version of this function and the \cppinline{ftable()} macro:
+\begin{cppcode}
+    // Write these in a file
+    file::write_table_hdr("some/path/to/a_table.dat", 8,
+        ftable(id, x, y, flux)
+    );
+\end{cppcode}
+
+This will take the C++ name of the variables and will use them directly as column names. For 2D vectors, ``\cppinline{_i}'' is appended to the name of the vector for each column \cppinline{i}. If you need better looking headers, you will have to write them manually using the previous signature.
+
 \end{itemize}
 
 \section{String manipulation \label{SEC:support:string}}
@@ -2283,7 +2348,7 @@ Finally, note that this support library introduces a new type: \cppinline{fits::
 
 We now describe the various functions offered by this library, split into categories.
 
-\subsection{Generic header functions}
+\subsection{Generic header functions \label{SEC:support:fits:header}}
 
 \begin{itemize}
 \item \cppinline|header fits::read_header(string f)| \itt{fits::read_header}
@@ -2299,7 +2364,7 @@ We now describe the various functions offered by this library, split into catego
 
 \end{itemize}
 
-\subsection{FITS images input/output}
+\subsection{FITS images input/output \label{SEC:support:fits:image}}
 
 \begin{itemize}
 \item \cppinline|uint_t fits::file_axes(string)| \itt{fits::file_axes}
@@ -2332,7 +2397,7 @@ We now describe the various functions offered by this library, split into catego
 
 \end{itemize}
 
-\subsection{WCS coordinates}
+\subsection{WCS coordinates \label{SEC:support:fits:wcs}}
 
 \begin{itemize}
 \item \cppinline|bool fits::make_wcs_header(auto p, header& hdr)| \itt{fits::make_wcs_header}
@@ -2351,7 +2416,7 @@ We now describe the various functions offered by this library, split into catego
 
 \end{itemize}
 
-\subsection{FITS tables input/output}
+\subsection{FITS tables input/output \label{SEC:support:fits:table}}
 
 \begin{itemize}
 \item \cppinline|vec<1,auto> fits::read_table_columns(string)| \itt{fits::read_table_columns}
