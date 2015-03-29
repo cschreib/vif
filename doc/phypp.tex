@@ -1,5 +1,7 @@
 \documentclass[12pt]{report}
 
+\usepackage[T1]{fontenc}
+% \usepackage{lmodern}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{txfonts}
@@ -95,6 +97,9 @@
 \newmintinline{cpp}{fontsize=\small}
 \newminted{bash}{fontsize=\small}
 \newmintinline{bash}{fontsize=\small}
+
+\newcommand{\cpptrue}{\cppinline{true}\xspace}
+\newcommand{\cppfalse}{\cppinline{false}\xspace}
 
 \newcommand{\footlabel}[2]{\footnote{\label{#1}#2}}
 \newcommand{\footref}[1]{\textsuperscript{\ref{#1}}}
@@ -402,7 +407,7 @@ vec1f w; // default constructor: w is empty
 
 \item \cppinline|explicit vec::vec(...); // The dimension constructor|
 
-The \stdvec has a constructor to create a new vector of a given size. The \phypp vector also offers this feature, however it is rendered a bit more complex by the possibility of having multi-dimensional vectors. In particular, it is possible to specify the size either by giving all the dimensions one by one, or by specifying some (or all) as a \cppinline|std::array|. In all cases, the vector is populated with the number of requested elements, and all these elements are \emph{default initialized} (i.e., integers and floats are initialized to \cppinline{0}, booleans to \cppinline{false}, and \cppinline|std::string| are empty). This constructor is declared \cppinline{explicit} to prevent interference with the other constructors and assignments.
+The \stdvec has a constructor to create a new vector of a given size. The \phypp vector also offers this feature, however it is rendered a bit more complex by the possibility of having multi-dimensional vectors. In particular, it is possible to specify the size either by giving all the dimensions one by one, or by specifying some (or all) as a \cppinline|std::array|. In all cases, the vector is populated with the number of requested elements, and all these elements are \emph{default initialized} (i.e., integers and floats are initialized to \cppinline{0}, booleans to \cppfalse, and \cppinline|std::string| are empty). This constructor is declared \cppinline{explicit} to prevent interference with the other constructors and assignments.
 
 \begin{example}
 \begin{cppcode}
@@ -518,7 +523,7 @@ z = w[id];
 \begin{itemize}
 \item \cppinline{bool vec::empty() const}
 
-This function will return \cppinline{true} if this vector contains at least one element, and \cppinline{false} otherwise. In particular, \cppinline{true} will be returned for default constructed vectors, and after a call to \cppinline{vec::clear()}.
+This function will return \cpptrue if this vector contains at least one element, and \cppfalse otherwise. In particular, \cpptrue will be returned for default constructed vectors, and after a call to \cppinline{vec::clear()}.
 
 \begin{example}
 \begin{cppcode}
@@ -1142,7 +1147,7 @@ sl; // {3,4,5,99,99};
 \begin{itemize}
 \item \cppinline|vec1u where(vec<D,bool>)| \itt{where}
 
-This function will scan the \cppinline{bool} vector provided in argument, will store the flat indices (\ref{SEC:core:vec:indexing}) of each element which is \cppinline{true}, and will return all these indices in a vector. This is a very useful tool to filter and selectively modify vectors, and probably one of the most used function of the whole library.
+This function will scan the \cppinline{bool} vector provided in argument, will store the flat indices (\ref{SEC:core:vec:indexing}) of each element which is \cpptrue, and will return all these indices in a vector. This is a very useful tool to filter and selectively modify vectors, and probably one of the most used function of the whole library.
 
 \begin{example}
 \begin{cppcode}
@@ -1241,7 +1246,7 @@ w[u]; // {1,2,4,5,6,7,8}
 
 \item \vectorfunc \cppinline|bool is_any_of(T1 v1, vec<D2,T2> v2)| \itt{is_any_of}
 
-This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cppinline{true}, else it returns \cppinline{false}.
+This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cpptrue, else it returns \cppfalse.
 
 \begin{example}
 \begin{cppcode}
@@ -1285,7 +1290,7 @@ v[id1] == w[id2]; // always true
 
 \item \cppinline|bool astar_find(vec2b m, uint_t& x, y)| \itt{astar_find}
 
-This function uses the $A^\star$ (``A star'') algorithm to look inside a 2D boolean map \cppinline{m} and, starting from the position \cppinline{x} and \cppinline{y} (i.e. \cppinline{m(x,y)}), find the closest point that has a value of \cppinline{true}. Once this position is found, its indices are stored inside \cppinline{x} and \cppinline{y}, and the function returns \cppinline{true}. If no element inside \cppinline{m} is \cppinline{true}, then the function returns \cppinline{false}.
+This function uses the $A^\star$ (``A star'') algorithm to look inside a 2D boolean map \cppinline{m} and, starting from the position \cppinline{x} and \cppinline{y} (i.e. \cppinline{m(x,y)}), find the closest point that has a value of \cpptrue. Once this position is found, its indices are stored inside \cppinline{x} and \cppinline{y}, and the function returns \cpptrue. If no element inside \cppinline{m} is \cpptrue, then the function returns \cppfalse.
 
 \begin{example}
 \begin{cppcode}
@@ -1423,7 +1428,7 @@ x; // {{5,6,7}, {1,2,0}, {3,4,0}} // x is (3x3)
 \begin{itemize}
 \item \cppinline|void phypp_check(bool b, ...)| \itt{phypp_check}
 
-This function makes error checking easier. When called, it checks the value of \cppinline{b}. If \cppinline{b} is \cppinline{true}, then nothing happens. However if \cppinline{b} is \cppinline{false}, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the \phypp library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
+This function makes error checking easier. When called, it checks the value of \cppinline{b}. If \cppinline{b} is \cpptrue, then nothing happens. However if \cppinline{b} is \cppfalse, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the \phypp library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
 
 Since this function is actually implemented by a preprocessor macro, you should not worry about its performance impact. It will only affect the performances when something goes wrong and the program is about to crash. However the calculation of \cppinline{b} can itself be costly (for example, you may want to check that a vector is sorted), and there is no way around this.
 
@@ -1578,21 +1583,251 @@ Now we will call instead
 
 \subsection{File system}
 
+This section describes the function provided by the \phypp library that are related to file system management, i.e., getting informations, creating or copying files and directories. All paths can be either absolute, or relative to the working directory.
+
 \begin{itemize}
 \item \vectorfunc \cppinline|bool file::exists(string)| \itt{file::exists}
+
+This function returns \cpptrue if the path given in argument corresponds to a file or directory that actually exists on the disk, and \cppfalse otherwise.
+
+\begin{example}
+\begin{cppcode}
+    bool b = file::exists("~/.phypprc");
+    b; // hopefully true
+
+    b = file::exists("/i/do/not/exist");
+    b; // probably false
+\end{cppcode}
+\end{example}
+
 \item \cppinline|bool file::is_older(string f1, string f2)| \itt{file::is_older}
+
+This function returns \cpptrue if the file or directory \cppinline{f1} is \emph{older} than the file or directory \cppinline{f2}. The age of a file corresponds to the time spent since the files were last modified. If one of the two files does not exists, the function returns \cppfalse.
+
+\begin{example}
+\begin{cppcode}
+    bool b = file::is_older("~/.phypprc", "/usr/bin/cp");
+    b; // probably false
+\end{cppcode}
+\end{example}
+
 \item \cppinline|vec1s file::list_directories(string)| \itt{file::list_directories}
+
+This function scans the directory given in argument and returns the list of all directories it contains. An empty list is returned if no directory is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
+
+\begin{example}
+\begin{cppcode}
+    vec1s d = file::list_directories("/path/to/phypp/");
+    d; // {"bin", "cmake", "doc", "include", "test", "tools"}
+
+    d = file::list_directories("/path/to/phypp/t*");
+    d; // {"test", "tools"}
+\end{cppcode}
+\end{example}
+
 \item \cppinline|vec1s file::list_files(string)| \itt{file::list_files}
+
+This function scans the directory given in argument and returns the list of all files it contains (excluding directories). An empty list is returned if no file is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
+
+\begin{example}
+\begin{cppcode}
+    vec1s d = file::list_files("/path/to/phypp/doc");
+    d; // {"compile.sh", "phypp.pdf", "phypp.tex"}
+
+    d = file::list_files("/path/to/phypp/doc/*.tex");
+    d; // {"phypp.tex"}
+\end{cppcode}
+\end{example}
+
 \item \vectorfunc \cppinline|string file::directorize(string)| \itt{file::directorize}
+
+This function modifies the path given in argument to make sure that it can be used as a directory, i.e.~in UNIX systems it makes sure that it ends with a forward slash \cppinline{/}. The goal is to produce a directory path that can be appended the base name of a file to form a valid file path.
+
+\begin{example}
+\begin{cppcode}
+    std::string p = file::directorize("/some/path");
+    p; // "/some/path/"
+
+    p = file::directorize("/another/path/");
+    p; // "/another/path/"
+\end{cppcode}
+\end{example}
+
 \item \vectorfunc \cppinline|string file::get_basename(string)| \itt{file::get_basename}
+
+This function extracts the name of a file from its full path given in argument. If this path is that of a directory, the function returns the name of this directory. This behavior is similar to the \texttt{bash} function \texttt{basename}.
+
+\begin{example}
+\begin{cppcode}
+    std::string n = file::get_basename("/some/path");
+    n; // "path"
+
+    n = file::get_basename("/another/path/to/a/file.txt");
+    n; // "file.txt"
+\end{cppcode}
+\end{example}
+
 \item \vectorfunc \cppinline|string file::get_directory(string)| \itt{file::get_directory}
+
+This function extracts the path of the directory that contains the file given in argument. If the path in argument is that of a directory, the function returns the path of its parent directory. This behavior is similar to the \texttt{bash} function \texttt{dirname}, except that the returned path ends with a forward slash \cppinline{/}.
+
+\begin{example}
+\begin{cppcode}
+    std::string n = file::get_directory("/some/path");
+    n; // "/some/"
+
+    n = file::get_directory("/another/path/to/a/file.txt");
+    n; // "/another/path/to/a/"
+\end{cppcode}
+\end{example}
+
 \item \vectorfunc \cppinline|bool file::mkdir(string)| \itt{file::mkdir}
+
+This function creates a new directory whose path is given in argument and returns \cpptrue. If the directory could not be created (e.g., because of permission issues), the function returns \cppfalse. If the directory already exists, the function does nothing and returns \cpptrue.
+
+\begin{example}
+\begin{cppcode}
+    bool b = file::mkdir("/path/to/phypp/a/new/directory");
+    // Will most likely create the directories:
+    //  - /path/to/phypp/a
+    //  - /path/to/phypp/a/new
+    //  - /path/to/phypp/a/new/directory
+    b; // maybe true or false, depending on your permissions
+\end{cppcode}
+\end{example}
+
 \end{itemize}
 
 \subsection{ASCII table input/output}
 
 \begin{itemize}
 \item \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
+
+This function reads the content of the ASCII table \cppinline{f} and stores the data inside vectors. The second argument \cppinline{s} gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table. Note that, due to the lack of standard formatting for the header, there is no automatic way to ignore these lines.
+
+The vectors in which the data should be stored are given in argument, one after the other. Each column of the file will be stored in a different vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
+
+Columns in the file can be separated by any number of spaces and tabulations. While this is better for human readability, columns need not be aligned to be read by this function. However, ``holes'' in the table are not supported, i.e., rows that only have data for some columns but not all. If such a situation is encountered, the ``hole'' is considered as white spaces and ignored, and the data from this column is actually read from the next one. This will make the function report and error only if all columns of the file are read. For this reason, it is advised to always read all the columns of a given file, even those that are not used (see below for an efficient way to do that). The table may contain empty lines however, they will simply be ignored.
+
+Regarding the type of the data. ASCII tables are not strongly typed: as long as the data in the table can be converted to a value of its corresponding vector, this function will be able to read it. There are particular rules though:
+\begin{itemize}
+\item Strings may not contain spaces (since they will be understood as column separators). Adding quotes \cppinline{"..."} will \emph{not} change that.
+\item Floating point columns can contain special values such as NaN or the infinity. These can be spelled \cppinline{nan}, \cppinline{+nan}, \cppinline{-nan}, \cppinline{+inf}, \cppinline{-inf}, \cppinline{inf}, \cppinline{inf+} or \cppinline{inf-} (case does not matter). The special value \cppinline{null} is also accepted and means zero. Both fixed point and scientific notation is allowed.
+\item In general for arithmetic data, if the value to be read is too large to fit in the corresponding C++ variable, the program will stop report the error. This will happen for example is trying to read a number like \cppinline{1e128} inside a \cppinline{float} vector. Use a larger data type to fix this (e.g.~\cppinline{double} in this particular case).
+\end{itemize}
+
+In the following examples, we will parse a table
+\begin{cppcode}
+    // File extension does not matter
+    std::string table = "some/ascii_table.dat";
+\end{cppcode}
+...which contains the following columns:
+\begin{bashcode}
+#  - source ID              (integer)
+#  - right ascension        (double)
+#  - declination            (double)
+#  - badpixel flag          (integer)
+#  - contamination flag     (integer)
+#  - cov   24               (float)
+#  - cov   160              (float)
+#  - flux  24               (float)
+#  - error 24               (float)
+#  - flux  160              (float)
+#  - error 160              (float)
+\end{bashcode}
+This is the header of the table, and it contains \cppinline{11} lines that should be ignored.
+
+Here is how to read the first three columns:
+\begin{cppcode}
+    // First declare the vectors and their types
+    vec1u id;
+    vec1d ra, dec;
+
+    // Then read the data
+    file::read_table(table, 11,
+        id, ra, dec // read three columns
+    );
+\end{cppcode}
+
+The placeholder character \cppinline{_} can be used in the argument list to skip a given column. Let's say we want to read the \cppinline{contamination} flag, but we don't care about the \cppinline{badpixel} flag. We can write:
+\begin{cppcode}
+    // First declare the vectors and their types
+    vec1u id;
+    vec1d ra, dec;
+    vec1u contam;
+
+    // Then read the data
+    file::read_table(table, 11,
+        id, ra, dec, // read three columns
+        _, contam    // ignore one column, and read one column
+    );
+\end{cppcode}
+
+Lastly, the \cppinline{file::columns(n, ...)} function can be used to group several columns and repeat \cppinline{n} times the same extraction pattern. This can be used to read multiple columns inside a single two-dimensional vector. Let's say we want now to read the data from \texttt{cov24} and \texttt{cov160} in a single vector:
+\begin{cppcode}
+    // First declare the vectors and their types
+    vec1u id;
+    vec1d ra, dec;
+    vec1u contam;
+    vec2f cov;
+
+    // Then read the data
+    file::read_table(table, 11,
+        id, ra, dec, // read three columns
+        _, contam,   // ignore one column, and read one column
+        file::columns(2, cov) // read two columns in one vector
+    );
+    cov(_,0); // contains data from "cov 24"
+    cov(_,1); // contains data from "cov 160"
+\end{cppcode}
+
+The \cppinline{file::columns(n, ...)} function can also be used to ignore multiple columns at a time. Let's say we don't want to read the \cppinline{contamination} flag anymore, so we need to skip two consecutive columns. We could write ``\cppinline{_, _}'', but this becomes tedious and error prone when many columns are to be ignored. Instead, we can write:
+\begin{cppcode}
+    // First declare the vectors and their types
+    vec1u id;
+    vec1d ra, dec;
+    vec2f cov;
+
+    // Then read the data
+    file::read_table(table, 11,
+        id, ra, dec,          // read three columns
+        file::columns(2, _),  // ignore two columns
+        file::columns(2, cov) // read two columns in one vector
+    );
+\end{cppcode}
+
+The \cppinline{file::columns(n, ...)} function can also be used to read consecutive groups of columns with a given pattern. Let's say we now want to read the \cppinline{flux} and \cppinline{error} inside their respective two-dimensional vectors. The pattern here is ``\cppinline{flux}, \cppinline{error}, \cppinline{flux}, \cppinline{error}, ...''. We can parse this using:
+\begin{cppcode}
+    // First declare the vectors and their types
+    vec1u id;
+    vec1d ra, dec;
+    vec2f cov, flux, err;
+
+    // Then read the data
+    file::read_table(table, 11,
+        id, ra, dec,           // read three columns
+        file::columns(2, _),   // ignore two columns
+        file::columns(2, cov), // read two columns in one vector
+        file::columns(2, flux, err) // read (flux,err,flux,err)
+    );
+\end{cppcode}
+
+Finally, note that it is possible to mix together vectors and \cppinline{_} in this pattern. Imagine we just want to read the \cppinline{flux} columns and ignore the \cppinline{errors}. We can write:
+\begin{cppcode}
+    // First declare the vectors and their types
+    vec1u id;
+    vec1d ra, dec;
+    vec2f cov, flux;
+
+    // Then read the data
+    file::read_table(table, 11,
+        id, ra, dec,           // read three columns
+        file::columns(2, _),   // ignore two columns
+        file::columns(2, cov), // read two columns in one vector
+        file::columns(2, flux, _) // read (flux,_,flux,_)
+    );
+\end{cppcode}
+
 \item \cppinline|void file::write_table(string f, uint_t w, ...)| \itt{file::write_table}
 
 \cppinline|void file::write_table_csv(string f, uint_t w, ...)| \itt{file::write_table_csv}
@@ -1730,7 +1965,7 @@ The mathematics support library is among the largest inside \phypp. It contains 
 
 This library provides the following global constants:
 \begin{itemize}
-\item \cppinline{fnan}\itt{fnan} and \cppinline{dnan}\itt{dnan}. These are the \cppinline{float} and \cppinline{double} representation of the ``not-a-number'' (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., \cppinline{2.0 + fnan == fnan}). More troubling, any comparison operation involving a NaN will return \cppinline{false}, e.g., \cppinline{(10.0 < fnan) == false} and \cppinline{(10.0 >= fnan) == false} too. The only notable exception to this rule is that \cppinline{(fnan != fnan) == true}. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as \cppinline{-99}. Using NaN in this case is clearer.
+\item \cppinline{fnan}\itt{fnan} and \cppinline{dnan}\itt{dnan}. These are the \cppinline{float} and \cppinline{double} representation of the ``not-a-number'' (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., \cppinline{2.0 + fnan == fnan}). More troubling, any comparison operation involving a NaN will return \cppfalse, e.g., \cppinline{(10.0 < fnan) == false} and \cppinline{(10.0 >= fnan) == false} too. The only notable exception to this rule is that \cppinline{(fnan != fnan) == true}. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as \cppinline{-99}. Using NaN in this case is clearer.
 
 \item \cppinline{fpi}\itt{fpi} and \cppinline{dpi}\itt{dpi}. This is the \cppinline{float} and \cppinline{double} closest representation of the number $\pi = 3.14519...$.
 
@@ -2053,7 +2288,9 @@ We now describe the various functions offered by this library, split into catego
 \begin{itemize}
 \item \cppinline|header fits::read_header(string f)| \itt{fits::read_header}
 
-\cppinline|header fits::read_header(string f, uint_t s)|
+\cppinline|header fits::read_header_hdu(string f, uint_t hdu)|
+
+\cppinline|header fits::read_header_sectfits(string f, uint_t s)|
 
 \item \cppinline|bool fits::getkey(header hdr, string k, T& v)| \itt{fits::getkey}
 
