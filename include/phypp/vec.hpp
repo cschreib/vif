@@ -35,28 +35,56 @@ std::string pretty_type_(type_list<const T>) {
     return "const "+pretty_type_(type_list<T>{});
 };
 
-std::string pretty_type_(type_list<int_t>) {
+std::string pretty_type_(type_list<char>) {
+    return "char";
+};
+
+std::string pretty_type_(type_list<short>) {
+    return "short";
+};
+
+std::string pretty_type_(type_list<int>) {
     return "int";
 };
 
-std::string pretty_type_(type_list<uint_t>) {
+std::string pretty_type_(type_list<long>) {
+    return "long";
+};
+
+std::string pretty_type_(type_list<long long>) {
+    return "llong";
+};
+
+std::string pretty_type_(type_list<unsigned char>) {
+    return "uchar";
+};
+
+std::string pretty_type_(type_list<unsigned short>) {
+    return "ushort";
+};
+
+std::string pretty_type_(type_list<unsigned int>) {
     return "uint";
 };
 
-std::string pretty_type_(type_list<char>) {
-    return "char";
+std::string pretty_type_(type_list<unsigned long>) {
+    return "ulong";
+};
+
+std::string pretty_type_(type_list<unsigned long long>) {
+    return "ullong";
 };
 
 std::string pretty_type_(type_list<bool>) {
     return "bool";
 };
 
-std::string pretty_type_(type_list<double>) {
-    return "double";
-};
-
 std::string pretty_type_(type_list<float>) {
     return "float";
+};
+
+std::string pretty_type_(type_list<double>) {
+    return "double";
 };
 
 std::string pretty_type_(type_list<std::string>) {
