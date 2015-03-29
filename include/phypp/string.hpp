@@ -48,40 +48,11 @@ std::string strn(const double& t) {
     return ss.str();
 }
 
-template<typename T>
-std::string strn(const T& t, std::size_t n, char fill = '0') {
-    if (n <= 1) {
-        return strn(t);
-    }
-    if (t == 0) {
-        return std::string(n-1, fill)+'0';
-    } else {
-        std::ostringstream ss;
-        ss << t;
-        std::size_t nz = n-1 - floor(log10(t));
-        if (nz > 0 && nz < 6) {
-            return std::string(nz, fill) + ss.str();
-        } else {
-            return ss.str();
-        }
-    }
-}
-
 template<std::size_t Dim, typename Type>
 vec<Dim,std::string> strna(const vec<Dim,Type>& v) {
     vec<Dim,std::string> s = strarr(v.dims);
     for (uint_t i : range(v)) {
         s.data[i] = strn(v.safe[i]);
-    }
-
-    return s;
-}
-
-template<std::size_t Dim, typename Type>
-vec<Dim,std::string> strna(const vec<Dim,Type>& v, std::size_t n, char fill = '0') {
-    vec<Dim,std::string> s = strarr(v.dims);
-    for (uint_t i : range(v)) {
-        s.data[i] = strn(v.safe[i], n, fill);
     }
 
     return s;

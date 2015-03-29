@@ -16,7 +16,9 @@ std::string today() {
     std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm tm = *std::localtime(&t);
     std::ostringstream ss;
-    ss << strn(tm.tm_year+1900,4) << strn(tm.tm_mon+1, 2) << strn(tm.tm_mday,2);
+    ss << align_right(strn(tm.tm_year+1900),4,'0')
+       << align_right(strn(tm.tm_mon+1),2,'0')
+       << align_right(strn(tm.tm_mday),2,'0');
     return ss.str();
 }
 
@@ -41,9 +43,9 @@ std::string time_str(T t) {
         std::size_t sec  = floor(t) - day*24*60*60 - hour*60*60 - min*60;
 
         if (day  != 0) date += strn(day)+'d';
-        if (hour != 0) date += strn(hour,2)+'h';
-        if (min  != 0) date += strn(min,2)+'m';
-        date += strn(sec,2)+'s';
+        if (hour != 0) date += align_right(strn(hour),2,'0')+'h';
+        if (min  != 0) date += align_right(strn(min),2,'0')+'m';
+        date += align_right(strn(sec),2,'0')+'s';
 
         if (date[0] == '0' && date.size() != 2) {
             date.erase(0,1);
@@ -64,9 +66,9 @@ std::string seconds_str(T t) {
     std::size_t ns  = floor((((t - sec)*1000 - ms)*1000 - us)*1000);
 
     if (sec != 0)                  date += strn(sec)+"s";
-    if (ms  != 0 || !date.empty()) date += strn(ms,3)+"ms";
-    if (us  != 0 || !date.empty()) date += strn(us,3)+"us";
-    date += strn(ns,3)+"ns";
+    if (ms  != 0 || !date.empty()) date += align_right(strn(ms),3,'0')+"ms";
+    if (us  != 0 || !date.empty()) date += align_right(strn(us),3,'0')+"us";
+    date += align_right(strn(ns),3,'0')+"ns";
 
     while (date[0] == '0' && date.size() != 3) {
         date.erase(0,1);
@@ -119,9 +121,9 @@ void progress_(progress_t& p) {
     msg += "["+std::string(floor(ndash*(p.i+1)/double(p.n)),'-')
         + std::string(ndash - floor(ndash*(p.i+1)/double(p.n)),' ')+"] ";
     // Iteration count
-    msg += strn((p.i+1), floor(log10(double(p.n))) + 1, ' ')+" ";
+    msg += align_right(strn(p.i+1), floor(log10(double(p.n))) + 1)+" ";
     // Percentage
-    msg += strn(std::size_t(floor(100.0*(p.i+1)/double(p.n))), 3, ' ')+"%, ";
+    msg += align_right(strn(std::size_t(floor(100.0*(p.i+1)/double(p.n)))), 3)+"%, ";
     // Timings
     msg += time_str(total)+" elapsed, "+time_str(remaining)+" left, "
         + time_str(total+remaining)+" total";

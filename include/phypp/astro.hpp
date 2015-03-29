@@ -767,8 +767,8 @@ void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
         }
     };
 
-    sra = strn(rah)+':'+strn(ram,2)+':'+format_sec(ras);
-    sdec = strn(dech)+':'+strn(decm,2)+':'+format_sec(decs);
+    sra = strn(rah)+':'+align_right(strn(ram),2,'0')+':'+format_sec(ras);
+    sdec = strn(dech)+':'+align_right(strn(decm),2,'0')+':'+format_sec(decs);
 }
 
 template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
