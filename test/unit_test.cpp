@@ -854,7 +854,7 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit(y, 1.0, 1.0, x, x*x);
         if (fr.success) {
-            check(abs(fr.params(0)) < 1e-6, "1");
+            check(fabs(fr.params(0)) < 1e-6, "1");
             check(fr.params(1), "-12");
             check(fr.params(2), "3.1415");
         } else {
@@ -878,7 +878,7 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit_pack(y, ye, x);
         if (fr.success) {
-            check(abs(fr.params(0)) < 1e-6, "1");
+            check(fabs(fr.params(0)) < 1e-6, "1");
             check(fr.params(1), "-12");
             check(fr.params(2), "3.1415");
         } else {
