@@ -715,7 +715,7 @@ dt {
   box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
 }
 #header nav {
-  max-width: 650px;
+  max-width: 750px;
   margin: 0 auto;
   padding: 0 10px;
   background: blue;
@@ -784,7 +784,8 @@ dt {
   font-family: 'OpenSansRegular', "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: normal;
   float: right;
-  margin-right: 10px;
+  margin-left: 14px;
+  margin-right: 6px;
   font-size: 11px;
 }
 
