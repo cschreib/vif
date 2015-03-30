@@ -1628,6 +1628,11 @@ namespace fits {
 
     void write_table_(file::macroed_t, fitsfile* fptr, int id, const std::string& names) {}
 
+
+    template<typename T, typename ... Args>
+    void write_table_(file::macroed_t, fitsfile* fptr, int id, const std::string& names,
+        const named_t<T>& v, Args&& ... args);
+
     template<typename T, typename ... Args>
     void write_table_(file::macroed_t, fitsfile* fptr, int id, const std::string& names,
         const T& v, Args&& ... args) {
