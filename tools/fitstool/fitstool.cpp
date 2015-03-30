@@ -891,11 +891,13 @@ bool make_2d(int argc, char* argv[], const std::string& file) {
             }
 
             for (int j = 1; j <= naxis; ++j) {
-                fits_delete_key(fptr, ("PC"+strn(i,2)+"_"+strn(j,2)).c_str(), &status);
+                fits_delete_key(fptr, ("PC"+align_right(strn(i),2,'0')+"_"+
+                                            align_right(strn(j),2,'0')).c_str(), &status);
                 if (status != 0) {
                     status = 0;
                 }
-                fits_delete_key(fptr, ("PC"+strn(j,2)+"_"+strn(i,2)).c_str(), &status);
+                fits_delete_key(fptr, ("PC"+align_right(strn(j),2,'0')+"_"+
+                                            align_right(strn(i),2,'0')).c_str(), &status);
                 if (status != 0) {
                     status = 0;
                 }
