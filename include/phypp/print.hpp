@@ -32,6 +32,25 @@ void note(Args&& ... args) {
     print("note: ", std::forward<Args>(args)...);
 }
 
+template<typename T>
+bool prompt(const std::string& msg, T& value, const std::string& err_msg = "") {
+    bool ok = false;
+
+    do {
+        std::cout << msg;
+        ok = (std::cin >> value);
+        if (!ok) {
+            std::cin.clear();
+            std::cin.ignore();
+            if (!err_msg.empty()) {
+                error(err_msg);
+            }
+        }
+    } while (!ok);
+
+    return ok;
+}
+
 #define phypp_check(value, ...) \
     if (!(value)) { \
         error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__); \
