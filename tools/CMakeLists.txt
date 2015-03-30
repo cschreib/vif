@@ -27,7 +27,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_definitions(-Wno-unneeded-internal-declaration)
     add_definitions(-Wno-unused-function)
     add_definitions(-Wno-unused-macros)
-    add_definitions(-Wno-weak-vtables)
 
     if((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 3.5) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 3.5))
         add_definitions(-Wno-old-style-cast)
