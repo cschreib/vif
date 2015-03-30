@@ -73,10 +73,15 @@ repeated_value<N,T> repeat(T t) {
 template<typename ... IArgs>
 struct unfolder;
 
+template<typename F, typename ... Args>
+struct deduce_return_type {
+    using type = decltype(std::declval<typename std::decay<F>::type>()(std::declval<Args&>()...));
+};
+
 template<>
 struct unfolder<> {
     template<typename F, typename ... OArgs>
-    using out_type = decltype(std::declval<typename std::decay<F>::type>()(std::declval<OArgs&>()...));
+    using out_type = typename deduce_return_type<F,OArgs...>::type;
 
     template<typename ... OArgs>
     struct out {
