@@ -2,7 +2,7 @@ Pre-requisites
 ==============
 
 1) You must have a recent compiler to compile C++ code. Either 'clang' (>= 3.3)
-   or 'gcc' (>= 4.8) will do.
+   or 'gcc' (>= 4.7) will do.
 
 2) You should have 'cmake' installed (see Appendix below for instructions on how
    to install it).
@@ -94,25 +94,25 @@ Appendix: installing dependencies (ubuntu and derivatives)
 
 Installing the required libraries in ubuntu-based systems is easy. You first
 need to run the following command:
-  sudo apt-get install cmake libcfitsio3-dev 
+  sudo apt-get install cmake libcfitsio3-dev
 
 If you want, you can also install the optional (but recommanded) libraries and
 tools:
   sudo apt-get install libccfits-dev liblapack-dev wcslib-dev libgsl0-dev libgoogle-perftools-dev libfftw3-dev gdb
 
-Lastly, if you want to use reflection, you will need to get a recent version 
+Lastly, if you want to use reflection, you will need to get a recent version
 of libclang.
 
 If running ubuntu Trusty Tarh (14.04) and above:
   sudo apt-get install libclang-3.5-dev
 Note: earlier versions are available, and even though phy++ is compatible with
 libclang as early as 3.3, the packages available in Ubuntu 14.04 for 3.3 and
-3.4 sometimes crash on valid code, and are therefore not supported. If for 
+3.4 sometimes crash on valid code, and are therefore not supported. If for
 some reason you cannot install version 3.5, please follow the same procedure
 as the older distributions below.
 
 If running any older ubuntu distribution, the packages available in the
-official repositories of ubuntu are too old or broken. But you can still get 
+official repositories of ubuntu are too old or broken. But you can still get
 the valid versions from unofficial repositories. To do so, add the following
 two lines in /etc/apt/sources.list:
   deb http://ppa.launchpad.net/h-rayflood/llvm/ubuntu precise main
@@ -120,7 +120,7 @@ two lines in /etc/apt/sources.list:
 Then run:
   sudo apt-get update
   sudo apt-get install libclang-3.3-dev
-You may install any other version provided it is >= 3.3. Contrary to the 
+You may install any other version provided it is >= 3.3. Contrary to the
 official Ubuntu packages, these unofficial packages are fully functionnal for
 any version of libclang >= 3.3.
 
@@ -134,7 +134,7 @@ if everything else fails.
 
 Since the build system of all these libraries can vary, please refer to each
 libraries' documentation for precise build instructions. Note that I will not
-offer support on how to compile and install these libraries, you will have to 
+offer support on how to compile and install these libraries, you will have to
 contact the libraries' respective authors.
 
 cfitsio:
