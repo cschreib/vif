@@ -1027,7 +1027,9 @@ for (uint_t i : range(1,3)) {
 \begin{itemize}
 \item \cppinline{vec1u mult_ids(vec v, uint_t i)} \itt{mult_ids}
 
-This is only useful for multidimensional vectors. This function converts a ``flat'' index \cppinline{i} (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector \cppinline{v}. The \cppinline{flat_id} function does the inverse job.
+\cppinline{vec1u mult_ids(array<uint_t> dims, uint_t i)}
+
+This is only useful for multidimensional vectors. This function converts a ``flat'' index \cppinline{i} (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector \cppinline{v} (or, in the second version, following the dimensions \cppinline{dims}). The \cppinline{flat_id} function does the inverse job.
 
 \begin{example}
 \begin{cppcode}

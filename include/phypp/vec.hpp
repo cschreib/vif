@@ -2484,6 +2484,18 @@ vec1u mult_ids(const vec<D,T>& v, uint_t i) {
     return r;
 }
 
+template<std::size_t D>
+vec1u mult_ids(const std::array<uint_t,D>& dims, uint_t i) {
+    vec1u r(D);
+
+    for (uint_t j : range(D)) {
+        r.safe[D-1-j] = i % dims[D-1-j];
+        i /= dims[D-1-j];
+    }
+
+    return r;
+}
+
 // Get flat ID from multi-dim IDs
 template<std::size_t D, typename T>
 uint_t flat_id_(const vec<D,T>& v, uint_t ret, cte_t<D>) {
