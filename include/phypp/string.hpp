@@ -106,14 +106,6 @@ vec<Dim,bool> from_string(const vec<Dim,std::string*>& s, vec<Dim,T>& t) {
     return res;
 }
 
-template<typename T>
-T nstr(const std::string& s) {
-    std::istringstream ss(s);
-    T t;
-    assert(ss >> t);
-    return t;
-}
-
 std::string trim(std::string s, const std::string& chars = " \t") {
     std::size_t spos = s.find_first_of(chars);
     if (spos == 0) {
