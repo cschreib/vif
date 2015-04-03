@@ -38,7 +38,20 @@ bool prompt(const std::string& msg, T& value, const std::string& err_msg = "") {
 
     do {
         std::cout << msg;
-        ok = (std::cin >> value);
+        std::cin >> value;
+
+        if (!std::cin.fail()) {
+            if (std::cin.eof()) {
+                ok = true;
+            } else {
+                std::string rem;
+                std::cin >> rem;
+                ok = rem.find_first_not_of(" \t") == rem.npos;
+            }
+        } else {
+            ok = false;
+        }
+
         if (!ok) {
             std::cin.clear();
             std::cin.ignore();
