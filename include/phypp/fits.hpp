@@ -534,7 +534,7 @@ namespace fits {
             hdr = "END" + std::string(77, ' ');
         }
 
-        if (finite(params.pixel_scale)) {
+        if (is_finite(params.pixel_scale)) {
             if (!setkey(hdr, "CDELT1", -params.pixel_scale/3600.0)) {
                 error("make_wcs_header: could not set keyword 'CDELT1' to '",
                     -params.pixel_scale, "'");
@@ -560,7 +560,7 @@ namespace fits {
             }
         }
 
-        if (finite(params.pixel_ref_x) && finite(params.pixel_ref_y)) {
+        if (is_finite(params.pixel_ref_x) && is_finite(params.pixel_ref_y)) {
             if (!setkey(hdr, "CRPIX1", params.pixel_ref_x)) {
                 error("make_wcs_header: could not set keyword 'CRPIX1' to '",
                     params.pixel_ref_x, "'");
@@ -573,7 +573,7 @@ namespace fits {
             }
         }
 
-        if (finite(params.sky_ref_ra) && finite(params.sky_ref_dec)) {
+        if (is_finite(params.sky_ref_ra) && is_finite(params.sky_ref_dec)) {
             if (!setkey(hdr, "CRVAL1", params.sky_ref_ra)) {
                 error("make_wcs_header: could not set keyword 'CRVAL1' to '",
                     params.sky_ref_ra, "'");

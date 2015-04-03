@@ -36,22 +36,22 @@ int main(int argc, char* argv[]) {
 
 template<std::size_t D, typename T>
 rtype_t<T> fstddev(const vec<D,T>& v) {
-    return stddev(v[where(finite(v))]);
+    return stddev(v[where(is_finite(v))]);
 }
 
 template<std::size_t D, typename T>
 rtype_t<T> frms(const vec<D,T>& v) {
-    return rms(v[where(finite(v))]);
+    return rms(v[where(is_finite(v))]);
 }
 
 template<std::size_t D, typename T>
 rtype_t<T> fmean(const vec<D,T>& v) {
-    return mean(v[where(finite(v))]);
+    return mean(v[where(is_finite(v))]);
 }
 
 template<std::size_t D, typename T>
 rtype_t<T> fmedian(const vec<D,T>& v) {
-    return median(v[where(finite(v))]);
+    return median(v[where(is_finite(v))]);
 }
 
 struct flux_extractor {
@@ -109,7 +109,7 @@ struct flux_extractor {
 
             if (beam_smoothed) {
                 vec2d kernel;
-                if (finite(smooth_radius)) {
+                if (is_finite(smooth_radius)) {
                     kernel = gaussian_profile(psf.dims, smooth_radius);
                 } else {
                     kernel = psf;
@@ -137,7 +137,7 @@ struct flux_extractor {
 
     void extract(const vec2d& timg, vec1d& result) {
         if (large_bg) {
-            vec1u id = where(finite(timg));
+            vec1u id = where(is_finite(timg));
             if (id.empty()) {
                 result = replicate(dnan, nresult);
                 error("no pixel to fit");
@@ -149,7 +149,7 @@ struct flux_extractor {
             result[0] = r.params[1];
             result[1] = r.params[0];
         } else {
-            vec1u id = where(ipsf && finite(timg));
+            vec1u id = where(ipsf && is_finite(timg));
             if (id.empty()) {
                 result = replicate(dnan, nresult);
                 error("no pixel to fit");
@@ -304,7 +304,7 @@ struct logdisp_extractor {
 
         if (apcor == 0.0) auto_apcor = true;
 
-        if (!finite(bfrac)) bfrac = ffrac;
+        if (!is_finite(bfrac)) bfrac = ffrac;
 
         if (!init && psf.empty() && tpsf.empty()) {
             error("missing PSF file: psf=...");
@@ -356,7 +356,7 @@ struct logdisp_extractor {
         });
 
         if (!raper.empty()) {
-            vec1u idbg = where(opsf && finite(dsp));
+            vec1u idbg = where(opsf && is_finite(dsp));
             if (idbg.empty()) {
                 disp = dnan;
                 bg = dnan;
@@ -366,7 +366,7 @@ struct logdisp_extractor {
 
             bg = mean(sqr(dsp[idbg]));
 
-            vec1u idd = where(ipsf && finite(dsp));
+            vec1u idd = where(ipsf && is_finite(dsp));
             if (idbg.empty()) {
                 disp = dnan;
                 bg = dnan;
@@ -377,7 +377,7 @@ struct logdisp_extractor {
             disp = sqrt(apcor*total(sqr(dsp[idd]) - bg));
             bg = sqrt(bg);
         } else if (central) {
-            vec1u idbg = where(opsf && finite(dsp));
+            vec1u idbg = where(opsf && is_finite(dsp));
             if (idbg.empty()) {
                 disp = dnan;
                 bg = dnan;
@@ -388,7 +388,7 @@ struct logdisp_extractor {
             bg = median(dsp[idbg]);
             disp = sqrt(sqr(dsp[imax]) - sqr(bg))/psf[imax];
         } else if (large_bg) {
-            vec1u idd = where(mpsf && finite(dsp));
+            vec1u idd = where(mpsf && is_finite(dsp));
             if (idd.empty()) {
                 disp = dnan;
                 bg = dnan;
@@ -400,7 +400,7 @@ struct logdisp_extractor {
             disp = sqrt(r.params[1]);
             bg = 1.483*sqrt(r.params[0]);
         } else {
-            vec1u idd = where(ipsf && finite(dsp));
+            vec1u idd = where(ipsf && is_finite(dsp));
             if (idd.empty()) {
                 disp = dnan;
                 bg = dnan;
@@ -418,7 +418,7 @@ struct logdisp_extractor {
         }
 
         double fmed;
-        vec1u idf = where(ifpsf && finite(med));
+        vec1u idf = where(ifpsf && is_finite(med));
         if (idf.empty()) {
             disp = dnan;
             bg = dnan;
@@ -445,8 +445,8 @@ struct logdisp_extractor {
             bgs.push_back(b);
         });
 
-        disps = disps[where(finite(disps))];
-        bgs = bgs[where(finite(bgs))];
+        disps = disps[where(is_finite(disps))];
+        bgs = bgs[where(is_finite(bgs))];
 
         disp = stddev(disps)/sqrt(2);
         bg = stddev(bgs)/sqrt(2);

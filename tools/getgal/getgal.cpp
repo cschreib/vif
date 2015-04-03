@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
         if (verbose) print(mname[b]);
 
         int_t hsize;
-        if (finite(radius)) {
+        if (is_finite(radius)) {
             // Convert radius to number of pixels
             double aspix;
             if (fits::get_pixel_size(mfile[b], aspix)) {

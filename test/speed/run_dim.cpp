@@ -119,7 +119,7 @@ namespace speed_test {
 
             uint_t nwrong = 0;
             for (auto iter = p.first; iter != p.second; ++iter) {
-                nwrong += nan(*iter);
+                nwrong += is_nan(*iter);
             }
 
             if (nwrong == v.dims[dim]) {
@@ -128,8 +128,8 @@ namespace speed_test {
                 std::ptrdiff_t offset = (v.dims[dim]-nwrong)/2;
                 std::nth_element(p.first, p.first + offset, p.second,
                     [](rtype_t<Type> x0, rtype_t<Type> x1) {
-                        if (nan(x0)) return false;
-                        if (nan(x1)) return true;
+                        if (is_nan(x0)) return false;
+                        if (is_nan(x1)) return true;
                         return x0 < x1;
                     }
                 );

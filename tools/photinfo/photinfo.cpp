@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     }
 
     print("Photometry: [", ngal, " sources]");
-    vec1u gidg = where(finite(cat.flux) && finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
+    vec1u gidg = where(is_finite(cat.flux) && is_finite(cat.flux_err) && cat.flux > 0 && cat.flux_err > 0
         && cat.flux/cat.flux_err > 3);
 
     auto seed = make_seed(42);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
             auto f = cat.flux(_,i);
             auto e = cat.flux_err(_,i);
 
-            vec1u idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3);
+            vec1u idg3s = where(is_finite(f) && is_finite(e) && f > 0 && e > 0 && f/e > 3);
             if (!idg3s.empty()) {
                 vec1u hull = convex_hull(cat.ra[idg3s], cat.dec[idg3s]);
                 areas[i] = field_area_hull(cat.ra[idg3s], cat.dec[idg3s]);
@@ -158,8 +158,8 @@ int main(int argc, char* argv[]) {
         auto f = cat.flux(_,i);
         auto e = cat.flux_err(_,i);
 
-        vec1u idg = where(finite(f) && finite(e) && f > 0 && e > 0);
-        vec1u idg3s = where(finite(f) && finite(e) && f > 0 && e > 0 && f/e > 3);
+        vec1u idg = where(is_finite(f) && is_finite(e) && f > 0 && e > 0);
+        vec1u idg3s = where(is_finite(f) && is_finite(e) && f > 0 && e > 0 && f/e > 3);
 
         if (idg.empty() || idg3s.empty()) continue;
 

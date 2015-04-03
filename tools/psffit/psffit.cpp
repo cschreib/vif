@@ -56,16 +56,16 @@ int main(int argc, char* argv[]) {
 
     vec1u idf;
     if (psf_frac != 1.0) {
-        idf = where(finite(img) && finite(err) && finite(psf) &&
-            psf > (1.0 - psf_frac)*max(psf[where(finite(psf))]));
+        idf = where(is_finite(img) && is_finite(err) && is_finite(psf) &&
+            psf > (1.0 - psf_frac)*max(psf[where(is_finite(psf))]));
     } else if (radius != 0.0) {
         vec2d rad = generate_img({{img.dims[0], img.dims[1]}}, [=](uint_t x, uint_t y) {
             return sqr(double(x) - x0) + sqr(double(y) - y0);
         });
 
-        idf = where(finite(img) && finite(err) && finite(psf) && rad < sqr(radius));
+        idf = where(is_finite(img) && is_finite(err) && is_finite(psf) && rad < sqr(radius));
     } else {
-        idf = where(finite(img) && finite(err) && finite(psf));
+        idf = where(is_finite(img) && is_finite(err) && is_finite(psf));
     }
 
     if (nobg) {

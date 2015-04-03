@@ -3,7 +3,7 @@
 namespace speed_test {
     template<std::size_t D, typename T>
     rtype_t<T> median1(const vec<D,T>& v) {
-        vec1u ok = where(!nan(v));
+        vec1u ok = where(!is_nan(v));
         if (ok.empty()) return dnan;
 
         typename vec<1,T>::effective_type t = v[ok];
@@ -14,7 +14,7 @@ namespace speed_test {
 
     template<std::size_t D, typename T>
     rtype_t<T> median2(const vec<D,T>& v) {
-        vec1u ok = where(!nan(v));
+        vec1u ok = where(!is_nan(v));
         if (ok.empty()) return dnan;
 
         std::ptrdiff_t offset = ok.size()/2;
@@ -28,15 +28,15 @@ namespace speed_test {
     rtype_t<T> median3(vec<D,T> v) {
         uint_t nwrong = 0;
         for (uint_t i : range(v)) {
-            nwrong += nan(v[i]);
+            nwrong += is_nan(v[i]);
         }
 
         if (nwrong == v.size()) return dnan;
 
         std::ptrdiff_t offset = (v.size()-nwrong)/2;
         std::nth_element(v.begin(), v.begin() + offset, v.end(), [&v](rtype_t<T> i, rtype_t<T> j) {
-            if (nan(i)) return false;
-            if (nan(j)) return true;
+            if (is_nan(i)) return false;
+            if (is_nan(j)) return true;
             return i < j;
         });
         return *(v.begin() + offset);
@@ -46,15 +46,15 @@ namespace speed_test {
     rtype_t<T> inplace_median3(vec<D,T>& v) {
         uint_t nwrong = 0;
         for (uint_t i : range(v)) {
-            nwrong += nan(v[i]);
+            nwrong += is_nan(v[i]);
         }
 
         if (nwrong == v.size()) return dnan;
 
         std::ptrdiff_t offset = (v.size()-nwrong)/2;
         std::nth_element(v.begin(), v.begin() + offset, v.end(), [&v](rtype_t<T> i, rtype_t<T> j) {
-            if (nan(i)) return false;
-            if (nan(j)) return true;
+            if (is_nan(i)) return false;
+            if (is_nan(j)) return true;
             return i < j;
         });
         return *(v.begin() + offset);

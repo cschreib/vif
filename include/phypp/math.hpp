@@ -255,12 +255,12 @@ rtype_t<Type> bin_width(const vec<1,Type>& b) {
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-bool finite(const T& t) {
+bool is_finite(const T& t) {
     return std::isfinite(t);
 }
 
 template<std::size_t Dim, typename Type>
-vec<Dim,bool> finite(const vec<Dim,Type>& v) {
+vec<Dim,bool> is_finite(const vec<Dim,Type>& v) {
     vec<Dim,bool> r(v.dims);
     for (uint_t i : range(v)) {
         r.safe[i] = std::isfinite(v.safe[i]);
@@ -270,12 +270,12 @@ vec<Dim,bool> finite(const vec<Dim,Type>& v) {
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-bool nan(const T& t) {
+bool is_nan(const T& t) {
     return std::isnan(t);
 }
 
 template<std::size_t Dim, typename Type>
-vec<Dim,bool> nan(const vec<Dim,Type>& v) {
+vec<Dim,bool> is_nan(const vec<Dim,Type>& v) {
     vec<Dim,bool> r(v.dims);
     for (uint_t i : range(v)) {
         r.safe[i] = std::isnan(v.safe[i]);
@@ -593,7 +593,7 @@ rtype_t<Type> inplace_median(vec<Dim,Type>& v) {
 
     uint_t nwrong = 0;
     for (auto& t : v) {
-        nwrong += nan(t);
+        nwrong += is_nan(t);
     }
 
     if (nwrong == v.size()) return dnan;
@@ -601,8 +601,8 @@ rtype_t<Type> inplace_median(vec<Dim,Type>& v) {
     std::ptrdiff_t offset = (v.size()-nwrong)/2;
     std::nth_element(v.data.begin(), v.data.begin() + offset, v.data.end(),
         [](dtype i, dtype j) {
-            if (nan(dref<Type>(i))) return false;
-            if (nan(dref<Type>(j))) return true;
+            if (is_nan(dref<Type>(i))) return false;
+            if (is_nan(dref<Type>(j))) return true;
             return dref<Type>(i) < dref<Type>(j);
         }
     );
@@ -619,7 +619,7 @@ template<std::size_t Dim, typename Type, typename U>
 rtype_t<Type> percentile(const vec<Dim,Type>& v, const U& u) {
     phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
-    vec1u ok = where(finite(v));
+    vec1u ok = where(is_finite(v));
     if (ok.empty()) return 0;
 
     // TODO: use same algorithm than median
@@ -646,7 +646,7 @@ template<std::size_t Dim, typename Type, typename ... Args>
 typename vec<1,Type>::effective_type percentiles(const vec<Dim,Type>& v, const Args& ... args) {
     phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
-    vec1u ok = where(finite(v));
+    vec1u ok = where(is_finite(v));
     typename vec<1,Type>::effective_type t;
     if (ok.empty()) return t;
     t = v.safe[ok];
@@ -662,7 +662,7 @@ vec<Dim,bool> sigma_clip(const vec<Dim,Type>& v, double percl = 0.15, double per
     if (percl > 0.5) percl = 1.0 - percl;
     if (percl < 0.0) percl = 0.0;
 
-    if (!finite(percu)) {
+    if (!is_finite(percu)) {
         percu = 1 - percl;
     } else {
         if (percu < 0.5) percu = 1.0 - percu;
@@ -687,8 +687,8 @@ typename vec<Dim,Type>::const_iterator min_(const vec<Dim,Type>& v) {
     phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
 
     auto iter = std::min_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
-        if (nan(t1)) return false;
-        if (nan(t2)) return true;
+        if (is_nan(t1)) return false;
+        if (is_nan(t2)) return true;
         return t1 < t2;
     });
 
@@ -701,8 +701,8 @@ typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
     phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
 
     auto iter = std::max_element(v.begin(), v.end(), [](rtype_t<Type> t1, rtype_t<Type> t2){
-        if (nan(t1)) return true;
-        if (nan(t2)) return false;
+        if (is_nan(t1)) return true;
+        if (is_nan(t2)) return false;
         return t1 < t2;
     });
 
@@ -957,7 +957,7 @@ vec2u histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
 
 template<std::size_t Dim, typename Type>
 void data_info_(const vec<Dim,Type>& v) {
-    vec1u idok = where(finite(v));
+    vec1u idok = where(is_finite(v));
     print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
     if (idok.size() == 0) return;
 

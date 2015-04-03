@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
             fcat.dec = fcat.dec[tid];
         }
 
-        vec1u id = where(finite(fcat.ra) && finite(fcat.dec));
+        vec1u id = where(is_finite(fcat.ra) && is_finite(fcat.dec));
         fcat.ra = fcat.ra[id];
         fcat.dec = fcat.dec[id];
 

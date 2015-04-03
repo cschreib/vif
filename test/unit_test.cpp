@@ -963,9 +963,9 @@ int main(int argc, char* argv[]) {
         f = {2.0f, fnan, -1.0f, 0.0f, 4.45f, fnan, -1.5f};
         check(min(f), "-1.5"); check(max(f), "4.45");
         f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, finf, -1.5f};
-        check(min(f), "-1.5"); check(!finite(max(f)), "1");
+        check(min(f), "-1.5"); check(!is_finite(max(f)), "1");
         f = {2.0f, 3.0f, -1.0f, 0.0f, 4.45f, -finf, -1.5f};
-        check(!finite(min(f)), "1"); check(max(f), "4.45");
+        check(!is_finite(min(f)), "1"); check(max(f), "4.45");
         vec1f f2 = {1.0f, 5.0f, -1.0f, fnan, 12.0f, 6.0, -1e6};
         check(max(f, f2), "{2, 5, -1, 0, 12, 6, -1.5}");
         check(min(f, f2), "{1, 3, -1, 0, 4.45, -inf, -1e+06}");

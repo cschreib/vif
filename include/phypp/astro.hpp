@@ -39,7 +39,7 @@ psffit_result psffit(const vec<2,TypeM>& img, const vec<2,TypeE>& terr,
     img_type icut = subregion(img, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, 0.0);
     err_type ecut = subregion(err, {pos(0)-hx, pos(1)-hy, pos(0)+hx, pos(1)+hy}, max_error);
 
-    vec1u idnan = where(!finite(icut) || !finite(ecut));
+    vec1u idnan = where(!is_finite(icut) || !is_finite(ecut));
     if (!idnan.empty()) {
         icut[idnan] = 0.0;
         ecut[idnan] = max_error;
@@ -872,7 +872,7 @@ void pick_sources(const vec<2,Type>& img, const vec1d& x, const vec1d& y,
         auto cut = img(x[i]+r, y[i]+r).concretise();
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
-        if (total(!finite(cut)) != 0) {
+        if (count(!is_finite(cut)) != 0) {
             continue;
         }
 

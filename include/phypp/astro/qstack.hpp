@@ -153,7 +153,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
                 cut.data.data(), &anynul, &img.status);
 
             // Discard any source that contains a bad pixel (either infinite or NaN)
-            if (!params.keep_nan && total(!finite(cut)) != 0) {
+            if (!params.keep_nan && count(!is_finite(cut)) != 0) {
                 continue;
             }
 
@@ -295,7 +295,7 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& ffile
             wcut.data.data(), &anynul, &status);
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
-        if (!params.keep_nan && total(!finite(cut) || !finite(wcut)) != 0) {
+        if (!params.keep_nan && count(!is_finite(cut) || !is_finite(wcut)) != 0) {
             continue;
         }
 

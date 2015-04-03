@@ -139,7 +139,7 @@ vec2d mpfit_fdjac2(F&& deviate, const vec1d& xall, const vec1u& ifree, const vec
         // Reverse the sign of the step if using backward derivative or if using forward derivative
         // and the function would be evaluated beyond the provided upper limit.
         if (options.deriv[ip] == mpfit_options::deriv_backward ||
-            (!nan(options.upper_limit[ip]) && x[p] > options.upper_limit[ip] - h[p])) {
+            (!is_nan(options.upper_limit[ip]) && x[p] > options.upper_limit[ip] - h[p])) {
             h[p] = -h[p];
         }
     }
@@ -190,7 +190,7 @@ void mpfit_qrfac(vec2d& a, vec1u& ipiv, vec1d& rdiag, vec1d& acnorm) {
             vec1u r = rgen(i,n-1);
             uint_t kmax;
             double rmax = max(rdiag[r], kmax);
-            if (!nan(rmax) && kmax != 0) {
+            if (!is_nan(rmax) && kmax != 0) {
                 // Exchange rows
                 kmax += i;
                 std::swap(ipiv[i], ipiv[kmax]);
@@ -540,8 +540,8 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
 
     vec1d llim = options.lower_limit[ifree];
     vec1d ulim = options.upper_limit[ifree];
-    vec1u ilow = where(!nan(llim));
-    vec1u iup = where(!nan(ulim));
+    vec1u ilow = where(!is_nan(llim));
+    vec1u iup = where(!is_nan(ulim));
     bool anylim = !ilow.empty() || !iup.empty();
 
     vec1d mastep = options.max_step[ifree];
@@ -575,10 +575,10 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
 
         // Set derivatives of frozen parameters to zero
         for (uint_t p : range(n)) {
-            if (!nan(llim[p]) && total(fvec*fjac(p,_)) > 0.0) {
+            if (!is_nan(llim[p]) && total(fvec*fjac(p,_)) > 0.0) {
                 fjac(p,_) = 0.0;
             }
-            if (!nan(ulim[p]) && total(fvec*fjac(p,_)) < 0.0) {
+            if (!is_nan(ulim[p]) && total(fvec*fjac(p,_)) < 0.0) {
                 fjac(p,_) = 0.0;
             }
         }
@@ -621,7 +621,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
         // Check for overflow
         bool stop = false;
         for (double d : fjac) {
-            if (!finite(d)) {
+            if (!is_finite(d)) {
                 res.success = false;
                 res.reason = mpfit_result::overflow;
                 stop = true;
@@ -837,8 +837,8 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
         if (stop) break;
 
         // Check for over/underflow
-        if (!finite(ratio) || total(!finite(wa1)) != 0 || total(!finite(wa2)) != 0 ||
-            total(!finite(x)) != 0) {
+        if (!is_finite(ratio) || count(!is_finite(wa1)) != 0 ||
+            count(!is_finite(wa2)) != 0 || count(!is_finite(x)) != 0) {
             res.success = false;
             res.reason = mpfit_result::overflow;
             break;

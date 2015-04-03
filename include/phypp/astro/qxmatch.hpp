@@ -134,10 +134,10 @@ qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
         ra2.dims, " vs ", dec2.dims, ")");
 
     // Make sure we are dealing with finite coordinates...
-    phypp_check(count(!finite(ra1) || !finite(dec1)) == 0, "first RA and Dec coordinates "
-        "contain invalid values (infinite or NaN)");
-    phypp_check(count(!finite(ra2) || !finite(dec2)) == 0, "second RA and Dec coordinates "
-        "contain invalid values (infinite or NaN)");
+    phypp_check(count(!is_finite(ra1) || !is_finite(dec1)) == 0,
+        "first RA and Dec coordinates contain invalid values (infinite or NaN)");
+    phypp_check(count(!is_finite(ra2) || !is_finite(dec2)) == 0,
+        "second RA and Dec coordinates contain invalid values (infinite or NaN)");
 
     // Make sure that the requested number of matches is valid
     uint_t nth = clamp(params.nth, 1u, npos);
