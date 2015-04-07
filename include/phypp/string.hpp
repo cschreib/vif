@@ -179,58 +179,42 @@ uint_t find(const std::string& ts, const std::string& pattern) {
     }
 }
 
-void build_regex_(const std::string& regex, regex_t& re) {
-    int status = regcomp(&re, regex.c_str(), REG_EXTENDED | REG_NOSUB);
-    if (status != 0) {
-        error("match: parsing regex '"+regex+"'");
-        switch (status) {
-        case REG_NOMATCH :  print("    regexec() failed to match. "); break;
-        case REG_BADPAT :   print("    Invalid regular expression. "); break;
-        case REG_ECOLLATE : print("    Invalid collating element referenced. "); break;
-        case REG_ECTYPE :   print("    Invalid character class type referenced. "); break;
-        case REG_EESCAPE :  print("    Trailing \\ in pattern. "); break;
-        case REG_ESUBREG :  print("    Number in \\digit invalid or in error. "); break;
-        case REG_EBRACK :   print("    [ ] imbalance. "); break;
-        case REG_EPAREN :   print("    \\( \\) or ( ) imbalance. "); break;
-        case REG_EBRACE :   print("    \\{ \\} imbalance. "); break;
-        case REG_BADBR :    print("    Content of \\{ \\} invalid: not a number, number too large, "
-            "more than two numbers, first larger than second. "); break;
-        case REG_ERANGE :   print("    Invalid endpoint in range expression. "); break;
-        case REG_ESPACE :   print("    Out of memory. "); break;
-        case REG_BADRPT :   print("    ?, * or + not preceded by valid regular expression. "); break;
-        case REG_ENOSYS :   print("    The implementation does not support the function. "); break;
-        default :           print("    Unknown error."); break;
-        }
-        assert(false);
+std::string regex_get_error_(int status) {
+    switch (status) {
+    case REG_NOMATCH :  return "no match";
+    case REG_BADPAT :   return "invalid regular expression";
+    case REG_ECOLLATE : return "invalid collating element referenced";
+    case REG_ECTYPE :   return "invalid character class type referenced";
+    case REG_EESCAPE :  return "trailing \\ in pattern";
+    case REG_ESUBREG :  return "number in \\digit invalid or in error";
+    case REG_EBRACK :   return "[ ] imbalance";
+    case REG_EPAREN :   return "\\( \\) or ( ) imbalance";
+    case REG_EBRACE :   return "\\{ \\} imbalance";
+    case REG_BADBR :    return "content of \\{ \\} invalid: not a number, number too large, "
+        "more than two numbers, first larger than second";
+    case REG_ERANGE :   return "invalid endpoint in range expression";
+    case REG_ESPACE :   return "out of memory";
+    case REG_BADRPT :   return "?, * or + not preceded by valid regular expression";
+    case REG_ENOSYS :   return "the implementation does not support the function";
+    default :           return "unknown error";
     }
 }
 
+void build_regex_(const std::string& regex, regex_t& re) {
+    int status = regcomp(&re, regex.c_str(), REG_EXTENDED | REG_NOSUB);
+    phypp_check(status == 0, "parsing regex '", regex, "': ", regex_get_error_(status));
+}
+
 bool match_(const std::string& ts, const std::string& regex, regex_t& re) {
-    int status = regexec(&re, ts.c_str(), (size_t)0, nullptr, 0);
+    int status = regexec(&re, ts.c_str(), std::size_t(0), nullptr, 0);
 
-    if (status == 0) return true;
-    if (status == REG_NOMATCH) return false;
-
-    error("match: parsing regex '"+regex+"'");
-    switch (status) {
-    case REG_NOMATCH :  return false;
-    case REG_BADPAT :   print("    Invalid regular expression. "); break;
-    case REG_ECOLLATE : print("    Invalid collating element referenced. "); break;
-    case REG_ECTYPE :   print("    Invalid character class type referenced. "); break;
-    case REG_EESCAPE :  print("    Trailing \\ in pattern. "); break;
-    case REG_ESUBREG :  print("    Number in \\digit invalid or in error. "); break;
-    case REG_EBRACK :   print("    [ ] imbalance. "); break;
-    case REG_EPAREN :   print("    \\( \\) or ( ) imbalance. "); break;
-    case REG_EBRACE :   print("    \\{ \\} imbalance. "); break;
-    case REG_BADBR :    print("    Content of \\{ \\} invalid: not a number, number too large, "
-        "more than two numbers, first larger than second. "); break;
-    case REG_ERANGE :   print("    Invalid endpoint in range expression. "); break;
-    case REG_ESPACE :   print("    Out of memory. "); break;
-    case REG_BADRPT :   print("    ?, * or + not preceded by valid regular expression. "); break;
-    case REG_ENOSYS :   print("    The implementation does not support the function. "); break;
-    default :           print("    Unknown error."); break;
+    if (status == 0) {
+        return true;
     }
-    assert(false);
+
+    phypp_check(status == REG_NOMATCH, "parsing regex '", regex, "': ",
+        regex_get_error_(status));
+
     return false;
 }
 
@@ -267,12 +251,55 @@ bool match_any_of(const std::string& ts, const vec1s& regex) {
     return false;
 }
 
+std::pair<uint_t,uint_t> match_pos_(const std::string& ts, const std::string& regex,
+    regex_t& re) {
+
+    regmatch_t m;
+    int status = regexec(&re, ts.c_str(), std::size_t(1), &m, 0);
+
+    if (status == 0) {
+        return std::pair<uint_t,uint_t>{m.rm_so, m.rm_eo};
+    }
+
+    phypp_check(status == REG_NOMATCH, "parsing regex '", regex, "': ",
+        regex_get_error_(status));
+
+    return std::pair<uint_t,uint_t>{npos, npos};
+}
+
+std::pair<uint_t,uint_t> match_pos(const std::string& ts, const std::string& regex) {
+    regex_t re;
+    build_regex_(regex, re);
+    std::pair<uint_t,uint_t> ret = match_pos_(ts, regex, re);
+    regfree(&re);
+    return ret;
+}
+
+template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+    std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
+vec<Dim+1,uint_t> match_pos(const vec<Dim,Type>& v, const std::string& regex) {
+    regex_t re;
+    build_regex_(regex, re);
+    vec<Dim,uint_t> b(v.dims);
+    vec<Dim,uint_t> e(v.dims);
+    for (uint_t i = 0; i < v.size(); ++i) {
+        std::pair<uint_t,uint_t> p = match_pos_(v.safe[i], regex, re);
+        b.safe[i] = p.first;
+        e.safe[i] = p.second;
+    }
+    regfree(&re);
+
+    vec<Dim+1,uint_t> r = reform(std::move(b), 1, v.dims);
+    append<0>(r, e);
+    return r;
+}
 
 uint_t length(const std::string& s) {
     return s.size();
 }
 
-template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+template<typename T, typename enable =
+    typename std::enable_if<std::is_arithmetic<T>::value>::type>
 uint_t length(T c) {
     return 1u;
 }
