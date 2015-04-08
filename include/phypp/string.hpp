@@ -200,28 +200,19 @@ std::string regex_get_error_(int status) {
     }
 }
 
-void build_regex_(const std::string& regex, regex_t& re) {
-    int status = regcomp(&re, regex.c_str(), REG_EXTENDED | REG_NOSUB);
+void build_regex_(const std::string& regex, regex_t& re, int flags) {
+    int status = regcomp(&re, regex.c_str(), flags);
     phypp_check(status == 0, "parsing regex '", regex, "': ", regex_get_error_(status));
 }
 
-bool match_(const std::string& ts, const std::string& regex, regex_t& re) {
-    int status = regexec(&re, ts.c_str(), std::size_t(0), nullptr, 0);
-
-    if (status == 0) {
-        return true;
-    }
-
-    phypp_check(status == REG_NOMATCH, "parsing regex '", regex, "': ",
-        regex_get_error_(status));
-
-    return false;
+bool match_(const std::string& ts, regex_t& re) {
+    return regexec(&re, ts.c_str(), std::size_t(0), nullptr, 0) == 0;
 }
 
 bool match(const std::string& ts, const std::string& regex) {
     regex_t re;
-    build_regex_(regex, re);
-    bool ret = match_(ts, regex, re);
+    build_regex_(regex, re, REG_EXTENDED | REG_NOSUB);
+    bool ret = match_(ts, re);
     regfree(&re);
     return ret;
 }
@@ -230,10 +221,10 @@ template<std::size_t Dim, typename Type, typename enable = typename std::enable_
     std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
 vec<Dim,bool> match(const vec<Dim,Type>& v, const std::string& regex) {
     regex_t re;
-    build_regex_(regex, re);
+    build_regex_(regex, re, REG_EXTENDED | REG_NOSUB);
     vec<Dim,bool> r(v.dims);
     for (uint_t i = 0; i < v.size(); ++i) {
-        r.safe[i] = match_(v.safe[i], regex, re);
+        r.safe[i] = match_(v.safe[i], re);
     }
     regfree(&re);
     return r;
@@ -242,8 +233,8 @@ vec<Dim,bool> match(const vec<Dim,Type>& v, const std::string& regex) {
 bool match_any_of(const std::string& ts, const vec1s& regex) {
     for (uint_t i : range(regex)) {
         regex_t re;
-        build_regex_(regex.safe[i], re);
-        bool ret = match_(ts, regex.safe[i], re);
+        build_regex_(regex.safe[i], re, REG_EXTENDED | REG_NOSUB);
+        bool ret = match_(ts, re);
         regfree(&re);
         if (ret) return true;
     }
@@ -251,47 +242,42 @@ bool match_any_of(const std::string& ts, const vec1s& regex) {
     return false;
 }
 
-std::pair<uint_t,uint_t> match_pos_(const std::string& ts, const std::string& regex,
-    regex_t& re) {
+vec2s extract(const std::string& ts, const std::string& regex) {
+    vec2s ret;
 
-    regmatch_t m;
-    int status = regexec(&re, ts.c_str(), std::size_t(1), &m, 0);
+    regex_t re;
+    build_regex_(regex, re, REG_EXTENDED);
 
-    if (status == 0) {
-        return std::pair<uint_t,uint_t>{m.rm_so, m.rm_eo};
+    uint_t nmatch = 0;
+    uint_t p = regex.find_first_of('(');
+    while (p != npos) {
+        if (p == 0 || regex[p-1] != '\\') {
+            ++nmatch;
+        }
+
+        p = regex.find_first_of('(', p+1);
     }
 
-    phypp_check(status == REG_NOMATCH, "parsing regex '", regex, "': ",
-        regex_get_error_(status));
+    if (nmatch == 0) return ret;
 
-    return std::pair<uint_t,uint_t>{npos, npos};
-}
+    std::vector<regmatch_t> m(nmatch+1);
+    uint_t offset = 0;
+    int status = regexec(&re, ts.c_str(), nmatch+1, m.data(), 0);
 
-std::pair<uint_t,uint_t> match_pos(const std::string& ts, const std::string& regex) {
-    regex_t re;
-    build_regex_(regex, re);
-    std::pair<uint_t,uint_t> ret = match_pos_(ts, regex, re);
-    regfree(&re);
+    while (status == 0) {
+        vec1s tret;
+        tret.reserve(nmatch);
+        for (uint_t i : range(nmatch)) {
+            tret.push_back(ts.substr(offset+m[i+1].rm_so, m[i+1].rm_eo - m[i+1].rm_so));
+        }
+
+        append<0>(ret, reform(std::move(tret), 1, nmatch));
+
+        offset += m[0].rm_eo;
+        status = regexec(&re, ts.c_str() + offset, nmatch+1, m.data(), 0);
+    }
+
     return ret;
-}
-
-template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
-    std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
-vec<Dim+1,uint_t> match_pos(const vec<Dim,Type>& v, const std::string& regex) {
-    regex_t re;
-    build_regex_(regex, re);
-    vec<Dim,uint_t> b(v.dims);
-    vec<Dim,uint_t> e(v.dims);
-    for (uint_t i = 0; i < v.size(); ++i) {
-        std::pair<uint_t,uint_t> p = match_pos_(v.safe[i], regex, re);
-        b.safe[i] = p.first;
-        e.safe[i] = p.second;
-    }
-    regfree(&re);
-
-    vec<Dim+1,uint_t> r = reform(std::move(b), 1, v.dims);
-    append<0>(r, e);
-    return r;
 }
 
 uint_t length(const std::string& s) {
