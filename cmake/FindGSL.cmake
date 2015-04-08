@@ -96,6 +96,17 @@ else( WIN32 AND NOT CYGWIN AND NOT MSYS )
           GSL_INCLUDE_DIRS "${GSL_INCLUDE_DIRS}")
         string( REGEX REPLACE "-I[^;]+;" ""
           GSL_CFLAGS "${GSL_CFLAGS}")
+
+        # check if directories actually contain the headers
+        find_path( TEMP_GSL_INCLUDE_DIR
+          NAMES gsl/gsl_cdf.h gsl/gsl_randist.h
+          PATHS ${GSL_INCLUDE_DIRS}
+          NO_DEFAULT_PATH
+        )
+
+        if( NOT TEMP_GSL_INCLUDE_DIR )
+          set( GSL_FOUND FALSE )
+        endif( NOT TEMP_GSL_INCLUDE_DIR )
       else( RET EQUAL 0 )
         set( GSL_FOUND FALSE )
       endif( RET EQUAL 0 )
