@@ -160,10 +160,27 @@ namespace file {
         return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
     }
 
-    void copy(const std::string& file_from, const std::string& file_to) {
+    bool copy(const std::string& file_from, const std::string& file_to) {
         std::ifstream src(file_from, std::ios::binary);
+        if (!src.is_open()) return false;
         std::ofstream dst(file_to,   std::ios::binary);
+        if (!dst.is_open()) return false;
         dst << src.rdbuf();
+        return true;
+    }
+
+    std::string to_string(const std::string& file_name) {
+        std::string   dst;
+        std::ifstream src(file_name, std::ios::binary);
+        if (src) {
+            src.seekg(0, std::ios::end);
+            dst.resize(src.tellg());
+            src.seekg(0, std::ios::beg);
+            src.read(&dst[0], dst.size());
+            src.close();
+        }
+
+        return dst;
     }
 
     vec1s list_directories(const std::string& path = "") {

@@ -107,3 +107,26 @@ bool b = file::mkdir("/path/to/phypp/a/new/directory");
 b; // maybe true or false, depending on your permissions
 \end{cppcode}
 \end{example}
+
+\item \cppinline|bool file::copy(string from, to)| \itt{file::copy}
+
+This function creates a copy of the file \cppinline{from} at the location given in \cppinline{to} and returns \cpptrue. If the new file could not be created (e.g., because of permission issues), or if the file \cppinline{from} could not be found or read, the function returns \cppfalse. If the file \cppinline{to} already exists, it will be overwritten.
+
+\begin{example}
+\begin{cppcode}
+bool b = file::copy("/home/joe/.phypprc", "/home/bob/.phypprc");
+b; // maybe true or false, depending on your permissions
+\end{cppcode}
+\end{example}
+
+\item \cppinline|string file::to_string(string)| \itt{file::to_string}
+
+This function reads the content of the file whose path is given in argument, stores all the characters (including line break characters and spaces) inside a string an returns it. If the file does not exist, the function returns an empty string.
+
+\begin{example}
+\begin{cppcode}
+std::string r = file::to_string("/etc/lsb-release");
+// 'r' now contains all the lines of the file, each
+// separated by a newline character '\n'.
+\end{cppcode}
+\end{example}
