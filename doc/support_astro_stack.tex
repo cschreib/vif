@@ -1,0 +1,32 @@
+\item \itt{pick_sources} \begin{cppcode}
+bool pick_sources(vec<2,T> m, vec1d x, y, uint_t hs,
+                  vec<3,T>& c, vec1u& ids)
+\end{cppcode}
+
+\item \itt{qstack} \begin{cppcode}
+auto qstack(vec<1,T> ra, dec, string ff, uint_t hs, vec<3,T>& fc,
+            vec1u& i, auto options = default)
+\end{cppcode}
+
+\begin{cppcode}
+auto qstack(vec<1,T> ra, dec, string ff, fw, uint_t hs,
+            vec<3,T>& fc, wc, vec1u& i, auto options = default)
+\end{cppcode}
+
+\item \cppinline|auto qstack_mean(vec<3,T> fc)| \itt{qstack_mean}
+
+\cppinline|auto qstack_mean(vec<3,T> fc, wc)|
+
+\item \cppinline|auto qstack_median(vec<3,T> fc)| \itt{qstack_median}
+
+\item \cppinline|void qstack_bootstrap(vec<3,T> fc, uint_t nb, ns, auto seed, F f)| \itt{qstack_bootstrap}
+
+\cppinline|void qstack_bootstrap(vec<3,T> fc, wc, uint_t nb, ns, auto seed, F f)|
+
+\cppinline|void qstack_bootstrap(uint_t nb, ns, auto seed, F f, ...)|
+
+\item \cppinline|vec<3,T> qstack_mean_bootstrap(vec<3,T> fc, uint_t nb, ns, auto seed)| \itt{qstack_mean_bootstrap}
+
+\cppinline|vec<3,T> qstack_mean_bootstrap(vec<3,T> fc, wc, uint_t nb, ns, auto seed)|
+
+\item \cppinline|vec<3,T> qstack_median_bootstrap(vec<3,T> fc, uint_t nb, ns, auto seed)| \itt{qstack_median_bootstrap}

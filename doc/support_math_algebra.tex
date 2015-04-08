@@ -1,0 +1,43 @@
+\item \cppinline|vec<2,T> mmul(vec<2,T> a, b)| \itt{mmul}
+
+\cppinline|vec<1,V> mmul(vec<2,T> a, vec<1,U> b)|
+
+\cppinline|vec<1,V> mmul(vec<1,T> b, vec<2,U> a)|
+
+\item \cppinline|vec<2,T> transpose(vec<2,T>)| \itt{transpose}
+
+\item \cppinline|vec<1,T*> diagonal(vec<2,T>)| \itt{diagonal}
+
+\item \cppinline|vec2d identity_matrix(uint_t)| \itt{identity_matrix}
+
+\item \cppinline|vec2d scale_matrix(double sx, sy)| \itt{scale_matrix}
+
+\cppinline|vec2d scale_matrix(double s)|
+
+\item \cppinline|vec2d translation_matrix(double dx, dy)| \itt{translation_matrix}
+
+\item \cppinline|vec2d rotation_matrix(double a)| \itt{rotation_matrix}
+
+\item \cppinline|vec1d point2d(double x, y)| \itt{point2d}
+
+\item \lapack \cppinline|bool invert(vec2d a, vec2d& i)| \itt{invert}
+
+\lapack \cppinline|bool inplace_invert(vec2d&)| \itt{inplace_invert}
+
+\item \lapack \cppinline|bool invert_symmetric(vec2d a, vec2d& i)| \itt{invert_symmetric}
+
+\lapack \cppinline|bool inplace_invert_symmetric(vec2d&)| \itt{inplace_invert_symmetric}
+
+\item \lapack \cppinline|bool solve_symmetric(vec2d a, vec1d b, vec1d& r)| \itt{solve_symmetric}
+
+\lapack \cppinline|bool inplace_solve_symmetric(vec2d& a, vec1d& b)| \itt{inplace_solve_symmetric}
+
+\item \lapack \cppinline|bool eigen_symmetric(vec2d a, vec1d& va, vec1d& ve)| \itt{eigen_symmetric}
+
+\lapack \cppinline|bool inplace_eigen_symmetric(vec2d& a, vec1d& va)| \itt{inplace_eigen_symmetric}
+
+\item \fftw \cppinline|vec2cd fft(vec2d)| \itt{fft}
+
+\fftw \cppinline|vec2d ifft(vec2cd)| \itt{ifft}
+
+\item \cppinline|vec<1,W> convolve(vec<1,T> x, vec<1,U> y, vec<1,V> k)| \itt{convolve}

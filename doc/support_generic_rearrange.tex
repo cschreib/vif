@@ -1,0 +1,60 @@
+\item \cppinline|vec1u sort(vec)| \itt{sort}
+
+\cppinline|void inplace_sort(vec&)| \itt{inplace_sort}
+
+These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between the two versions is that \cppinline{sort} does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and \cppinline{inplace_sort} directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
+
+\begin{example}
+\begin{cppcode}
+// First version
+vec1i v = {1,5,6,3,7};
+vec1u id = sort(v); // {0,3,1,2,4}
+v[id]; // {1,3,5,6,7} is sorted
+// now, id can also be used to modify the order of
+// another vector of the same dimensions
+
+// Second version
+inplace_sort(v);
+v; // {1,3,5,6,7} is sorted
+\end{cppcode}
+\end{example}
+
+\item \cppinline|bool is_sorted(vec)| \itt{is_sorted}
+
+This function just traverses the whole input vector and checks if its elements are sorted by increasing value.
+
+\begin{example}
+\begin{cppcode}
+// First version
+vec1i v = {1,5,6,3,7};
+is_sorted(v); // false
+inplace_sort(v);
+v; // {1,3,5,6,7}
+is_sorted(v); // true
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec<1,T> reverse(vec<1,T>)| \itt{reverse}
+
+This function will inverse the order of all the elements inside the provided vector.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {1,2,3,4,5,6};
+vec1i w = reverse(v); // {6,5,4,3,2,1}
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec<1,T> shift(vec<1,T> v, int_t n, T d = 0)| \itt{shift}
+
+This function will shift the position of the elements inside the provided vector \cppinline{v} by a given amount of indices \cppinline{n}. Elements that would go outside of the bounds of the vector are destroyed. New elements are inserted and default constructed, or assigned the default value \cppinline{d} (optional argument).
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {1,2,3,4,5};
+vec1i sr = shift(v, 2);
+sr; // {0,0,1,2,3}
+vec1i sl = shift(v, -2, 99);
+sl; // {3,4,5,99,99};
+\end{cppcode}
+\end{example}

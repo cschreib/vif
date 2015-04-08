@@ -1,0 +1,16 @@
+\item \cppinline|vec<D,int_t>  indgen(...)| \itt{indgen}
+
+\cppinline|vec<D,uint_t> uindgen(...)| \itt{uindgen}
+
+\cppinline|vec<D,float>  findgen(...)| \itt{findgen}
+
+\cppinline|vec<D,double> dindgen(...)| \itt{dindgen}
+
+These functions will create a new vector, whose dimensions are specified in argument (like in the dimension constructor, \ref{SEC:core:vec:constructor}, or \cppinline{vec::resize()}, \ref{SEC:core:vec:member_fun}). After this vector is created, the function will fill it with values that start at \cppinline{0} and increment by steps of \cppinline{1} until the end of the vector.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = indgen(5);    // {0,1,2,3,4}
+vec2u w = uindgen(3,2); // {{0,1}, {2,3}, {4,5}}
+\end{cppcode}
+\end{example}

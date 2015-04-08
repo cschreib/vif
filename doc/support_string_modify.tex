@@ -1,0 +1,352 @@
+\item \vectorfunc \cppinline|bool empty(string s)| \itt{empty}
+
+This function will return \cpptrue if the provided string does not contain any character \emph{at all} (inluding spaces), and \cppfalse otherwise.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = {"", "abc", "   "};
+vec1b b = empty(str);
+b; // {true, false, false}
+// Not to be confused with the vec::empty() function
+str.empty(); // false
+str = {""};
+str.empty(); // false
+str = {};
+str.empty(); // true
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|uint_t length(string s)| \itt{length}
+
+This function will return the length of the provided string, i.e., the number of character it contains (including spaces). If the string is empty (see above), the function will return zero.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = {"", "abc", " a b"};
+vec1u n = length(str);
+n; // {0, 3, 4}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string trim(string s, c = " \t")| \itt{trim}
+
+This function will look at the beginning and the end of the string \cppinline{s} and search for any of the characters that is present in \cppinline{c}. If one is found, then this character is removed from \cppinline{s}. This procedure is repeated until no character is found. The net effect of this function is that the provided string \cppinline{s} is \emph{trimmed} from any of the characters listed in \cppinline{c}. This is useful for example to remove leading and trailing spaces of a string (default value of \cppinline{c}), or to removes quotes.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = {"", "abc", " a b", " a b c  "};
+vec1s t = trim(str, " "); // trim spaces
+t; // {"", "abc", "a b", "a b c"}
+
+str = {"", "(a,b)", "((a,b),c)"};
+t = trim(str, "()"); // trim parentheses
+t; // {"", "a,b", "a,b),c"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string toupper(string s)| \itt{toupper}
+
+This function will transform all characters of the string to be upper case. It has no effect on non-alphabetic characters such as numbers, punctuation, of special characters.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = {"", "abc", "AbCdE", "No, thanks!"};
+vec1s t = toupper(str);
+t; // {"", "ABC", "ABCDE", "NO, THANKS!"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string tolower(string s)| \itt{tolower}
+
+This function will transform all characters of the string to be lower case. It has no effect on non-alphabetic characters such as numbers, punctuation, of special characters.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = {"", "abc", "AbCdE", "No, thanks!"};
+vec1s t = tolower(str);
+t; // {"", "abc", "abcde", "no, thanks!"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string replace(string s, p, r)| \itt{replace}
+
+This function will look inside the string \cppinline{s} for occurrences of \cppinline{p} and replace each of them with \cppinline{r}. The string is unchanged if no occurrence is found. In particular, this function can be used to remove all the occurrences of \cppinline{p} simply by setting \cppinline{r} equal to an empty string.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = {"I eat apples", "The apple is red"};
+vec1s r = replace(str, "apple", "pear");
+r; // {"I eat pears", "The pear is red"}
+
+str = {"a:b:c", "g::p"};
+r = replace(str, ":", ",");
+r; // {"a,b,c", "g,,p"};
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec1s split(string s, p)| \itt{split}
+
+This function will split the string \cppinline{s} into a vector of sub-strings each time the pattern \cppinline{p} occurs. If no such pattern is found in \cppinline{s}, the function returns a vector containing a single element which is the whole string \cppinline{s}.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = split("this is the end", " ");
+str; // {"this", "is", "the", "end"};
+str = split("a:b::c:d");
+str; // {"a", "b", "", "c", "d"};
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec1s cut(string s, uint_t n)| \itt{cut}
+
+This function will split the string \cppinline{s} into a vector of sub-strings (or ``lines'') that are exactly \cppinline{n} characters long (except possibly the last one). Contrary to the function \cppinline{wrap()}, this function does not care about spaces and preserving the boundaries of words.
+
+\begin{example}
+\begin{cppcode}
+vec1s str = cut("this is the end", 5);
+str; // {"this ", "is th", "e end"};
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec1s wrap(string s, uint_t w, string i = "", bool e = false)| \itt{wrap}
+
+This function will split the string \cppinline{s} into a vector of sub-strings (or ``lines'') that are at most \cppinline{w} characters long. Contrary to the function \cppinline{cut()}, this function takes care of not splitting words into multiple parts. If a cut would happen in the middle of a word, then the cut is shifted back to the beginning of the word, and the latter is flushed to the next line. If a word is larger than \cppinline{w}, then it will be alone on its line. Alternatively, in such a case if \cppinline{e} is set to \cppinline{true}, the word is truncated and the last characters are lost. An ellipsis \cppinline{"..."} is also appended to notify that the word has been truncated. Finally, the parameter \cppinline{i} can be used to add indentation: these characters are added at the beginning of the line and are taken into account when calculating the length of the line. In this case the first line is not indented, to allow using a different header. This function is useful to display multi-line messages on the terminal.
+
+\begin{example}
+\begin{cppcode}
+std::string str = "This is an example text with many words. Just "
+    " for the sake of the example, we are going to write a "
+    "veryyyyyyyyyyyyyyyyyyyyyyyyyy long word.";
+
+vec1s s = wrap(str, 23);
+s[0]; // "This is an example text"
+s[1]; // "with many words. Just "
+s[2]; // "for the sake of the"
+s[3]; // "example, we are going"
+s[4]; // "to write a"
+s[5]; // "veryyyyyyyyyyyyyyyyyyyyyyyyyy"
+s[6]; // "long word."
+
+vec1s s = wrap(str, 23, "", true);
+s[0]; // "This is an example text"
+s[1]; // "with many words. Just "
+s[2]; // "for the sake of the"
+s[3]; // "example, we are going"
+s[4]; // "to write a"
+s[5]; // "veryyyyyyyyyyyyyyyyy..."
+s[6]; // "long word."
+
+vec1s s = wrap(str, 23, "  ", true);
+s[0]; // "This is an example text"
+s[1]; // "  with many words. Just"
+s[2]; // "  for the sake of the"
+s[3]; // "  example, we are going"
+s[4]; // "  to write a"
+s[5]; // "  veryyyyyyyyyyyyyyy..."
+s[6]; // "  long word."
+\end{cppcode}
+\end{example}
+
+\item \cppinline|string collapse(vec<D,string> v, string s = "")| \itt{collapse}
+
+This function will concatenate together all the strings present in the vector \cppinline{v} to form a single string. A separator can be provided using the argument \cppinline{s}, in which case the string \cppinline{s} will be inserted between each pair of strings of \cppinline{v} that are to be concatenated.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"a", "b", "c"};
+std::string s = collapse(v);
+s; // "abc"
+
+s = collapse(v, ", ");
+s; // "a, b, c"
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|uint_t find(string s, p)| \itt{find}
+
+This function returns the position in the string \cppinline{s} of the first occurrence of the sub-string \cppinline{p}. If no such occurrence is found, the function returns \cppinline{npos}.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"Apple", "please", "complementary", "huh?"};
+vec1u p = find(v, "ple");
+p; // {2, 0, 3, npos}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|bool match(string s, r)| \itt{match}
+
+\vectorfunc \cppinline|bool match_any_of(string s, vec1s r)| \itt{match_any_of}
+
+This function will return \cpptrue if the string \cppinline{s} matches the regular expression (regex) \cppinline{r}. This regular expression can be used to identify complex patterns in a string, far more advanced than just matching the existence of a sub-string. This particular implementation uses POSIX regular expressions. The syntax is complex and not particularly intuitive, but it has become a well known standard and is therefore understood by most programmers. A gentle tutorial can be found \href{http://www.zytrax.com/tech/web/regex.htm}{here}. Note that if the regular expression is invalid, an error will be reported to diagnose the problem, and the program will stop.
+
+The function \cppinline{match_any_of} will do the same, but for a list of regular expressions. \cpptrue will be returned if the string \cppinline{s} matches at least one of these.
+
+Lastly, it is advised to use \emph{raw string literals} to specify the regex in C++ code. Indeed, one often needs to use the backslash \cppinline{'\'} character, but this character is used in C++ to create escape sequences like \cppinline{'\n'} (new line). For this reason, to feed the character \cppinline{'\'} to the regex compiler you actually need to escape it: \cppinline{"\\"}. To avoid this inconvenience, just enclose the regular expression in \cppinline{R"(...)"}, and you will not need to worry about escaping characters from the C++ compiler. Note however that you will still need to escape characters from the regular expression compiler itself, when needed.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"abc,def", "abc:def", "956,fgt", "9g5,hij", "ghji,abc"};
+
+// We want to find which strings have the "XXX,YYY" format
+// where "XXX" can be any combination of three letters or numbers
+// and "YYY" can be a combination of three letters
+vec1b b = match(v, R"(^[a-z0-9]{3},[a-z]{3}$)");
+
+// This regular expression can be read like:
+//  '^'   : at the beginning of the string, match...
+//  '['   : any character among...
+//  'a-z' : letters from 'a' to 'z'
+//  '0-9' : numbers from 0 to 9
+//  ']'
+//  '{3}' : three times
+//  ','   : followed by a coma, then...
+//  '['   : any character among...
+//  'a-z' : letters from 'a' to 'z'
+//  ']'
+//  '{3}' : three times
+//  '$'   : and then the end of the string
+
+b[0]; // true
+b[1]; // false, there is no ","
+b[2]; // true
+b[3]; // true
+b[4]; // false, too many characters before the ","
+\end{cppcode}
+\end{example}
+
+\item \cppinline|vec2s extract(string s, r)| \itt{extract}
+
+This function will perform regular expression matching (see above), and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension correspond to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
+
+\begin{example}
+\begin{cppcode}
+std::string s = "array{5,6.25,7,28}end45.6ddfk";
+// Find all floating point numbers, and extract
+// the integer and fractional parts separately.
+vec2s sub = extract(s, R"(([0-9]+)\.([0-9]+))");
+sub(0,_); // {"6", "25"}
+sub(1,_); // {"45", "6"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|bool start_with(string s, string p)| \itt{start_with}
+
+\vectorfunc \cppinline|bool end_with(string s, string p)| \itt{end_with}
+
+These functions will return \cpptrue if the beginning (\cppinline{start_with}) or the end (\cppinline{end_with}) of the string \cppinline{s} is \emph{exactly} the same as the string \cppinline{p}.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"p1_m2.txt", "p3_c4.fits", "p1_t8.fits"};
+vec1b b = start_with(v, "p1");
+b; // {true, false, true}
+
+b = end_with(v, ".fits");
+b; // {false, true, true}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string erase_begin(string s, string p)| \itt{erase_begin}
+
+\vectorfunc \cppinline|string erase_begin(string s, uint_t n)|
+
+\vectorfunc \cppinline|string erase_end(string s, string p)| \itt{erase_end}
+
+\vectorfunc \cppinline|string erase_end(string s, uint_t n)|
+
+These functions will erase a number of characters from the beginning (\cppinline{erase_begin}) or the end (\cppinline{erase_end}) of the string \cppinline{s}. If the second argument is a string \cppinline{p}, then the function first checks that the string begins/ends with \cppinline{p}: if yes, it removes this substring from \cppinline{s}; if no, an error is reported and the program stops. If the second argument is a number \cppinline{n}, then \cppinline{n} characters are removed. If \cppinline{n} is larger than the size of \cppinline{s}, the returned string will be empty.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"p1_m2.txt", "p3_c4.fits", "p1_t8.fits"};
+std::string s = erase_begin(v[0], "p1_");
+s; // "m2.txt"
+s = erase_begin(v[1], "p1_");
+// will trigger an error
+s = erase_begin(v[2], "p1_");
+s; // "t8.fits"
+
+s = erase_end(v[0], ".fits");
+// will trigger an error
+s = erase_end(v[1], ".fits");
+s; // "p3_c4"
+s = erase_end(v[2], ".fits");
+s; // "p1_t8"
+
+vec1s t = erase_begin(v, 3);
+t; // {"m2.txt", "c4.fits", "t8.fits"}
+t = erase_end(v, 5);
+t; // {"p1_m", "p3_c4", "p1_t8"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string keep_start(string s, uint_t n = 1)| \itt{keep_start}
+
+\vectorfunc \cppinline|string keep_end(string s, uint_t n = 1)| \itt{keep_end}
+
+These functions will return the first (\cppinline{keep_start}) or last (\cppinline{keep_end}) \cppinline{n} characters of the string \cppinline{s} and discard the rest. If \cppinline{n} is larger than the size of \cppinline{s}, the whole string is returned untouched.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"p1_m2.txt", "p3_c4.fits", "p1_t8.fits"};
+vec1s s = keep_start(v, 2);
+s; // {"p1", "p3", "p1"}
+s = keep_end(v, 4);
+s; // {".txt", "fits", "fits"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string remove_extension(string)| \itt{remove_extension}
+
+This function scans the provided string to look for a file extension (e.g., ".fits"). The extension is whatever ends the string after the \emph{last} dot (and including this dot). If one is found, the function will return a new string with the extension removed. Else, the input string is returned untouched.
+
+\begin{example}
+\begin{cppcode}
+vec1s v = {"p1_m2.txt", "p3_c4.fits", "p1_t8.dat.fits", "readme"};
+vec1s s = remove_extension(v);
+s; // {"p1_m2", "p3_c4", "p1_t8.dat", "readme"}
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|string align_left(string s, uint_t w, char f = ' ')| \itt{align_left}
+
+\vectorfunc \cppinline|string align_center(string s, uint_t w, char f = ' ')| \itt{align_center}
+
+\vectorfunc \cppinline|string align_right(string s, uint_t w, char f = ' ')| \itt{align_right}
+
+These functions will pad the provided string with the character \cppinline{f} (default to a space) so that the total width the returned string is equal to \cppinline{w}. If the provided string is larger than \cppinline{w}, it is returned untouched. Padding characters will be appended at the end of the string (\cppinline{align_left}), at the beginning of the string (\cppinline{align_right}), or both (\cppinline{align_center}).
+
+\begin{example}
+\begin{cppcode}
+std::string s = "5.0";
+std::string n = align_left(s, 6);
+n; // "5.0   "
+n = align_right(s, 6);
+n; // "   5.0"
+n = align_center(s, 6);
+n; // " 5.0  "
+
+// Another padding character can be used
+n = align_left(s, 6, '0');
+n; // "5.0000"
+\end{cppcode}
+\end{example}
+
+\item \vectorfunc \cppinline|uint_t distance(string s1, s2)| \itt{distance}
+
+This function computes the \emph{lexicographic distance} between two strings. The definition of this distance is the following. If the two strings that are exactly identical, the distance is zero. Else, each character of the shortest string are compared to their equivalent at the same position in the other string: if they are different, the distance is increase by one. Finally, the distance is increased by the difference of size between the two strings.
+
+The goal of this function is to identify \emph{near} matches in case a string could not be found in a pre-defined list. This is useful to suggest corrections to the user, who may have misspelled it.
+
+\begin{example}
+\begin{cppcode}
+vec1s s = {"wircam_K", "hawki_Ks", "subaru_B"};
+vec1u d = distance(s, "wirkam_Ks");
+d; // {2, 8, 8}
+
+// Nearest match
+std::string m = s[min_id(d)];
+m; // "wircam_K"
+\end{cppcode}
+\end{example}

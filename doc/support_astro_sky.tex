@@ -1,0 +1,35 @@
+\item \cppinline|double field_area_hull(vec1u hull, vec ra, dec)| \itt{field_area_hull}
+
+\cppinline|double field_area_hull(vec ra, dec)|
+
+\item \cppinline|double field_area_h2d(vec ra, dec)| \itt{field_area_h2d}
+
+\item \cppinline|double field_area(vec ra, dec)| \itt{field_area}
+
+\item \cppinline|vec1d angcorrel(vec<D1,T> ra, dec, vec<D2,U> rra, rdec, vec<2,V> b)| \itt{angcorrel}
+
+\item \itt{randpos_uniform} \begin{cppcode}
+auto randpos_uniform(auto seed, vec1d rra, rdec, F in,
+                     vec& ra, dec, auto options = default)
+\end{cppcode}
+
+\item \itt{randpos_power_circle} \begin{cppcode}
+auto randpos_power_circle(auto seed, double ra0, dec0, r0,
+                          vec& ra, dec, auto options = default)
+\end{cppcode}
+
+\item \itt{randpos_power} \begin{cppcode}
+auto randpos_power(auto seed, vec1u h, vec<D1,double> hra, hdec,
+                   vec& ra, dec, auto options = default)
+\end{cppcode}
+
+\item \vectorfunc \cppinline|bool sex2deg(string sra, sdec, T& ra, dec)| \itt{sex2deg}
+
+\vectorfunc \cppinline|void deg2sex(T ra, dec, string& sra, sdec)| \itt{deg2sex}
+
+\item \itt{qxmatch} \begin{cppcode}
+auto qxmatch(vec<1,T> ra1, dec1, ra2, dec2,
+             auto options = default)
+\end{cppcode}
+
+\item \cppinline|vec2d qdist(vec<1,T> ra, dec, auto options = default)| \itt{qdist}

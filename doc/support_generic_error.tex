@@ -1,0 +1,23 @@
+\item \cppinline|void phypp_check(bool b, ...)| \itt{phypp_check}
+
+This function makes error checking easier. When called, it checks the value of \cppinline{b}. If \cppinline{b} is \cpptrue, then nothing happens. However if \cppinline{b} is \cppfalse, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the \phypp library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
+
+Since this function is actually implemented by a preprocessor macro, you should not worry about its performance impact. It will only affect the performances when something goes wrong and the program is about to crash. However the calculation of \cppinline{b} can itself be costly (for example, you may want to check that a vector is sorted), and there is no way around this.
+
+\begin{example}
+\begin{cppcode}
+vec1i v;
+// Suppose v is read from the command line arguments.
+v = read_from_somewhere();
+
+// The following code needs at least 3 elements in the
+// vector v, so we need to check that first.
+phypp_check(v.size() >= 3, "this algorithm needs at least "
+    "3 values in the input vector, but only ", v.size(),
+    " were found");
+
+// If we get past this point, then v has the right number
+// of elements, and we can proceed
+do_stuff(v);
+\end{cppcode}
+\end{example}

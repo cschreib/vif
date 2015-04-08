@@ -1,0 +1,193 @@
+\item \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
+
+This function reads the content of the ASCII table \cppinline{f} and stores the data inside vectors. The second argument \cppinline{s} gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table. Note that, due to the lack of standard formatting for the header, there is no automatic way to ignore these lines.
+
+The vectors in which the data should be stored are given in argument, one after the other. Each column of the file will be stored in a different vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
+
+Columns in the file can be separated by any number of spaces and tabulations. While this is better for human readability, columns need not be aligned to be read by this function. However, ``holes'' in the table are not supported, i.e., rows that only have data for some columns but not all. If such a situation is encountered, the ``hole'' is considered as white spaces and ignored, and the data from this column is actually read from the next one. This will make the function report and error only if all columns of the file are read. For this reason, it is advised to always read all the columns of a given file, even those that are not used (see below for an efficient way to do that). The table may contain empty lines however, they will simply be ignored.
+
+Regarding the type of the data. ASCII tables are not strongly typed: as long as the data in the table can be converted to a value of its corresponding vector, this function will be able to read it. There are particular rules though:
+\begin{itemize}
+\item Strings may not contain spaces (since they will be understood as column separators). Adding quotes \cppinline{"..."} will \emph{not} change that.
+\item Floating point columns can contain special values such as NaN or the infinity. These can be spelled \cppinline{nan}, \cppinline{+nan}, \cppinline{-nan}, \cppinline{+inf}, \cppinline{-inf}, \cppinline{inf}, \cppinline{inf+} or \cppinline{inf-} (case does not matter). The special value \cppinline{null} is also accepted and means zero. Both fixed point and scientific notation is allowed.
+\item In general for arithmetic data, if the value to be read is too large to fit in the corresponding C++ variable, the program will stop report the error. This will happen for example is trying to read a number like \cppinline{1e128} inside a \cppinline{float} vector. Use a larger data type to fix this (e.g.~\cppinline{double} in this particular case).
+\end{itemize}
+
+In the following examples, we will parse a table which contains the following columns:
+\begin{bashcode}
+#  - source ID              (integer)
+#  - right ascension        (double)
+#  - declination            (double)
+#  - badpixel flag          (integer)
+#  - contamination flag     (integer)
+#  - cov   24               (float)
+#  - cov   160              (float)
+#  - flux  24               (float)
+#  - error 24               (float)
+#  - flux  160              (float)
+#  - error 160              (float)
+\end{bashcode}
+This is the header of the table, and it contains \cppinline{11} lines that should be ignored.
+
+Here is how to read the first three columns:
+\begin{cppcode}
+// First declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", 11,
+    id, ra, dec // read three columns
+);
+\end{cppcode}
+
+The placeholder character \cppinline{_} can be used in the argument list to skip a given column. Let's say we want to read the \cppinline{contamination} flag, but we don't care about the \cppinline{badpixel} flag. We can write:
+\begin{cppcode}
+// First declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+vec1u contam;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", 11,
+    id, ra, dec, // read three columns
+    _, contam    // ignore one column, and read one column
+);
+\end{cppcode}
+
+Lastly, the \cppinline{file::columns(n, ...)} function can be used to group several columns and repeat \cppinline{n} times the same extraction pattern. This can be used to read multiple columns inside a single two-dimensional vector. Let's say we want now to read the data from \texttt{cov24} and \texttt{cov160} in a single vector:
+\begin{cppcode}
+// First declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+vec1u contam;
+vec2f cov;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", 11,
+    id, ra, dec, // read three columns
+    _, contam,   // ignore one column, and read one column
+    file::columns(2, cov) // read two columns in one vector
+);
+cov(_,0); // contains data from "cov 24"
+cov(_,1); // contains data from "cov 160"
+\end{cppcode}
+
+The \cppinline{file::columns(n, ...)} function can also be used to ignore multiple columns at a time. Let's say we don't want to read the \cppinline{contamination} flag anymore, so we need to skip two consecutive columns. We could write ``\cppinline{_, _}'', but this becomes tedious and error prone when many columns are to be ignored. Instead, we can write:
+\begin{cppcode}
+// First declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+vec2f cov;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", 11,
+    id, ra, dec,          // read three columns
+    file::columns(2, _),  // ignore two columns
+    file::columns(2, cov) // read two columns in one vector
+);
+\end{cppcode}
+
+The \cppinline{file::columns(n, ...)} function can also be used to read consecutive groups of columns with a given pattern. Let's say we now want to read the \cppinline{flux} and \cppinline{error} inside their respective two-dimensional vectors. The pattern here is ``\cppinline{flux}, \cppinline{error}, \cppinline{flux}, \cppinline{error}, ...''. We can parse this using:
+\begin{cppcode}
+// First declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+vec2f cov, flux, err;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", 11,
+    id, ra, dec,           // read three columns
+    file::columns(2, _),   // ignore two columns
+    file::columns(2, cov), // read two columns in one vector
+    file::columns(2, flux, err) // read (flux,err,flux,err)
+);
+\end{cppcode}
+
+Finally, note that it is possible to mix together vectors and \cppinline{_} in this pattern. Imagine we just want to read the \cppinline{flux} columns and ignore the \cppinline{errors}. We can write:
+\begin{cppcode}
+// First declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+vec2f cov, flux;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", 11,
+    id, ra, dec,           // read three columns
+    file::columns(2, _),   // ignore two columns
+    file::columns(2, cov), // read two columns in one vector
+    file::columns(2, flux, _) // read (flux,_,flux,_)
+);
+\end{cppcode}
+
+\item \cppinline|void file::write_table(string f, uint_t w, ...)| \itt{file::write_table}
+
+\cppinline|void file::write_table_csv(string f, uint_t w, ...)| \itt{file::write_table_csv}
+
+\cppinline|void file::write_table_hdr(string f, uint_t w, ...)| \itt{file::write_table_hdr}
+
+This collection of functions will write the data contained inside one of multiple vectors into a file \cppinline{f}, in human-readable ``ASCII'' format\footnote{This is simple and convenient for small files, but if the volume of data is huge, consider instead using binary FITS files (\ref{SEC:support:fits:table}). This will be both faster to read and write, and will also occupy less space on your disk.}. The data is written in separate columns, with a fixed width of \cppinline{w} characters. Spaces are used to fill the empty space between columns.
+
+The first two functions in the list will just write all the data, and nothing else. The difference between the two is that the second version uses the ``CSV'' format (comma-separated values), i.e., appends a comma after each value. Apart from this, the functions behave the same: after the column width \cppinline{w}, the following arguments can be any number of 1D vectors. They must contain the same number of elements. 2D vectors are also allowed, in which case, by convention, the first dimension is considered as the ``row'' dimension, and the second is the ``column'' dimension.
+
+Note that this function will only create the \emph{file}. If the path \cppinline{f} given in argument contains directories that do not exist, the function will fail. You have to create them yourself beforehand.
+
+For example, imagine we want to save the following data into a file:
+\begin{cppcode}
+// Some arbitrary data
+vec1u id = {1,2,3,4,5};
+vec1i x = {125,568,9852,12,-51};
+vec1i y = {-56,157,2,99,1024};
+vec2f flux(5,2);
+flux(_,0) = {0.0, 1.2, 5.6, 9.5, 1.5};
+flux(_,1) = {9.6, 0.0, 4.5, 0.0, 0.0};
+\end{cppcode}
+
+We can use this function to create an ASCII table with columns that are \cppinline{8} characters wide:
+\begin{cppcode}
+// Write these in a file
+file::write_table("some/path/to/a_table.dat", 8,
+    id, x, y, flux
+);
+\end{cppcode}
+
+The content of the file will be:
+\begin{bashcode}
+       1     125     -56       0     9.6
+       2     568     157     1.2       0
+       3    9852       2     5.6     4.5
+       4      12      99     9.5       0
+       5     -51    1024     1.5       0
+\end{bashcode}
+
+Sometimes it is desirable to also add some information in the file about what kind of data is stored in each column. This is usually done with a \emph{header}, i.e., a couple of lines at the beginning of the file containing information about what the file contains, among other things. This can be done easily using the third function in the list above, \cppinline{file::write_table_hdr()}. Usage is fairly simple:
+\begin{cppcode}
+// Write these in a file
+file::write_table_hdr("some/path/to/a_table.dat", 8,
+    {"id", "x", "y", "flux_1", "flux_2"},
+    id, x, y, flux
+);
+\end{cppcode}
+
+The resulting file is:
+\begin{bashcode}
+#     id       x       y  flux_1  flux_2
+#
+       1     125     -56       0     9.6
+       2     568     157     1.2       0
+       3    9852       2     5.6     4.5
+       4      12      99     9.5       0
+       5     -51    1024     1.5       0
+\end{bashcode}
+
+However it can be tedious to write the name of the columns manually, especially when they match closely the names of the vectors in the C++ code. For this reason, another way to write the above file is to use an alternative version of this function and the \cppinline{ftable()} macro:
+\begin{cppcode}
+// Write these in a file
+file::write_table_hdr("some/path/to/a_table.dat", 8,
+    ftable(id, x, y, flux)
+);
+\end{cppcode}
+
+This will take the C++ name of the variables and will use them directly as column names. For 2D vectors, ``\cppinline{_i}'' is appended to the name of the vector for each column \cppinline{i}. If you need better looking headers, you will have to write them manually using the previous signature.
+
+Finally, if you want to fine tune the way a particular column is written in the file, for example if you want to use scientific notation, you can perform the conversion to string yourself (\ref{SEC:support:string:convert}), and feed string vectors to this function.

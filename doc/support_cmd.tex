@@ -1,0 +1,121 @@
+\item \cppinline|void read_args(int argc, char* argv[], ...)| \itt{read_args}
+
+The biggest problem of C++ programs is that, while they are usually fast to execute, they can take a long time to \emph{compile}. For this reason, C++ is generally not a productive language in situations where the code has to be written by \emph{trial and error}, a process that involves frequently changing the behavior or starting point of a program. This situation could change the day we have a complete, robust and efficient C++ interpreter (keep an eye out for \texttt{cling}\footnote{\url{http://root.cern.ch/drupal/content/cling}}).
+
+Fortunately, in the mean time there are ways around this issue. One in particular is called \emph{data driven} programming: the behavior of a program depends on the data that are fed to it. The simplest way to use this paradigm is to control the program through \emph{command line arguments}. The C++ language provides the basic bricks to use command line arguments, but the interface is inherited from C and lacks severely in usability. For this reason we introduce in \phypp a single function \cppinline{read_args()} that uses these bricks to provide a simple and concise interface to implement command line arguments in a program. The details of the implementation are complex, since this function makes use of preprocessor macros, so instead of describing it all, we will focus on a simple example.
+
+Let us assume that we want to build a simple program that will print (\ref{SEC:support:print}) to the terminal the first \cppinline{n} powers of two.
+
+\begin{example}
+\begin{cppcode}
+// This is the standard entry point of every C++ program.
+// The signature of the main function is imposed by the C++ standard
+int main(int argc, char* argv[]) {
+    // Declare the main parameters of the program
+
+    // The number of powers of two to display
+    uint_t n = 1;
+
+    // Then read command line arguments...
+    read_args(argc, argv, arg_list(n));
+
+    // - The first two arguments must be the arguments of the main
+    //   function, in the exact same order.
+    // - The following argument must be arg_list(...).
+
+    // Within the arg_list(), one can put as many C++ variables as
+    // needed. The function will recognize their name, and will try
+    // to find a command line argument that matches.
+    // If it finds one, it tries to convert its value into the type
+    // of the variable, and if successful, store this new value
+    // inside the variable. In all other cases, the variable is not
+    // modified.
+    // It is therefore important to give a meaningful default value
+    // to each variable!
+
+    // Now we can go on with the program
+    print(pow(2.0, findgen(n)+1));
+
+    // And quit gracefully
+    return 0;
+}
+\end{cppcode}
+\end{example}
+
+By just adding this line
+\begin{cppcode}
+    read_args(argc, argv, arg_list(n));
+\end{cppcode}
+we exposed the variable \cppinline{n} to the public: everyone that runs this program can modify the value of \cppinline{n} to suit their need. Assuming the name of the compiled program is \cppinline{show_pow2}, then the program is ran the following way:
+
+\begin{bashcode}
+# First try with no parameter.
+# 'n' is not modified, and keeps its default value of 1.
+./show_pow2
+# output:
+# 2
+
+# Then we change 'n' to 5.
+./show_pow2 n=5
+# output:
+# 2 4 8 16 32
+\end{bashcode}
+
+You immediately see the interest of this approach. Instead of recompiling the whole program just to change \cppinline{n}, we expose it in the program arguments. We can then compile the program once, and change its behavior without recompiling. This saves a lot of time when trying to figure out what is the best value of a parameter in a given problem, or if we have created an algorithm that depends on some parameters, and we want to see how the results change when we change the values of these parameters. And of course, this is most useful when writing \emph{tools} (see, e.g., the tools presented in Chapter \ref{SEC:tool}).
+
+In the previous example, we chose to expose a simple integer. But in fact, the interface also allows virtually any type, provided that there is a way to convert a string into a value of this type. In particular, this is the case for vectors. There is a little subtlety though: the values of the vector must be separated by commas, \emph{without any space} (unless you put the whole argument inside quotes), and surrounded by brackets \cppinline{[...]}. Again, let us illustrate this with an example. We will modify the previous program to allow it to show not only powers of $2$, but the powers of multiple, arbitrary numbers. Note: in the following, we will not repeat the whole \cppinline{main()} function, just the important bits.
+
+\begin{example}
+\begin{cppcode}
+    // The number of powers of two to display
+    uint_t n = 1;
+    // The powers to display
+    vec1f p = {2};
+
+    // Read command line arguments
+    read_args(argc, argv, arg_list(n, p));
+
+    // Go on with the program
+    for (float v : p) {
+        print(pow(v, findgen(n)+1));
+    }
+\end{cppcode}
+\end{example}
+
+The program can now change the powers it displays, for example
+\begin{bashcode}
+# We keep 'n' equal to 5, and we show the powers of 2, 3 and 5.
+./show_pow2 n=5 p=[2,3,5]
+# output:
+# 2 4 8 16 32
+# 3 9 27 81 243
+# 5 25 125 625 3125
+\end{bashcode}
+
+Finally, you may think that \cppinline{p} is not a very explicit name for this last parameter. It would be clearer if we could call it \cppinline{pow}. Unfortunately, \cppinline{pow} is already the name of a function in C++, so we cannot give this name to the variable. However, the \cppinline{read_args()} interface allows you to manually give a name to any parameter using the \cppinline{name()} function. Let us do that and modify the previous example.
+
+\begin{example}
+\begin{cppcode}
+    // The number of powers of two to display
+    uint_t n = 1;
+    // The powers to display, we still call it 'p' in the program
+    vec1f p = {2};
+
+    // Read command line arguments
+    read_args(argc, argv, arg_list(n, name(p, "pow"));
+
+    // Go on with the program
+    for (float v : p) {
+        print(pow(v, findgen(n)+1));
+    }
+\end{cppcode}
+\end{example}
+
+Now we will call instead
+\begin{bashcode}
+./show_pow2 n=5 pow=[2,3,5]
+# output:
+# 2 4 8 16 32
+# 3 9 27 81 243
+# 5 25 125 625 3125
+\end{bashcode}
