@@ -14,27 +14,36 @@ namespace speed_test {
 
     template<std::size_t D, typename T>
     rtype_t<T> median2(const vec<D,T>& v) {
-        vec1u ok = where(!is_nan(v));
-        if (ok.empty()) return dnan;
+        // vec1u ok = where(!is_nan(v));
+        // if (ok.empty()) return dnan;
+
+        vec1u ok; ok.data.reserve(v.size());
+        for (uint_t i : range(v)) {
+            if (!is_nan(v.safe[i])) ok.data.push_back(i);
+        }
+
+        ok.dims[0] = ok.data.size();
 
         std::ptrdiff_t offset = ok.size()/2;
-        std::nth_element(ok.begin(), ok.begin() + offset, ok.end(), [&v](uint_t i, uint_t j) {
-            return v[i] < v[j];
+        std::nth_element(ok.begin(), ok.begin() + offset, ok.end(),
+            [&v](uint_t i, uint_t j) {
+            return v.safe[i] < v.safe[j];
         });
-        return v[*(ok.begin() + offset)];
+        return v.safe[*(ok.begin() + offset)];
     }
 
     template<std::size_t D, typename T>
     rtype_t<T> median3(vec<D,T> v) {
         uint_t nwrong = 0;
-        for (uint_t i : range(v)) {
-            nwrong += is_nan(v[i]);
+        for (auto d : v) {
+            nwrong += is_nan(d);
         }
 
         if (nwrong == v.size()) return dnan;
 
         std::ptrdiff_t offset = (v.size()-nwrong)/2;
-        std::nth_element(v.begin(), v.begin() + offset, v.end(), [&v](rtype_t<T> i, rtype_t<T> j) {
+        std::nth_element(v.begin(), v.begin() + offset, v.end(),
+            [&v](rtype_t<T> i, rtype_t<T> j) {
             if (is_nan(i)) return false;
             if (is_nan(j)) return true;
             return i < j;
@@ -45,14 +54,15 @@ namespace speed_test {
     template<std::size_t D, typename T>
     rtype_t<T> inplace_median3(vec<D,T>& v) {
         uint_t nwrong = 0;
-        for (uint_t i : range(v)) {
-            nwrong += is_nan(v[i]);
+        for (auto d : v) {
+            nwrong += is_nan(d);
         }
 
         if (nwrong == v.size()) return dnan;
 
         std::ptrdiff_t offset = (v.size()-nwrong)/2;
-        std::nth_element(v.begin(), v.begin() + offset, v.end(), [&v](rtype_t<T> i, rtype_t<T> j) {
+        std::nth_element(v.begin(), v.begin() + offset, v.end(),
+            [&v](rtype_t<T> i, rtype_t<T> j) {
             if (is_nan(i)) return false;
             if (is_nan(j)) return true;
             return i < j;
@@ -71,7 +81,8 @@ int main(int argc, char* argv[]) {
     auto seed = make_seed(42);
     if (!check) {
         // Time
-        vec1d data = randomn(seed, nsrc);
+        vec1d odata = randomn(seed, nsrc);
+        vec1d data = odata;
         vec1u id = randomi(seed, 0, nsrc-1, nsrc/10);
         data[id] = dnan;
 
@@ -81,6 +92,7 @@ int main(int argc, char* argv[]) {
         }, navg);
 
         print(t);
+        data = odata;
 
         res = 0.0;
         t = profile([&data,&res]() {
@@ -88,6 +100,7 @@ int main(int argc, char* argv[]) {
         }, navg);
 
         print(t);
+        data = odata;
 
         res = 0.0;
         t = profile([&data,&res]() {
@@ -95,10 +108,27 @@ int main(int argc, char* argv[]) {
         }, navg);
 
         print(t);
+        data = odata;
 
         res = 0.0;
         t = profile([&data,&res]() {
             res += speed_test::inplace_median3(data);
+        }, navg);
+
+        print(t);
+        data = odata;
+
+        res = 0.0;
+        t = profile([&data,&res]() {
+            res += median(data);
+        }, navg);
+
+        print(t);
+        data = odata;
+
+        res = 0.0;
+        t = profile([&data,&res]() {
+            res += inplace_median(data);
         }, navg);
 
         print(t);
