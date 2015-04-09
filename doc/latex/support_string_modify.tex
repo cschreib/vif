@@ -182,7 +182,7 @@ This function will return \cpptrue if the string \cppinline{s} matches the regul
 
 The function \cppinline{match_any_of} will do the same, but for a list of regular expressions. \cpptrue will be returned if the string \cppinline{s} matches at least one of these.
 
-Lastly, it is advised to use \emph{raw string literals} to specify the regex in C++ code. Indeed, one often needs to use the backslash \cppinline{'\'} character, but this character is used in C++ to create escape sequences like \cppinline{'\n'} (new line). For this reason, to feed the character \cppinline{'\'} to the regex compiler you actually need to escape it: \cppinline{"\\"}. To avoid this inconvenience, just enclose the regular expression in \cppinline{R"(...)"}, and you will not need to worry about escaping characters from the C++ compiler. Note however that you will still need to escape characters from the regular expression compiler itself, when needed.
+Lastly, it is advised to use \emph{raw string literals} to specify the regex in C++ code. Indeed, one often needs to use the backslash character (\cppinline{\}), but this character is used in C++ to create escape sequences like \cppinline{'\n'} (new line). For this reason, to feed the backslash to the regex compiler you actually need to escape it: \cppinline{"\\"}. To avoid this inconvenience, just enclose the regular expression in \cppinline{R"(...)"}, and you will not need to worry about escaping characters from the C++ compiler. Note however that you will still need to escape characters from the regular expression compiler itself, when needed.
 
 \begin{example}
 \begin{cppcode}
