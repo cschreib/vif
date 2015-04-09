@@ -163,9 +163,8 @@ private :
         } else {
             print("cross-matching "+name+"...");
 
-            std::string file = xmatch_file+"_"+strn(std::hash<std::string>()(
-                name+strn(cra.size())+strn(sel.size())+strn(ngal)+strn(sources)+strn(files)
-            ))+".fits";
+            std::string hashed = hash(name, cra.size(), sel.size(), ngal, sources, files);
+            std::string file = xmatch_file+"_"+hashed+".fits";
 
             bool rematch = false;
             if (!xmatch && file::exists(file)) {

@@ -63,3 +63,31 @@ bs; // {true, true, false, false, true}
 fs; // {1,    1e5,  ???,   ???,   2.5}
 \end{cppcode}
 \end{example}
+
+\item \cppinline|string hash(...)| \itt{hash}
+
+This function scans all the arguments that are provided, and returns the hexadecimal representation of the SHA-1 hash of this argument list. The hash is a string such that: 1) all further calls of \cppinline{hash(...)} with arguments that have the exact same value will always return the same string, and 2) the probability that the function returns the same string for another set of arguments is very small (in fact, although this algorithm was created in 1995, no such collision has been found yet).
+
+This is useful for example to cache the result of some heavy computation: once the computation is done, the input parameters of the computation can be fed to \cppinline{hash()} to give a ``sort-of-unique'' identifier to the result, and this result can be saved somewhere with this identifier. Later on, if the computation is requested with another set of parameters, they are fed to \cppinline{hash()} and the resulting string is compared to all the saved results: if a match is found, then the associated pre-computed result can be used immediately, else the computation goes on.
+
+\begin{example}
+\begin{cppcode}
+std::string s;
+
+// With a single argument
+s = hash("hello world!");
+s; // "da52a1357f3c973e1ffc1b694d5308d0abcd9845"
+s = hash("hello world?")
+s; // "793e673d04e555f8f0b38033d5223c525a040719"
+// Notice how changing a single character gives a completely
+// different hash string
+
+// With multiple arguments
+s = hash(1, 2, 3);
+s; // "570331ab965721aae8a8b3c628cae57a21a37560"
+s = hash("123");
+s; // "0e898437b29ec20c39ca48243e676bcb177d4632"
+s = hash(1.0, 2.0, 3.0);
+s; // "9c45014f7c7943cb7860f3db4b885fb44b510ec8"
+\end{cppcode}
+\end{example}
