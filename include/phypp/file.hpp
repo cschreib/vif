@@ -284,6 +284,12 @@ namespace file {
         }
     }
 
+    std::string remove_extension(std::string s) {
+        auto p = s.find_last_of('.');
+        if (p == s.npos) return s;
+        return s.substr(0u, p);
+    }
+
     // Same behavior as 'dirname'
     std::string get_directory(const std::string& path) {
         auto pos = path.find_last_of('/');

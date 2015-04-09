@@ -384,12 +384,6 @@ std::string keep_end(std::string s, uint_t n = 1) {
     return s;
 }
 
-std::string remove_extension(std::string s) {
-    auto p = s.find_last_of('.');
-    if (p == s.npos) return s;
-    return s.substr(0u, p);
-}
-
 // Note: all the code within this namespace comes from smallsha1,
 // a lightweight SHA-1 implementation in C++. It was slightly adapted
 // to fit the needs of the phy++ library.

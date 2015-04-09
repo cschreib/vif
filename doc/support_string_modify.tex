@@ -297,18 +297,6 @@ s; // {".txt", "fits", "fits"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string remove_extension(string)| \itt{remove_extension}
-
-This function scans the provided string to look for a file extension (e.g., ".fits"). The extension is whatever ends the string after the \emph{last} dot (and including this dot). If one is found, the function will return a new string with the extension removed. Else, the input string is returned untouched.
-
-\begin{example}
-\begin{cppcode}
-vec1s v = {"p1_m2.txt", "p3_c4.fits", "p1_t8.dat.fits", "readme"};
-vec1s s = remove_extension(v);
-s; // {"p1_m2", "p3_c4", "p1_t8.dat", "readme"}
-\end{cppcode}
-\end{example}
-
 \item \vectorfunc \cppinline|string align_left(string s, uint_t w, char f = ' ')| \itt{align_left}
 
 \vectorfunc \cppinline|string align_center(string s, uint_t w, char f = ' ')| \itt{align_center}
