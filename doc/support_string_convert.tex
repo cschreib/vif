@@ -42,9 +42,9 @@ strn(vec1i{1,5,6,9});  // "{1, 5, 6, 9}"
 
 \item \vectorfunc \cppinline|bool from_string(string s, T& v)| \itt{from_string}
 
-This function tries to convert the string \cppinline{s} into a C++ value \cppinline{v} and returns \cpptrue in case of success. If the string cannot be converted into this value, for example if the string contains letters and the value has an arithmetic type, or if the number inside the string is too big to fit inside the C++ value, the function will return \cppfalse. In this case, the value of \cppinline{v} is not modified.
+This function tries to convert the string \cppinline{s} into a C++ value \cppinline{v} and returns \cpptrue in case of success. If the string cannot be converted into this value, for example if the string contains letters and the value has an arithmetic type, or if the number inside the string is too big to fit inside the C++ value, the function will return \cppfalse. In this case, the value of \cppinline{v} is undefined.
 
-The vectorized version of this function will try to convert every value inside the string vector \cppinline{s}, and will store the converted values inside the vector \cppinline{v} (it will take care or properly resizing the vector, so you can pass an empty vector if you want). The return value will then be an array of boolean values, corresponding to the success or failure of each individual value inside \cppinline{s}. If an element of \cppinline{s} fails to convert, the corresponding value in \cppinline{v} will be default-initialized (e.g., zero for numbers).
+The vectorized version of this function will try to convert every value inside the string vector \cppinline{s}, and will store the converted values inside the vector \cppinline{v} (it will take care or properly resizing the vector, so you can pass an empty vector if you want). The return value will then be an array of boolean values, corresponding to the success or failure of each individual value inside \cppinline{s}. If an element of \cppinline{s} fails to convert, the corresponding value in \cppinline{v} will be undefined.
 
 \begin{example}
 \begin{cppcode}
@@ -55,11 +55,11 @@ f; // 3.1415
 
 b = from_string("abcdef", f);
 b; // false;
-f; // 3.1415, 'f' has not been modified
+f; // ??? could be 3.1415, or NaN, or anything else
 
 vec1f fs;
-vec1b bs = from_string({"1", "15", "abc", "1e128", "2.5"}, fs);
+vec1b bs = from_string({"1", "1.00e5", "abc", "1e128", "2.5"}, fs);
 bs; // {true, true, false, false, true}
-fs; // {1,    15,   0,     0,     2.5}
+fs; // {1,    1e5,  ???,   ???,   2.5}
 \end{cppcode}
 \end{example}
