@@ -705,6 +705,74 @@ std::string collapse(const vec<Dim,Type>& v, const std::string& sep) {
     return r;
 }
 
+template<typename T>
+std::string convert_block(const std::string& os, const std::string& begin,
+    const std::string& end, T&& convert) {
+
+    std::string s;
+
+    uint_t p = os.find(begin);
+    uint_t p0 = 0;
+    while (p != npos) {
+        s += os.substr(p0, p-p0);
+
+        p += begin.size();
+
+        p0 = os.find(end, p);
+        phypp_check(p0 != npos, "ill formed "+begin+"..."+end+" block");
+
+        s += convert(os.substr(p, p0-p));
+        p0 += end.size();
+
+        p = os.find(begin, p0);
+    }
+
+    s += os.substr(p0);
+
+    return s;
+}
+
+template<typename T>
+std::string convert_blocks(std::string s, const std::string& begin,
+    const std::string& sep, const std::string& end, T&& convert) {
+
+    std::string os = s;
+    s.clear();
+
+    uint_t p = os.find(begin);
+    uint_t p0 = 0;
+    while (p != npos) {
+        s += os.substr(p0, p-p0);
+
+        p += begin.size();
+
+        vec1s b;
+
+        p0 = os.find(sep, p);
+        while (p0 != npos) {
+            b.push_back(os.substr(p, p0-p));
+            p0 += sep.size();
+            p = p0;
+
+            p0 = os.find(sep, p);
+        }
+
+        p0 = os.find(end, p);
+        phypp_check(p0 != npos, "ill formed "+begin+"..."+end+" command");
+
+        b.push_back(os.substr(p, p0-p));
+        s += convert(b);
+
+        p0 += end.size();
+
+        p = os.find(begin, p0);
+    }
+
+    s += os.substr(p0);
+
+    return s;
+}
+
 std::string system_var(const std::string& name, const std::string& def = "") {
     char* v = getenv(name.c_str());
     if (!v) return def;

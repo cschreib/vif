@@ -338,3 +338,32 @@ std::string m = s[min_id(d)];
 m; // "wircam_K"
 \end{cppcode}
 \end{example}
+
+\funcitem \cppinline|string convert_block(string v, b, e, T f)| \itt{convert_block}
+
+\cppinline|string convert_blocks(string v, b, s, e, T f)| \itt{convert_blocks}
+
+The \cppinline{convert_block} function will look in the string \cppinline{v} and identify all blocks that start with \cppinline{b} and end with \cppinline{e}. The content of each block is fed to the user-supplied function \cppinline{f} which does any kind of conversion or operation, and returns a new string. This new string is inserted in \cppinline{v} in place of the block.
+
+The \cppinline{convert_blocks} function will do the same thing, except that each block can have multiple ``arguments'' that are separed with \cppinline{s}. In this case, the function extracts all the ``arguments'' and stores them inside a string vector, and feeds this vector to the conversion function \cppinline{f}.
+
+\begin{example}
+\begin{cppcode}
+// We want to modify the content inside <b>...</b> to be upper case
+std::string s = "This is a <b>whole</b> lot of <b>money</b>";
+std::string ns = convert_block(s, "<b>", "</b>", [](std::string t) {
+    return toupper(t);
+});
+
+ns; // "This is a <b>WHOLE</b> lot of <b>MONEY</b>"
+
+// We want to convert this LaTeX link into HTML
+s = "Look at \url{http://www.google.com}{this} link.";
+ns = convert_blocks(s, "\url{", "}{", "}", [](vec1s t) {
+    return "<a href=\""+t[0]+"\">"+t[1]+"</a>";
+});
+
+ns; // "Look at <a href="http://www.google.com">this</a> link."
+\end{cppcode}
+\end{example}
+
