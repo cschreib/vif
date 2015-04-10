@@ -131,6 +131,18 @@ b; // maybe true or false, depending on your permissions
 \end{cppcode}
 \end{example}
 
+\funcitem \cppinline|bool file::remove(string)| \itt{file::remove}
+
+This function will delete the file given in argument and return \cpptrue on success, or if the file does not exists. It will return \cppfalse only if the file exists but could not be removed (i.e., because you are lacking the right permissions).
+
+\begin{example}
+\begin{cppcode}
+// That's a bad idea, but for the sake of the example...
+bool b = file::remove("/home/joe/.phypprc");
+b; // probably true
+\end{cppcode}
+\end{example}
+
 \funcitem \cppinline|string file::to_string(string)| \itt{file::to_string}
 
 This function reads the content of the file whose path is given in argument, stores all the characters (including line break characters and spaces) inside a string an returns it. If the file does not exist, the function returns an empty string.

@@ -169,6 +169,10 @@ namespace file {
         return true;
     }
 
+    bool remove(const std::string& file) {
+        return !file::exists(file) || ::remove(file.c_str()) == 0;
+    }
+
     std::string to_string(const std::string& file_name) {
         std::string   dst;
         std::ifstream src(file_name, std::ios::binary);
