@@ -1,36 +1,36 @@
-\item \cppinline|void run_dim_idx(uint_t d, F f, ...)| \itt{run_dim_idx}
+\funcitem \cppinline|void run_dim_idx(uint_t d, F f, ...)| \itt{run_dim_idx}
 
-\item \cppinline|vec<D-1,T> run_dim(vec<D,T> v, uint_t d, F f)| \itt{run_dim}
+\funcitem \cppinline|vec<D-1,T> run_dim(vec<D,T> v, uint_t d, F f)| \itt{run_dim}
 
-\item \cppinline|T total(vec<D,T> v)| \itt{total}
+\funcitem \cppinline|T total(vec<D,T> v)| \itt{total}
 
 \cppinline|vec<D-1,T> partial_total(uint_t d, vec<D,T> v)| \itt{partial_total}
 
-\item \cppinline|uint_t count(vec<D,bool> v)| \itt{count}
+\funcitem \cppinline|uint_t count(vec<D,bool> v)| \itt{count}
 
 \cppinline|vec<D-1,uint_t> partial_count(uint_t d, vec<D,bool> v)| \itt{partial_count}
 
-\item \cppinline|uint_t fraction_of(vec<D,bool> v)| \itt{fraction_of}
+\funcitem \cppinline|uint_t fraction_of(vec<D,bool> v)| \itt{fraction_of}
 
 \cppinline|vec<D-1,uint_t> partial_fraction_of(uint_t d, vec<D,bool> v)| \itt{partial_fraction_of}
 
-\item \cppinline|double mean(vec v)| \itt{mean}
+\funcitem \cppinline|double mean(vec v)| \itt{mean}
 
 \cppinline|vec<D-1,double> partial_mean(uint_t d, vec<D,T> v)| \itt{partial_mean}
 
-\item \cppinline|T median(vec<D,T> v)| \itt{median}
+\funcitem \cppinline|T median(vec<D,T> v)| \itt{median}
 
 \cppinline|T inplace_median(vec<D,T>& v)| \itt{inplace_median}
 
 \cppinline|vec<D-1,T> partial_median(uint_t d, vec<D,T> v)| \itt{partial_median}
 
-\item \cppinline|T percentile(vec<D,T> v, double p)| \itt{percentile}
+\funcitem \cppinline|T percentile(vec<D,T> v, double p)| \itt{percentile}
 
 \cppinline|vec<D-1,T> partial_percentile(uint_t d, vec<D,T> v, double p)| \itt{partial_percentile}
 
 \cppinline|vec<1,T> percentiles(vec<D,T> v, double ...)| \itt{percentiles}
 
-\item \cppinline|T min(vec<D,T> v)| \itt{min}
+\funcitem \cppinline|T min(vec<D,T> v)| \itt{min}
 
 \cppinline|T min(vec<D,T> v, uint_t& i)|
 
@@ -42,16 +42,16 @@
 
 \cppinline|vec<D-1,T> partial_max(uint_t d, vec<D,T> v)| \itt{partial_max}
 
-\item \cppinline|uint_t min_id(vec v)| \itt{min_id}
+\funcitem \cppinline|uint_t min_id(vec v)| \itt{min_id}
 
 \cppinline|uint_t max_id(vec v)| \itt{max_id}
 
-\item \cppinline|vec1u histogram(vec v, vec<2,V> b)| \itt{histogram}
+\funcitem \cppinline|vec1u histogram(vec v, vec<2,V> b)| \itt{histogram}
 
 \cppinline|vec<1,W> histogram(vec<D,T> v, vec<D,W> w, vec<2,U> b)|
 
-\item \cppinline|vec2u histogram2d(vec x, y, vec<2,U> bx, by)| \itt{histogram2d}
+\funcitem \cppinline|vec2u histogram2d(vec x, y, vec<2,U> bx, by)| \itt{histogram2d}
 
-\item \cppinline|vec<D,bool> sigma_clip(vec<D,T> v, double pl, double pu)| \itt{sigma_clip}
+\funcitem \cppinline|vec<D,bool> sigma_clip(vec<D,T> v, double pl, double pu)| \itt{sigma_clip}
 
-\item \cppinline|vec<D,bool> mad_clip(vec<D,T> v, double s)| \itt{mad_clip}
+\funcitem \cppinline|vec<D,bool> mad_clip(vec<D,T> v, double s)| \itt{mad_clip}

@@ -1,6 +1,6 @@
-\item \cppinline{vec1u mult_ids(vec v, uint_t i)} \itt{mult_ids}
+\funcitem \cppinline|vec1u mult_ids(vec v, uint_t i)| \itt{mult_ids}
 
-\cppinline{vec1u mult_ids(array<uint_t> dims, uint_t i)}
+\cppinline|vec1u mult_ids(array<uint_t> dims, uint_t i)|
 
 This is only useful for multidimensional vectors. This function converts a ``flat'' index \cppinline{i} (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector \cppinline{v} (or, in the second version, following the dimensions \cppinline{dims}). The \cppinline{flat_id} function does the inverse job.
 
@@ -15,7 +15,7 @@ v[3] == v(1,0); // true
 \end{cppcode}
 \end{example}
 
-\item \cppinline{uint_t flat_id(vec v, ...)} \itt{flat_id}
+\funcitem \cppinline|uint_t flat_id(vec v, ...)| \itt{flat_id}
 
 This is only useful for multidimensional vectors. This function converts a group of multidimensional indices into a ``flat'' index (\ref{SEC:core:vec:indexing}), following the dimensions of the provided vector \cppinline{v}. The \cppinline{mult_ids} function does the inverse job.
 

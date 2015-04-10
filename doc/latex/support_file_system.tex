@@ -1,4 +1,4 @@
-\item \vectorfunc \cppinline|bool file::exists(string)| \itt{file::exists}
+\funcitem \vectorfunc \cppinline|bool file::exists(string)| \itt{file::exists}
 
 This function returns \cpptrue if the path given in argument corresponds to a file or directory that actually exists on the disk, and \cppfalse otherwise.
 
@@ -12,7 +12,7 @@ b; // probably false
 \end{cppcode}
 \end{example}
 
-\item \cppinline|bool file::is_older(string f1, string f2)| \itt{file::is_older}
+\funcitem \cppinline|bool file::is_older(string f1, string f2)| \itt{file::is_older}
 
 This function returns \cpptrue if the file or directory \cppinline{f1} is \emph{older} than the file or directory \cppinline{f2}. The age of a file corresponds to the time spent since the files were last modified. If one of the two files does not exists, the function returns \cppfalse.
 
@@ -23,7 +23,7 @@ b; // probably false
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1s file::list_directories(string)| \itt{file::list_directories}
+\funcitem \cppinline|vec1s file::list_directories(string)| \itt{file::list_directories}
 
 This function scans the directory given in argument and returns the list of all directories it contains. An empty list is returned if no directory is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
 
@@ -37,7 +37,7 @@ d; // {"test", "tools"}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1s file::list_files(string)| \itt{file::list_files}
+\funcitem \cppinline|vec1s file::list_files(string)| \itt{file::list_files}
 
 This function scans the directory given in argument and returns the list of all files it contains (excluding directories). An empty list is returned if no file is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
 
@@ -51,7 +51,7 @@ d; // {"phypp.tex"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string file::directorize(string)| \itt{file::directorize}
+\funcitem \vectorfunc \cppinline|string file::directorize(string)| \itt{file::directorize}
 
 This function modifies the path given in argument to make sure that it can be used as a directory, i.e.~in UNIX systems it makes sure that it ends with a forward slash \cppinline{/}. The goal is to produce a directory path that can be appended the base name of a file to form a valid file path.
 
@@ -65,7 +65,7 @@ p; // "/another/path/"
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string file::get_basename(string)| \itt{file::get_basename}
+\funcitem \vectorfunc \cppinline|string file::get_basename(string)| \itt{file::get_basename}
 
 This function extracts the name of a file from its full path given in argument. If this path is that of a directory, the function returns the name of this directory. This behavior is similar to the \texttt{bash} function \texttt{basename}.
 
@@ -79,7 +79,7 @@ n; // "file.txt"
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string remove_extension(string)| \itt{remove_extension}
+\funcitem \vectorfunc \cppinline|string remove_extension(string)| \itt{remove_extension}
 
 This function scans the provided string to look for a file extension (e.g., ".fits"). The extension is whatever ends the string after the \emph{last} dot (and including this dot). If one is found, the function will return a new string with the extension removed. Else, the input string is returned untouched.
 
@@ -91,7 +91,7 @@ s; // {"p1_m2", "p3_c4", "p1_t8.dat", "readme"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string file::get_directory(string)| \itt{file::get_directory}
+\funcitem \vectorfunc \cppinline|string file::get_directory(string)| \itt{file::get_directory}
 
 This function extracts the path of the directory that contains the file given in argument. If the path in argument is that of a directory, the function returns the path of its parent directory. This behavior is similar to the \texttt{bash} function \texttt{dirname}, except that the returned path ends with a forward slash \cppinline{/}.
 
@@ -105,7 +105,7 @@ n; // "/another/path/to/a/"
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|bool file::mkdir(string)| \itt{file::mkdir}
+\funcitem \vectorfunc \cppinline|bool file::mkdir(string)| \itt{file::mkdir}
 
 This function creates a new directory whose path is given in argument and returns \cpptrue. If the directory could not be created (e.g., because of permission issues), the function returns \cppfalse. If the directory already exists, the function does nothing and returns \cpptrue.
 
@@ -120,7 +120,7 @@ b; // maybe true or false, depending on your permissions
 \end{cppcode}
 \end{example}
 
-\item \cppinline|bool file::copy(string from, to)| \itt{file::copy}
+\funcitem \cppinline|bool file::copy(string from, to)| \itt{file::copy}
 
 This function creates a copy of the file \cppinline{from} at the location given in \cppinline{to} and returns \cpptrue. If the new file could not be created (e.g., because of permission issues), or if the file \cppinline{from} could not be found or read, the function returns \cppfalse. If the file \cppinline{to} already exists, it will be overwritten.
 
@@ -131,7 +131,7 @@ b; // maybe true or false, depending on your permissions
 \end{cppcode}
 \end{example}
 
-\item \cppinline|string file::to_string(string)| \itt{file::to_string}
+\funcitem \cppinline|string file::to_string(string)| \itt{file::to_string}
 
 This function reads the content of the file whose path is given in argument, stores all the characters (including line break characters and spaces) inside a string an returns it. If the file does not exist, the function returns an empty string.
 

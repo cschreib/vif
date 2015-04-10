@@ -1,25 +1,25 @@
-\item \cppinline|vec<2,T> enlarge(vec<2,T> v, array {l1, l2, u1, u2}, T d = 0)| \itt{enlarge}
+\funcitem \cppinline|vec<2,T> enlarge(vec<2,T> v, array {l1, l2, u1, u2}, T d = 0)| \itt{enlarge}
 
 \cppinline|vec<2,T> enlarge(vec<2,T> v, uint_t u, T d = 0)|
 
-\item \cppinline|vec<2,T> shrink(vec<2,T> v, array {l1, l2, u1, u2})| \itt{shrink}
+\funcitem \cppinline|vec<2,T> shrink(vec<2,T> v, array {l1, l2, u1, u2})| \itt{shrink}
 
 \cppinline|vec<2,T> shrink(vec<2,T> v, uint_t u)|
 
-\item \cppinline|void subregion(vec<2,T> v, vec1i r, vec1u& rr, rs)| \itt{subregion}
+\funcitem \cppinline|void subregion(vec<2,T> v, vec1i r, vec1u& rr, rs)| \itt{subregion}
 
 \cppinline|void subregion(vec<2,T> v, vec1i r, T d = 0)|
 
-\item \cppinline|vec<2,T> translate(vec<2,T> v, double x, y, T d = 0)| \itt{translate}
+\funcitem \cppinline|vec<2,T> translate(vec<2,T> v, double x, y, T d = 0)| \itt{translate}
 
-\item \cppinline|vec2d circular_mask(vec1u d, vec1d c, double r)| \itt{circular_mask}
+\funcitem \cppinline|vec2d circular_mask(vec1u d, vec1d c, double r)| \itt{circular_mask}
 
-\item \cppinline|vec<1,T> radial_profile(vec<2,T> m, uint_t n)| \itt{radial_profile}
+\funcitem \cppinline|vec<1,T> radial_profile(vec<2,T> m, uint_t n)| \itt{radial_profile}
 
-\item \cppinline|vec<2,T> generate_img(array {w,h}, F f)| \itt{generate_img}
+\funcitem \cppinline|vec<2,T> generate_img(array {w,h}, F f)| \itt{generate_img}
 
-\item \cppinline|vec2d gaussian_profile(array {w,h}, double sigma)| \itt{gaussian_profile}
+\funcitem \cppinline|vec2d gaussian_profile(array {w,h}, double sigma)| \itt{gaussian_profile}
 
-\item \cppinline|vec<2,T> convolve2d(vec<2,T> m, vec<2,U> k)| \itt{convolve2d}
+\funcitem \cppinline|vec<2,T> convolve2d(vec<2,T> m, vec<2,U> k)| \itt{convolve2d}
 
-\item \cppinline|vec<2,T> boxcar(vec<2,T> m, uint_t n, F f)| \itt{boxcar}
+\funcitem \cppinline|vec<2,T> boxcar(vec<2,T> m, uint_t n, F f)| \itt{boxcar}

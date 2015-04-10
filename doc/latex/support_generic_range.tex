@@ -1,8 +1,8 @@
-\item \cppinline{auto range(vec v)} \itt{range}
+\funcitem \cppinline|auto range(vec v)| \itt{range}
 
-\cppinline{auto range(uint_t n)}
+\cppinline|auto range(uint_t n)|
 
-\cppinline{auto range(uint_t i0, uint_t n)}
+\cppinline|auto range(uint_t i0, uint_t n)|
 
 This function returns a C++ \emph{range}, i.e., an object that can be used inside the C++ range-based \cppinline{for} loop. This range will generate integer values starting from \cppinline{0} (first and second version) or \cppinline{i0} (third version) to \cppinline{v.size()} (first version) or \cppinline{n} (second and third versions), that last value being \emph{excluded} from the range. This nice way of writing an integer \cppinline{for} loop actually runs as fast as (if not faster than) the classical way, and is less error prone.
 

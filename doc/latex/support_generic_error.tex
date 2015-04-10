@@ -1,4 +1,4 @@
-\item \cppinline|void phypp_check(bool b, ...)| \itt{phypp_check}
+\funcitem \cppinline|void phypp_check(bool b, ...)| \itt{phypp_check}
 
 This function makes error checking easier. When called, it checks the value of \cppinline{b}. If \cppinline{b} is \cpptrue, then nothing happens. However if \cppinline{b} is \cppfalse, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the \phypp library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
 

@@ -1,4 +1,4 @@
-\item \cppinline|string strn(T v)| \itt{strn}
+\funcitem \cppinline|string strn(T v)| \itt{strn}
 
 \cppinline|string strn_sci(T v)| \itt{strn_sci}
 
@@ -27,7 +27,7 @@ strn_sci(1000.0); // "1.000000e+03"
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec_<D,string> strna(vec<D,T>)| \itt{strna}
+\funcitem \cppinline|vec_<D,string> strna(vec<D,T>)| \itt{strna}
 
 \cppinline|vec_<D,string> strna_sci(vec<D,T> v)| \itt{strna_sci}
 
@@ -40,7 +40,7 @@ strn(vec1i{1,5,6,9});  // "{1, 5, 6, 9}"
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|bool from_string(string s, T& v)| \itt{from_string}
+\funcitem \vectorfunc \cppinline|bool from_string(string s, T& v)| \itt{from_string}
 
 This function tries to convert the string \cppinline{s} into a C++ value \cppinline{v} and returns \cpptrue in case of success. If the string cannot be converted into this value, for example if the string contains letters and the value has an arithmetic type, or if the number inside the string is too big to fit inside the C++ value, the function will return \cppfalse. In this case, the value of \cppinline{v} is undefined.
 
@@ -64,7 +64,7 @@ fs; // {1,    1e5,  ???,   ???,   2.5}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|string hash(...)| \itt{hash}
+\funcitem \cppinline|string hash(...)| \itt{hash}
 
 This function scans all the arguments that are provided, and returns the hexadecimal representation of the SHA-1 hash of this argument list. The hash is a string such that: 1) all further calls of \cppinline{hash(...)} with arguments that have the exact same value will always return the same string, and 2) the probability that the function returns the same string for another set of arguments is very small (in fact, although this algorithm was created in 1995, no such collision has been found yet).
 

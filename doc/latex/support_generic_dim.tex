@@ -1,4 +1,4 @@
-\item \cppinline|vec<1,T> flatten(vec<D,T>)| \itt{flatten}
+\funcitem \cppinline|vec<1,T> flatten(vec<D,T>)| \itt{flatten}
 
 This function transforms a multidimensional vector into a monodimensional vector. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. The \cppinline{reform} function does the inverse job, and more.
 
@@ -9,7 +9,7 @@ vec1i w = flatten(v); // {1,2,3,4,5,6}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec<D1,T> reform(vec<D2,T>, ...)| \itt{reform}
+\funcitem \cppinline|vec<D1,T> reform(vec<D2,T>, ...)| \itt{reform}
 
 This function transforms a vector into another vector just by changing its dimensions. The content in memory is exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary, this function is extremely cheap as it produces no copy. However, the new dimensions have to generate the same number of elements as the provided vector contains. The \cppinline{flatten} function is a special case of \cppinline{reform}.
 
@@ -20,7 +20,7 @@ vec2i w = reform(v, 2, 3); // {{1,2,3}, {4,5,6}}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec<N,T>   replicate(T, ...)| \itt{replicate}
+\funcitem \cppinline|vec<N,T>   replicate(T, ...)| \itt{replicate}
 
       \cppinline|vec<D+N,T> replicate(vec<D,T>, ...)|
 
@@ -46,7 +46,7 @@ vec2i z = replicate({1,2}, 3); // error, unfortunately
 \subsection{Adding/removing elements}
 
 \begin{itemize}
-\item \cppinline|vec<1,T> remove(vec<1,T> v, vec1u id)| \itt{remove}
+\funcitem \cppinline|vec<1,T> remove(vec<1,T> v, vec1u id)| \itt{remove}
 
 \cppinline|void inplace_remove(vec<1,T>& v, vec1u id)| \itt{inplace_remove}
 
@@ -64,7 +64,7 @@ v; // {4,2,1}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void append<N>(vec<D,T1>& t1, vec<D,T2> t2)| \itt{append}
+\funcitem \cppinline|void append<N>(vec<D,T1>& t1, vec<D,T2> t2)| \itt{append}
 
 \cppinline|void append(vec<1,T1>& t1, vec<1,T2> t2)|
 

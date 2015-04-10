@@ -1,4 +1,4 @@
-\item \cppinline|vec1u where(vec<D,bool>)| \itt{where}
+\funcitem \cppinline|vec1u where(vec<D,bool>)| \itt{where}
 
 This function will scan the \cppinline{bool} vector provided in argument, will store the flat indices (\ref{SEC:core:vec:indexing}) of each element which is \cpptrue, and will return all these indices in a vector. This is a very useful tool to filter and selectively modify vectors, and probably one of the most used function of the whole library.
 
@@ -24,7 +24,7 @@ w[id]; // {8,6,1,-2,0,5}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1u complement(vec v, vec1u id)| \itt{complement}
+\funcitem \cppinline|vec1u complement(vec v, vec1u id)| \itt{complement}
 
 This function works in tandem with \cppinline{where}. Given a vector \cppinline{v} and a set of flat indices \cppinline{id} (\ref{SEC:core:vec:indexing}), it will return the complementary set of indices inside this vector, i.e., all the indices of \cppinline{v} that are \emph{not} present in \cppinline{id}.
 
@@ -36,7 +36,7 @@ vec1u cid = complement(v, id); // {0,3}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|uint_t lower_bound(T x, vec v)| \itt{lower_bound}
+\funcitem \cppinline|uint_t lower_bound(T x, vec v)| \itt{lower_bound}
 
 \cppinline|uint_t upper_bound(T x, vec v)| \itt{upper_bound}
 
@@ -61,7 +61,7 @@ bounds(100, v); // {4,npos}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1u equal_range(T x, vec v)| \itt{equal_range}
+\funcitem \cppinline|vec1u equal_range(T x, vec v)| \itt{equal_range}
 
 Similarly to \cppinline{lower_bound}, \cppinline{upper_bound} and \cppinline{bounds}, this function uses a binary search algorithm to locate all the values in the input vector \cppinline{v} that are equal to \cppinline{x}. It then returns the flat indices of all these values in a vector. It is important to note that the binary search assumes that the elements in the input vector are \emph{sorted} by increasing value. This algorithm also assumes that the input vector does not contain any NaN value (\ref{SEC:support:math}).
 
@@ -77,7 +77,7 @@ where(v == 9);
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1u uniq(vec v)| \itt{uniq}
+\funcitem \cppinline|vec1u uniq(vec v)| \itt{uniq}
 
 \cppinline|vec1u uniq(vec v, vec1u sid)|
 
@@ -97,7 +97,7 @@ w[u]; // {1,2,4,5,6,7,8}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|bool is_any_of(T1 v1, vec<D2,T2> v2)| \itt{is_any_of}
+\funcitem \vectorfunc \cppinline|bool is_any_of(T1 v1, vec<D2,T2> v2)| \itt{is_any_of}
 
 This function looks if there is any value inside \cppinline{v2} that is equal to \cppinline{v1}. If so, it returns \cpptrue, else it returns \cppfalse.
 
@@ -109,7 +109,7 @@ vec1b b = is_any_of(v, d); // {true, false, false, false, true}
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void match(vec v1, v2, vec1u& id1, id2)| \itt{match}
+\funcitem \cppinline|void match(vec v1, v2, vec1u& id1, id2)| \itt{match}
 
 This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for elements in \cppinline{v2} that have the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Note that, contrary to \cppinline{match_dictionary}, each value in \cppinline{v1} is matched to \emph{at most} one value in \cppinline{v2}, and vice versa. In other words, if \cppinline{v1} or \cppinline{v2} contain duplicates, only the first value will be matched and the others will be ignored. This function is symmetric: the result will be the same if you swap the two input vectors (of course, the output vectors have to be swapped also).
 
@@ -125,7 +125,7 @@ v[id1] == w[id2]; // always true
 \end{cppcode}
 \end{example}
 
-\item \cppinline|void match_dictionary(vec v1, v2, vec1u& id1, id2)| \itt{match_dictionary}
+\funcitem \cppinline|void match_dictionary(vec v1, v2, vec1u& id1, id2)| \itt{match_dictionary}
 
 This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for an element in \cppinline{v2} that has the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Contrary to \cppinline{match}, each value in \cppinline{v2} can be matched to multiple values in \cppinline{v1}. Therefore this function is not symmetric: the second vector should be considered as a ``dictionary'', hence the name of this function. It is assumed that \cppinline{v2} does not contain any duplicates.
 
@@ -141,7 +141,7 @@ v[id1] == w[id2]; // always true
 \end{cppcode}
 \end{example}
 
-\item \cppinline|bool astar_find(vec2b m, uint_t& x, y)| \itt{astar_find}
+\funcitem \cppinline|bool astar_find(vec2b m, uint_t& x, y)| \itt{astar_find}
 
 This function uses the $A^\star$ (``A star'') algorithm to look inside a 2D boolean map \cppinline{m} and, starting from the position \cppinline{x} and \cppinline{y} (i.e. \cppinline{m(x,y)}), find the closest point that has a value of \cpptrue. Once this position is found, its indices are stored inside \cppinline{x} and \cppinline{y}, and the function returns \cpptrue. If no element inside \cppinline{m} is \cpptrue, then the function returns \cppfalse.
 

@@ -1,4 +1,4 @@
-\item \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
+\funcitem \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
 
 This function reads the content of the ASCII table \cppinline{f} and stores the data inside vectors. The second argument \cppinline{s} gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table. Note that, due to the lack of standard formatting for the header, there is no automatic way to ignore these lines.
 
@@ -120,7 +120,7 @@ file::read_table("some/ascii_table.dat", 11,
 );
 \end{cppcode}
 
-\item \cppinline|void file::write_table(string f, uint_t w, ...)| \itt{file::write_table}
+\funcitem \cppinline|void file::write_table(string f, uint_t w, ...)| \itt{file::write_table}
 
 \cppinline|void file::write_table_csv(string f, uint_t w, ...)| \itt{file::write_table_csv}
 

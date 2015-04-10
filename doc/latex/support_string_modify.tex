@@ -1,4 +1,4 @@
-\item \vectorfunc \cppinline|bool empty(string s)| \itt{empty}
+\funcitem \vectorfunc \cppinline|bool empty(string s)| \itt{empty}
 
 This function will return \cpptrue if the provided string does not contain any character \emph{at all} (inluding spaces), and \cppfalse otherwise.
 
@@ -16,7 +16,7 @@ str.empty(); // true
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|uint_t length(string s)| \itt{length}
+\funcitem \vectorfunc \cppinline|uint_t length(string s)| \itt{length}
 
 This function will return the length of the provided string, i.e., the number of character it contains (including spaces). If the string is empty (see above), the function will return zero.
 
@@ -28,7 +28,7 @@ n; // {0, 3, 4}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string trim(string s, c = " \t")| \itt{trim}
+\funcitem \vectorfunc \cppinline|string trim(string s, c = " \t")| \itt{trim}
 
 This function will look at the beginning and the end of the string \cppinline{s} and search for any of the characters that is present in \cppinline{c}. If one is found, then this character is removed from \cppinline{s}. This procedure is repeated until no character is found. The net effect of this function is that the provided string \cppinline{s} is \emph{trimmed} from any of the characters listed in \cppinline{c}. This is useful for example to remove leading and trailing spaces of a string (default value of \cppinline{c}), or to removes quotes.
 
@@ -44,7 +44,7 @@ t; // {"", "a,b", "a,b),c"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string toupper(string s)| \itt{toupper}
+\funcitem \vectorfunc \cppinline|string toupper(string s)| \itt{toupper}
 
 This function will transform all characters of the string to be upper case. It has no effect on non-alphabetic characters such as numbers, punctuation, of special characters.
 
@@ -56,7 +56,7 @@ t; // {"", "ABC", "ABCDE", "NO, THANKS!"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string tolower(string s)| \itt{tolower}
+\funcitem \vectorfunc \cppinline|string tolower(string s)| \itt{tolower}
 
 This function will transform all characters of the string to be lower case. It has no effect on non-alphabetic characters such as numbers, punctuation, of special characters.
 
@@ -68,7 +68,7 @@ t; // {"", "abc", "abcde", "no, thanks!"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string replace(string s, p, r)| \itt{replace}
+\funcitem \vectorfunc \cppinline|string replace(string s, p, r)| \itt{replace}
 
 This function will look inside the string \cppinline{s} for occurrences of \cppinline{p} and replace each of them with \cppinline{r}. The string is unchanged if no occurrence is found. In particular, this function can be used to remove all the occurrences of \cppinline{p} simply by setting \cppinline{r} equal to an empty string.
 
@@ -84,7 +84,7 @@ r; // {"a,b,c", "g,,p"};
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1s split(string s, p)| \itt{split}
+\funcitem \cppinline|vec1s split(string s, p)| \itt{split}
 
 This function will split the string \cppinline{s} into a vector of sub-strings each time the pattern \cppinline{p} occurs. If no such pattern is found in \cppinline{s}, the function returns a vector containing a single element which is the whole string \cppinline{s}.
 
@@ -97,7 +97,7 @@ str; // {"a", "b", "", "c", "d"};
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1s cut(string s, uint_t n)| \itt{cut}
+\funcitem \cppinline|vec1s cut(string s, uint_t n)| \itt{cut}
 
 This function will split the string \cppinline{s} into a vector of sub-strings (or ``lines'') that are exactly \cppinline{n} characters long (except possibly the last one). Contrary to the function \cppinline{wrap()}, this function does not care about spaces and preserving the boundaries of words.
 
@@ -108,7 +108,7 @@ str; // {"this ", "is th", "e end"};
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec1s wrap(string s, uint_t w, string i = "", bool e = false)| \itt{wrap}
+\funcitem \cppinline|vec1s wrap(string s, uint_t w, string i = "", bool e = false)| \itt{wrap}
 
 This function will split the string \cppinline{s} into a vector of sub-strings (or ``lines'') that are at most \cppinline{w} characters long. Contrary to the function \cppinline{cut()}, this function takes care of not splitting words into multiple parts. If a cut would happen in the middle of a word, then the cut is shifted back to the beginning of the word, and the latter is flushed to the next line. If a word is larger than \cppinline{w}, then it will be alone on its line. Alternatively, in such a case if \cppinline{e} is set to \cppinline{true}, the word is truncated and the last characters are lost. An ellipsis \cppinline{"..."} is also appended to notify that the word has been truncated. Finally, the parameter \cppinline{i} can be used to add indentation: these characters are added at the beginning of the line and are taken into account when calculating the length of the line. In this case the first line is not indented, to allow using a different header. This function is useful to display multi-line messages on the terminal.
 
@@ -147,7 +147,7 @@ s[6]; // "  long word."
 \end{cppcode}
 \end{example}
 
-\item \cppinline|string collapse(vec<D,string> v, string s = "")| \itt{collapse}
+\funcitem \cppinline|string collapse(vec<D,string> v, string s = "")| \itt{collapse}
 
 This function will concatenate together all the strings present in the vector \cppinline{v} to form a single string. A separator can be provided using the argument \cppinline{s}, in which case the string \cppinline{s} will be inserted between each pair of strings of \cppinline{v} that are to be concatenated.
 
@@ -162,7 +162,7 @@ s; // "a, b, c"
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|uint_t find(string s, p)| \itt{find}
+\funcitem \vectorfunc \cppinline|uint_t find(string s, p)| \itt{find}
 
 This function returns the position in the string \cppinline{s} of the first occurrence of the sub-string \cppinline{p}. If no such occurrence is found, the function returns \cppinline{npos}.
 
@@ -174,7 +174,7 @@ p; // {2, 0, 3, npos}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|bool match(string s, r)| \itt{match}
+\funcitem \vectorfunc \cppinline|bool match(string s, r)| \itt{match}
 
 \vectorfunc \cppinline|bool match_any_of(string s, vec1s r)| \itt{match_any_of}
 
@@ -215,7 +215,7 @@ b[4]; // false, too many characters before the ","
 \end{cppcode}
 \end{example}
 
-\item \cppinline|vec2s extract(string s, r)| \itt{extract}
+\funcitem \cppinline|vec2s extract(string s, r)| \itt{extract}
 
 This function will perform regular expression matching (see above), and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension correspond to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
 
@@ -230,7 +230,7 @@ sub(1,_); // {"45", "6"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|bool start_with(string s, string p)| \itt{start_with}
+\funcitem \vectorfunc \cppinline|bool start_with(string s, string p)| \itt{start_with}
 
 \vectorfunc \cppinline|bool end_with(string s, string p)| \itt{end_with}
 
@@ -247,7 +247,7 @@ b; // {false, true, true}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string erase_begin(string s, string p)| \itt{erase_begin}
+\funcitem \vectorfunc \cppinline|string erase_begin(string s, string p)| \itt{erase_begin}
 
 \vectorfunc \cppinline|string erase_begin(string s, uint_t n)|
 
@@ -281,7 +281,7 @@ t; // {"p1_m", "p3_c4", "p1_t8"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string keep_start(string s, uint_t n = 1)| \itt{keep_start}
+\funcitem \vectorfunc \cppinline|string keep_start(string s, uint_t n = 1)| \itt{keep_start}
 
 \vectorfunc \cppinline|string keep_end(string s, uint_t n = 1)| \itt{keep_end}
 
@@ -297,7 +297,7 @@ s; // {".txt", "fits", "fits"}
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|string align_left(string s, uint_t w, char f = ' ')| \itt{align_left}
+\funcitem \vectorfunc \cppinline|string align_left(string s, uint_t w, char f = ' ')| \itt{align_left}
 
 \vectorfunc \cppinline|string align_center(string s, uint_t w, char f = ' ')| \itt{align_center}
 
@@ -321,7 +321,7 @@ n; // "5.0000"
 \end{cppcode}
 \end{example}
 
-\item \vectorfunc \cppinline|uint_t distance(string s1, s2)| \itt{distance}
+\funcitem \vectorfunc \cppinline|uint_t distance(string s1, s2)| \itt{distance}
 
 This function computes the \emph{lexicographic distance} between two strings. The definition of this distance is the following. If the two strings that are exactly identical, the distance is zero. Else, each character of the shortest string are compared to their equivalent at the same position in the other string: if they are different, the distance is increase by one. Finally, the distance is increased by the difference of size between the two strings.
 
