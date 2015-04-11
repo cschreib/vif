@@ -230,6 +230,35 @@ sub(1,_); // {"45", "6"}
 \end{cppcode}
 \end{example}
 
+\end{example}
+
+\funcitem \cppinline|string regex_replace(string s, reg, rep)| \itt{regex_replace}
+
+This function will perform regular expression matching (see \cppinline{regex_match}) using the regex \cppinline{reg}, to locate some expressions in the string \cppinline{s} and replace them with another expression \cppinline{rep}. The expression to replace can contain sub-expressions that will be reused in the replacement. To do so, the sub-expressions must be enclosed in parentheses in \cppinline{reg}, and referenced as \cppinline{\1}, \cppinline{\2}, etc., in \cppinline{rep}.
+
+This function is very similar to the \texttt{sed} program.
+
+\begin{example}
+\begin{cppcode}
+std::string s = "array{5,6.25,7,28}end45.6ddfk";
+// Find all floating point numbers, and swap their
+// integer and fractional parts.
+std::string n = regex_replace(
+    s,                       // the string to analyse
+    R"(([0-9]+)\.([0-9]+))", // the regular expression
+    R"(\2.\1)"               // the replacement pattern
+);
+
+// Here we have two sub-expressions, the first being the integer
+// part of the number (\1), the second being the fractional
+// part (\2).
+
+n; // "array{5,25.6,7,28}end6.45ddfk"
+
+\end{cppcode}
+\end{example}
+
+
 \funcitem \vectorfunc \cppinline|bool start_with(string s, string p)| \itt{start_with}
 
 \vectorfunc \cppinline|bool end_with(string s, string p)| \itt{end_with}
