@@ -816,7 +816,7 @@ using get_band_has_notes_ = typename get_band_has_notes_impl_<typename std::deca
 template<typename Cat>
 bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
     vec1s notes = get_band_get_notes_(cat, get_band_has_notes_<Cat>{});
-    vec1u id = where(match(cat.bands, band));
+    vec1u id = where(regex_match(cat.bands, band));
     if (id.empty()) {
         error("no band matching '"+band+"'");
         return false;
@@ -834,7 +834,7 @@ bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
 
 template<typename Cat>
 bool get_band(const Cat& cat, const std::string& band, const std::string& note_, uint_t& bid) {
-    vec1u id = where(match(cat.bands, band) && match(cat.notes, note_));
+    vec1u id = where(regex_match(cat.bands, band) && regex_match(cat.notes, note_));
     if (id.empty()) {
         error("no band matching '"+band+"' & '"+note_+"'");
         return false;

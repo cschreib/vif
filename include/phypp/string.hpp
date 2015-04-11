@@ -205,36 +205,36 @@ void build_regex_(const std::string& regex, regex_t& re, int flags) {
     phypp_check(status == 0, "parsing regex '", regex, "': ", regex_get_error_(status));
 }
 
-bool match_(const std::string& ts, regex_t& re) {
+bool regex_match_(const std::string& ts, regex_t& re) {
     return regexec(&re, ts.c_str(), std::size_t(0), nullptr, 0) == 0;
 }
 
-bool match(const std::string& ts, const std::string& regex) {
+bool regex_match(const std::string& ts, const std::string& regex) {
     regex_t re;
     build_regex_(regex, re, REG_EXTENDED | REG_NOSUB);
-    bool ret = match_(ts, re);
+    bool ret = regex_match_(ts, re);
     regfree(&re);
     return ret;
 }
 
 template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
     std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
-vec<Dim,bool> match(const vec<Dim,Type>& v, const std::string& regex) {
+vec<Dim,bool> regex_match(const vec<Dim,Type>& v, const std::string& regex) {
     regex_t re;
     build_regex_(regex, re, REG_EXTENDED | REG_NOSUB);
     vec<Dim,bool> r(v.dims);
     for (uint_t i = 0; i < v.size(); ++i) {
-        r.safe[i] = match_(v.safe[i], re);
+        r.safe[i] = regex_match_(v.safe[i], re);
     }
     regfree(&re);
     return r;
 }
 
-bool match_any_of(const std::string& ts, const vec1s& regex) {
+bool regex_match_any_of(const std::string& ts, const vec1s& regex) {
     for (uint_t i : range(regex)) {
         regex_t re;
         build_regex_(regex.safe[i], re, REG_EXTENDED | REG_NOSUB);
-        bool ret = match_(ts, re);
+        bool ret = regex_match_(ts, re);
         regfree(&re);
         if (ret) return true;
     }
@@ -242,7 +242,7 @@ bool match_any_of(const std::string& ts, const vec1s& regex) {
     return false;
 }
 
-vec2s extract(const std::string& ts, const std::string& regex) {
+vec2s regex_extract(const std::string& ts, const std::string& regex) {
     vec2s ret;
 
     regex_t re;

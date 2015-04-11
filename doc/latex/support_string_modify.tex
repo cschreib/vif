@@ -174,13 +174,13 @@ p; // {2, 0, 3, npos}
 \end{cppcode}
 \end{example}
 
-\funcitem \vectorfunc \cppinline|bool match(string s, r)| \itt{match}
+\funcitem \vectorfunc \cppinline|bool regex_match(string s, r)| \itt{regex_match}
 
-\vectorfunc \cppinline|bool match_any_of(string s, vec1s r)| \itt{match_any_of}
+\vectorfunc \cppinline|bool regex_match_any_of(string s, vec1s r)| \itt{regex_match_any_of}
 
 This function will return \cpptrue if the string \cppinline{s} matches the regular expression (regex) \cppinline{r}. This regular expression can be used to identify complex patterns in a string, far more advanced than just matching the existence of a sub-string. This particular implementation uses POSIX regular expressions. The syntax is complex and not particularly intuitive, but it has become a well known standard and is therefore understood by most programmers. A gentle tutorial can be found \href{http://www.zytrax.com/tech/web/regex.htm}{here}. Note that if the regular expression is invalid, an error will be reported to diagnose the problem, and the program will stop.
 
-The function \cppinline{match_any_of} will do the same, but for a list of regular expressions. \cpptrue will be returned if the string \cppinline{s} matches at least one of these.
+The function \cppinline{regex_match_any_of} will do the same, but for a list of regular expressions. \cpptrue will be returned if the string \cppinline{s} matches at least one of these.
 
 Lastly, it is advised to use \emph{raw string literals} to specify the regex in C++ code. Indeed, one often needs to use the backslash character (\cppinline{\}), but this character is used in C++ to create escape sequences like \cppinline{'\n'} (new line). For this reason, to feed the backslash to the regex compiler you actually need to escape it: \cppinline{"\\"}. To avoid this inconvenience, just enclose the regular expression in \cppinline{R"(...)"}, and you will not need to worry about escaping characters from the C++ compiler. Note however that you will still need to escape characters from the regular expression compiler itself, when needed.
 
@@ -191,7 +191,7 @@ vec1s v = {"abc,def", "abc:def", "956,fgt", "9g5,hij", "ghji,abc"};
 // We want to find which strings have the "XXX,YYY" format
 // where "XXX" can be any combination of three letters or numbers
 // and "YYY" can be a combination of three letters
-vec1b b = match(v, R"(^[a-z0-9]{3},[a-z]{3}$)");
+vec1b b = regex_match(v, R"(^[a-z0-9]{3},[a-z]{3}$)");
 
 // This regular expression can be read like:
 //  '^'   : at the beginning of the string, match...
@@ -215,16 +215,16 @@ b[4]; // false, too many characters before the ","
 \end{cppcode}
 \end{example}
 
-\funcitem \cppinline|vec2s extract(string s, r)| \itt{extract}
+\funcitem \cppinline|vec2s regex_extract(string s, r)| \itt{regex_extract}
 
-This function will perform regular expression matching (see above), and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension correspond to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
+This function will perform regular expression matching (see \cppinline{regex_match}), and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension correspond to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
 
 \begin{example}
 \begin{cppcode}
 std::string s = "array{5,6.25,7,28}end45.6ddfk";
 // Find all floating point numbers, and extract
 // the integer and fractional parts separately.
-vec2s sub = extract(s, R"(([0-9]+)\.([0-9]+))");
+vec2s sub = regex_extract(s, R"(([0-9]+)\.([0-9]+))");
 sub(0,_); // {"6", "25"}
 sub(1,_); // {"45", "6"}
 \end{cppcode}
