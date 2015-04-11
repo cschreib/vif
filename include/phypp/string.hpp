@@ -706,7 +706,7 @@ std::string collapse(const vec<Dim,Type>& v, const std::string& sep) {
 }
 
 template<typename T>
-std::string convert_block(const std::string& os, const std::string& begin,
+std::string replace_block(const std::string& os, const std::string& begin,
     const std::string& end, T&& convert) {
 
     std::string s;
@@ -733,7 +733,7 @@ std::string convert_block(const std::string& os, const std::string& begin,
 }
 
 template<typename T>
-std::string convert_blocks(std::string s, const std::string& begin,
+std::string replace_blocks(std::string s, const std::string& begin,
     const std::string& sep, const std::string& end, T&& convert) {
 
     std::string os = s;
