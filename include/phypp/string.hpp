@@ -280,8 +280,9 @@ vec2s regex_extract(const std::string& ts, const std::string& regex) {
     return ret;
 }
 
+template<typename F>
 std::string regex_replace(const std::string& ts, const std::string& regex,
-    const std::string& rep) {
+    const std::string& rep, F&& func) {
 
     std::string s;
 
@@ -361,7 +362,7 @@ std::string regex_replace(const std::string& ts, const std::string& regex,
                 s += rep_txt[i-1];
             } else {
                 uint_t rid = rep_rep[-i-1];
-                s += ts.substr(offset+m[rid].rm_so, m[rid].rm_eo - m[rid].rm_so);
+                s += func(rid, ts.substr(offset+m[rid].rm_so, m[rid].rm_eo - m[rid].rm_so));
             }
         }
 
@@ -372,6 +373,13 @@ std::string regex_replace(const std::string& ts, const std::string& regex,
     s += ts.substr(offset);
 
     return s;
+}
+
+std::string regex_replace(const std::string& ts, const std::string& regex,
+    const std::string& rep) {
+    return regex_replace(ts, regex, rep, [](uint_t, std::string e) {
+        return e;
+    });
 }
 
 uint_t length(const std::string& s) {

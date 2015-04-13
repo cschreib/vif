@@ -217,47 +217,129 @@ b[4]; // false, too many characters before the ","
 
 \funcitem \cppinline|vec2s regex_extract(string s, r)| \itt{regex_extract}
 
-This function will perform regular expression matching (see \cppinline{regex_match}), and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension correspond to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
+This function will analyze the string \cppinline{s}, perform regular expression matching (see \cppinline{regex_match}) using the regular expression \cppinline{r}, and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension corresponds to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
 
 \begin{example}
 \begin{cppcode}
-std::string s = "array{5,6.25,7,28}end45.6ddfk";
-// Find all floating point numbers, and extract
-// the integer and fractional parts separately.
-vec2s sub = regex_extract(s, R"(([0-9]+)\.([0-9]+))");
-sub(0,_); // {"6", "25"}
-sub(1,_); // {"45", "6"}
-\end{cppcode}
-\end{example}
+std::string s = "array{5,6.25,7,28}end45.6ddfk 3.1415";
 
+// We want to find all floating point numbers in this mess, and
+// extract their integer and fractional parts separately.
+vec2s sub = regex_extract(s, R"(([0-9]+)\.([0-9]+))");
+
+// The regular expression can be read like:
+// '('   : open a new sub-expression containing...
+// '['   : any character among...
+// '0-9' : the numbers 0 to 9
+// ']'
+// '+'   : with at least one such character
+// ')'   : end of the sub-expression
+// '\.'  : followed by a dot (has to be escaped with '\')
+// '('   : open a new sub-expression containing...
+//         ... exactly the same pattern as the first one
+// ')'   : end of the sub-expression
+
+// So we are looking for two sub-expressions, the first is the
+// integral part of the floating point number, and the second is the
+// fractional part.
+
+// It turns out that there are three locations in the input string
+// that match this pattern:
+sub(0,_); // {"6",  "25"}
+sub(1,_); // {"45", "6"}
+sub(2,_); // {"3",  "1415"}
+\end{cppcode}
 \end{example}
 
 \funcitem \cppinline|string regex_replace(string s, reg, rep)| \itt{regex_replace}
 
-This function will perform regular expression matching (see \cppinline{regex_match}) using the regex \cppinline{reg}, to locate some expressions in the string \cppinline{s} and replace them with another expression \cppinline{rep}. The expression to replace can contain sub-expressions that will be reused in the replacement. To do so, the sub-expressions must be enclosed in parentheses in \cppinline{reg}, and referenced as \cppinline{\1}, \cppinline{\2}, etc., in \cppinline{rep}.
+\cppinline|string regex_replace(string s, reg, rep, T f)|
 
-This function is very similar to the \texttt{sed} program.
+This function will search in the string \cppinline{s} using the regular expression \cppinline{reg} (see \cppinline{regex_match}) to locate some expressions. These expressions are then modified according to the pattern given in \cppinline{rep}, and will be inserted back in a copy of \cppinline{s}, which is eventually returned. The expression to replace can contain sub-expressions that will be reused in the replacement. To do so, the sub-expressions must be enclosed in parentheses in \cppinline{reg}, and referred to as \cppinline{\1}, \cppinline{\2}, etc., in \cppinline{rep}.
+
+There are little rules about the replacement pattern. It can be of arbitrary length, and can refer to a given sub-expression (e.g., \cppinline{\1}) any number of times (including zero). These sub-expressions can appear in any order. Apart from the sub-expression identifiers, there is no special character. As for the regular expression, it is advised to use the \emph{raw string literal} notation (see \cppinline{regex_match}).
+
+This function is very similar to the \cppinline{sed} program.
 
 \begin{example}
 \begin{cppcode}
-std::string s = "array{5,6.25,7,28}end45.6ddfk";
-// Find all floating point numbers, and swap their
-// integer and fractional parts.
+std::string s = "a, b, c=5, d=9, e, f=2, g";
+
+// We want to find all the "X=Y" expressions in this string and
+// add quotes around "Y".
 std::string n = regex_replace(
-    s,                       // the string to analyse
-    R"(([0-9]+)\.([0-9]+))", // the regular expression
-    R"(\2.\1)"               // the replacement pattern
+    s,                    // the string to analyze
+    R"(([a-z])=([0-9]))", // the regular expression
+    R"(\1="\2")"          // the replacement pattern
 );
 
-// Here we have two sub-expressions, the first being the integer
-// part of the number (\1), the second being the fractional
-// part (\2).
+// The regular expression can be read like:
+// '('   : open a new sub-expression containing...
+// '['   : any character among...
+// 'a-z' : the letters 'a' to 'z'
+// ']'
+// ')'   : end of the sub-expression
+// '='   : followed by the equal sign
+// '('   : open a new sub-expression containing...
+// '['   : any character among...
+// '0-9' : the numbers 0 to 9
+// ']'
+// ')'   : end of the sub-expression
 
-n; // "array{5,25.6,7,28}end6.45ddfk"
+// So we have two sub-expressions, the first (\1) is "X", the second
+// (\2) is "Y".
 
+// In the replacement pattern, we just specify how we want to change
+// the numbers that were matched. Here we say that we want:
+// '\1' : the first sub-expression
+// '='  : followed by an equal sign (indeed, it was not captured)
+// '"'  : a double quote
+// '\2' : the second sub-expression
+// '"'  : another double quote
+
+n; // "a, b, c="5", d="9", e, f="2", g"
 \end{cppcode}
 \end{example}
 
+The second overload will mostly do the same thing. The only difference is that, before inserting back a matched sub-expression in the replacement pattern, the sub-expression is fed to the user-supplied function \cppinline{f}, which can do any kind of operation on this expression and return the modified version. The function \cppinline{f} must take two arguments: first, an integer specifying the ID of the sub-expression that was matched (starting from \cppinline{1}); second, a string containing the sub-expression itself.
+
+\begin{example}
+\begin{cppcode}
+// We take the same example as above, but this time we also want to
+// change "X" to upper case increment "Y" by one. This cannot
+// be achieved with the first overload.
+
+// The function parameters are unchanged (see above), but we add
+// a fourth argument
+std::string n = regex_replace(
+    s,                    // the string to analyze
+    R"(([a-z])=([0-9]))", // the regular expression
+    R"(\1="\2")",         // the replacement pattern
+    [](uint_t i, std::string e) {
+        // i: index of the sub-expression
+        // e: the sub-expression
+
+        if (i == 1) {
+            // This is "X"
+            return toupper(e);
+        } else if (i == 2) {
+            // This is "Y"
+            // Read the integer
+            uint_t k; from_string(e, k);
+            // Increment it
+            ++k;
+            // Convert it back to a string
+            return strn(k);
+        } else {
+            // Will never happen
+            return e;
+        }
+    }
+);
+
+n; // "a, b, C="6", D="10", e, F="3", g"
+\end{cppcode}
+\end{example}
 
 \funcitem \vectorfunc \cppinline|bool start_with(string s, string p)| \itt{start_with}
 
