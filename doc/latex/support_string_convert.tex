@@ -31,7 +31,7 @@ strn_sci(1000.0); // "1.000000e+03"
 
 \cppinline|vec_<D,string> strna_sci(vec<D,T> v)| \itt{strna_sci}
 
-These functions are the vectorized version of \cppinline{strn} (see above). The reason why the name of the function is different is because it is already possible to call \cppinline{strn} with vector arguments: the whole vector will be converted into a \emph{single} string. These versions however convert each element separately to form a vector of strings.
+These functions are the vectorized version of \cppinline{strn}. The reason why the name of the function is different is because it is already possible to call \cppinline{strn} with vector arguments: the whole vector will be converted into a \emph{single} string. These versions however convert each element separately to form a vector of strings.
 
 \begin{example}
 \begin{cppcode}
