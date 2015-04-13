@@ -285,8 +285,7 @@ vec2s regex_extract(const std::string& ts, const std::string& regex) {
     return ret;
 }
 
-template<typename F, typename enable = typename std::enable_if<
-    !std::is_convertible<typename std::decay<F>::type, std::string>::value>::type>
+template<typename F>
 std::string regex_replace(const std::string& ts, const std::string& regex, F&& func) {
     std::string s;
 
@@ -317,77 +316,6 @@ std::string regex_replace(const std::string& ts, const std::string& regex, F&& f
     s += ts.substr(offset);
 
     return s;
-}
-
-std::string regex_replace(const std::string& ts, const std::string& regex,
-    const std::string& rep) {
-
-    uint_t nmatch = regex_find_nmatch_(regex);
-
-    vec1i rep_id;
-    vec1s rep_txt;
-    vec1u rep_rep;
-
-    if (nmatch == 0) {
-        rep_id.push_back(1);
-        rep_txt.push_back(rep);
-    } else {
-        auto isnum = [](char c) {
-            return c >= '0' && c <= '9';
-        };
-
-        uint_t p0 = 0;
-        uint_t p = rep.find_first_of('\\');
-        while (p != npos) {
-            if (p == rep.size()-1) break;
-            if (isnum(rep[p+1])) {
-                if (p != p0) {
-                    rep_txt.push_back(rep.substr(p0, p-p0));
-                    rep_id.push_back(int_t(rep_txt.size()));
-                }
-
-                uint_t i = 1;
-                while (p+1+i < rep.size() && isnum(rep[p+1+i])) {
-                    ++i;
-                }
-
-                uint_t rid;
-                phypp_check(from_string(rep.substr(p+1, i), rid), "could not read "
-                    "replacement token '\\", rep.substr(p+1, i), "' in '", rep, "'");
-                phypp_check(rid >= 1 && rid <= nmatch, "replacement token can only range "
-                    "from 1 to ", nmatch, " included (got '\\", rid, ") in '", rep, "'");
-
-                rep_rep.push_back(rid);
-                rep_id.push_back(-int_t(rep_rep.size()));
-
-                p0 = p+1+i;
-                p = p0;
-            } else {
-                p += 2;
-            }
-
-            p = rep.find_first_of('\\', p);
-        }
-
-        if (p0 != rep.size()) {
-            rep_txt.push_back(rep.substr(p0));
-            rep_id.push_back(int_t(rep_txt.size()));
-        }
-    }
-
-    return regex_replace(ts, regex, [&](vec1s m) {
-        std::string r;
-        for (auto i : rep_id) {
-            if (i > 0) {
-                r += rep_txt[i-1];
-            } else {
-                uint_t rid = rep_rep[-i-1];
-                r += m[rid-1];
-            }
-        }
-
-        return r;
-    });
 }
 
 uint_t length(const std::string& s) {
