@@ -242,12 +242,7 @@ bool regex_match_any_of(const std::string& ts, const vec1s& regex) {
     return false;
 }
 
-vec2s regex_extract(const std::string& ts, const std::string& regex) {
-    vec2s ret;
-
-    regex_t re;
-    build_regex_(regex, re, REG_EXTENDED);
-
+uint_t regex_find_nmatch_(const std::string& regex) {
     uint_t nmatch = 0;
     uint_t p = regex.find_first_of('(');
     while (p != npos) {
@@ -258,6 +253,16 @@ vec2s regex_extract(const std::string& ts, const std::string& regex) {
         p = regex.find_first_of('(', p+1);
     }
 
+    return nmatch;
+}
+
+vec2s regex_extract(const std::string& ts, const std::string& regex) {
+    vec2s ret;
+
+    regex_t re;
+    build_regex_(regex, re, REG_EXTENDED);
+
+    uint_t nmatch = regex_find_nmatch_(regex);
     if (nmatch == 0) return ret;
 
     std::vector<regmatch_t> m(nmatch+1);
@@ -280,24 +285,44 @@ vec2s regex_extract(const std::string& ts, const std::string& regex) {
     return ret;
 }
 
-template<typename F>
-std::string regex_replace(const std::string& ts, const std::string& regex,
-    const std::string& rep, F&& func) {
-
+template<typename F, typename enable = typename std::enable_if<
+    !std::is_convertible<typename std::decay<F>::type, std::string>::value>::type>
+std::string regex_replace(const std::string& ts, const std::string& regex, F&& func) {
     std::string s;
 
     regex_t re;
     build_regex_(regex, re, REG_EXTENDED);
 
-    uint_t nmatch = 0;
-    uint_t p = regex.find_first_of('(');
-    while (p != npos) {
-        if (p == 0 || regex[p-1] != '\\') {
-            ++nmatch;
+    uint_t nmatch = regex_find_nmatch_(regex);
+
+    std::vector<regmatch_t> m(nmatch+1);
+    uint_t offset = 0;
+    int status = regexec(&re, ts.c_str(), nmatch+1, m.data(), 0);
+
+    while (status == 0) {
+        s += ts.substr(offset, m[0].rm_so);
+
+        vec1s ext;
+        ext.reserve(nmatch);
+        for (uint_t i : range(nmatch)) {
+            ext.push_back(ts.substr(offset+m[i+1].rm_so, m[i+1].rm_eo - m[i+1].rm_so));
         }
 
-        p = regex.find_first_of('(', p+1);
+        s += func(std::move(ext));
+
+        offset += m[0].rm_eo;
+        status = regexec(&re, ts.c_str() + offset, nmatch+1, m.data(), 0);
     }
+
+    s += ts.substr(offset);
+
+    return s;
+}
+
+std::string regex_replace(const std::string& ts, const std::string& regex,
+    const std::string& rep) {
+
+    uint_t nmatch = regex_find_nmatch_(regex);
 
     vec1i rep_id;
     vec1s rep_txt;
@@ -312,7 +337,7 @@ std::string regex_replace(const std::string& ts, const std::string& regex,
         };
 
         uint_t p0 = 0;
-        p = rep.find_first_of('\\');
+        uint_t p = rep.find_first_of('\\');
         while (p != npos) {
             if (p == rep.size()-1) break;
             if (isnum(rep[p+1])) {
@@ -327,10 +352,10 @@ std::string regex_replace(const std::string& ts, const std::string& regex,
                 }
 
                 uint_t rid;
-                phypp_check(from_string(rep.substr(p+1, i), rid), "could not read replacement "
-                    "token '\\", rep.substr(p+1, i), "' in '", rep, "'");
-                phypp_check(rid >= 1 && rid <= nmatch, "replacement token can only range from "
-                    "1 to ", nmatch, " included (got '\\", rid, ") in '", rep, "'");
+                phypp_check(from_string(rep.substr(p+1, i), rid), "could not read "
+                    "replacement token '\\", rep.substr(p+1, i), "' in '", rep, "'");
+                phypp_check(rid >= 1 && rid <= nmatch, "replacement token can only range "
+                    "from 1 to ", nmatch, " included (got '\\", rid, ") in '", rep, "'");
 
                 rep_rep.push_back(rid);
                 rep_id.push_back(-int_t(rep_rep.size()));
@@ -350,35 +375,18 @@ std::string regex_replace(const std::string& ts, const std::string& regex,
         }
     }
 
-    std::vector<regmatch_t> m(nmatch+1);
-    uint_t offset = 0;
-    int status = regexec(&re, ts.c_str(), nmatch+1, m.data(), 0);
-
-    while (status == 0) {
-        s += ts.substr(offset, m[0].rm_so);
-
+    return regex_replace(ts, regex, [&](vec1s m) {
+        std::string r;
         for (auto i : rep_id) {
             if (i > 0) {
-                s += rep_txt[i-1];
+                r += rep_txt[i-1];
             } else {
                 uint_t rid = rep_rep[-i-1];
-                s += func(rid, ts.substr(offset+m[rid].rm_so, m[rid].rm_eo - m[rid].rm_so));
+                r += m[rid-1];
             }
         }
 
-        offset += m[0].rm_eo;
-        status = regexec(&re, ts.c_str() + offset, nmatch+1, m.data(), 0);
-    }
-
-    s += ts.substr(offset);
-
-    return s;
-}
-
-std::string regex_replace(const std::string& ts, const std::string& regex,
-    const std::string& rep) {
-    return regex_replace(ts, regex, rep, [](uint_t, std::string e) {
-        return e;
+        return r;
     });
 }
 

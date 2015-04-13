@@ -18,7 +18,7 @@ str.empty(); // true
 
 \funcitem \vectorfunc \cppinline|uint_t length(string s)| \itt{length}
 
-This function will return the length of the provided string, i.e., the number of character it contains (including spaces). If the string is empty (see above), the function will return zero.
+This function will return the length of the provided string, i.e., the number of character it contains (including spaces). If the string is empty, the function will return zero.
 
 \begin{example}
 \begin{cppcode}
@@ -251,13 +251,11 @@ sub(2,_); // {"3",  "1415"}
 \end{cppcode}
 \end{example}
 
-\funcitem \cppinline|string regex_replace(string s, reg, rep)| \itt{regex_replace}
+\funcitem \cppinline|string regex_replace(string s, reg, T fun)| \itt{regex_replace}
 
-\cppinline|string regex_replace(string s, reg, rep, T f)|
+This function will search in the string \cppinline{s} using the regular expression \cppinline{reg} (see \cppinline{regex_match}) to locate some expressions. Parts of these expressions can be \emph{captured} by enclosing them in parenthesis. These captured sub-expressions are extracted from \cppinline{s}, stored inside a string vector, and fed to the user-supplied ``replacement function'' \cppinline{fun}. In turn, this function can analyze and modify the captured sub-expressions and produce a new replacement string that will be inserted in place of the matched expression.
 
-This function will search in the string \cppinline{s} using the regular expression \cppinline{reg} (see \cppinline{regex_match}) to locate some expressions. These expressions are then modified according to the pattern given in \cppinline{rep}, and will be inserted back in a copy of \cppinline{s}, which is eventually returned. The expression to replace can contain sub-expressions that will be reused in the replacement. To do so, the sub-expressions must be enclosed in parentheses in \cppinline{reg}, and referred to as \cppinline{\1}, \cppinline{\2}, etc., in \cppinline{rep}.
-
-There are little rules about the replacement pattern. It can be of arbitrary length, and can refer to a given sub-expression (e.g., \cppinline{\1}) any number of times (including zero). These sub-expressions can appear in any order. Apart from the sub-expression identifiers, there is no special character. As for the regular expression, it is advised to use the \emph{raw string literal} notation (see \cppinline{regex_match}).
+If no sub-expression is captured, then the string vector that is fed to \cppinline{fun} will be empty. Expressions are found and replaced in the order in which they appear in the input string \cppinline{s}.
 
 This function is very similar to the \cppinline{sed} program.
 
@@ -265,12 +263,17 @@ This function is very similar to the \cppinline{sed} program.
 \begin{cppcode}
 std::string s = "a, b, c=5, d=9, e, f=2, g";
 
+// First a simple example.
 // We want to find all the "X=Y" expressions in this string and
-// add quotes around "Y".
+// add parentheses around "Y".
 std::string n = regex_replace(
     s,                    // the string to analyze
     R"(([a-z])=([0-9]))", // the regular expression
-    R"(\1="\2")"          // the replacement pattern
+    // the replacement function
+    [](vec1s m) {
+        // "X" is in m[0], "Y" is in m[1].
+        return m[0]+"=("+m[1]+")";
+    }
 );
 
 // The regular expression can be read like:
@@ -286,58 +289,31 @@ std::string n = regex_replace(
 // ']'
 // ')'   : end of the sub-expression
 
-// So we have two sub-expressions, the first (\1) is "X", the second
-// (\2) is "Y".
+// The result is:
+n; // "a, b, c=(5), d=(9), e, f=(2), g"
 
-// In the replacement pattern, we just specify how we want to change
-// the numbers that were matched. Here we say that we want:
-// '\1' : the first sub-expression
-// '='  : followed by an equal sign (indeed, it was not captured)
-// '"'  : a double quote
-// '\2' : the second sub-expression
-// '"'  : another double quote
-
-n; // "a, b, c="5", d="9", e, f="2", g"
-\end{cppcode}
-\end{example}
-
-The second overload will mostly do the same thing. The only difference is that, before inserting back a matched sub-expression in the replacement pattern, the sub-expression is fed to the user-supplied function \cppinline{f}, which can do any kind of operation on this expression and return the modified version. The function \cppinline{f} must take two arguments: first, an integer specifying the ID of the sub-expression that was matched (starting from \cppinline{1}); second, a string containing the sub-expression itself.
-
-\begin{example}
-\begin{cppcode}
-// We take the same example as above, but this time we also want to
-// change "X" to upper case increment "Y" by one. This cannot
-// be achieved with the first overload.
-
-// The function parameters are unchanged (see above), but we add
-// a fourth argument
+// A second, more complex example.
+// We take the same example as above, but this time we want to
+// change "X" to upper case and increment "Y" by one.
 std::string n = regex_replace(
     s,                    // the string to analyze
     R"(([a-z])=([0-9]))", // the regular expression
-    R"(\1="\2")",         // the replacement pattern
-    [](uint_t i, std::string e) {
-        // i: index of the sub-expression
-        // e: the sub-expression
+    // the replacement function
+    [](vec1s m) {
+        // Again, "X" is in m[0], "Y" is in m[1].
 
-        if (i == 1) {
-            // This is "X"
-            return toupper(e);
-        } else if (i == 2) {
-            // This is "Y"
-            // Read the integer
-            uint_t k; from_string(e, k);
-            // Increment it
-            ++k;
-            // Convert it back to a string
-            return strn(k);
-        } else {
-            // Will never happen
-            return e;
-        }
+        // Read the integer "Y" and increment it
+        uint_t k;
+        from_string(m[1], k);
+        ++k;
+
+        // Build the replacement string
+        return toupper(m[0])+"="+strn(k);
     }
 );
 
-n; // "a, b, C="6", D="10", e, F="3", g"
+// The result is:
+n; // "a, b, C=6, D=10, e, F=3, g"
 \end{cppcode}
 \end{example}
 
