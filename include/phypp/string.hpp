@@ -799,7 +799,7 @@ std::string replace_blocks(std::string s, const std::string& begin,
         phypp_check(p0 != npos, "ill formed "+begin+"..."+end+" command");
 
         b.push_back(os.substr(p, p0-p));
-        s += convert(b);
+        s += convert(std::move(b));
 
         p0 += end.size();
 
