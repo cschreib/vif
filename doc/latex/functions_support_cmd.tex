@@ -1,10 +1,10 @@
 \funcitem \cppinline|void read_args(int argc, char* argv[], ...)| \itt{read_args}
 
-The biggest problem of C++ programs is that, while they are usually fast to execute, they can take a long time to \emph{compile}. For this reason, C++ is generally not a productive language in situations where the code has to be written by \emph{trial and error}, a process that involves frequently changing the behavior or starting point of a program. This situation could change the day we have a complete, robust and efficient C++ interpreter (keep an eye out for \texttt{cling}\footnote{\url{http://root.cern.ch/drupal/content/cling}}).
+The biggest problem of C++ programs is that, while they are usually fast to execute, they can take a long time to \emph{compile}. For this reason, C++ is generally not a productive language in situations where the code has to be written by \emph{trial and error}, a process that involves frequently changing the behavior or starting point of a program. This situation could change the day we have a complete, robust and efficient C++ interpreter (keep an eye out for \href{http://root.cern.ch/drupal/content/cling}{\texttt{cling}}).
 
 Fortunately, in the mean time there are ways around this issue. One in particular is called \emph{data driven} programming: the behavior of a program depends on the data that are fed to it. The simplest way to use this paradigm is to control the program through \emph{command line arguments}. The C++ language provides the basic bricks to use command line arguments, but the interface is inherited from C and lacks severely in usability. For this reason we introduce in \phypp a single function \cppinline{read_args()} that uses these bricks to provide a simple and concise interface to implement command line arguments in a program. The details of the implementation are complex, since this function makes use of preprocessor macros, so instead of describing it all, we will focus on a simple example.
 
-Let us assume that we want to build a simple program that will print (\ref{SEC:support:print}) to the terminal the first \cppinline{n} powers of two.
+Let us assume that we want to build a simple program that will print \rsec{SEC:support:print} to the terminal the first \cppinline{n} powers of two.
 
 \begin{example}
 \begin{cppcode}
