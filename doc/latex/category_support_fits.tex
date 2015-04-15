@@ -1,0 +1,25 @@
+\section{FITS input/output \label{SEC:support:fits}}
+
+The FITS (Flexible Image Transport System) format is a general purpose file format developed for astrophysics data. In particular, FITS files can store images with floating point pixel values, image cubes, but also binary data tables with an arbitrary number of columns and rows. Using a meta-data system (FITS keywords), FITS files usually carry a number of important additional informations about their content. E.g., for images files, the mapping between image pixels and sky coordinates (WCS coordinates), or the physical unit of the pixel values.
+
+Storying data tables in binary inside FITS files is a space-efficient and fast way to store and read non-image data. FITS tables come in two fashions: row-oriented and column-oriented tables. In row-oriented tables, all the data about one row (e.g., about one galaxy in the table) is stored contiguously on disk. This means that it is very fast to retrieve all the information about a given object. In column-oriented tables however, a whole column is stored contiguously in memory. This means that it is very fast to read a given column for all the objects in the table. Due to the way the \phypp library is designed, it is more efficient to use the latter format, since a given column of the file will be represented by a single \phypp vector. It also brings the nice advantage of allowing to store columns of different lengths, e.g.~to combine two tables in the same file, or to carry meta-data that would be hard to store in the standard FITS keywords. The column-oriented format is not well known, but most softwares and libraries do support it\footnote{Topcat does. In IDL, column-oriented FITS files are supported by the \cppinline{mrdfits} and \cppinline{mwrfits} procedures.}.
+
+Finally, note that this support library introduces a new type: \cppinline{fits::header} (that we will shorten to \cppinline{header} in the following). This type is used to store the header of any FITS file. For now, it is actually just a raw \cppinline{std::string}, but that might change in the future.
+
+We now describe the various functions offered by this library, split into categories.
+
+\subsection{Generic header functions \label{SEC:support:fits:header}}
+
+\loadfunctions{functions_support_fits_header.tex}
+
+\subsection{FITS images input/output \label{SEC:support:fits:image}}
+
+\loadfunctions{functions_support_fits_image.tex}
+
+\subsection{WCS coordinates \label{SEC:support:fits:wcs}}
+
+\loadfunctions{functions_support_fits_wcs.tex}
+
+\subsection{FITS tables input/output \label{SEC:support:fits:table}}
+
+\loadfunctions{functions_support_fits_table.tex}

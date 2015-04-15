@@ -1,0 +1,35 @@
+\section{Generic vector functions \label{SEC:support:generic}}
+
+The vector and view classes are useful and complete tools. However, there are a number of tasks that one repeatedly need to do, like generating a sequence of indices, or sorting a vector, and that would be tedious to write each time they are needed. For this reason, the \phypp library comes with a large set of utility functions to sort, rearrange, and select data inside vectors. In this section we list these functions and algorithms.
+
+This support library also introduces a global constant called \cppinline{npos}\itt{npos}. This is an unsigned integer whose value is the largest possible integer that the \cppinline{uint_t} type can hold. It is meant to be used as an error value, or the value to return if no normal value would make sense. It is very similar in concept to the \cppinline{std::string::npos} provided by the C++ standard library. In particular, it is worth noting that converting \cppinline{npos} to a \emph{signed} integer produces the value \cppinline{-1}.
+
+We now describe the functions provided by this library, sorted by categories.
+
+\subsection{Range-based iteration \label{SEC:support:generic:range}}
+
+\loadfunctions{functions_support_generic_range.tex}
+
+\subsection{Index manipulation \label{SEC:support:generic:index}}
+
+\loadfunctions{functions_support_generic_index.tex}
+
+\subsection{Integer sequences \label{SEC:support:generic:sequence}}
+
+\loadfunctions{functions_support_generic_sequence.tex}
+
+\subsection{Rearranging elements \label{SEC:support:generic:rearrange}}
+
+\loadfunctions{functions_support_generic_rearrange.tex}
+
+\subsection{Finding elements \label{SEC:support:generic:find}}
+
+\loadfunctions{functions_support_generic_find.tex}
+
+\subsection{Modifying dimensions \label{SEC:support:generic:dims}}
+
+\loadfunctions{functions_support_generic_dim.tex}
+
+\subsection{Error checking \label{SEC:support:generic:error}}
+
+\loadfunctions{functions_support_generic_error.tex}

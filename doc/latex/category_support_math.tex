@@ -1,0 +1,69 @@
+\section{Mathematics \label{SEC:support:math}}
+
+The mathematics support library is among the largest inside \phypp. It contains many functions, as well as a handful of useful constants. Some functionalities of this library are only available if you have installed the \texttt{fftw} and \texttt{gsl} libraries. If not, the specific functions that depend on these libraries will not be available, or will be slow, but the rest of the library will function properly.
+
+This library provides the following global constants:
+\begin{itemize}
+\item \cppinline{fnan}\itt{fnan} and \cppinline{dnan}\itt{dnan}. These are the \cppinline{float} and \cppinline{double} representation of the ``not-a-number'' (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., \cppinline{2.0 + fnan == fnan}). More troubling, any comparison operation involving a NaN will return \cppfalse, e.g., \cppinline{(10.0 < fnan) == false} and \cppinline{(10.0 >= fnan) == false} too. The only notable exception to this rule is that \cppinline{(fnan != fnan) == true}. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as \cppinline{-99}. Using NaN in this case is clearer.
+
+\item \cppinline{fpi}\itt{fpi} and \cppinline{dpi}\itt{dpi}. This is the \cppinline{float} and \cppinline{double} closest representation of the number $\pi = 3.14519...$.
+
+\item \cppinline{finf}\itt{finf} and \cppinline{dinf}\itt{dinf}. This is the \cppinline{float} and \cppinline{double} representation of the positive infinity. The positive infinity is larger than any other finite value.
+\end{itemize}
+
+We now present the functions provided by this support library. One of the responsibilities of this library is to bring vectorized versions of standard mathematical functions that only work for scalar values. Since these functions are fairly common and well known, we will not describe their signature and behavior, and instead just list them here:
+\begin{itemize}
+\item exponentiation: \cppinline{sqrt}\itt{sqrt}, \cppinline{pow}\itt{pow},
+\item trigonometry: \cppinline{cos}\itt{cos}, \cppinline{sin}\itt{sin}, \cppinline{tan}\itt{tan}, \cppinline{acos}\itt{acos}, \cppinline{asin}\itt{asin}, \cppinline{atan}\itt{atan}, \cppinline{cosh}\itt{cosh}, \cppinline{sinh}\itt{sinh}, \cppinline{tanh}\itt{tanh}, \cppinline{acosh}\itt{acosh}, \cppinline{asinh}\itt{asinh}, \cppinline{atanh}\itt{atanh},
+\item exponentials and logarithms: \cppinline{exp}\itt{exp}, \cppinline{log}\itt{log}, \cppinline{log2}\itt{log2}, \cppinline{log10}\itt{log10},
+\item special functions: \cppinline{erf}\itt{erf}, \cppinline{erfc}\itt{erfc}, \cppinline{tgamma}\itt{tgamma},
+\item rounding: \cppinline{ceil}\itt{ceil}, \cppinline{floor}\itt{floor}, \cppinline{round}\itt{round},
+\item absolute value: \cppinline{fabs}\itt{fabs}.
+\end{itemize}
+
+We also introduce the functions \cppinline{bessel_j0}\itt{bessel_j0}, \cppinline{bessel_j1}\itt{bessel_j1}, \cppinline{bessel_y0}\itt{bessel_y0}, \cppinline{bessel_y1}\itt{bessel_y1}, \cppinline{bessel_i0}\itt{bessel_i0}, \cppinline{bessel_i1}\itt{bessel_i1}, \cppinline{bessel_k0}\itt{bessel_k0}, \cppinline{bessel_k1}\itt{bessel_k1}. The scalar version of the first four are provided by the C++ standard, while the last four are provided by the \texttt{gsl}.
+
+We now list the other, less common functions provided in this library. These are grouped by sections.
+
+\subsection{Low level mathematics \label{SEC:support:math:lowlevel}}
+
+\loadfunctions{functions_support_math_lowlevel.tex}
+
+\subsection{Sequences and bins \label{SEC:support:math:sequence}}
+
+\loadfunctions{functions_support_math_sequence.tex}
+
+\subsection{Randomization \label{SEC:support:math:random}}
+
+\loadfunctions{functions_support_math_random.tex}
+
+\subsection{Reduction \label{SEC:support:math:reduce}}
+
+\loadfunctions{functions_support_math_reduce.tex}
+
+\subsection{Interpolation \label{SEC:support:math:interp}}
+
+\loadfunctions{functions_support_math_interpol.tex}
+
+\subsection{Calculus \label{SEC:support:math:calculus}}
+
+\loadfunctions{functions_support_math_calculus.tex}
+
+\subsection{Algebra \label{SEC:support:math:algebra}}
+
+\loadfunctions{functions_support_math_algebra.tex}
+
+\subsection{Fitting \label{SEC:support:math:fit}}
+
+\loadfunctions{functions_support_math_fit.tex}
+
+\subsection{Geometry \label{SEC:support:math:geometry}}
+
+\loadfunctions{functions_support_math_geometry.tex}
+
+\subsection{Debug functions \label{SEC:support:math:debug}}
+
+\begin{itemize}
+\item \cppinline|void data_info(vec)| \itt{data_info}
+\item \cppinline|void mprint(vec<2,T>)| \itt{mprint}
+\end{itemize}
