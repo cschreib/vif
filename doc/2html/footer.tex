@@ -1,0 +1,10 @@
+\begin{document}
+\setbox0\hbox{\formula}
+\begin{preview}
+\formula
+\end{preview}
+\newwrite\outputstream
+\immediate\openout\outputstream=tmp.dat
+\immediate\write\outputstream{box_height=\the\ht0,box_depth=\the\dp0,box_width=\the\wd0}
+\immediate\closeout\outputstream
+\end{document}
