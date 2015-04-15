@@ -90,9 +90,9 @@ int main(int argc, char* argv[]) {
     }
 
     std::string cat = "";
-    std::string img = "";
-    std::string wht = "";
-    std::string err = "";
+    vec1s img;
+    vec1s wht;
+    vec1s err;
     std::string pos = "";
     std::string out = "";
     uint_t hsize = npos;
@@ -150,19 +150,28 @@ int main(int argc, char* argv[]) {
         error("missing image file 'img'\n");
         print_help();
         return 1;
-    } else if (!file::exists(img)) {
-        error("cannot find '"+img+"'\n");
-        return 1;
+    } else {
+        vec1u i = where(!file::exists(img));
+        if (!i.empty()) {
+            error("cannot find '"+img[i]+"'\n");
+            return 1;
+        }
     }
 
-    if (!wht.empty() && !file::exists(wht)) {
-        error("cannot find '"+wht+"'\n");
-        return 1;
+    if (!wht.empty()) {
+        vec1u i = where(!file::exists(wht));
+        if (!i.empty()) {
+            error("cannot find '"+wht[i]+"'\n");
+            return 1;
+        }
     }
 
-    if (!err.empty() && !file::exists(err)) {
-        error("cannot find '"+err+"'\n");
-        return 1;
+    if (!err.empty()) {
+        vec1u i = where(!file::exists(err));
+        if (!i.empty()) {
+            error("cannot find '"+err[i]+"'\n");
+            return 1;
+        }
     }
 
     if (!cids.empty() && cids.size() != 2) {
@@ -229,7 +238,13 @@ int main(int argc, char* argv[]) {
 
     if ((wht.empty() && err.empty()) || median) {
         if (cat.empty()) {
-            fits::read(img, cube);
+            fits::read(img[0], cube);
+
+            for (uint_t i : range(1, img.size())) {
+                vec3f tc;
+                fits::read(img[i], tc);
+                append<0>(cube, tc);
+            }
 
             if (!cids.empty()) {
                 vec1u tcids(2);
@@ -242,8 +257,13 @@ int main(int argc, char* argv[]) {
 
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
+            if (img.size() != 1) {
+                error("catalog stacking needs a single image");
+                return 1;
+            }
+
             vec1u ids;
-            qstack_output qout = qstack(fcat.ra, fcat.dec, img, hsize, cube, ids, params);
+            qstack_output qout = qstack(fcat.ra, fcat.dec, img[0], hsize, cube, ids, params);
             if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
 
             if (subpixel) {
@@ -275,8 +295,16 @@ int main(int argc, char* argv[]) {
 
         vec3f wcube;
         if (cat.empty()) {
-            fits::read(img, cube);
-            fits::read(wht.empty() ? err : wht, wcube);
+            fits::read(img[0], cube);
+            fits::read(wht.empty() ? err[0] : wht[0], wcube);
+
+            for (uint_t i : range(1, img.size())) {
+                vec3f tc;
+                fits::read(img[i], tc);
+                append<0>(cube, tc);
+                fits::read(wht.empty() ? err[i] : wht[i], tc);
+                append<0>(wcube, tc);
+            }
 
             if (!cids.empty()) {
                 vec1u tcids(2);
@@ -290,9 +318,14 @@ int main(int argc, char* argv[]) {
 
             if (verbose) print("stacking ", cube.dims[0], " sources");
         } else {
+            if (img.size() != 1) {
+                error("catalog stacking needs a single image");
+                return 1;
+            }
+
             vec1u ids;
-            qstack_output qout = qstack(fcat.ra, fcat.dec, img,
-                wht.empty() ? err : wht, hsize, cube, wcube, ids, params);
+            qstack_output qout = qstack(fcat.ra, fcat.dec, img[0],
+                wht.empty() ? err[0] : wht[0], hsize, cube, wcube, ids, params);
             if (verbose) print("stacking ", ids.size(), "/", fcat.ra.size(), " sources");
 
             if (subpixel) {
