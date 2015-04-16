@@ -36,10 +36,8 @@
 \newcommand{\vectorfuncsym}{\circled{$\hspace{-1pt}\mathcal{V}$}\xspace}
 \newcommand{\vectorfunc}{\vectorfuncsym\hspace{2pt}\xspace}
 
-\newcommand{\lapacksym}{\textsc{\small[lapack\small]}}
-\newcommand{\lapack}{\lapacksym\hspace{2pt}\xspace}
-\newcommand{\fftwsym}{\textsc{[fftw]}}
-\newcommand{\fftw}{\fftwsym\hspace{2pt}\xspace}
+\newcommand{\libsym}[1]{\textsc{\small[#1\small]}}
+\newcommand{\requirelib}[1]{\libsym{#1}\hspace{2pt}\xspace}
 
 \newcommand{\stwork}{works}
 \newcommand{\sthwork}{half-working}
@@ -855,29 +853,31 @@ This whole section is more advanced than the rest. It is describing the sets of 
 % first
 % last
 
-\input{category_support.tex}
+\input{category_support_01_intro.tex}
 
-\input{category_support_generic.tex}
+\input{category_support_02_generic.tex}
 
-\input{category_support_cmd.tex}
+\input{category_support_03_cmd.tex}
 
-\input{category_support_string.tex}
+\input{category_support_04_string.tex}
 
-\input{category_support_os.tex}
+\input{category_support_05_os.tex}
 
-\input{category_support_print.tex}
+\input{category_support_06_file.tex}
 
-\input{category_support_time.tex}
+\input{category_support_07_print.tex}
 
-\input{category_support_math.tex}
+\input{category_support_08_time.tex}
 
-\input{category_support_thread.tex}
+\input{category_support_09_math.tex}
 
-\input{category_support_fits.tex}
+\input{category_support_10_thread.tex}
 
-\input{category_support_image.tex}
+\input{category_support_11_fits.tex}
 
-\input{category_support_astro.tex}
+\input{category_support_12_image.tex}
+
+\input{category_support_13_astro.tex}
 
 \chapter{Tools \label{SEC:tool}}
 

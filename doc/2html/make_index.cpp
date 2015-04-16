@@ -10,7 +10,9 @@ int main(int argc, char* argv[]) {
     }
 
     std::vector<cache_t> catindex;
-    for (auto& f : file::list_files(out_dir+"cache/category*_index.cache")) {
+    vec1s catfiles = file::list_files(out_dir+"cache/category*_index.cache");
+    inplace_sort(catfiles);
+    for (auto& f : catfiles) {
         cache_t tmp;
         read_cache(tmp, out_dir+"cache/"+f);
         catindex.push_back(std::move(tmp));

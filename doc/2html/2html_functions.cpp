@@ -5,6 +5,7 @@ struct function_t {
     std::string name;
     std::string fname;
     std::string signature;
+    vec1s requires;
     bool vectorized = false;
 };
 
@@ -125,6 +126,12 @@ int main(int argc, char* argv[]) {
         // Check if the function is vectorized
         f.vectorized = find(line, "\\vectorfunc") != npos;
 
+        // Find dependencies
+        vec2s ext = regex_extract(line, R"(\\requirelib\{([^}]+)\})");
+        if (!ext.empty()) {
+            f.requires = ext(0,_);
+        }
+
         funcs.push_back(f);
 
         insert_cache(index, f.name, con.base+"_"+funcs.front().fname+".html");
@@ -141,14 +148,36 @@ int main(int argc, char* argv[]) {
                 << (funcs.size() > 1 ? "s" : "")
                 << "</span>\n";
             out << "<table style=\"signatures\">\n";
-            for (auto f : funcs) {
-                out << "<tr>";
-                if (f.vectorized) {
-                    out << "<td><img src=\"vectorized.png\" alt=\"vectorized\"></td>";
-                } else {
-                    out << "<td><img src=\"vectorized.png\" alt=\"vectorized\" class=\"hidden\"></td>";
+
+            bool hasdep = false;
+            bool hasvec = false;
+            for (auto& f : funcs) {
+                if (!f.requires.empty()) {
+                    hasdep = true;
                 }
-                out << "<td>" << pygmentize(con, "c++", f.signature) << "</td>";
+                if (f.vectorized) {
+                    hasvec = true;
+                }
+            }
+
+            for (auto& f : funcs) {
+                out << "<tr>";
+                if (hasdep) {
+                    out << "<td>";
+                    out << collapse("<span class=\"libsymbol\">["+f.requires+"]</span>", " ");
+                    out << "</td>";
+                }
+                if (hasvec) {
+                    out << "<td>";
+                    if (f.vectorized) {
+                        out << "<img src=\"vectorized.png\" alt=\"vectorized\">";
+                    } else {
+                        out << "<img src=\"vectorized.png\" alt=\"vectorized\" class=\"hidden\">";
+                    }
+                    out << "</td>";
+                }
+                std::string sig = pygmentize(con, "c++", f.signature);
+                out << "<td>" << replace(sig, "class=\"highlight\"", "class=\"highlight-sig\"") << "</td>";
                 out << "</tr>\n";
             }
             out << "</table>\n";
@@ -202,6 +231,7 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
         } else if (open && (start_with(tline, "\\vectorfunc") ||
+                            start_with(tline, "\\requirelib") ||
                             start_with(tline, "\\cppinline"))) {
             if (!find_function()) {
                 return 1;

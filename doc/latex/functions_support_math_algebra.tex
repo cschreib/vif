@@ -20,24 +20,24 @@
 
 \funcitem \cppinline|vec1d point2d(double x, y)| \itt{point2d}
 
-\item \lapack \cppinline|bool invert(vec2d a, vec2d& i)| \itt{invert}
+\funcitem \requirelib{lapack} \cppinline|bool invert(vec2d a, vec2d& i)| \itt{invert}
 
-\lapack \cppinline|bool inplace_invert(vec2d&)| \itt{inplace_invert}
+\requirelib{lapack} \cppinline|bool inplace_invert(vec2d&)| \itt{inplace_invert}
 
-\item \lapack \cppinline|bool invert_symmetric(vec2d a, vec2d& i)| \itt{invert_symmetric}
+\funcitem \requirelib{lapack} \cppinline|bool invert_symmetric(vec2d a, vec2d& i)| \itt{invert_symmetric}
 
-\lapack \cppinline|bool inplace_invert_symmetric(vec2d&)| \itt{inplace_invert_symmetric}
+\requirelib{lapack} \cppinline|bool inplace_invert_symmetric(vec2d&)| \itt{inplace_invert_symmetric}
 
-\item \lapack \cppinline|bool solve_symmetric(vec2d a, vec1d b, vec1d& r)| \itt{solve_symmetric}
+\funcitem \requirelib{lapack} \cppinline|bool solve_symmetric(vec2d a, vec1d b, vec1d& r)| \itt{solve_symmetric}
 
-\lapack \cppinline|bool inplace_solve_symmetric(vec2d& a, vec1d& b)| \itt{inplace_solve_symmetric}
+\requirelib{lapack} \cppinline|bool inplace_solve_symmetric(vec2d& a, vec1d& b)| \itt{inplace_solve_symmetric}
 
-\item \lapack \cppinline|bool eigen_symmetric(vec2d a, vec1d& va, vec1d& ve)| \itt{eigen_symmetric}
+\funcitem \requirelib{lapack} \cppinline|bool eigen_symmetric(vec2d a, vec1d& va, vec1d& ve)| \itt{eigen_symmetric}
 
-\lapack \cppinline|bool inplace_eigen_symmetric(vec2d& a, vec1d& va)| \itt{inplace_eigen_symmetric}
+\requirelib{lapack} \cppinline|bool inplace_eigen_symmetric(vec2d& a, vec1d& va)| \itt{inplace_eigen_symmetric}
 
-\item \fftw \cppinline|vec2cd fft(vec2d)| \itt{fft}
+\funcitem \requirelib{fftw} \cppinline|vec2cd fft(vec2d)| \itt{fft}
 
-\fftw \cppinline|vec2d ifft(vec2cd)| \itt{ifft}
+\requirelib{fftw} \cppinline|vec2d ifft(vec2cd)| \itt{ifft}
 
 \funcitem \cppinline|vec<1,W> convolve(vec<1,T> x, vec<1,U> y, vec<1,V> k)| \itt{convolve}

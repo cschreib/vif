@@ -4,3 +4,6 @@ lib
 bak
 phypp.sublime-workspace
 build/
+doc/2html/2html_category
+doc/2html/2html_functions
+doc/2html/make_index

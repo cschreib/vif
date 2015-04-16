@@ -274,6 +274,12 @@ img.latex {
   padding: 0;
 }
 
+.libsymbol {
+  font-size: 75%;
+  font-variant: small-caps;
+  display: inline;
+}
+
 /* Category */
 ul.category-funclist {
   width: 170px;

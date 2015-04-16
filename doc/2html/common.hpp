@@ -241,6 +241,14 @@ std::string latexify(context_t& con, std::string s) {
         return "<i>phy</i><sub>++</sub>";
     });
 
+    s = parse_latex_command(con, s, "vectorfuncsym", 0, [&](vec1s v) {
+        return "<img src=\"vectorized.png\" alt=\"vectorized\">";
+    });
+
+    s = parse_latex_command(con, s, "libsym", 1, [&](vec1s v) {
+        return "<span class=\"libsymbol\">["+v[0]+"]</span>";
+    });
+
     s = parse_latex_command(con, s, "cppinline", 1, [&](vec1s v) {
         return pygmentize_inline(con, "c++", v[0]);
     });
