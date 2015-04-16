@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function returns <div class="highlight-inline"><pre><span class="kc">true</span></pre></div> if the path given in argument corresponds to a file or directory that actually exists on the disk, and <div class="highlight-inline"><pre><span class="kc">false</span></pre></div> otherwise.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;~/.phypprc&quot;</span><span class="p">);</span>
+<span class="n">b</span><span class="p">;</span> <span class="c1">// hopefully true</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;/i/do/not/exist&quot;</span><span class="p">);</span>
+<span class="n">b</span><span class="p">;</span> <span class="c1">// probably false</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">shift</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">int_t</span> <span class="n">n</span><span class="p">,</span> <span class="n">T</span> <span class="n">d</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function will shift the position of the elements inside the provided vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> by a given amount of indices <div class="highlight-inline"><pre><span class="n">n</span></pre></div>. Elements that would go outside of the bounds of the vector are destroyed. New elements are inserted and default constructed, or assigned the default value <div class="highlight-inline"><pre><span class="n">d</span></pre></div> (optional argument).
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">};</span>
+<span class="n">vec1i</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">shift</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">sr</span><span class="p">;</span> <span class="c1">// {0,0,1,2,3}</span>
+<span class="n">vec1i</span> <span class="n">sl</span> <span class="o">=</span> <span class="n">shift</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">99</span><span class="p">);</span>
+<span class="n">sl</span><span class="p">;</span> <span class="c1">// {3,4,5,99,99};</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

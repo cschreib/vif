@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">trim</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s">&quot; </span><span class="se">\t</span><span class="s">&quot;</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function will look at the beginning and the end of the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> and search for any of the characters that is present in <div class="highlight-inline"><pre><span class="n">c</span></pre></div>. If one is found, then this character is removed from <div class="highlight-inline"><pre><span class="n">s</span></pre></div>. This procedure is repeated until no character is found. The net effect of this function is that the provided string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> is <span class="emphasis">trimmed</span> from any of the characters listed in <div class="highlight-inline"><pre><span class="n">c</span></pre></div>. This is useful for example to remove leading and trailing spaces of a string (default value of <div class="highlight-inline"><pre><span class="n">c</span></pre></div>), or to removes quotes.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;abc&quot;</span><span class="p">,</span> <span class="s">&quot; a b&quot;</span><span class="p">,</span> <span class="s">&quot; a b c  &quot;</span><span class="p">};</span>
+<span class="n">vec1s</span> <span class="n">t</span> <span class="o">=</span> <span class="n">trim</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">);</span> <span class="c1">// trim spaces</span>
+<span class="n">t</span><span class="p">;</span> <span class="c1">// {&quot;&quot;, &quot;abc&quot;, &quot;a b&quot;, &quot;a b c&quot;}</span>
+
+<span class="n">str</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;(a,b)&quot;</span><span class="p">,</span> <span class="s">&quot;((a,b),c)&quot;</span><span class="p">};</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">trim</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;()&quot;</span><span class="p">);</span> <span class="c1">// trim parentheses</span>
+<span class="n">t</span><span class="p">;</span> <span class="c1">// {&quot;&quot;, &quot;a,b&quot;, &quot;a,b),c&quot;}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content">
+<span class="section">Introduction</span>
+<div class="section-content">
+<div class="description">
+Here we describe the set of helper functions that are part of the <i>phy</i><sub>++</sub> support library. These functions are not essential to the use of the <i>phy</i><sub>++</sub> library, but are mostly modular components that one may choose to use or not. All the support functions are sorted into broad categories to help you discover new functions and algorithm. Alternatively, if you know the name of a function and would like to read its documentation, an index is available at the end of this document.
+<br><br>
+Note that, in all this documentation, the signature of the functions is given in pseudo-code, both for conciseness and readability. In particular, the following rules apply.
+<ul>
+<li> The presence of the <img src="vectorized.png" alt="vectorized"> symbol in front of the signature of the function means that this function is also available in a <span class="emphasis">vectorized</span> form. This only applies to functions whose first argument is a scalar (i.e., not a vector). In this case, the vectorized form shares the same signature as the original form, but the first argument is promoted to a vector. Calling the vectorized version is the same as writing a loop to call the original version on each element of the vector. If the original function had a return value, the vectorized form returns a vector whose elements are the return value of each call, corresponding to each element of the input vector. The vectorized version can be faster than writing the loop manually.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Suppose this function is marked as vectorized</span>
+<span class="kt">bool</span> <span class="n">is_odd</span><span class="p">(</span><span class="n">uint_t</span><span class="p">)</span>
+<span class="c1">// It means that there is another function with the</span>
+<span class="c1">// same name, but that acts on a vector instead</span>
+<span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">bool</span><span class="o">&gt;</span> <span class="n">is_odd</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">uint_t</span><span class="o">&gt;</span><span class="p">)</span>
+
+<span class="c1">// It is used like this</span>
+<span class="n">vec1u</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">};</span>
+<span class="n">vec1b</span> <span class="n">b</span> <span class="o">=</span> <span class="n">is_odd</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+<span class="c1">// ... and is equivalent to</span>
+<span class="n">vec1b</span> <span class="n">b</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">dims</span><span class="p">);</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_odd</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+<hr><br>
+<li> If the function depends on an external library, the name of this library will be written before the signature, for example if LAPACK is needed you will find the symbol <span class="libsymbol">[lapack]</span>.</li>
+<li> Template parameters are not declared explicitly. They are always written in uppercase, usually with a single character (e.g., <div class="highlight-inline"><pre><span class="n">T</span></pre></div>, <div class="highlight-inline"><pre><span class="n">D</span></pre></div>), or possibly two (e.g., a letter and a number), but never more. Letters <div class="highlight-inline"><pre><span class="n">T</span></pre></div>, <div class="highlight-inline"><pre><span class="n">U</span></pre></div>, <div class="highlight-inline"><pre><span class="n">V</span></pre></div>, etc. refer to template <span class="emphasis">types</span>, while letters <div class="highlight-inline"><pre><span class="n">D</span></pre></div>, <div class="highlight-inline"><pre><span class="n">N</span></pre></div> or <div class="highlight-inline"><pre><span class="n">I</span></pre></div> refer to template <span class="emphasis">integers</span>.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Pseudo-code used in this section</span>
+<span class="kt">void</span> <span class="n">foo</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="c1">// Corresponding C++ code</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">foo</span><span class="p">(</span><span class="n">T</span><span class="p">);</span>
+
+<span class="c1">// Pseudo-code used in this section</span>
+<span class="kt">void</span> <span class="n">foo</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">U</span> <span class="n">u</span><span class="p">)</span>
+<span class="c1">// Corresponding C++ code</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">D</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T</span><span class="p">,</span> <span class="k">typename</span> <span class="n">U</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">foo</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">U</span> <span class="n">u</span><span class="p">);</span>
+</pre></div>
+<hr><br>
+<li> Template parameters are omitted when not relevant to the description of the function. In this case, it is implicitly assumed that the function will work for any type/value of these template parameters.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Pseudo-code used in this section</span>
+<span class="kt">void</span> <span class="n">sort</span><span class="p">(</span><span class="n">vec</span><span class="o">&amp;</span><span class="p">)</span>
+<span class="c1">// Corresponding C++ code</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">D</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="kt">void</span> <span class="n">sort</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;&amp;</span><span class="p">);</span>
+</pre></div>
+<hr><br>
+<li> There are only two kinds of arguments: input arguments, and input/output arguments. Input arguments are always spelled as plain types, e.g. <div class="highlight-inline"><pre><span class="n">T</span></pre></div>, even if the actual signature of the function uses a constant reference, an r-value reference or a universal reference. The reason is that this implementation choice does not matter to the end user. What matters is the interface. The input/output parameters are always C++ references, e.g. <div class="highlight-inline"><pre><span class="n">T</span><span class="o">&amp;</span></pre></div>.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Pseudo-code used in this section</span>
+<span class="n">vec1u</span> <span class="n">dims</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+<span class="c1">// Corresponding C++ code could be either</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">D</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="n">vec1u</span> <span class="n">dims</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">);</span>
+<span class="c1">// ... or</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">D</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="n">vec1u</span> <span class="n">dims</span><span class="p">(</span><span class="k">const</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;&amp;</span><span class="p">);</span>
+<span class="c1">// The only difference is that the first version will</span>
+<span class="c1">// always make a copy (or move) of its parameter, while</span>
+<span class="c1">// the second may not. This optimization choice depends</span>
+<span class="c1">// on the actual code inside the function, and has no</span>
+<span class="c1">// consequence on how the function is actually used.</span>
+</pre></div>
+<hr><br>
+<li> The ellipsis <div class="highlight-inline"><pre><span class="p">...</span></pre></div> is used to symbolize a list of multiple arguments whose length can vary depending on the context. These arguments are not spelled out explicitly, but the description of the function must make it clear what they are used for. Optionally, a type may be placed before the ellipsis to indicate that all the arguments must be of this same type.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Pseudo-code used in this section</span>
+<span class="n">uint_t</span> <span class="n">flat_id</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">...)</span>
+<span class="c1">// Corresponding C++ code</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">D</span><span class="p">,</span> <span class="k">typename</span> <span class="n">T</span><span class="p">,</span> <span class="k">typename</span> <span class="p">...</span> <span class="n">Args</span><span class="o">&gt;</span>
+<span class="n">uint_t</span> <span class="n">flat_id</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">Args</span><span class="o">&amp;&amp;</span> <span class="p">...);</span>
+</pre></div>
+<hr><br>
+<li> The <div class="highlight-inline"><pre><span class="n">std</span></pre></div> namespace is omitted for common standard types, like <div class="highlight-inline"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span></pre></div> or <div class="highlight-inline"><pre><span class="n">std</span><span class="o">::</span><span class="n">array</span></pre></div>.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Pseudo-code used in this section</span>
+<span class="n">uint_t</span> <span class="n">length</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<span class="c1">// Corresponding C++ code</span>
+<span class="n">uint_t</span> <span class="n">length</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="p">);</span>
+</pre></div>
+<hr><br>
+<li> For the particular case of <div class="highlight-inline"><pre><span class="n">std</span><span class="o">::</span><span class="n">array</span></pre></div>, the individual elements inside the array can be named by placing the names inside curly braces after the type of the array.</li>
+<br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Pseudo-code used in this section</span>
+<span class="n">uint_t</span> <span class="n">distance</span><span class="p">(</span><span class="n">array</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">})</span>
+<span class="c1">// Corresponding C++ code</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="n">uint_t</span> <span class="n">length</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// x := a[0]</span>
+    <span class="c1">// y := a[1]</span>
+<span class="p">}</span>
+</pre></div>
+<hr><br>
+<li> If the return type of a function in pseudo-code is <div class="highlight-inline"><pre><span class="k">auto</span></pre></div>, it means that this return value is &ldquo;complex&rdquo; (usually a structure or a class) and it is not important to know its precise type. The description of the function must therefore make it clear how this return value can be used.</li>
+</ul>
+With this in mind, it is clear that this chapter focuses on the <span class="emphasis">interface</span> that is provided by the library, rather than on the individual function themselves. In fact, a single interface may be composed of many different functions to take care of all the combination of types that the interface supports. If the reader is interested in all these overloads, or is experiencing a particular compiler error that cannot be easily fixed just by looking at the interface, then it is best to look directly into the code of the library. Although less readable than the pseudo-code used in this document, most of the time an effort is made to make the code as clear as possible. However, if a function is too hard to understand, I consider this as a bug that should be reported on the <span class="fixed-width">github</span> issue tracker (seriously). Similarly, if you end up doing something wrong with the library, but that the compiler error message is too cryptic or too long, you may also fill in a bug report. Ensuring that clear error messages are sent to the user is a shared responsibility between compiler writers and library authors.
+</div>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

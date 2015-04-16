@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signatures</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">uint_t</span> <span class="n">lower_bound</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="n">uint_t</span> <span class="n">upper_bound</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="n">array</span><span class="o">&lt;</span><span class="n">uint_t</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="n">bounds</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="n">array</span><span class="o">&lt;</span><span class="n">uint_t</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="n">bounds</span><span class="p">(</span><span class="n">T</span> <span class="n">x1</span><span class="p">,</span> <span class="n">U</span> <span class="n">x2</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+These functions use a binary search algorithm to locate the element in the input vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that is equal to or closest to the provided value <div class="highlight-inline"><pre><span class="n">x</span></pre></div>. It is important to note that the binary search assumes that the elements in the input vector are <span class="emphasis">sorted</span> by increasing value. This algorithm also assumes that the input vector does not contain any NaN value (\ref{SEC:support:math}).
+<br><br>
+The <div class="highlight-inline"><pre><span class="n">lower_bound</span></pre></div> function locates the last element in <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that is less or equal to <div class="highlight-inline"><pre><span class="n">x</span></pre></div>. If no such element is found, <div class="highlight-inline"><pre><span class="n">npos</span></pre></div> is returned.
+<br><br>
+The <div class="highlight-inline"><pre><span class="n">upper_bound</span></pre></div> function locates the first element in <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that is greater than <div class="highlight-inline"><pre><span class="n">x</span></pre></div>. If no such element is found, <div class="highlight-inline"><pre><span class="n">npos</span></pre></div> is returned.
+<br><br>
+The first <div class="highlight-inline"><pre><span class="n">bounds</span></pre></div> function combines what both <div class="highlight-inline"><pre><span class="n">lower_bound</span></pre></div> and <div class="highlight-inline"><pre><span class="n">upper_bound</span></pre></div> do, and returns both indices in an array. The second <div class="highlight-inline"><pre><span class="n">bounds</span></pre></div> function calls <div class="highlight-inline"><pre><span class="n">lower_bound</span></pre></div> to look for <div class="highlight-inline"><pre><span class="n">x1</span></pre></div>, and <div class="highlight-inline"><pre><span class="n">upper_bound</span></pre></div> to look for <div class="highlight-inline"><pre><span class="n">x2</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">50</span><span class="p">};</span>
+<span class="n">bounds</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>   <span class="c1">// {npos,0}</span>
+<span class="n">bounds</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>   <span class="c1">// {2,3}</span>
+<span class="n">bounds</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span> <span class="c1">// {4,npos}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

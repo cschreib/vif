@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">read_args</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[],</span> <span class="p">...)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+The biggest problem of C++ programs is that, while they are usually fast to execute, they can take a long time to <span class="emphasis">compile</span>. For this reason, C++ is generally not a productive language in situations where the code has to be written by <span class="emphasis">trial and error</span>, a process that involves frequently changing the behavior or starting point of a program. This situation could change the day we have a complete, robust and efficient C++ interpreter (keep an eye out for <a href=http://root.cern.ch/drupal/content/cling><span class="fixed-width">cling</span></a>).
+<br><br>
+Fortunately, in the mean time there are ways around this issue. One in particular is called <span class="emphasis">data driven</span> programming: the behavior of a program depends on the data that are fed to it. The simplest way to use this paradigm is to control the program through <span class="emphasis">command line arguments</span>. The C++ language provides the basic bricks to use command line arguments, but the interface is inherited from C and lacks severely in usability. For this reason we introduce in <i>phy</i><sub>++</sub> a single function <div class="highlight-inline"><pre><span class="n">read_args</span><span class="p">()</span></pre></div> that uses these bricks to provide a simple and concise interface to implement command line arguments in a program. The details of the implementation are complex, since this function makes use of preprocessor macros, so instead of describing it all, we will focus on a simple example.
+<br><br>
+Let us assume that we want to build a simple program that will print <a class="section-link" href="category_support_07_print.html"><img src="section-link.png"></a> to the terminal the first <div class="highlight-inline"><pre><span class="n">n</span></pre></div> powers of two.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// This is the standard entry point of every C++ program.</span>
+<span class="c1">// The signature of the main function is imposed by the C++ standard</span>
+<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+    <span class="c1">// Declare the main parameters of the program</span>
+
+    <span class="c1">// The number of powers of two to display</span>
+    <span class="n">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="c1">// Then read command line arguments...</span>
+    <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+
+    <span class="c1">// - The first two arguments must be the arguments of the main</span>
+    <span class="c1">//   function, in the exact same order.</span>
+    <span class="c1">// - The following argument must be arg_list(...).</span>
+
+    <span class="c1">// Within the arg_list(), one can put as many C++ variables as</span>
+    <span class="c1">// needed. The function will recognize their name, and will try</span>
+    <span class="c1">// to find a command line argument that matches.</span>
+    <span class="c1">// If it finds one, it tries to convert its value into the type</span>
+    <span class="c1">// of the variable, and if successful, store this new value</span>
+    <span class="c1">// inside the variable. In all other cases, the variable is not</span>
+    <span class="c1">// modified.</span>
+    <span class="c1">// It is therefore important to give a meaningful default value</span>
+    <span class="c1">// to each variable!</span>
+
+    <span class="c1">// Now we can go on with the program</span>
+    <span class="n">print</span><span class="p">(</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">findgen</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">));</span>
+
+    <span class="c1">// And quit gracefully</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<hr><br>
+By just adding this line
+<div class="highlight"><pre>    <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+</pre></div>
+we exposed the variable <div class="highlight-inline"><pre><span class="n">n</span></pre></div> to the public: everyone that runs this program can modify the value of <div class="highlight-inline"><pre><span class="n">n</span></pre></div> to suit their need. Assuming the name of the compiled program is <div class="highlight-inline"><pre><span class="n">show_pow2</span></pre></div>, then the program is ran the following way:
+<div class="highlight"><pre><span class="c"># First try with no parameter.</span>
+<span class="c"># &#39;n&#39; is not modified, and keeps its default value of 1.</span>
+./show_pow2
+<span class="c"># output:</span>
+<span class="c"># 2</span>
+
+<span class="c"># Then we change &#39;n&#39; to 5.</span>
+./show_pow2 <span class="nv">n</span><span class="o">=</span>5
+<span class="c"># output:</span>
+<span class="c"># 2 4 8 16 32</span>
+</pre></div>
+You immediately see the interest of this approach. Instead of recompiling the whole program just to change <div class="highlight-inline"><pre><span class="n">n</span></pre></div>, we expose it in the program arguments. We can then compile the program once, and change its behavior without recompiling. This saves a lot of time when trying to figure out what is the best value of a parameter in a given problem, or if we have created an algorithm that depends on some parameters, and we want to see how the results change when we change the values of these parameters. And of course, this is most useful when writing <span class="emphasis">tools</span> (see, e.g., the tools presented in Chapter \ref{SEC:tool}).
+<br><br>
+In the previous example, we chose to expose a simple integer. But in fact, the interface also allows virtually any type, provided that there is a way to convert a string into a value of this type. In particular, this is the case for vectors. There is a little subtlety though: the values of the vector must be separated by commas, <span class="emphasis">without any space</span> (unless you put the whole argument inside quotes), and surrounded by brackets <div class="highlight-inline"><pre><span class="p">[...]</span></pre></div>. Again, let us illustrate this with an example. We will modify the previous program to allow it to show not only powers of <img class="latex" style="vertical-align: -0pt" src=latex/functions_support_cmd_0.svg>, but the powers of multiple, arbitrary numbers. Note: in the following, we will not repeat the whole <div class="highlight-inline"><pre><span class="n">main</span><span class="p">()</span></pre></div> function, just the important bits.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre>    <span class="c1">// The number of powers of two to display</span>
+    <span class="n">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// The powers to display</span>
+    <span class="n">vec1f</span> <span class="n">p</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">};</span>
+
+    <span class="c1">// Read command line arguments</span>
+    <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">));</span>
+
+    <span class="c1">// Go on with the program</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">float</span> <span class="n">v</span> <span class="o">:</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="n">pow</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">findgen</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">));</span>
+    <span class="p">}</span>
+</pre></div>
+<hr><br>
+The program can now change the powers it displays, for example
+<div class="highlight"><pre><span class="c"># We keep &#39;n&#39; equal to 5, and we show the powers of 2, 3 and 5.</span>
+./show_pow2 <span class="nv">n</span><span class="o">=</span>5 <span class="nv">p</span><span class="o">=[</span>2,3,5<span class="o">]</span>
+<span class="c"># output:</span>
+<span class="c"># 2 4 8 16 32</span>
+<span class="c"># 3 9 27 81 243</span>
+<span class="c"># 5 25 125 625 3125</span>
+</pre></div>
+Finally, you may think that <div class="highlight-inline"><pre><span class="n">p</span></pre></div> is not a very explicit name for this last parameter. It would be clearer if we could call it <div class="highlight-inline"><pre><span class="n">pow</span></pre></div>. Unfortunately, <div class="highlight-inline"><pre><span class="n">pow</span></pre></div> is already the name of a function in C++, so we cannot give this name to the variable. However, the <div class="highlight-inline"><pre><span class="n">read_args</span><span class="p">()</span></pre></div> interface allows you to manually give a name to any parameter using the <div class="highlight-inline"><pre><span class="n">name</span><span class="p">()</span></pre></div> function. Let us do that and modify the previous example.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre>    <span class="c1">// The number of powers of two to display</span>
+    <span class="n">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// The powers to display, we still call it &#39;p&#39; in the program</span>
+    <span class="n">vec1f</span> <span class="n">p</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">};</span>
+
+    <span class="c1">// Read command line arguments</span>
+    <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">name</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s">&quot;pow&quot;</span><span class="p">));</span>
+
+    <span class="c1">// Go on with the program</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">float</span> <span class="n">v</span> <span class="o">:</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">print</span><span class="p">(</span><span class="n">pow</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">findgen</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">));</span>
+    <span class="p">}</span>
+</pre></div>
+<hr><br>
+Now we will call instead
+<div class="highlight"><pre>./show_pow2 <span class="nv">n</span><span class="o">=</span>5 <span class="nv">pow</span><span class="o">=[</span>2,3,5<span class="o">]</span>
+<span class="c"># output:</span>
+<span class="c"># 2 4 8 16 32</span>
+<span class="c"># 3 9 27 81 243</span>
+<span class="c"># 5 25 125 625 3125</span>
+</pre></div>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

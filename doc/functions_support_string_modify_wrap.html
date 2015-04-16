@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">vec1s</span> <span class="n">wrap</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">w</span><span class="p">,</span> <span class="n">string</span> <span class="n">i</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">e</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function will split the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> into a vector of sub-strings (or &ldquo;lines&rdquo;) that are at most <div class="highlight-inline"><pre><span class="n">w</span></pre></div> characters long. Contrary to the function <div class="highlight-inline"><pre><span class="n">cut</span><span class="p">()</span></pre></div>, this function takes care of not splitting words into multiple parts. If a cut would happen in the middle of a word, then the cut is shifted back to the beginning of the word, and the latter is flushed to the next line. If a word is larger than <div class="highlight-inline"><pre><span class="n">w</span></pre></div>, then it will be alone on its line. Alternatively, in such a case if <div class="highlight-inline"><pre><span class="n">e</span></pre></div> is set to <div class="highlight-inline"><pre><span class="kc">true</span></pre></div>, the word is truncated and the last characters are lost. An ellipsis <div class="highlight-inline"><pre><span class="s">&quot;...&quot;</span></pre></div> is also appended to notify that the word has been truncated. Finally, the parameter <div class="highlight-inline"><pre><span class="n">i</span></pre></div> can be used to add indentation: these characters are added at the beginning of the line and are taken into account when calculating the length of the line. In this case the first line is not indented, to allow using a different header. This function is useful to display multi-line messages on the terminal.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">str</span> <span class="o">=</span> <span class="s">&quot;This is an example text with many words. Just &quot;</span>
+    <span class="s">&quot; for the sake of the example, we are going to write a &quot;</span>
+    <span class="s">&quot;veryyyyyyyyyyyyyyyyyyyyyyyyyy long word.&quot;</span><span class="p">;</span>
+
+<span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="n">wrap</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="mi">23</span><span class="p">);</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="c1">// &quot;This is an example text&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// &quot;with many words. Just &quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span> <span class="c1">// &quot;for the sake of the&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span> <span class="c1">// &quot;example, we are going&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span> <span class="c1">// &quot;to write a&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span> <span class="c1">// &quot;veryyyyyyyyyyyyyyyyyyyyyyyyyy&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">6</span><span class="p">];</span> <span class="c1">// &quot;long word.&quot;</span>
+
+<span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="n">wrap</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="c1">// &quot;This is an example text&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// &quot;with many words. Just &quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span> <span class="c1">// &quot;for the sake of the&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span> <span class="c1">// &quot;example, we are going&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span> <span class="c1">// &quot;to write a&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span> <span class="c1">// &quot;veryyyyyyyyyyyyyyyyy...&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">6</span><span class="p">];</span> <span class="c1">// &quot;long word.&quot;</span>
+
+<span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="n">wrap</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="s">&quot;  &quot;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="c1">// &quot;This is an example text&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// &quot;  with many words. Just&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span> <span class="c1">// &quot;  for the sake of the&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span> <span class="c1">// &quot;  example, we are going&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span> <span class="c1">// &quot;  to write a&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span> <span class="c1">// &quot;  veryyyyyyyyyyyyyyy...&quot;</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">6</span><span class="p">];</span> <span class="c1">// &quot;  long word.&quot;</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

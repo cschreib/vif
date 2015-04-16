@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">astar_find</span><span class="p">(</span><span class="n">vec2b</span> <span class="n">m</span><span class="p">,</span> <span class="n">uint_t</span><span class="o">&amp;</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function uses the <img class="latex" style="vertical-align: -0pt" src=latex/functions_support_generic_find_0.svg> (&ldquo;A star&rdquo;) algorithm to look inside a 2D boolean map <div class="highlight-inline"><pre><span class="n">m</span></pre></div> and, starting from the position <div class="highlight-inline"><pre><span class="n">x</span></pre></div> and <div class="highlight-inline"><pre><span class="n">y</span></pre></div> (i.e. <div class="highlight-inline"><pre><span class="n">m</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span></pre></div>), find the closest point that has a value of <div class="highlight-inline"><pre><span class="kc">true</span></pre></div>. Once this position is found, its indices are stored inside <div class="highlight-inline"><pre><span class="n">x</span></pre></div> and <div class="highlight-inline"><pre><span class="n">y</span></pre></div>, and the function returns <div class="highlight-inline"><pre><span class="kc">true</span></pre></div>. If no element inside <div class="highlight-inline"><pre><span class="n">m</span></pre></div> is <div class="highlight-inline"><pre><span class="kc">true</span></pre></div>, then the function returns <div class="highlight-inline"><pre><span class="kc">false</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Using &#39;@&#39; for true and &#39;.&#39; for false,</span>
+<span class="c1">// assume we have the following boolean map,</span>
+<span class="c1">// and that we start at the position indicated</span>
+<span class="c1">// by &#39;S&#39;, the closest point whose coordinates</span>
+<span class="c1">// will be returned by astar_find is indicated</span>
+<span class="c1">// by an &#39;X&#39;</span>
+<span class="n">vec2b</span> <span class="n">m</span><span class="p">;</span>
+<span class="c1">// .................</span>
+<span class="c1">// .................</span>
+<span class="c1">// .................</span>
+<span class="c1">// ...@@@@@.........</span>
+<span class="c1">// ...@@@@@.........</span>
+<span class="c1">// ...@@@@@.........</span>
+<span class="c1">// ...@@@@@.........</span>
+<span class="c1">// ...@@@@X.........</span>
+<span class="c1">// .............S...</span>
+<span class="c1">// .................</span>
+<span class="c1">// .................</span>
+
+<span class="n">uint_t</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">13</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">astar_find</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="n">x</span><span class="p">;</span> <span class="c1">// 7</span>
+<span class="n">y</span><span class="p">;</span> <span class="c1">// 3</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

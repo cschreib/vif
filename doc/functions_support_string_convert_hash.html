@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">hash</span><span class="p">(...)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function scans all the arguments that are provided, and returns the hexadecimal representation of the SHA-1 hash of this argument list. The hash is a string such that: 1) all further calls of <div class="highlight-inline"><pre><span class="n">hash</span><span class="p">(...)</span></pre></div> with arguments that have the exact same value will always return the same string, and 2) the probability that the function returns the same string for another set of arguments is very small (in fact, although this algorithm was created in 1995, no such collision has been found yet).
+<br><br>
+This is useful for example to cache the result of some heavy computation: once the computation is done, the input parameters of the computation can be fed to <div class="highlight-inline"><pre><span class="n">hash</span><span class="p">()</span></pre></div> to give a &ldquo;sort-of-unique&rdquo; identifier to the result, and this result can be saved somewhere with this identifier. Later on, if the computation is requested with another set of parameters, they are fed to <div class="highlight-inline"><pre><span class="n">hash</span><span class="p">()</span></pre></div> and the resulting string is compared to all the saved results: if a match is found, then the associated pre-computed result can be used immediately, else the computation goes on.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">s</span><span class="p">;</span>
+
+<span class="c1">// With a single argument</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="s">&quot;hello world!&quot;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;da52a1357f3c973e1ffc1b694d5308d0abcd9845&quot;</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="s">&quot;hello world?&quot;</span><span class="p">)</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;793e673d04e555f8f0b38033d5223c525a040719&quot;</span>
+<span class="c1">// Notice how changing a single character gives a completely</span>
+<span class="c1">// different hash string</span>
+
+<span class="c1">// With multiple arguments</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;570331ab965721aae8a8b3c628cae57a21a37560&quot;</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="s">&quot;123&quot;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;0e898437b29ec20c39ca48243e676bcb177d4632&quot;</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;9c45014f7c7943cb7860f3db4b885fb44b510ec8&quot;</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signatures</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">write_table</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">w</span><span class="p">,</span> <span class="p">...)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">write_table_csv</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">w</span><span class="p">,</span> <span class="p">...)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">write_table_hdr</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">w</span><span class="p">,</span> <span class="p">...)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This collection of functions will write the data contained inside one of multiple vectors into a file <div class="highlight-inline"><pre><span class="n">f</span></pre></div>, in human-readable &ldquo;ASCII&rdquo; format<a class="footnote" href="#footnote-a"><sup>a</sup></a>. The data is written in separate columns, with a fixed width of <div class="highlight-inline"><pre><span class="n">w</span></pre></div> characters. Spaces are used to fill the empty space between columns.
+<br><br>
+The first two functions in the list will just write all the data, and nothing else. The difference between the two is that the second version uses the &ldquo;CSV&rdquo; format (comma-separated values), i.e., appends a comma after each value. Apart from this, the functions behave the same: after the column width <div class="highlight-inline"><pre><span class="n">w</span></pre></div>, the following arguments can be any number of 1D vectors. They must contain the same number of elements. 2D vectors are also allowed, in which case, by convention, the first dimension is considered as the &ldquo;row&rdquo; dimension, and the second is the &ldquo;column&rdquo; dimension.
+<br><br>
+Note that this function will only create the <span class="emphasis">file</span>. If the path <div class="highlight-inline"><pre><span class="n">f</span></pre></div> given in argument contains directories that do not exist, the function will fail. You have to create them yourself beforehand.
+<br><br>
+For example, imagine we want to save the following data into a file:
+<div class="highlight"><pre><span class="c1">// Some arbitrary data</span>
+<span class="n">vec1u</span> <span class="n">id</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">};</span>
+<span class="n">vec1i</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{</span><span class="mi">125</span><span class="p">,</span><span class="mi">568</span><span class="p">,</span><span class="mi">9852</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="o">-</span><span class="mi">51</span><span class="p">};</span>
+<span class="n">vec1i</span> <span class="n">y</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">56</span><span class="p">,</span><span class="mi">157</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">99</span><span class="p">,</span><span class="mi">1024</span><span class="p">};</span>
+<span class="n">vec2f</span> <span class="n">flux</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span>
+<span class="n">flux</span><span class="p">(</span><span class="n">_</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">5.6</span><span class="p">,</span> <span class="mf">9.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">};</span>
+<span class="n">flux</span><span class="p">(</span><span class="n">_</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="mf">9.6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">};</span>
+</pre></div>
+We can use this function to create an ASCII table with columns that are <div class="highlight-inline"><pre><span class="mi">8</span></pre></div> characters wide:
+<div class="highlight"><pre><span class="c1">// Write these in a file</span>
+<span class="n">file</span><span class="o">::</span><span class="n">write_table</span><span class="p">(</span><span class="s">&quot;some/path/to/a_table.dat&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flux</span>
+<span class="p">);</span>
+</pre></div>
+The content of the file will be:
+<div class="highlight"><pre>       1     125     -56       0     9.6
+       2     568     157     1.2       0
+       3    9852       2     5.6     4.5
+       4      12      99     9.5       0
+       5     -51    1024     1.5       0
+</pre></div>
+Sometimes it is desirable to also add some information in the file about what kind of data is stored in each column. This is usually done with a <span class="emphasis">header</span>, i.e., a couple of lines at the beginning of the file containing information about what the file contains, among other things. This can be done easily using the third function in the list above, <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">write_table_hdr</span><span class="p">()</span></pre></div>. Usage is fairly simple:
+<div class="highlight"><pre><span class="c1">// Write these in a file</span>
+<span class="n">file</span><span class="o">::</span><span class="n">write_table_hdr</span><span class="p">(</span><span class="s">&quot;some/path/to/a_table.dat&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="s">&quot;y&quot;</span><span class="p">,</span> <span class="s">&quot;flux_1&quot;</span><span class="p">,</span> <span class="s">&quot;flux_2&quot;</span><span class="p">},</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flux</span>
+<span class="p">);</span>
+</pre></div>
+The resulting file is:
+<div class="highlight"><pre><span class="c">#     id       x       y  flux_1  flux_2</span>
+<span class="c">#</span>
+       1     125     -56       0     9.6
+       2     568     157     1.2       0
+       3    9852       2     5.6     4.5
+       4      12      99     9.5       0
+       5     -51    1024     1.5       0
+</pre></div>
+However it can be tedious to write the name of the columns manually, especially when they match closely the names of the vectors in the C++ code. For this reason, another way to write the above file is to use an alternative version of this function and the <div class="highlight-inline"><pre><span class="n">ftable</span><span class="p">()</span></pre></div> macro:
+<div class="highlight"><pre><span class="c1">// Write these in a file</span>
+<span class="n">file</span><span class="o">::</span><span class="n">write_table_hdr</span><span class="p">(</span><span class="s">&quot;some/path/to/a_table.dat&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="n">ftable</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">flux</span><span class="p">)</span>
+<span class="p">);</span>
+</pre></div>
+This will take the C++ name of the variables and will use them directly as column names. For 2D vectors, &ldquo;<div class="highlight-inline"><pre><span class="n">_i</span></pre></div>&rdquo; is appended to the name of the vector for each column <div class="highlight-inline"><pre><span class="n">i</span></pre></div>. If you need better looking headers, you will have to write them manually using the previous signature.
+<br><br>
+Finally, if you want to fine tune the way a particular column is written in the file, for example if you want to use scientific notation, you can perform the conversion to string yourself (\ref{SEC:support:string:convert}), and feed string vectors to this function.
+</div>
+<hr>
+<ul class="footnotes">
+<li><a name="footnote-a"></a><span class="footnote"><sup>a</sup></span> This is simple and convenient for small files, but if the volume of data is huge, consider instead using binary FITS files (\ref{SEC:support:fits:table}). This will be both faster to read and write, and will also occupy less space on your disk.</li>
+</ul>
+</div>
+  </div>
+  </body>
+</html>
+

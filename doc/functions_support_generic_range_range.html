@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signatures</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">i0</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function returns a C++ <span class="emphasis">range</span>, i.e., an object that can be used inside the C++ range-based <div class="highlight-inline"><pre><span class="k">for</span></pre></div> loop. This range will generate integer values starting from <div class="highlight-inline"><pre><span class="mi">0</span></pre></div> (first and second version) or <div class="highlight-inline"><pre><span class="n">i0</span></pre></div> (third version) to <div class="highlight-inline"><pre><span class="n">v</span><span class="p">.</span><span class="n">size</span><span class="p">()</span></pre></div> (first version) or <div class="highlight-inline"><pre><span class="n">n</span></pre></div> (second and third versions), that last value being <span class="emphasis">excluded</span> from the range. This nice way of writing an integer <div class="highlight-inline"><pre><span class="k">for</span></pre></div> loop actually runs as fast as (if not faster than) the classical way, and is less error prone.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">8</span><span class="p">};</span>
+
+<span class="c1">// First version</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// &#39;i&#39; goes from 0 to 3</span>
+    <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...;</span>
+<span class="p">}</span>
+
+<span class="c1">// Note that the loop above generates</span>
+<span class="c1">// *indices* inside the vector, while:</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">:</span> <span class="n">v</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+<span class="c1">// ... generates *values* from the vector.</span>
+
+<span class="c1">// Second version</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// &#39;i&#39; goes from 0 to 2</span>
+    <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...;</span>
+<span class="p">}</span>
+
+<span class="c1">// Third version</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// &#39;i&#39; goes from 1 to 3</span>
+    <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...;</span>
+<span class="p">}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

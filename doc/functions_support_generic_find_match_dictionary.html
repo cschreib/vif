@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">match_dictionary</span><span class="p">(</span><span class="n">vec</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">vec1u</span><span class="o">&amp;</span> <span class="n">id1</span><span class="p">,</span> <span class="n">id2</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function traverses <div class="highlight-inline"><pre><span class="n">v1</span></pre></div> and, for each value in <div class="highlight-inline"><pre><span class="n">v1</span></pre></div>, looks for an element in <div class="highlight-inline"><pre><span class="n">v2</span></pre></div> that has the same value. If one is found, the flat index of the element of <div class="highlight-inline"><pre><span class="n">v1</span></pre></div> is added to <div class="highlight-inline"><pre><span class="n">id1</span></pre></div>, and the flat index of the element of <div class="highlight-inline"><pre><span class="n">v2</span></pre></div> is added to <div class="highlight-inline"><pre><span class="n">id2</span></pre></div>. Then the function goes on to the next value in <div class="highlight-inline"><pre><span class="n">v1</span></pre></div>. Contrary to <div class="highlight-inline"><pre><span class="n">match</span></pre></div>, each value in <div class="highlight-inline"><pre><span class="n">v2</span></pre></div> can be matched to multiple values in <div class="highlight-inline"><pre><span class="n">v1</span></pre></div>. Therefore this function is not symmetric: the second vector should be considered as a &ldquo;dictionary&rdquo;, hence the name of this function. It is assumed that <div class="highlight-inline"><pre><span class="n">v2</span></pre></div> does not contain any duplicates.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">};</span>
+<span class="n">vec1i</span> <span class="n">w</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">};</span>
+<span class="n">vec1u</span> <span class="n">id1</span><span class="p">,</span> <span class="n">id2</span><span class="p">;</span>
+<span class="n">match_dictionary</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">id1</span><span class="p">,</span> <span class="n">id2</span><span class="p">);</span>
+<span class="n">id1</span><span class="p">;</span> <span class="c1">// {1,2,4}</span>
+<span class="n">id2</span><span class="p">;</span> <span class="c1">// {1,0,1}</span>
+<span class="n">v</span><span class="p">[</span><span class="n">id1</span><span class="p">]</span> <span class="o">==</span> <span class="n">w</span><span class="p">[</span><span class="n">id2</span><span class="p">];</span> <span class="c1">// always true</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">file</span><span class="o">::</span><span class="n">get_directory</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function extracts the path of the directory that contains the file given in argument. If the path in argument is that of a directory, the function returns the path of its parent directory. This behavior is similar to the <span class="fixed-width">bash</span> function <span class="fixed-width">dirname</span>, except that the returned path ends with a forward slash <div class="highlight-inline"><pre><span class="o">/</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">n</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">get_directory</span><span class="p">(</span><span class="s">&quot;/some/path&quot;</span><span class="p">);</span>
+<span class="n">n</span><span class="p">;</span> <span class="c1">// &quot;/some/&quot;</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">get_directory</span><span class="p">(</span><span class="s">&quot;/another/path/to/a/file.txt&quot;</span><span class="p">);</span>
+<span class="n">n</span><span class="p">;</span> <span class="c1">// &quot;/another/path/to/a/&quot;</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

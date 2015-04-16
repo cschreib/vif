@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">uint_t</span> <span class="n">distance</span><span class="p">(</span><span class="n">string</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function computes the <span class="emphasis">lexicographic distance</span> between two strings. The definition of this distance is the following. If the two strings that are exactly identical, the distance is zero. Else, each character of the shortest string are compared to their equivalent at the same position in the other string: if they are different, the distance is increase by one. Finally, the distance is increased by the difference of size between the two strings.
+<br><br>
+The goal of this function is to identify <span class="emphasis">near</span> matches in case a string could not be found in a pre-defined list. This is useful to suggest corrections to the user, who may have misspelled it.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;wircam_K&quot;</span><span class="p">,</span> <span class="s">&quot;hawki_Ks&quot;</span><span class="p">,</span> <span class="s">&quot;subaru_B&quot;</span><span class="p">};</span>
+<span class="n">vec1u</span> <span class="n">d</span> <span class="o">=</span> <span class="n">distance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;wirkam_Ks&quot;</span><span class="p">);</span>
+<span class="n">d</span><span class="p">;</span> <span class="c1">// {2, 8, 8}</span>
+
+<span class="c1">// Nearest match</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">m</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">min_id</span><span class="p">(</span><span class="n">d</span><span class="p">)];</span>
+<span class="n">m</span><span class="p">;</span> <span class="c1">// &quot;wircam_K&quot;</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

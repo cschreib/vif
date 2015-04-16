@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">uint_t</span> <span class="n">find</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function returns the position in the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> of the first occurrence of the sub-string <div class="highlight-inline"><pre><span class="n">p</span></pre></div>. If no such occurrence is found, the function returns <div class="highlight-inline"><pre><span class="n">npos</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;Apple&quot;</span><span class="p">,</span> <span class="s">&quot;please&quot;</span><span class="p">,</span> <span class="s">&quot;complementary&quot;</span><span class="p">,</span> <span class="s">&quot;huh?&quot;</span><span class="p">};</span>
+<span class="n">vec1u</span> <span class="n">p</span> <span class="o">=</span> <span class="n">find</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s">&quot;ple&quot;</span><span class="p">);</span>
+<span class="n">p</span><span class="p">;</span> <span class="c1">// {2, 0, 3, npos}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

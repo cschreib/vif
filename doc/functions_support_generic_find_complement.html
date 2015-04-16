@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">complement</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">,</span> <span class="n">vec1u</span> <span class="n">id</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function works in tandem with <div class="highlight-inline"><pre><span class="n">where</span></pre></div>. Given a vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> and a set of flat indices <div class="highlight-inline"><pre><span class="n">id</span></pre></div> (\ref{SEC:core:vec:indexing}), it will return the complementary set of indices inside this vector, i.e., all the indices of <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that are <span class="emphasis">not</span> present in <div class="highlight-inline"><pre><span class="n">id</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">};</span>
+<span class="n">vec1u</span> <span class="n">id</span> <span class="o">=</span> <span class="n">where</span><span class="p">(</span><span class="n">v</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">);</span> <span class="c1">// {1,2,4}</span>
+<span class="n">vec1u</span> <span class="n">cid</span> <span class="o">=</span> <span class="n">complement</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span> <span class="c1">// {0,3}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

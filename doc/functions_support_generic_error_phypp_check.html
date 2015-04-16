@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">phypp_check</span><span class="p">(</span><span class="kt">bool</span> <span class="n">b</span><span class="p">,</span> <span class="p">...)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function makes error checking easier. When called, it checks the value of <div class="highlight-inline"><pre><span class="n">b</span></pre></div>. If <div class="highlight-inline"><pre><span class="n">b</span></pre></div> is <div class="highlight-inline"><pre><span class="kc">true</span></pre></div>, then nothing happens. However if <div class="highlight-inline"><pre><span class="n">b</span></pre></div> is <div class="highlight-inline"><pre><span class="kc">false</span></pre></div>, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the <i>phy</i><sub>++</sub> library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
+<br><br>
+Since this function is actually implemented by a preprocessor macro, you should not worry about its performance impact. It will only affect the performances when something goes wrong and the program is about to crash. However the calculation of <div class="highlight-inline"><pre><span class="n">b</span></pre></div> can itself be costly (for example, you may want to check that a vector is sorted), and there is no way around this.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span><span class="p">;</span>
+<span class="c1">// Suppose v is read from the command line arguments.</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">read_from_somewhere</span><span class="p">();</span>
+
+<span class="c1">// The following code needs at least 3 elements in the</span>
+<span class="c1">// vector v, so we need to check that first.</span>
+<span class="n">phypp_check</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;this algorithm needs at least &quot;</span>
+    <span class="s">&quot;3 values in the input vector, but only &quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span>
+    <span class="s">&quot; were found&quot;</span><span class="p">);</span>
+
+<span class="c1">// If we get past this point, then v has the right number</span>
+<span class="c1">// of elements, and we can proceed</span>
+<span class="n">do_stuff</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

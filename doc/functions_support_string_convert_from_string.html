@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">from_string</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">v</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function tries to convert the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> into a C++ value <div class="highlight-inline"><pre><span class="n">v</span></pre></div> and returns <div class="highlight-inline"><pre><span class="kc">true</span></pre></div> in case of success. If the string cannot be converted into this value, for example if the string contains letters and the value has an arithmetic type, or if the number inside the string is too big to fit inside the C++ value, the function will return <div class="highlight-inline"><pre><span class="kc">false</span></pre></div>. In this case, the value of <div class="highlight-inline"><pre><span class="n">v</span></pre></div> is undefined.
+<br><br>
+The vectorized version of this function will try to convert every value inside the string vector <div class="highlight-inline"><pre><span class="n">s</span></pre></div>, and will store the converted values inside the vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> (it will take care or properly resizing the vector, so you can pass an empty vector if you want). The return value will then be an array of boolean values, corresponding to the success or failure of each individual value inside <div class="highlight-inline"><pre><span class="n">s</span></pre></div>. If an element of <div class="highlight-inline"><pre><span class="n">s</span></pre></div> fails to convert, the corresponding value in <div class="highlight-inline"><pre><span class="n">v</span></pre></div> will be undefined.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="kt">float</span> <span class="n">f</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">from_string</span><span class="p">(</span><span class="s">&quot;3.1415&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">);</span>
+<span class="n">b</span><span class="p">;</span> <span class="c1">// true</span>
+<span class="n">f</span><span class="p">;</span> <span class="c1">// 3.1415</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">from_string</span><span class="p">(</span><span class="s">&quot;abcdef&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">);</span>
+<span class="n">b</span><span class="p">;</span> <span class="c1">// false;</span>
+<span class="n">f</span><span class="p">;</span> <span class="c1">// ??? could be 3.1415, or NaN, or anything else</span>
+
+<span class="n">vec1f</span> <span class="n">fs</span><span class="p">;</span>
+<span class="n">vec1b</span> <span class="n">bs</span> <span class="o">=</span> <span class="n">from_string</span><span class="p">({</span><span class="s">&quot;1&quot;</span><span class="p">,</span> <span class="s">&quot;1.00e5&quot;</span><span class="p">,</span> <span class="s">&quot;abc&quot;</span><span class="p">,</span> <span class="s">&quot;1e128&quot;</span><span class="p">,</span> <span class="s">&quot;2.5&quot;</span><span class="p">},</span> <span class="n">fs</span><span class="p">);</span>
+<span class="n">bs</span><span class="p">;</span> <span class="c1">// {true, true, false, false, true}</span>
+<span class="n">fs</span><span class="p">;</span> <span class="c1">// {1,    1e5,  ???,   ???,   2.5}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

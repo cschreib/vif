@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signatures</span>
+<table style="signatures">
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">erase_begin</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">string</span> <span class="n">p</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">erase_begin</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">erase_end</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">string</span> <span class="n">p</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">erase_end</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+These functions will erase a number of characters from the beginning (<div class="highlight-inline"><pre><span class="n">erase_begin</span></pre></div>) or the end (<div class="highlight-inline"><pre><span class="n">erase_end</span></pre></div>) of the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div>. If the second argument is a string <div class="highlight-inline"><pre><span class="n">p</span></pre></div>, then the function first checks that the string begins/ends with <div class="highlight-inline"><pre><span class="n">p</span></pre></div>: if yes, it removes this substring from <div class="highlight-inline"><pre><span class="n">s</span></pre></div>; if no, an error is reported and the program stops. If the second argument is a number <div class="highlight-inline"><pre><span class="n">n</span></pre></div>, then <div class="highlight-inline"><pre><span class="n">n</span></pre></div> characters are removed. If <div class="highlight-inline"><pre><span class="n">n</span></pre></div> is larger than the size of <div class="highlight-inline"><pre><span class="n">s</span></pre></div>, the returned string will be empty.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;p1_m2.txt&quot;</span><span class="p">,</span> <span class="s">&quot;p3_c4.fits&quot;</span><span class="p">,</span> <span class="s">&quot;p1_t8.fits&quot;</span><span class="p">};</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="n">erase_begin</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;p1_&quot;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;m2.txt&quot;</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">erase_begin</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;p1_&quot;</span><span class="p">);</span>
+<span class="c1">// will trigger an error</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">erase_begin</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">&quot;p1_&quot;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;t8.fits&quot;</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">erase_end</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;.fits&quot;</span><span class="p">);</span>
+<span class="c1">// will trigger an error</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">erase_end</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;.fits&quot;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;p3_c4&quot;</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">erase_end</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">&quot;.fits&quot;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// &quot;p1_t8&quot;</span>
+
+<span class="n">vec1s</span> <span class="n">t</span> <span class="o">=</span> <span class="n">erase_begin</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+<span class="n">t</span><span class="p">;</span> <span class="c1">// {&quot;m2.txt&quot;, &quot;c4.fits&quot;, &quot;t8.fits&quot;}</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">erase_end</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+<span class="n">t</span><span class="p">;</span> <span class="c1">// {&quot;p1_m&quot;, &quot;p3_c4&quot;, &quot;p1_t8&quot;}</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

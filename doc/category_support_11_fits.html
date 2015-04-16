@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content">
+<span class="section">FITS input/output</span>
+<div class="section-content">
+<div class="description">
+The FITS (Flexible Image Transport System) format is a general purpose file format developed for astrophysics data. In particular, FITS files can store images with floating point pixel values, image cubes, but also binary data tables with an arbitrary number of columns and rows. Using a meta-data system (FITS keywords), FITS files usually carry a number of important additional informations about their content. E.g., for images files, the mapping between image pixels and sky coordinates (WCS coordinates), or the physical unit of the pixel values.
+<br><br>
+Storying data tables in binary inside FITS files is a space-efficient and fast way to store and read non-image data. FITS tables come in two fashions: row-oriented and column-oriented tables. In row-oriented tables, all the data about one row (e.g., about one galaxy in the table) is stored contiguously on disk. This means that it is very fast to retrieve all the information about a given object. In column-oriented tables however, a whole column is stored contiguously in memory. This means that it is very fast to read a given column for all the objects in the table. Due to the way the <i>phy</i><sub>++</sub> library is designed, it is more efficient to use the latter format, since a given column of the file will be represented by a single <i>phy</i><sub>++</sub> vector. It also brings the nice advantage of allowing to store columns of different lengths, e.g. to combine two tables in the same file, or to carry meta-data that would be hard to store in the standard FITS keywords. The column-oriented format is not well known, but most softwares and libraries do support it<a class="footnote" href="#footnote-a"><sup>a</sup></a>.
+<br><br>
+Finally, note that this support library introduces a new type: <div class="highlight-inline"><pre><span class="n">fits</span><span class="o">::</span><span class="n">header</span></pre></div> (that we will shorten to <div class="highlight-inline"><pre><span class="n">header</span></pre></div> in the following). This type is used to store the header of any FITS file. For now, it is actually just a raw <div class="highlight-inline"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span></pre></div>, but that might change in the future.
+<br><br>
+We now describe the various functions offered by this library, split into categories.
+</div>
+</div>
+<span class="subsection"><a name="SEC_support_fits_header"></a>Generic header functions</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_fits_header_fits_read_header.html">fits::read_header</a></li>
+<li><a href="functions_support_fits_header_fits_getkey.html">fits::getkey</a></li>
+<li><a href="functions_support_fits_header_fits_setkey.html">fits::setkey</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_fits_image"></a>FITS images input/output</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_fits_image_fits_file_axes.html">fits::file_axes</a></li>
+<li><a href="functions_support_fits_image_fits_file_dimensions.html">fits::file_dimensions</a></li>
+<li><a href="functions_support_fits_image_fits_is_cube.html">fits::is_cube</a></li>
+<li><a href="functions_support_fits_image_fits_is_image.html">fits::is_image</a></li>
+<li><a href="functions_support_fits_image_fits_read.html">fits::read</a></li>
+<li><a href="functions_support_fits_image_fits_read.html">fits::read_hdu</a></li>
+<li><a href="functions_support_fits_image_fits_read_sectfits.html">fits::read_sectfits</a></li>
+<li><a href="functions_support_fits_image_fits_write.html">fits::write</a></li>
+<li><a href="functions_support_fits_image_fits_display.html">fits::display</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_fits_wcs"></a>WCS coordinates</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_fits_wcs_fits_make_wcs_header.html">fits::make_wcs_header</a></li>
+<li><a href="functions_support_fits_wcs_fits_filter_wcs.html">fits::filter_wcs</a></li>
+<li><a href="functions_support_fits_wcs_fits_extast.html">fits::extast</a></li>
+<li><a href="functions_support_fits_wcs_fits_ad2xy.html">fits::ad2xy</a></li>
+<li><a href="functions_support_fits_wcs_fits_ad2xy.html">fits::xy2ad</a></li>
+<li><a href="functions_support_fits_wcs_fits_get_pixel_size.html">fits::get_pixel_size</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_fits_table"></a>FITS tables input/output</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_fits_table_fits_read_table_columns.html">fits::read_table_columns</a></li>
+<li><a href="functions_support_fits_table_fits_read_table.html">fits::read_table</a></li>
+<li><a href="functions_support_fits_table_fits_read_table.html">fits::read_table_loose</a></li>
+<li><a href="functions_support_fits_table_fits_write_table.html">fits::write_table</a></li>
+<li><a href="functions_support_fits_table_fits_write_table.html">fits::update_table</a></li>
+</ul>
+</div>
+<hr>
+<ul class="footnotes">
+<li><a name="footnote-a"></a><span class="footnote"><sup>a</sup></span> Topcat does. In IDL, column-oriented FITS files are supported by the <div class="highlight-inline"><pre><span class="n">mrdfits</span></pre></div> and <div class="highlight-inline"><pre><span class="n">mwrfits</span></pre></div> procedures.</li>
+</ul>
+</div>
+  </div>
+  </body>
+</html>
+

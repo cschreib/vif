@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">regex_replace</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">T</span> <span class="n">fun</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function will search in the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> using the regular expression <div class="highlight-inline"><pre><span class="n">reg</span></pre></div> (see <div class="highlight-inline"><pre><span class="n">regex_match</span></pre></div>) to locate some expressions. Parts of these expressions can be <span class="emphasis">captured</span> by enclosing them in parenthesis. These captured sub-expressions are extracted from <div class="highlight-inline"><pre><span class="n">s</span></pre></div>, stored inside a string vector, and fed to the user-supplied &ldquo;replacement function&rdquo; <div class="highlight-inline"><pre><span class="n">fun</span></pre></div>. In turn, this function can analyze and modify the captured sub-expressions and produce a new replacement string that will be inserted in place of the matched expression.
+<br><br>
+If no sub-expression is captured, then the string vector that is fed to <div class="highlight-inline"><pre><span class="n">fun</span></pre></div> will be empty. Expressions are found and replaced in the order in which they appear in the input string <div class="highlight-inline"><pre><span class="n">s</span></pre></div>.
+<br><br>
+This function is very similar to the <div class="highlight-inline"><pre><span class="n">sed</span></pre></div> program.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;a, b, c=5, d=9, e, f=2, g&quot;</span><span class="p">;</span>
+
+<span class="c1">// First a simple example.</span>
+<span class="c1">// We want to find all the &quot;X=Y&quot; expressions in this string and</span>
+<span class="c1">// add parentheses around &quot;Y&quot;.</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">n</span> <span class="o">=</span> <span class="n">regex_replace</span><span class="p">(</span>
+    <span class="n">s</span><span class="p">,</span>                    <span class="c1">// the string to analyze</span>
+    <span class="s">R&quot;(([a-z])=([0-9]))&quot;</span><span class="p">,</span> <span class="c1">// the regular expression</span>
+    <span class="c1">// the replacement function</span>
+    <span class="p">[](</span><span class="n">vec1s</span> <span class="n">m</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// &quot;X&quot; is in m[0], &quot;Y&quot; is in m[1].</span>
+        <span class="k">return</span> <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s">&quot;=(&quot;</span><span class="o">+</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s">&quot;)&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">);</span>
+
+<span class="c1">// The regular expression can be read like:</span>
+<span class="c1">// &#39;(&#39;   : open a new sub-expression containing...</span>
+<span class="c1">// &#39;[&#39;   : any character among...</span>
+<span class="c1">// &#39;a-z&#39; : the letters &#39;a&#39; to &#39;z&#39;</span>
+<span class="c1">// &#39;]&#39;</span>
+<span class="c1">// &#39;)&#39;   : end of the sub-expression</span>
+<span class="c1">// &#39;=&#39;   : followed by the equal sign</span>
+<span class="c1">// &#39;(&#39;   : open a new sub-expression containing...</span>
+<span class="c1">// &#39;[&#39;   : any character among...</span>
+<span class="c1">// &#39;0-9&#39; : the numbers 0 to 9</span>
+<span class="c1">// &#39;]&#39;</span>
+<span class="c1">// &#39;)&#39;   : end of the sub-expression</span>
+
+<span class="c1">// The result is:</span>
+<span class="n">n</span><span class="p">;</span> <span class="c1">// &quot;a, b, c=(5), d=(9), e, f=(2), g&quot;</span>
+
+<span class="c1">// A second, more complex example.</span>
+<span class="c1">// We take the same example as above, but this time we want to</span>
+<span class="c1">// change &quot;X&quot; to upper case and increment &quot;Y&quot; by one.</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">n</span> <span class="o">=</span> <span class="n">regex_replace</span><span class="p">(</span>
+    <span class="n">s</span><span class="p">,</span>                    <span class="c1">// the string to analyze</span>
+    <span class="s">R&quot;(([a-z])=([0-9]))&quot;</span><span class="p">,</span> <span class="c1">// the regular expression</span>
+    <span class="c1">// the replacement function</span>
+    <span class="p">[](</span><span class="n">vec1s</span> <span class="n">m</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Again, &quot;X&quot; is in m[0], &quot;Y&quot; is in m[1].</span>
+
+        <span class="c1">// Read the integer &quot;Y&quot; and increment it</span>
+        <span class="n">uint_t</span> <span class="n">k</span><span class="p">;</span>
+        <span class="n">from_string</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">k</span><span class="p">);</span>
+        <span class="o">++</span><span class="n">k</span><span class="p">;</span>
+
+        <span class="c1">// Build the replacement string</span>
+        <span class="k">return</span> <span class="n">toupper</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;=&quot;</span><span class="o">+</span><span class="n">strn</span><span class="p">(</span><span class="n">k</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">);</span>
+
+<span class="c1">// The result is:</span>
+<span class="n">n</span><span class="p">;</span> <span class="c1">// &quot;a, b, C=6, D=10, e, F=3, g&quot;</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

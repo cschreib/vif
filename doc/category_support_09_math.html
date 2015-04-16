@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content">
+<span class="section">Mathematics</span>
+<div class="section-content">
+<div class="description">
+The mathematics support library is among the largest inside <i>phy</i><sub>++</sub>. It contains many functions, as well as a handful of useful constants. Some functionalities of this library are only available if you have installed the <span class="fixed-width">fftw</span> and <span class="fixed-width">gsl</span> libraries. If not, the specific functions that depend on these libraries will not be available, or will be slow, but the rest of the library will function properly.
+<br><br>
+This library provides the following global constants:
+<ul>
+<li> <div class="highlight-inline"><pre><span class="n">fnan</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dnan</span></pre></div>. These are the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> representation of the &ldquo;not-a-number&rdquo; (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., <div class="highlight-inline"><pre><span class="mf">2.0</span> <span class="o">+</span> <span class="n">fnan</span> <span class="o">==</span> <span class="n">fnan</span></pre></div>). More troubling, any comparison operation involving a NaN will return <div class="highlight-inline"><pre><span class="kc">false</span></pre></div>, e.g., <div class="highlight-inline"><pre><span class="p">(</span><span class="mf">10.0</span> <span class="o">&lt;</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="kc">false</span></pre></div> and <div class="highlight-inline"><pre><span class="p">(</span><span class="mf">10.0</span> <span class="o">&gt;=</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="kc">false</span></pre></div> too. The only notable exception to this rule is that <div class="highlight-inline"><pre><span class="p">(</span><span class="n">fnan</span> <span class="o">!=</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="kc">true</span></pre></div>. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as <div class="highlight-inline"><pre><span class="o">-</span><span class="mi">99</span></pre></div>. Using NaN in this case is clearer.</li>
+<li> <div class="highlight-inline"><pre><span class="n">fpi</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dpi</span></pre></div>. This is the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> closest representation of the number <img class="latex" style="vertical-align: -0pt" src=latex/category_support_09_math_0.svg>.</li>
+<li> <div class="highlight-inline"><pre><span class="n">finf</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dinf</span></pre></div>. This is the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> representation of the positive infinity. The positive infinity is larger than any other finite value.</li>
+</ul>
+We now present the functions provided by this support library. One of the responsibilities of this library is to bring vectorized versions of standard mathematical functions that only work for scalar values. Since these functions are fairly common and well known, we will not describe their signature and behavior, and instead just list them here:
+<ul>
+<li> exponentiation: <div class="highlight-inline"><pre><span class="n">sqrt</span></pre></div>, <div class="highlight-inline"><pre><span class="n">pow</span></pre></div>,</li>
+<li> trigonometry: <div class="highlight-inline"><pre><span class="n">cos</span></pre></div>, <div class="highlight-inline"><pre><span class="n">sin</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tan</span></pre></div>, <div class="highlight-inline"><pre><span class="n">acos</span></pre></div>, <div class="highlight-inline"><pre><span class="n">asin</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atan</span></pre></div>, <div class="highlight-inline"><pre><span class="n">cosh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">sinh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tanh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">acosh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">asinh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atanh</span></pre></div>,</li>
+<li> exponentials and logarithms: <div class="highlight-inline"><pre><span class="n">exp</span></pre></div>, <div class="highlight-inline"><pre><span class="n">log</span></pre></div>, <div class="highlight-inline"><pre><span class="n">log2</span></pre></div>, <div class="highlight-inline"><pre><span class="n">log10</span></pre></div>,</li>
+<li> special functions: <div class="highlight-inline"><pre><span class="n">erf</span></pre></div>, <div class="highlight-inline"><pre><span class="n">erfc</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tgamma</span></pre></div>,</li>
+<li> rounding: <div class="highlight-inline"><pre><span class="n">ceil</span></pre></div>, <div class="highlight-inline"><pre><span class="n">floor</span></pre></div>, <div class="highlight-inline"><pre><span class="n">round</span></pre></div>,</li>
+<li> absolute value: <div class="highlight-inline"><pre><span class="n">fabs</span></pre></div>.</li>
+</ul>
+We also introduce the functions <div class="highlight-inline"><pre><span class="n">bessel_j0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_j1</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_y0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_y1</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_i0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_i1</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_k0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_k1</span></pre></div>. The scalar version of the first four are provided by the C++ standard, while the last four are provided by the <span class="fixed-width">gsl</span>.
+<br><br>
+We now list the other, less common functions provided in this library. These are grouped by sections.
+</div>
+</div>
+<span class="subsection"><a name="SEC_support_math_lowlevel"></a>Low level mathematics</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_lowlevel_e10.html">e10</a></li>
+<li><a href="functions_support_math_lowlevel_sqr.html">sqr</a></li>
+<li><a href="functions_support_math_lowlevel_invsqr.html">invsqr</a></li>
+<li><a href="functions_support_math_lowlevel_clamp.html">clamp</a></li>
+<li><a href="functions_support_math_lowlevel_is_finite.html">is_finite</a></li>
+<li><a href="functions_support_math_lowlevel_is_nan.html">is_nan</a></li>
+<li><a href="functions_support_math_lowlevel_sign.html">sign</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_sequence"></a>Sequences and bins</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_sequence_rgen.html">rgen</a></li>
+<li><a href="functions_support_math_sequence_rgen.html">rgen_log</a></li>
+<li><a href="functions_support_math_sequence_make_bins.html">make_bins</a></li>
+<li><a href="functions_support_math_sequence_in_bin.html">in_bin</a></li>
+<li><a href="functions_support_math_sequence_in_bin.html">in_bin_open</a></li>
+<li><a href="functions_support_math_sequence_bin_center.html">bin_center</a></li>
+<li><a href="functions_support_math_sequence_bin_width.html">bin_width</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_random"></a>Randomization</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_random_make_seed.html">make_seed</a></li>
+<li><a href="functions_support_math_random_randomn.html">randomn</a></li>
+<li><a href="functions_support_math_random_randomi.html">randomi</a></li>
+<li><a href="functions_support_math_random_random_pdf.html">random_pdf</a></li>
+<li><a href="functions_support_math_random_random_coin.html">random_coin</a></li>
+<li><a href="functions_support_math_random_shuffle.html">shuffle</a></li>
+<li><a href="functions_support_math_random_shuffle.html">inplace_shuffle</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_reduce"></a>Reduction</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_reduce_run_dim_idx.html">run_dim_idx</a></li>
+<li><a href="functions_support_math_reduce_run_dim.html">run_dim</a></li>
+<li><a href="functions_support_math_reduce_total.html">total</a></li>
+<li><a href="functions_support_math_reduce_total.html">partial_total</a></li>
+<li><a href="functions_support_math_reduce_count.html">count</a></li>
+<li><a href="functions_support_math_reduce_count.html">partial_count</a></li>
+<li><a href="functions_support_math_reduce_fraction_of.html">fraction_of</a></li>
+<li><a href="functions_support_math_reduce_fraction_of.html">partial_fraction_of</a></li>
+<li><a href="functions_support_math_reduce_mean.html">mean</a></li>
+<li><a href="functions_support_math_reduce_mean.html">partial_mean</a></li>
+<li><a href="functions_support_math_reduce_median.html">median</a></li>
+<li><a href="functions_support_math_reduce_median.html">inplace_median</a></li>
+<li><a href="functions_support_math_reduce_median.html">partial_median</a></li>
+<li><a href="functions_support_math_reduce_percentile.html">percentile</a></li>
+<li><a href="functions_support_math_reduce_percentile.html">partial_percentile</a></li>
+<li><a href="functions_support_math_reduce_percentile.html">percentiles</a></li>
+<li><a href="functions_support_math_reduce_min.html">min</a></li>
+<li><a href="functions_support_math_reduce_min.html">partial_min</a></li>
+<li><a href="functions_support_math_reduce_min.html">max</a></li>
+<li><a href="functions_support_math_reduce_min.html">partial_max</a></li>
+<li><a href="functions_support_math_reduce_min_id.html">min_id</a></li>
+<li><a href="functions_support_math_reduce_min_id.html">max_id</a></li>
+<li><a href="functions_support_math_reduce_histogram.html">histogram</a></li>
+<li><a href="functions_support_math_reduce_histogram2d.html">histogram2d</a></li>
+<li><a href="functions_support_math_reduce_sigma_clip.html">sigma_clip</a></li>
+<li><a href="functions_support_math_reduce_mad_clip.html">mad_clip</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_interp"></a>Interpolation</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_interpol_interpolate.html">interpolate</a></li>
+<li><a href="functions_support_math_interpol_bilinear.html">bilinear</a></li>
+<li><a href="functions_support_math_interpol_rebin.html">rebin</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_calculus"></a>Calculus</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_calculus_derivate1.html">derivate1</a></li>
+<li><a href="functions_support_math_calculus_derivate2.html">derivate2</a></li>
+<li><a href="functions_support_math_calculus_integrate_trap.html">integrate_trap</a></li>
+<li><a href="functions_support_math_calculus_integrate_trap.html">integrate</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_algebra"></a>Algebra</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_algebra_mmul.html">mmul</a></li>
+<li><a href="functions_support_math_algebra_transpose.html">transpose</a></li>
+<li><a href="functions_support_math_algebra_diagonal.html">diagonal</a></li>
+<li><a href="functions_support_math_algebra_identity_matrix.html">identity_matrix</a></li>
+<li><a href="functions_support_math_algebra_scale_matrix.html">scale_matrix</a></li>
+<li><a href="functions_support_math_algebra_translation_matrix.html">translation_matrix</a></li>
+<li><a href="functions_support_math_algebra_rotation_matrix.html">rotation_matrix</a></li>
+<li><a href="functions_support_math_algebra_point2d.html">point2d</a></li>
+<li><a href="functions_support_math_algebra_invert.html">invert</a></li>
+<li><a href="functions_support_math_algebra_invert.html">inplace_invert</a></li>
+<li><a href="functions_support_math_algebra_invert_symmetric.html">invert_symmetric</a></li>
+<li><a href="functions_support_math_algebra_invert_symmetric.html">inplace_invert_symmetric</a></li>
+<li><a href="functions_support_math_algebra_solve_symmetric.html">solve_symmetric</a></li>
+<li><a href="functions_support_math_algebra_solve_symmetric.html">inplace_solve_symmetric</a></li>
+<li><a href="functions_support_math_algebra_eigen_symmetric.html">eigen_symmetric</a></li>
+<li><a href="functions_support_math_algebra_eigen_symmetric.html">inplace_eigen_symmetric</a></li>
+<li><a href="functions_support_math_algebra_fft.html">fft</a></li>
+<li><a href="functions_support_math_algebra_fft.html">ifft</a></li>
+<li><a href="functions_support_math_algebra_convolve.html">convolve</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_fit"></a>Fitting</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_fit_linfit.html">linfit</a></li>
+<li><a href="functions_support_math_fit_linfit.html">linfit_pack</a></li>
+<li><a href="functions_support_math_fit_affinefit.html">affinefit</a></li>
+<li><a href="functions_support_math_fit_mpfit.html">mpfit</a></li>
+<li><a href="functions_support_math_fit_mpfitfun.html">mpfitfun</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_geometry"></a>Geometry</span>
+<div class="section-content">
+<ul class="category-funclist">
+<li><a href="functions_support_math_geometry_convex_hull.html">convex_hull</a></li>
+<li><a href="functions_support_math_geometry_is_hull_closed.html">is_hull_closed</a></li>
+<li><a href="functions_support_math_geometry_in_convex_hull.html">in_convex_hull</a></li>
+<li><a href="functions_support_math_geometry_convex_hull_distance.html">convex_hull_distance</a></li>
+<li><a href="functions_support_math_geometry_angdistr.html">angdistr</a></li>
+<li><a href="functions_support_math_geometry_angdistr.html">angdist</a></li>
+<li><a href="functions_support_math_geometry_angdist_less.html">angdist_less</a></li>
+<li><a href="functions_support_math_geometry_move_ra_dec.html">move_ra_dec</a></li>
+</ul>
+</div>
+<span class="subsection"><a name="SEC_support_math_debug"></a>Debug functions</span>
+<div class="section-content">
+<div class="description">
+<ul>
+<li> |void data_info(vec)| </li>
+<li> |void mprint(vec<2,T>)| </li>
+</ul>
+</div>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

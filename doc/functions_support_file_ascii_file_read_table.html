@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">s</span><span class="p">,</span> <span class="p">...)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function reads the content of the ASCII table <div class="highlight-inline"><pre><span class="n">f</span></pre></div> and stores the data inside vectors. The second argument <div class="highlight-inline"><pre><span class="n">s</span></pre></div> gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table. Note that, due to the lack of standard formatting for the header, there is no automatic way to ignore these lines.
+<br><br>
+The vectors in which the data should be stored are given in argument, one after the other. Each column of the file will be stored in a different vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
+<br><br>
+Columns in the file can be separated by any number of spaces and tabulations. While this is better for human readability, columns need not be aligned to be read by this function. However, &ldquo;holes&rdquo; in the table are not supported, i.e., rows that only have data for some columns but not all. If such a situation is encountered, the &ldquo;hole&rdquo; is considered as white spaces and ignored, and the data from this column is actually read from the next one. This will make the function report and error only if all columns of the file are read. For this reason, it is advised to always read all the columns of a given file, even those that are not used (see below for an efficient way to do that). The table may contain empty lines however, they will simply be ignored.
+<br><br>
+Regarding the type of the data. ASCII tables are not strongly typed: as long as the data in the table can be converted to a value of its corresponding vector, this function will be able to read it. There are particular rules though:
+<ul>
+<li> Strings may not contain spaces (since they will be understood as column separators). Adding quotes <div class="highlight-inline"><pre><span class="s">&quot;...&quot;</span></pre></div> will <span class="emphasis">not</span> change that.</li>
+<li> Floating point columns can contain special values such as NaN or the infinity. These can be spelled <div class="highlight-inline"><pre><span class="n">nan</span></pre></div>, <div class="highlight-inline"><pre><span class="o">+</span><span class="n">nan</span></pre></div>, <div class="highlight-inline"><pre><span class="o">-</span><span class="n">nan</span></pre></div>, <div class="highlight-inline"><pre><span class="o">+</span><span class="n">inf</span></pre></div>, <div class="highlight-inline"><pre><span class="o">-</span><span class="n">inf</span></pre></div>, <div class="highlight-inline"><pre><span class="n">inf</span></pre></div>, <div class="highlight-inline"><pre><span class="n">inf</span><span class="o">+</span></pre></div> or <div class="highlight-inline"><pre><span class="n">inf</span><span class="o">-</span></pre></div> (case does not matter). The special value <div class="highlight-inline"><pre><span class="n">null</span></pre></div> is also accepted and means zero. Both fixed point and scientific notation is allowed.</li>
+<li> In general for arithmetic data, if the value to be read is too large to fit in the corresponding C++ variable, the program will stop report the error. This will happen for example is trying to read a number like <div class="highlight-inline"><pre><span class="mf">1e128</span></pre></div> inside a <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> vector. Use a larger data type to fix this (e.g. <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> in this particular case).</li>
+</ul>
+In the following examples, we will parse a table which contains the following columns:
+<div class="highlight"><pre><span class="c">#  - source ID              (integer)</span>
+<span class="c">#  - right ascension        (double)</span>
+<span class="c">#  - declination            (double)</span>
+<span class="c">#  - badpixel flag          (integer)</span>
+<span class="c">#  - contamination flag     (integer)</span>
+<span class="c">#  - cov   24               (float)</span>
+<span class="c">#  - cov   160              (float)</span>
+<span class="c">#  - flux  24               (float)</span>
+<span class="c">#  - error 24               (float)</span>
+<span class="c">#  - flux  160              (float)</span>
+<span class="c">#  - error 160              (float)</span>
+</pre></div>
+This is the header of the table, and it contains <div class="highlight-inline"><pre><span class="mi">11</span></pre></div> lines that should be ignored.
+<br><br>
+Here is how to read the first three columns:
+<div class="highlight"><pre><span class="c1">// First declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="c1">// read three columns</span>
+<span class="p">);</span>
+</pre></div>
+The placeholder character <div class="highlight-inline"><pre><span class="n">_</span></pre></div> can be used in the argument list to skip a given column. Let's say we want to read the <div class="highlight-inline"><pre><span class="n">contamination</span></pre></div> flag, but we don't care about the <div class="highlight-inline"><pre><span class="n">badpixel</span></pre></div> flag. We can write:
+<div class="highlight"><pre><span class="c1">// First declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+<span class="n">vec1u</span> <span class="n">contam</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="c1">// read three columns</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">contam</span>    <span class="c1">// ignore one column, and read one column</span>
+<span class="p">);</span>
+</pre></div>
+Lastly, the <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="p">...)</span></pre></div> function can be used to group several columns and repeat <div class="highlight-inline"><pre><span class="n">n</span></pre></div> times the same extraction pattern. This can be used to read multiple columns inside a single two-dimensional vector. Let's say we want now to read the data from <span class="fixed-width">cov24</span> and <span class="fixed-width">cov160</span> in a single vector:
+<div class="highlight"><pre><span class="c1">// First declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+<span class="n">vec1u</span> <span class="n">contam</span><span class="p">;</span>
+<span class="n">vec2f</span> <span class="n">cov</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="c1">// read three columns</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">contam</span><span class="p">,</span>   <span class="c1">// ignore one column, and read one column</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span> <span class="c1">// read two columns in one vector</span>
+<span class="p">);</span>
+<span class="n">cov</span><span class="p">(</span><span class="n">_</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// contains data from &quot;cov 24&quot;</span>
+<span class="n">cov</span><span class="p">(</span><span class="n">_</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// contains data from &quot;cov 160&quot;</span>
+</pre></div>
+The <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="p">...)</span></pre></div> function can also be used to ignore multiple columns at a time. Let's say we don't want to read the <div class="highlight-inline"><pre><span class="n">contamination</span></pre></div> flag anymore, so we need to skip two consecutive columns. We could write &ldquo;<div class="highlight-inline"><pre><span class="n">_</span><span class="p">,</span> <span class="n">_</span></pre></div>&rdquo;, but this becomes tedious and error prone when many columns are to be ignored. Instead, we can write:
+<div class="highlight"><pre><span class="c1">// First declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+<span class="n">vec2f</span> <span class="n">cov</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span>          <span class="c1">// read three columns</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span>  <span class="c1">// ignore two columns</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span> <span class="c1">// read two columns in one vector</span>
+<span class="p">);</span>
+</pre></div>
+The <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="p">...)</span></pre></div> function can also be used to read consecutive groups of columns with a given pattern. Let's say we now want to read the <div class="highlight-inline"><pre><span class="n">flux</span></pre></div> and <div class="highlight-inline"><pre><span class="n">error</span></pre></div> inside their respective two-dimensional vectors. The pattern here is &ldquo;<div class="highlight-inline"><pre><span class="n">flux</span></pre></div>, <div class="highlight-inline"><pre><span class="n">error</span></pre></div>, <div class="highlight-inline"><pre><span class="n">flux</span></pre></div>, <div class="highlight-inline"><pre><span class="n">error</span></pre></div>, ...&rdquo;. We can parse this using:
+<div class="highlight"><pre><span class="c1">// First declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+<span class="n">vec2f</span> <span class="n">cov</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span>           <span class="c1">// read three columns</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span>   <span class="c1">// ignore two columns</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">cov</span><span class="p">),</span> <span class="c1">// read two columns in one vector</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="c1">// read (flux,err,flux,err)</span>
+<span class="p">);</span>
+</pre></div>
+Finally, note that it is possible to mix together vectors and <div class="highlight-inline"><pre><span class="n">_</span></pre></div> in this pattern. Imagine we just want to read the <div class="highlight-inline"><pre><span class="n">flux</span></pre></div> columns and ignore the <div class="highlight-inline"><pre><span class="n">errors</span></pre></div>. We can write:
+<div class="highlight"><pre><span class="c1">// First declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+<span class="n">vec2f</span> <span class="n">cov</span><span class="p">,</span> <span class="n">flux</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span>           <span class="c1">// read three columns</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span>   <span class="c1">// ignore two columns</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">cov</span><span class="p">),</span> <span class="c1">// read two columns in one vector</span>
+    <span class="n">file</span><span class="o">::</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="c1">// read (flux,_,flux,_)</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+
