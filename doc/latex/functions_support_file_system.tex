@@ -25,7 +25,7 @@ b; // probably false
 
 \funcitem \cppinline|vec1s file::list_directories(string)| \itt{file::list_directories}
 
-This function scans the directory given in argument and returns the list of all directories it contains. An empty list is returned if no directory is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
+This function scans the directory given in argument and returns the list of all directories it contains. An empty list is returned if no directory is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The order of the directories in the output list is undefined (can be anything): if you need a sorted list, you have to sort it yourself. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
 
 \begin{example}
 \begin{cppcode}
@@ -39,7 +39,7 @@ d; // {"test", "tools"}
 
 \funcitem \cppinline|vec1s file::list_files(string)| \itt{file::list_files}
 
-This function scans the directory given in argument and returns the list of all files it contains (excluding directories). An empty list is returned if no file is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
+This function scans the directory given in argument and returns the list of all files it contains (excluding directories). An empty list is returned if no file is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The order of the files in the output list is undefined (can be anything): if you need a sorted list, you have to sort it yourself. Lastly, the path given in argument can contain wildcard characters \cppinline{*}, like in \texttt{bash}, to filter out the output list.
 
 \begin{example}
 \begin{cppcode}
