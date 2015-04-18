@@ -24,7 +24,7 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function scans the directory given in argument and returns the list of all files it contains (excluding directories). An empty list is returned if no file is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The output list is ordered alphabetically. Lastly, the path given in argument can contain wildcard characters <div class="highlight-inline"><pre><span class="o">*</span></pre></div>, like in <span class="fixed-width">bash</span>, to filter out the output list.
+This function scans the directory given in argument and returns the list of all files it contains (excluding directories). An empty list is returned if no file is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The order of the files in the output list is undefined (can be anything): if you need a sorted list, you have to sort it yourself. Lastly, the path given in argument can contain wildcard characters <div class="highlight-inline"><pre><span class="o">*</span></pre></div>, like in <span class="fixed-width">bash</span>, to filter out the output list.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="n">vec1s</span> <span class="n">d</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">list_files</span><span class="p">(</span><span class="s">&quot;/path/to/phypp/doc&quot;</span><span class="p">);</span>
 <span class="n">d</span><span class="p">;</span> <span class="c1">// {&quot;compile.sh&quot;, &quot;phypp.pdf&quot;, &quot;phypp.tex&quot;}</span>
