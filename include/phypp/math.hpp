@@ -1631,7 +1631,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
         }
     }
 
-    fr.chi2 = total(sqr(model*flatten(1.0/ye) - tmp));
+    fr.chi2 = total(sqr(model - tmp));
 
     return fr;
 }
