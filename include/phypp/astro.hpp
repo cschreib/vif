@@ -950,14 +950,21 @@ double sed_convert(const filter_t& from, const filter_t& to, double z, double d,
     return ref/flx;
 }
 
-// Compute the LIR luminosity of a rest-frame SED (8um to 1000um).
+// Compute the luminosity of a rest-frame SED by integrating a given wavelength region.
+// The return value is in the same units as the input SED, i.e. most likely Lsun.
 template<typename TL, typename TS>
-double lir_8_1000(const vec<1,TL>& lam, const vec<1,TS>& sed) {
-    uint_t s = lower_bound(8.0, lam);
-    uint_t e = upper_bound(1000.0, lam);
+double sed_luminosity(const vec<1,TL>& lam, const vec<1,TS>& sed, double l0, double l1) {
+    uint_t s = lower_bound(l0, lam);
+    uint_t e = upper_bound(l1, lam);
     if (s == npos || e == npos) return dnan;
 
     return integrate(lam[s-_-e], sed[s-_-e]/lam[s-_-e]);
+}
+
+// Compute the LIR luminosity of a rest-frame SED (8um to 1000um).
+template<typename TL, typename TS>
+double lir_8_1000(const TL& lam, const TS& sed) {
+    return sed_luminosity(lam, sed, 8.0, 1000.0);
 }
 
 bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
