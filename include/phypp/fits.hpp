@@ -1096,7 +1096,6 @@ namespace fits {
                     if (i == 0 && ci.type == column_info::string) {
                         ci.length = axes[i];
                         if (naxis == 1) {
-                            ci.dims.push_back(1);
                             break;
                         }
 
