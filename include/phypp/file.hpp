@@ -411,10 +411,13 @@ namespace file {
     template<typename I, typename T>
     bool read_value_(I& in, T& v, std::string& fallback) {
         auto pos = in.tellg();
-        if (!(in >> v)) {
+        in >> fallback;
+
+        std::istringstream ss(fallback);
+        ss >> v;
+        if (ss.fail() || !ss.eof()) {
             in.clear();
             in.seekg(pos);
-            in >> fallback;
             return false;
         }
 
@@ -423,30 +426,29 @@ namespace file {
 
     template<typename I, typename T>
     bool read_value_float_(I& in, T& v, std::string& fallback) {
-        // std::istream will fail to extract a float/double value where the string is
-        // 'INF', 'NAN', 'NULL', or any other text
         auto pos = in.tellg();
-        if (!(in >> v)) {
+        in >> fallback;
+
+        std::string s = trim(toupper(fallback));
+        if (s == "NAN" || s == "+NAN" || s == "-NAN") {
+            v = dnan;
+            return true;
+        } else if (s == "+INF" || s == "INF+" || s == "INF") {
+            v = dinf;
+            return true;
+        } else if (s == "-INF" || s == "INF-") {
+            v = -dinf;
+            return true;
+        } else if (s == "NULL") {
+            v = dnan;
+            return true;
+        }
+
+        std::istringstream ss(fallback);
+        ss >> v;
+        if (ss.fail() || !ss.eof()) {
             in.clear();
             in.seekg(pos);
-            std::string s;
-            in >> s;
-            s = trim(toupper(s));
-            if (s == "NAN" || s == "+NAN" || s == "-NAN") {
-                v = dnan;
-                return true;
-            } else if (s == "+INF" || s == "INF+" || s == "INF") {
-                v = dinf;
-                return true;
-            } else if (s == "-INF" || s == "INF-") {
-                v = -dinf;
-                return true;
-            } else if (s == "NULL") {
-                v = dnan;
-                return true;
-            }
-
-            fallback = s;
             return false;
         }
 
