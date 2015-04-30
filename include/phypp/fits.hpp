@@ -43,6 +43,12 @@ namespace fits {
         static std::string def() {
             return "";
         }
+
+        static bool is_convertible(int type) {
+            if (type == TSTRING) return true;
+            if (type == TBYTE) return true;
+            return false;
+        }
     };
 
     template<>
@@ -54,6 +60,13 @@ namespace fits {
         static const int image_type = BYTE_IMG;
 
         static bool def() {
+            return false;
+        }
+
+        static bool is_convertible(int type) {
+            if (type == TLOGICAL) return true;
+            if (type == TBIT) return true;
+            if (type == TBYTE) return true;
             return false;
         }
     };
@@ -69,6 +82,11 @@ namespace fits {
         static bool def() {
             return '\0';
         }
+
+        static bool is_convertible(int type) {
+            if (type == TBYTE) return true;
+            return false;
+        }
     };
 
     template<>
@@ -81,6 +99,15 @@ namespace fits {
 
         static uint_t def() {
             return 0;
+        }
+
+        static bool is_convertible(int type) {
+            if (type == TSHORT) return true;
+            if (type == TLONG) return true;
+            if (type == TBIT) return true;
+            if (type == TBYTE) return true;
+            if (type == TINT32BIT) return true;
+            return false;
         }
     };
 
@@ -95,6 +122,15 @@ namespace fits {
         static int_t def() {
             return 0;
         }
+
+        static bool is_convertible(int type) {
+            if (type == TSHORT) return true;
+            if (type == TLONG) return true;
+            if (type == TBIT) return true;
+            if (type == TBYTE) return true;
+            if (type == TINT32BIT) return true;
+            return false;
+        }
     };
 
     template<>
@@ -108,6 +144,16 @@ namespace fits {
         static float def() {
             return fnan;
         }
+
+        static bool is_convertible(int type) {
+            if (type == TSHORT) return true;
+            if (type == TLONG) return true;
+            if (type == TFLOAT) return true;
+            if (type == TBIT) return true;
+            if (type == TBYTE) return true;
+            if (type == TINT32BIT) return true;
+            return false;
+        }
     };
 
     template<>
@@ -120,6 +166,17 @@ namespace fits {
 
         static float def() {
             return dnan;
+        }
+
+        static bool is_convertible(int type) {
+            if (type == TSHORT) return true;
+            if (type == TLONG) return true;
+            if (type == TFLOAT) return true;
+            if (type == TDOUBLE) return true;
+            if (type == TBIT) return true;
+            if (type == TBYTE) return true;
+            if (type == TINT32BIT) return true;
+            return false;
         }
     };
 
@@ -1125,6 +1182,21 @@ namespace fits {
         return toupper(file::bake_macroed_name(s));
     }
 
+    std::string type_to_string_(int type) {
+        if (type == TSTRING) return "string";
+        if (type == TSHORT) return "short";
+        if (type == TLONG) return "long";
+        if (type == TFLOAT) return "float";
+        if (type == TDOUBLE) return "double";
+        if (type == TLOGICAL) return "bool";
+        if (type == TBIT) return "bool";
+        if (type == TBYTE) return "char";
+        if (type == TINT32BIT) return "int32";
+        if (type == TCOMPLEX) return "complex float";
+        if (type == TDBLCOMPLEX) return "complex double";
+        return "unknown";
+    }
+
     // Load the content of a FITS file into a set of arrays.
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
@@ -1147,6 +1219,8 @@ namespace fits {
         fits_read_tdim(fptr, id, Dim, &naxis, naxes.data(), &status);
         phypp_check_fits(naxis == Dim, "wrong dimension for column '"+colname+"' "
             "(expected "+strn(Dim)+", got "+strn(naxis)+")");
+        phypp_check_fits(traits<Type>::is_convertible(type), "wrong type for column '"+colname+"' "
+            "(expected "+pretty_type_t(Type)+", got "+type_to_string_(type)+")");
         status = 0;
 
         for (uint_t i = 0; i < Dim; ++i) {
@@ -1180,6 +1254,8 @@ namespace fits {
         fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
         phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"' "
             "(expected 1, got "+strn(naxis)+")");
+        phypp_check_fits(traits<Type>::is_convertible(type), "wrong type for column '"+colname+"' "
+            "(expected "+pretty_type_t(Type)+", got "+type_to_string_(type)+")");
         status = 0;
 
         Type def = traits<Type>::def();
@@ -1210,6 +1286,8 @@ namespace fits {
         fits_read_tdim(fptr, id, Dim+1, &naxis, naxes.data(), &status);
         phypp_check_fits(naxis == Dim+1, "wrong dimension for column '"+colname+"' "
             "(expected "+strn(Dim)+", got "+strn(naxis-1)+")");
+        phypp_check_fits(traits<std::string>::is_convertible(type), "wrong type for column '"+colname+"' "
+            "(expected "+pretty_type_t(std::string)+", got "+type_to_string_(type)+")");
         status = 0;
 
         for (uint_t i = 0; i < Dim; ++i) {
@@ -1257,6 +1335,8 @@ namespace fits {
         fits_read_tdim(fptr, id, 1, &naxis, naxes.data(), &status);
         phypp_check_fits(naxis == 1, "wrong dimension for column '"+colname+"' "
             "(expected 1, got "+strn(naxis)+")");
+        phypp_check_fits(traits<std::string>::is_convertible(type), "wrong type for column '"+colname+"' "
+            "(expected "+pretty_type_t(std::string)+", got "+type_to_string_(type)+")");
         status = 0;
 
         char* buffer = new char[naxes[0]+1];
