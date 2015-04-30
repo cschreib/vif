@@ -324,4 +324,215 @@ template_fit_res_t template_fit(const TLib& lib, TypeSeed& seed, const TZ& z,
     return res;
 }
 
+
+struct multi_template_fit_res_t {
+    vec1u bfit; // index of the best fit template in each library
+    vec1d amp;  // amplitude of the best fit of each library
+    vec2d flux; // best-fit flux of each library
+    double chi2;
+
+    vec2u sed_sim; // index of each error realization's best fit templates
+    vec2d amp_sim; // renormalization amplitude for each error realization's best fit
+};
+
+struct multi_template_fit_params {
+    uint_t nsim = 200; // number of random realizations to perform to estimate errors
+    bool ulim = false; // if true, use upper limits to constrain the fit (negative errors)
+};
+
+void increment_index_list(vec1u& ids, const vec1u& n) {
+    uint_t i = ids.size();
+    do {
+        --i;
+        ++(ids.safe[i]);
+        if (ids.safe[i] == n.safe[i]) {
+            ids.safe[i] = 0;
+        } else {
+            break;
+        }
+    } while (i != 0);
+}
+
+template<typename TLibs, typename TFi, typename TypeSeed,
+    typename TZ, typename TD, typename TConst>
+multi_template_fit_res_t multi_template_fit(const TLibs& libs, TypeSeed& seed, const TZ& z,
+   const TD& d, vec1d flux, vec1d err,
+   const vec<1,TFi>& filters, multi_template_fit_params params = multi_template_fit_params(),
+   TConst&& constraints = [](const vec1u&) { return true; }) {
+
+    multi_template_fit_res_t res;
+
+    uint_t nlib = libs.size();
+
+    uint_t nseds = 1;
+    vec1u nsed(nlib);
+    std::vector<vec2f> convflux(nlib);
+    for (uint_t l : range(nlib)) {
+        nsed[l] = libs[l].sed.dims[0];
+        nseds *= nsed[l];
+
+        convflux[l] = template_observed(libs[l], z, d, filters);
+    }
+
+    const uint_t nfilter = filters.size();
+
+    using ttype = decltype(err[0]*flux[0]*res.flux[0]);
+
+    if (params.ulim) {
+        vec1u idu = where(err < 0);
+        vec1u idm = where(err > 0);
+        err[idu] *= -1.0;
+
+        vec2f rflux(params.nsim, nfilter);
+        vec1d rchi2 = replicate(dinf, params.nsim);
+        res.sed_sim.resize(params.nsim, nlib);
+        res.amp_sim.resize(params.nsim, nlib);
+
+        for (uint_t s : range(params.nsim)) {
+            rflux(s,_) = flux + err*randomn(seed, nfilter);
+        }
+
+        res.chi2 = dinf;
+
+        vec1u ilib = replicate(0, nlib);
+        for (uint_t i : range(nseds)) {
+            if (!constraints(ilib)) continue;
+
+            vec2f tpls(nlib, nfilter);
+            for (uint_t l : range(nlib)) {
+                tpls(l,_) = convflux[l](ilib[l],_);
+            }
+
+            auto tres = linfit_pack(flux[idm], err[idm], tpls(_,idm));
+            auto fres = mpfit([&](const vec1d& p) {
+                auto deviate = flux;
+                for (uint_t l : range(nlib)) {
+                    deviate -= p[l]*tpls(l,_);
+                }
+
+                deviate /= err;
+                deviate[idu] = sqrt(limweight(deviate[idu]));
+                return deviate;
+            }, tres.params);
+
+            if (fres.chi2 < res.chi2) {
+                res.chi2 = fres.chi2;
+                res.bfit = ilib;
+                res.amp = fres.params;
+            }
+
+            for (uint_t s : range(params.nsim)) {
+                fres = mpfit([&](const vec1d& p) {
+                    auto deviate = rflux(s,_);
+                    for (uint_t l : range(nlib)) {
+                        deviate -= p[l]*tpls(l,_);
+                    }
+
+                    deviate /= err;
+                    deviate[idu] = sqrt(limweight(deviate[idu]));
+                    return deviate;
+                }, tres.params);
+
+                if (fres.chi2 < rchi2[s]) {
+                    rchi2[s] = fres.chi2;
+                    res.sed_sim(s,_) = ilib;
+                    res.amp_sim(s,_) = fres.params;
+                }
+            }
+
+            increment_index_list(ilib, nsed);
+        }
+    } else {
+        vec2f rflux(params.nsim, nfilter);
+        vec1d rchi2 = replicate(dinf, params.nsim);
+        res.sed_sim.resize(params.nsim, nlib);
+        res.amp_sim.resize(params.nsim, nlib);
+
+        flux /= err;
+
+        for (uint_t s : range(params.nsim)) {
+            rflux(s,_) = flux + randomn(seed, nfilter);
+        }
+
+        res.chi2 = dinf;
+
+        for (uint_t l : range(nlib)) {
+            for (uint_t i : range(nsed[l])) {
+                convflux[l](i,_) /= err;
+            }
+        }
+
+        vec1u ilib = replicate(0, nlib);
+        for (uint_t i : range(nseds)) {
+            if (constraints(ilib)) {
+                vec2d alpha(nlib, nlib);
+                for (uint_t k1 : range(nlib))
+                for (uint_t k2 : range(k1, nlib)) {
+                    alpha(k2,k1) = total(convflux[k1](ilib[k1],_)*convflux[k2](ilib[k2],_));
+                }
+
+                if (!inplace_invert_symmetric(alpha)) {
+                    continue;
+                }
+
+                symmetrize(alpha);
+
+                vec1d beta(nlib);
+                for (uint_t k1 : range(nlib)) {
+                    beta[k1] = total(flux*convflux[k1](ilib[k1],_));
+                }
+
+                vec1d amp = mmul(alpha, beta);
+
+                vec1d model(nfilter);
+                for (uint_t k1 : range(nlib)) {
+                    model += amp[k1]*convflux[k1](ilib[k1],_);
+                }
+
+                double chi2 = total(sqr(flux - model));
+                if (chi2 < res.chi2) {
+                    res.chi2 = chi2;
+                    res.bfit = ilib;
+                    res.amp = amp;
+                }
+
+                for (uint_t s : range(params.nsim)) {
+                    for (uint_t k1 : range(nlib)) {
+                        beta[k1] = total(rflux(s,_)*convflux[k1](ilib[k1],_));
+                    }
+
+                    amp = mmul(alpha, beta);
+
+                    model[_] = 0;
+                    for (uint_t k1 : range(nlib)) {
+                        model += amp[k1]*convflux[k1](ilib[k1],_);
+                    }
+
+                    chi2 = total(sqr(flux - model));
+                    if (chi2 < rchi2[s]) {
+                        rchi2[s] = chi2;
+                        res.sed_sim(s,_) = ilib;
+                        res.amp_sim(s,_) = amp;
+                    }
+                }
+            }
+
+            increment_index_list(ilib, nsed);
+        }
+    }
+
+    res.flux.resize(nlib, nfilter);
+    if (is_finite(res.chi2)) {
+        for (uint_t l : range(nlib)) {
+            res.flux(l,_) = res.amp[l]*convflux[l](res.bfit[l],_)*err;
+        }
+    } else {
+        res.bfit = replicate(npos, nlib);
+        res.amp = replicate(dnan, nlib);
+        res.flux[_] = fnan;
+    }
+
+    return res;
+}
+
 #endif
