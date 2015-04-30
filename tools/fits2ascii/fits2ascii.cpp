@@ -246,13 +246,13 @@ int main(int argc, char* argv[]) {
 
     for (auto& c : cols) {
         if (include.empty()) {
-            if (!exclude.empty() && match_any_of(tolower(c.name), exclude)) continue;
+            if (!exclude.empty() && regex_match_any_of(tolower(c.name), exclude)) continue;
         } else {
-            if (!match_any_of(tolower(c.name), include)) continue;
+            if (!regex_match_any_of(tolower(c.name), include)) continue;
         }
 
         if (verbose) {
-            print("found column: ", c.name);
+            print("found column: ", c.name, ", dimension: ", c.dims);
         }
 
         if (c.dims.size() == 1) {
