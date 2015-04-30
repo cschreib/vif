@@ -97,6 +97,7 @@ std::string pretty_type_(type_list<vec<Dim,T>>) {
 };
 
 #define pretty_type(x) pretty_type_(type_list<decltype(x)>{})
+#define pretty_type_t(x) pretty_type_(type_list<x>{})
 
 // Generic vector type
 template<std::size_t Dim, typename Type>
