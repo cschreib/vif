@@ -429,24 +429,28 @@ namespace file {
         auto pos = in.tellg();
         in >> fallback;
 
-        std::string s = trim(toupper(fallback));
-        if (s == "NAN" || s == "+NAN" || s == "-NAN") {
-            v = dnan;
-            return true;
-        } else if (s == "+INF" || s == "INF+" || s == "INF") {
-            v = dinf;
-            return true;
-        } else if (s == "-INF" || s == "INF-") {
-            v = -dinf;
-            return true;
-        } else if (s == "NULL") {
-            v = dnan;
-            return true;
-        }
-
         std::istringstream ss(fallback);
         ss >> v;
-        if (ss.fail() || !ss.eof()) {
+        if (ss.fail()) {
+            std::string s = trim(toupper(fallback));
+            if (s == "NAN" || s == "+NAN" || s == "-NAN") {
+                v = dnan;
+                return true;
+            } else if (s == "+INF" || s == "INF+" || s == "INF") {
+                v = dinf;
+                return true;
+            } else if (s == "-INF" || s == "INF-") {
+                v = -dinf;
+                return true;
+            } else if (s == "NULL") {
+                v = dnan;
+                return true;
+            }
+
+            in.clear();
+            in.seekg(pos);
+            return false;
+        } else if (!ss.eof()) {
             in.clear();
             in.seekg(pos);
             return false;
