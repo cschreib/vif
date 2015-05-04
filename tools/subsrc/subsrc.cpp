@@ -51,20 +51,20 @@ int main(int argc, char* argv[]) {
         if (bands.empty() || cat.bands.empty()) {
             bm = replicate(true, cat.flux.dims[1]);
         } else {
-            bm = match(cat.bands, bands);
+            bm = regex_match(cat.bands, bands);
         }
         if (notes.empty() || cat.notes.empty()) {
             nm = replicate(true, cat.flux.dims[1]);
         } else {
-            nm = match(cat.notes, notes);
+            nm = regex_match(cat.notes, notes);
         }
     } else {
         if (cat.bands.empty()) {
             bm = replicate(true, cat.flux.dims[1]);
         } else if (cat.notes.empty()) {
-            bm = match(cat.bands, bands_notes);
+            bm = regex_match(cat.bands, bands_notes);
         } else {
-            bm = match(cat.bands+" "+cat.notes, bands_notes);
+            bm = regex_match(cat.bands+" "+cat.notes, bands_notes);
         }
 
         nm = replicate(true, cat.flux.dims[1]);
