@@ -744,6 +744,16 @@ uint_t max_id(const vec<Dim,Type>& v) {
     return max_(v) - v.begin();
 }
 
+template<typename T1, typename T2>
+auto min(T1&& t1, T2&& t2) -> decltype((t1 < t2 ? t1 : t2)) {
+    return t1 < t2 ? t1 : t2;
+}
+
+template<typename T1, typename T2>
+auto max(T1&& t1, T2&& t2) -> decltype((t1 > t2 ? t1 : t2)) {
+    return t1 > t2 ? t1 : t2;
+}
+
 template<std::size_t Dim, typename Type1, typename Type2>
 vec<Dim,rtype_t<Type1>> min(const vec<Dim,Type1>& v1, const vec<Dim,Type2>& v2) {
     phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions "
