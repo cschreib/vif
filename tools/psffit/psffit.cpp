@@ -38,46 +38,8 @@ int main(int argc, char* argv[]) {
     int_t x0 = round(fx0), y0 = round(fy0);
 
     vec2d psf;
-    if (end_with(psf_model, ".fits")) {
-        vec2d tpsf;
-        fits::read(psf_model, tpsf);
-
-        // Trim the tPSF, make sure that the peak is at the center, and that the dimensions
-        // are odds
-        vec1i idm = mult_ids(tpsf, max_id(tpsf));
-        int_t hsize = 0;
-        int_t imax = std::min(
-            std::min(idm[0], int_t(tpsf.dims[0])-1-idm[0]),
-            std::min(idm[1], int_t(tpsf.dims[1])-1-idm[1])
-        );
-
-        for (int_t i = 1; i <= imax; ++i) {
-            if (tpsf(idm[0]-i,idm[1]) == 0.0 &&
-                tpsf(idm[0]+i,idm[1]) == 0.0 &&
-                tpsf(idm[0],idm[1]-i) == 0.0 &&
-                tpsf(idm[0],idm[1]+i) == 0.0) {
-                hsize = i;
-                break;
-            }
-        }
-
-        if (hsize == 0) hsize = imax;
-        tpsf = subregion(tpsf, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
-
-        double dx = fx0 - x0;
-        double dy = fy0 - y0;
-
-        tpsf = translate(tpsf, dy, dx);
-
-        vec1u idi, idp;
-        subregion(img, {y0-hsize, x0-hsize, y0+hsize, x0+hsize}, idi, idp);
-
-        psf = img*0;
-        psf[idi] = tpsf[idp];
-    } else {
-        if (!make_psf({{img.dims[0], img.dims[1]}}, x0, y0, psf_model, psf)) {
-            return 1;
-        }
+    if (!make_psf({{img.dims[0], img.dims[1]}}, x0, y0, psf_model, psf)) {
+        return 1;
     }
 
     vec1u idf;
@@ -141,5 +103,6 @@ int main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    print("[WIP]");
+    print("psffit v1.0");
+    paragraph("usage: psffit img.fits x y psf=...");
 }
