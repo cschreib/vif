@@ -1026,6 +1026,53 @@ bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
                 + rfrac*exp(-sqr(sqrt(r2) - rpos)/(2.0*sqr(rwidth)))
             );
         });
+    } else if (params[0] == "file") {
+        uint_t narg = 1;
+        if (params.size() < narg+1) {
+            error("'gaussian' PSF model requires one argument (file name), but "
+                "none was provided");
+            return false;
+        } else if (params.size() > narg+1) {
+            warning("'gaussian' PSF model requires one argument (file name) but ",
+                params.size()-1, " are provided");
+        }
+
+        vec2d tpsf;
+        fits::read(params[1], tpsf);
+
+        // Trim the tPSF, make sure that the peak is at the center, and that the dimensions
+        // are odds
+        vec1i idm = mult_ids(tpsf, max_id(tpsf));
+        int_t hsize = 0;
+        int_t imax = std::min(
+            std::min(idm[0], int_t(tpsf.dims[0])-1-idm[0]),
+            std::min(idm[1], int_t(tpsf.dims[1])-1-idm[1])
+        );
+
+        for (int_t i = 1; i <= imax; ++i) {
+            if (tpsf(idm[0]-i,idm[1]) == 0.0 &&
+                tpsf(idm[0]+i,idm[1]) == 0.0 &&
+                tpsf(idm[0],idm[1]-i) == 0.0 &&
+                tpsf(idm[0],idm[1]+i) == 0.0) {
+                hsize = i;
+                break;
+            }
+        }
+
+        if (hsize == 0) hsize = imax;
+        tpsf = subregion(tpsf, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
+
+        int_t ix0 = round(x0), iy0 = round(y0);
+        double dx = x0 - ix0;
+        double dy = y0 - iy0;
+
+        tpsf = translate(tpsf, dx, dy);
+
+        psf.resize(dims);
+        vec1u idi, idp;
+        subregion(psf, {ix0-hsize, iy0-hsize, ix0+hsize, iy0+hsize}, idi, idp);
+
+        psf[idi] = tpsf[idp];
     } else {
         error("unknown PSF model '", params[0], "'");
         return false;
