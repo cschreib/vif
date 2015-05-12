@@ -15,7 +15,7 @@ vec2d template_observed(const TLib& lib, double z, double d, const vec<1,TFi>& f
     const uint_t nfilter = filters.size();
     vec2d flux = dblarr(nsed, nfilter);
     for (uint_t f = 0; f < nfilter; ++f) {
-        flux(_,f) = sed2flux(filters[f], rflam, rfsed);
+        flux.safe(_,f) = sed2flux(filters[f], rflam, rfsed);
     }
 
     return flux;
@@ -46,7 +46,7 @@ vec2d template_observed(const TLib& lib, const vec<1,TZ>& z, const vec<1,TD>& d,
     const uint_t nfilter = filters.size();
     vec2d flux = dblarr(nsed, nfilter);
     for (uint_t f = 0; f < nfilter; ++f) {
-        flux(_,f) = sed2flux(filters[f], rflam, rfsed);
+        flux.safe(_,f) = sed2flux(filters[f], rflam, rfsed);
     }
 
     return flux;
