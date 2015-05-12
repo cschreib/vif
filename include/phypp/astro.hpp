@@ -131,6 +131,15 @@ vec1s cosmo_list() {
     return {"std", "wmap", "plank"};
 }
 
+// Proper size of an object in [kpc/arcsec] as a function of redshift 'z'.
+// Uses lumdist() internally.
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+T propsize(const T& z, const cosmo_t& cosmo) {
+    if (z <= 0) return dinf;
+
+    return (1.0/3.6)*(dpi/180.0)*lumdist(z, cosmo)/pow(1.0+z, 2.0);
+}
+
 // Luminosity distance [Mpc] as a function of redshift 'z'.
 // Note: assumes that cosmo.wk = 0.
 // There is no analytic form for this function, hence it must be numerically integrated.
@@ -204,6 +213,7 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
 
 VECTORIZE_INTERPOL(lumdist, 800);
 VECTORIZE_INTERPOL(lookback_time, 800);
+VECTORIZE_INTERPOL(propsize, 800);
 VECTORIZE_INTERPOL(vuniverse, 800);
 
 #undef VECTORIZE_INTERPOL
