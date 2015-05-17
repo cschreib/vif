@@ -182,12 +182,14 @@ document.write('\
 <li><a href="functions_support_math_sequence_make_bins.html">make_bins</a></li> \
 <li><a href="functions_support_astro_psffit_make_psf.html">make_psf</a></li> \
 <li><a href="functions_support_math_random_make_seed.html">make_seed</a></li> \
+<li><a href="functions_support_image_mask_inflate.html">mask_inflate</a></li> \
 <li><a href="functions_support_generic_find_match.html">match</a></li> \
 <li><a href="functions_support_generic_find_match_dictionary.html">match_dictionary</a></li> \
 <li><a href="functions_support_math_reduce_min.html">max</a></li> \
 <li><a href="functions_support_math_reduce_min_id.html">max_id</a></li> \
 <li><a href="functions_support_math_reduce_mean.html">mean</a></li> \
 <li><a href="functions_support_math_reduce_median.html">median</a></li> \
+<li><a href="functions_support_math_interpol_merge_add.html">merge_add</a></li> \
 <li><a href="functions_support_math_reduce_min.html">min</a></li> \
 <li><a href="functions_support_math_reduce_min_id.html">min_id</a></li> \
 <li><a href="functions_support_math_algebra_mmul.html">mmul</a></li> \
@@ -222,6 +224,7 @@ document.write('\
 <li><a href="functions_support_time_progress_start.html">progress</a></li> \
 <li><a href="functions_support_time_progress_start.html">progress_start</a></li> \
 <li><a href="functions_support_print_prompt.html">prompt</a></li> \
+<li><a href="functions_support_astro_cosmo_propsize.html">propsize</a></li> \
 <li><a href="functions_support_astro_psffit_psffit.html">psffit</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">Q</span><br> \
