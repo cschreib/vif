@@ -308,4 +308,61 @@ auto boxcar(const vec<2,T>& img, uint_t hsize, F&& func) ->
     return res;
 }
 
+vec2b mask_inflate(vec2b m, uint_t d) {
+    if (d != 0) {
+        // Locate edges
+        vec1u ids; ids.reserve(3*sqrt(m.size()));
+        for (uint_t x : range(m.dims[0]))
+        for (uint_t y : range(m.dims[1])) {
+            if (!m.safe(x,y)) continue;
+
+            if ((x > 0 && !m.safe(x-1,y)) || (x < m.dims[0]-1 && !m.safe(x+1,y)) ||
+                (y > 0 && !m.safe(x,y-1)) || (y < m.dims[1]-1 && !m.safe(x,y+1))) {
+                ids.push_back(flat_id(m, x, y));
+            }
+        }
+
+        if (!ids.empty()) {
+            // Make kernel
+            // (will contain exactly 4*d*(d+1)/2 elements)
+            vec1i x; x.reserve(2*d*(d+1));
+            vec1i y; y.reserve(2*d*(d+1));
+
+            for (int_t k : range(1, d))
+            for (int_t l : range(4*k)) {
+                int_t ml = l%k;
+                if (l < k) {
+                    x.push_back(k-ml);
+                    y.push_back(-ml);
+                } else if (l < 2*k) {
+                    x.push_back(-ml);
+                    y.push_back(-k+ml);
+                } else if (l < 3*k) {
+                    x.push_back(-k+ml);
+                    y.push_back(ml);
+                } else {
+                    x.push_back(ml);
+                    y.push_back(k-ml);
+                }
+            }
+
+            // Apply kernel to edge points
+            for (uint_t i : range(ids)) {
+                vec1u j = mult_ids(m, ids[i]);
+
+                for (int_t k : range(x)) {
+                    int_t tx = j.safe[0] + x.safe[k];
+                    int_t ty = j.safe[1] + y.safe[k];
+
+                    if (tx >= 0 && tx < m.dims[0] && ty >= 0 && ty < m.dims[1]) {
+                        m.safe(uint_t(tx), uint_t(ty)) = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return m;
+}
+
 #endif
