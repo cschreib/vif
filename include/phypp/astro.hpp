@@ -1068,6 +1068,7 @@ bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
 
         tpsf = translate(tpsf, dx, dy);
 
+        psf.clear();
         psf.resize(dims);
         vec1u idi, idp;
         subregion(psf, {ix0-hsize, iy0-hsize, ix0+hsize, iy0+hsize}, idi, idp);
