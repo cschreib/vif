@@ -155,6 +155,69 @@ typename vec<2,TypeV>::effective_type translate(const vec<2,TypeV>& v, double dx
     return trs;
 }
 
+template<typename TypeV>
+typename vec<2,TypeV>::effective_type flip_x(const vec<2,TypeV>& v) {
+    auto r = v.concretise();
+    for (uint_t y : range(v.dims[0]))
+    for (uint_t x : range(v.dims[1]/2)) {
+        std::swap(r.safe(y,x), r.safe(y,v.dims[1]-1-x));
+    }
+
+    return r;
+}
+
+template<typename TypeV>
+typename vec<2,TypeV>::effective_type flip_y(const vec<2,TypeV>& v) {
+    auto r = v.concretise();
+    for (uint_t y : range(v.dims[0]/2))
+    for (uint_t x : range(v.dims[1])) {
+        std::swap(r.safe(y,x), r.safe(v.dims[0]-1-y,x));
+    }
+
+    return r;
+}
+
+template<typename TypeV, typename TypeD = double>
+typename vec<2,TypeV>::effective_type scale(const vec<2,TypeV>& v, double factor,
+    TypeD def = 0.0) {
+
+    auto r = v.concretise();
+
+    for (int_t y : range(v.dims[0]))
+    for (int_t x : range(v.dims[1])) {
+        r.safe(uint_t(y),uint_t(x)) = bilinear_strict(v,
+            (y-int_t(v.dims[0]/2))/factor + v.dims[0]/2,
+            (x-int_t(v.dims[1]/2))/factor + v.dims[1]/2,
+            def
+        );
+    }
+
+    return r;
+}
+
+template<typename TypeV, typename TypeD = double>
+typename vec<2,TypeV>::effective_type rotate(const vec<2,TypeV>& v, double angle,
+    TypeD def = 0.0) {
+
+    auto r = v.concretise();
+
+    double ca = cos(angle*dpi/180.0);
+    double sa = sin(angle*dpi/180.0);
+
+    for (int_t y : range(v.dims[0]))
+    for (int_t x : range(v.dims[1])) {
+        double dy = (y-int_t(v.dims[0]/2));
+        double dx = (x-int_t(v.dims[1]/2));
+        r.safe(uint_t(y),uint_t(x)) = bilinear_strict(v,
+            dy*ca - dx*sa + v.dims[0]/2,
+            dx*ca + dy*sa + v.dims[1]/2,
+            def
+        );
+    }
+
+    return r;
+}
+
 vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
     if (n_elements(dim) == 0) {
         dim = {uint_t(radius), uint_t(radius)};
