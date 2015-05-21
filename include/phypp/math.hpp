@@ -883,10 +883,10 @@ vec1u histogram(const vec<Dim,Type>& data, const vec<2,TypeB>& bins) {
             return t >= bins.safe(0,i) && t < bins.safe(1,i);
         });
 
-        if (last == tmp.data.end()) break;
-
         counts.safe[i] = last - first;
         first = last;
+
+        if (last == tmp.data.end()) break;
     }
 
     return counts;
@@ -911,11 +911,11 @@ vec<1,rtype_t<TypeW>> histogram(const vec<Dim,Type>& data, const vec<Dim,TypeW>&
             return data.safe[id] >= bins.safe(0,i) && data.safe[id] < bins.safe(1,i);
         });
 
-        if (last == tmp.data.end()) break;
-
         for (; first != last; ++first) {
             counts.safe[i] += weight.safe[*first];
         }
+
+        if (last == tmp.data.end()) break;
     }
 
     return counts;
@@ -944,20 +944,20 @@ vec2u histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
             return x.safe[id] >= xbins.safe(0,i) && x.safe[id] < xbins.safe(1,i);
         });
 
-        if (lastx == ids.data.end()) break;
-
         auto firsty = firstx;
         for (uint_t j : range(nybin)) {
             auto lasty = std::partition(firsty, lastx, [&ybins,&y,j](uint_t id) {
                 return y.safe[id] >= ybins.safe(0,j) && y.safe[id] < ybins.safe(1,j);
             });
 
-            if (lasty == lastx) break;
-
             counts.safe(i,j) = lasty - firsty;
+
+            if (lasty == lastx) break;
 
             firsty = lasty;
         }
+
+        if (lastx == ids.data.end()) break;
 
         firstx = lastx;
     }
