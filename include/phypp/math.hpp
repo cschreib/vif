@@ -1852,6 +1852,26 @@ rtype_t<Type> bilinear(const vec<2,Type>& map, double x, double y) {
         + map.safe(ix+1,iy)*dx*(1.0 - dy) + map.safe(ix+1,iy+1)*dx*dy;
 }
 
+template<typename Type, typename TypeD = double>
+rtype_t<Type> bilinear_strict(const vec<2,Type>& map, double x, double y,
+    TypeD def = 0.0) {
+
+    int_t tix = floor(x);
+    int_t tiy = floor(y);
+
+    if (tix >= map.dims[0]-1 || tix < 0 || tiy >= map.dims[1]-1 || tiy < 0) {
+        return def;
+    }
+
+    double dx = x - tix;
+    double dy = y - tiy;
+    uint_t ix = tix;
+    uint_t iy = tiy;
+
+    return map.safe(ix,iy)*(1.0 - dx)*(1.0 - dy) + map.safe(ix,iy+1)*(1.0 - dx)*dy
+        + map.safe(ix+1,iy)*dx*(1.0 - dy) + map.safe(ix+1,iy+1)*dx*dy;
+}
+
 template<typename Type>
 vec<2,rtype_t<Type>> rebin(const vec<2,Type>& map, const vec1d& mx,
     const vec1d& my, const vec1d& x, const vec1d& y) {
