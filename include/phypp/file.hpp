@@ -353,6 +353,27 @@ namespace file {
 
 #undef VECTORIZE
 
+    uint_t find_skip(const std::string& name) {
+        phypp_check(file::exists(name), "cannot open file '"+name+"'");
+
+        std::string line;
+
+        std::size_t n = 0;
+        std::ifstream file(name.c_str());
+        while (!file.eof()) {
+            std::getline(file, line);
+
+            auto p = line.find_first_not_of(" \t");
+            if (p != line.npos && line[p] != '#') {
+                break;
+            }
+
+            ++n;
+        }
+
+        return n;
+    }
+
     template<typename T, typename ... Args>
     auto columns(std::size_t n, T& t, Args& ... args) ->
         decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
