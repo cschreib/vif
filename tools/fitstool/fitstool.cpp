@@ -342,7 +342,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
             // Read column info
             int type;
             long repeat, width;
-            fits_get_coltype(ifptr, c, &type, &repeat, &width, &status);
+            fits_get_eqcoltype(ifptr, c, &type, &repeat, &width, &status);
             char name[80] = {0};
             char comment[80];
             fits_read_key(ifptr, TSTRING, const_cast<char*>(("TTYPE"+strn(c)).c_str()),
