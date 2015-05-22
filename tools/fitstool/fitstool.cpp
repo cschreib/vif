@@ -343,6 +343,14 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
             int type;
             long repeat, width;
             fits_get_eqcoltype(ifptr, c, &type, &repeat, &width, &status);
+
+            // TODO: understand why TINT32BIT needs more than this function suggests
+            if (type == TINT32BIT) {
+                // 'fits_get_eqcoltype' suggests width=4, but actually width=8 is read
+                // in 'fits_read_col'
+                width *= 2;
+            }
+
             char name[80] = {0};
             char comment[80];
             fits_read_key(ifptr, TSTRING, const_cast<char*>(("TTYPE"+strn(c)).c_str()),
