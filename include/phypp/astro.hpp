@@ -346,23 +346,83 @@ double field_area_h2d(const TX& ra, const TY& dec) {
 
     double dr = sqrt(optinum)*sqrt(rough_area/ra.size());
 
-    // Since the field is possibly not uniform, we have to introduce a tolerence threshold.
-    uint_t threshold = 0.5*optinum;
-
     // Now define the grid
-    uint_t nra  = ceil((max_ra  - min_ra)/dr);
-    uint_t ndec = ceil((max_dec - min_dec)/dr);
-    vec2d rb = make_bins(min_ra,  max_ra,  nra);
-    vec2d db = make_bins(min_dec, max_dec, ndec);
+    uint_t inset = 2;
+    uint_t nra  = ceil((max_ra  - min_ra)/dr + 2*inset);
+    uint_t ndec = ceil((max_dec - min_dec)/dr + 2*inset);
+    vec2d rb = make_bins(min_ra-inset*dr,  max_ra+inset*dr,  nra);
+    vec2d db = make_bins(min_dec-inset*dr, max_dec+inset*dr, ndec);
 
-    // Compute the area occupied by a cell
-    double cell_area = (rb(1,0) - rb(0,0))*(db(1,0) - db(0,0));
+    // Build the 2d histograms
+    // In each cell, we compute both:
+    // - the exact total area of of the cell
+    vec2d carea(nra, ndec);
+    // - the filling factor of the cell, i.e., what fraction is occupied by sources
+    vec2d cfill(nra, ndec);
 
-    // Build the 2d histogram
-    vec2u counts = histogram2d(ra, dec, rb, db);
+    histogram2d(ra, dec, rb, db, [&](uint_t r, uint_t d, vec1u ids) {
+        if (ids.size() < 2) return;
 
-    // Sum up the areas of all cells with counts above the threshold
-    return cell_area*total(counts > threshold);
+        // Compute the area of this cell
+        carea(r,d) = (angdist(rb(0,r), db(0,d), rb(1,r), db(0,d))/3600.0)*
+                     (angdist(rb(0,r), db(0,d), rb(0,r), db(1,d))/3600.0);
+
+        // Compute the average distance between sources
+        const double d2r = dpi/180.0;
+        auto dra  = ra[ids]*d2r;
+        auto ddec = dec[ids]*d2r;
+        auto dcdec = cos(ddec);
+
+        const uint_t n = ra.size();
+
+        auto distance_proxy = [&](uint_t i, uint_t j) {
+            double sra = sin(0.5*(dra.safe[j] - dra.safe[i]));
+            double sde = sin(0.5*(ddec.safe[j] - ddec.safe[i]));
+            return sde*sde + sra*sra*dcdec.safe[j]*dcdec.safe[i];
+        };
+
+        auto distance = [](double d) {
+            return (180.0/dpi)*2*asin(sqrt(d));
+        };
+
+        uint_t m = ids.size();
+        vec1d dmin = replicate(dinf, m);
+        for (uint_t i : range(m))
+        for (uint_t j : range(i+1, m)) {
+            double d = distance_proxy(i,j);
+            if (d < dmin.safe[i]) dmin.safe[i] = d;
+            if (d < dmin.safe[j]) dmin.safe[j] = d;
+        }
+
+        double dist = distance(mean(dmin));
+
+        // Compute the filling factor
+        // We make a second 2D histogram in which we only find cells where there is
+        // at least one source
+        const uint_t tnb = 20;
+        vec2d trb = make_bins(rb(0,r), rb(1,r), tnb);
+        vec2d tdb = make_bins(db(0,d), db(1,d), tnb);
+
+        vec2b mask = histogram2d(ra[ids], dec[ids], trb, tdb) >= 1;
+
+        // ... then inflate the corresponding mask by a radius that is equal to
+        // the average minimal distance between sources, i.e., the average "radius"
+        // of each source (this is not the physical size of the galaxy).
+        mask = mask_inflate(mask, ceil(dist/(sqrt(carea(r,d))/tnb)));
+
+        // The filling factor is the fraction of cells in the mask
+        cfill(r,d) = fraction_of(mask);
+    });
+
+    // Find cells which are well filled
+    vec2b mask = cfill > 0.5;
+    // Inflate and deflate this mask to fill the holes due to statiscial fluctations
+    mask = !mask_inflate(!mask_inflate(mask, 1), 1);
+    // Attribute filling factor of 1 to all cells in the mask
+    cfill[where(mask)] = 1.0;
+
+    // Compute total area
+    return total(cfill*carea);
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2].
