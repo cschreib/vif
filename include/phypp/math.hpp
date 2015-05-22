@@ -921,9 +921,10 @@ vec<1,rtype_t<TypeW>> histogram(const vec<Dim,Type>& data, const vec<Dim,TypeW>&
     return counts;
 }
 
-template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX, typename TypeBY>
-vec2u histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
-    const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins) {
+template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX,
+    typename TypeBY, typename TypeF>
+void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
+    const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins, TypeF&& func) {
 
     phypp_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
         "dims=[2, ...], got dims=[", xbins.dims, "])");
@@ -950,19 +951,53 @@ vec2u histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
                 return y.safe[id] >= ybins.safe(0,j) && y.safe[id] < ybins.safe(1,j);
             });
 
-            counts.safe(i,j) = lasty - firsty;
+            func(ids, i, j, firsty, lasty);
 
             if (lasty == lastx) break;
-
             firsty = lasty;
         }
 
         if (lastx == ids.data.end()) break;
-
         firstx = lastx;
     }
 
     return counts;
+}
+
+template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX, typename TypeBY>
+vec2u histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
+    const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins) {
+
+    vec2u counts(xbins.dims[1], ybins.dims[1]);
+
+    using iterator = vec1u::iterator;
+    histogram2d_impl(x, y, xbins, ybins,
+        [&](const vec1u& ids, uint_t i, uint_t j, iterator i0, iterator i1) {
+            counts.safe(i,j) = i1 - i0;
+        }
+    );
+
+    return counts;
+}
+
+template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX,
+    typename TypeBY, typename TypeF>
+void histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
+    const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins, TypeF&& func) {
+
+    using iterator = vec1u::iterator;
+    histogram2d_impl(x, y, xbins, ybins,
+        [&](const vec1u& ids, uint_t i, uint_t j, iterator i0, iterator i1) {
+            uint_t npts = i1 - i0;
+            vec1u tids(npts);
+            uint_t k0 = i0 - ids.data.begin();
+            for (uint_t k : range(npts)) {
+                tids[k] = ids[k0 + k];
+            }
+
+            func(i, j, std::move(tids));
+        }
+    );
 }
 
 template<std::size_t Dim, typename Type>
