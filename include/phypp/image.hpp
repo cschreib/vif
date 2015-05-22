@@ -391,7 +391,7 @@ vec2b mask_inflate(vec2b m, uint_t d) {
             vec1i x; x.reserve(2*d*(d+1));
             vec1i y; y.reserve(2*d*(d+1));
 
-            for (int_t k : range(1, d))
+            for (int_t k : range(1, d+1))
             for (int_t l : range(4*k)) {
                 int_t ml = l%k;
                 if (l < k) {
