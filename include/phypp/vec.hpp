@@ -3190,6 +3190,48 @@ bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
     return false;
 }
 
+// Transform a scalar lambda into an overloaded lambda that supports both scalar and
+// vector calls.
+template<typename L>
+struct vectorized_lambda_t {
+    L lambda;
+
+    vectorized_lambda_t(L tlam) : lambda(tlam) {}
+
+    template<typename T, typename ... Args, typename enable =
+        typename std::enable_if<!is_vec<typename std::decay<T>::type>::value>::type>
+    auto operator()(T&& t, Args&& ... args) ->
+        decltype(lambda(std::forward<T>(t), std::forward<Args>(args)...)) {
+        return lambda(std::forward<T>(t), std::forward<Args>(args)...);
+    }
+
+    template<typename T, std::size_t D, typename ... Args>
+    auto operator()(const vec<D,T>& t, Args&& ... args) ->
+        vec<D,decltype(lambda(std::declval<const T&>(), std::forward<Args>(args)...))> {
+        vec<D,decltype(lambda(std::declval<const T&>(), std::forward<Args>(args)...))> ret(t.dims);
+        for (uint_t i : range(t)) {
+            ret.safe[i] = lambda(t.safe[i], std::forward<Args>(args)...);
+        }
+        return ret;
+    }
+
+    template<typename T, std::size_t D, typename ... Args>
+    auto operator()(vec<D,T>&& t, Args&& ... args) ->
+        vec<D,decltype(lambda(std::declval<T>(), std::forward<Args>(args)...))> {
+        vec<D,decltype(lambda(std::declval<T>(), std::forward<Args>(args)...))> ret(t.dims);
+        for (uint_t i : range(t)) {
+            ret.safe[i] = lambda(std::move(t.safe[i]), std::forward<Args>(args)...);
+        }
+        return ret;
+    }
+};
+
+template<typename T>
+vectorized_lambda_t<typename std::decay<T>::type> vectorize_lambda(T&& t) {
+    vectorized_lambda_t<typename std::decay<T>::type> func(std::move(t));
+    return func;
+}
+
 // Print a vector into a stream.
 template<typename O, std::size_t Dim, typename Type, typename enable = typename std::enable_if<!std::is_same<Type, bool>::value>::type>
 O& operator << (O& o, const vec<Dim,Type>& v) {

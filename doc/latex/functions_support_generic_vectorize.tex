@@ -1,0 +1,37 @@
+\funcitem \cppinline|auto vectorize_lambda(T func)| \itt{vectorize_lambda}
+
+This function takes a single argument that must be a C++ lambda. In turn, this lambda can take an arbitrary number of arguments, with the only constraint that the \emph{first} argument must be a scalar, i.e., not a \phypp vector.
+
+The function then creates a new lambda that can be called both with a scalar or a vector as the first argument. This allows easy conversion from legacy functions (e.g., from the standard library) into vectorized functions, and automatically takes care of possible optimizations.
+
+\begin{example}
+\begin{cppcode}
+// Create a simple lambda
+auto lambda = [](double f1, double f2) {
+    return f1*f2;
+};
+
+// It can be called like this:
+double res = lambda(1.5, 2.0);
+res; // 3.0
+
+// But if we want to call this function on a vector
+// of doubles, we cannot:
+vec1d x = {1,2,3,4,5};
+vec1d vres = lambda(x, 2.0); // error!
+
+// We have to explicitly adapt this function for
+// vectorization. Instead of doing this manually,
+// we use vectorize_lambda
+auto vlambda = vectorize_lambda([](double f1, double f2) {
+    return f1*f2;
+});
+
+vec1d vres = vlambda(x, 2.0); // ok!
+vres; // {2.0, 4.0, 6.0, 8.0, 10.0}
+
+// We can also use this new lambda with scalar arguments
+res = vlambda(1.5, 2.0);
+res; // 3.0
+\end{cppcode}
+\end{example}
