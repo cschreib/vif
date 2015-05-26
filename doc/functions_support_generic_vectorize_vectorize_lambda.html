@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content"><span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">vectorize_lambda</span><span class="p">(</span><span class="n">T</span> <span class="n">func</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function takes a single argument that must be a C++ lambda. In turn, this lambda can take an arbitrary number of arguments, with the only constraint that the <span class="emphasis">first</span> argument must be a scalar, i.e., not a <i>phy</i><sub>++</sub> vector.
+<br><br>
+The function then creates a new lambda that can be called both with a scalar or a vector as the first argument. This allows easy conversion from legacy functions (e.g., from the standard library) into vectorized functions, and automatically takes care of possible optimizations.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Create a simple lambda</span>
+<span class="k">auto</span> <span class="n">lambda</span> <span class="o">=</span> <span class="p">[](</span><span class="kt">double</span> <span class="n">f1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">f2</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">f1</span><span class="o">*</span><span class="n">f2</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// It can be called like this:</span>
+<span class="kt">double</span> <span class="n">res</span> <span class="o">=</span> <span class="n">lambda</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">);</span>
+<span class="n">res</span><span class="p">;</span> <span class="c1">// 3.0</span>
+
+<span class="c1">// But if we want to call this function on a vector</span>
+<span class="c1">// of doubles, we cannot:</span>
+<span class="n">vec1d</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">};</span>
+<span class="n">vec1d</span> <span class="n">vres</span> <span class="o">=</span> <span class="n">lambda</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">);</span> <span class="c1">// error!</span>
+
+<span class="c1">// We have to explicitly adapt this function for</span>
+<span class="c1">// vectorization. Instead of doing this manually,</span>
+<span class="c1">// we use vectorize_lambda</span>
+<span class="k">auto</span> <span class="n">vlambda</span> <span class="o">=</span> <span class="n">vectorize_lambda</span><span class="p">([](</span><span class="kt">double</span> <span class="n">f1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">f2</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">f1</span><span class="o">*</span><span class="n">f2</span><span class="p">;</span>
+<span class="p">});</span>
+
+<span class="n">vec1d</span> <span class="n">vres</span> <span class="o">=</span> <span class="n">vlambda</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">);</span> <span class="c1">// ok!</span>
+<span class="n">vres</span><span class="p">;</span> <span class="c1">// {2.0, 4.0, 6.0, 8.0, 10.0}</span>
+
+<span class="c1">// We can also use this new lambda with scalar arguments</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">vlambda</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">);</span>
+<span class="n">res</span><span class="p">;</span> <span class="c1">// 3.0</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

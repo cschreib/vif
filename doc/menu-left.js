@@ -12,6 +12,7 @@ document.write('\
 <li><a href="category_support_02_generic.html#SEC_support_generic_range">Range-based iteration</a></li> \
 <li><a href="category_support_02_generic.html#SEC_support_generic_rearrange">Rearranging elements</a></li> \
 <li><a href="category_support_02_generic.html#SEC_support_generic_sequence">Integer sequences</a></li> \
+<li><a href="category_support_02_generic.html#SEC_support_generic_vectorization">Vectorization</a></li> \
 </ul></li> \
 <li><a class="menu-cat-sec" href="category_support_03_cmd.html">Parsing command line arguments</a></li> \
 <li><a class="menu-cat-sec" href="category_support_04_string.html">String manipulation</a> \

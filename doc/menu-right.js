@@ -109,6 +109,8 @@ document.write('\
 <li><a href="functions_support_fits_wcs_fits_ad2xy.html">fits::xy2ad</a></li> \
 <li><a href="functions_support_generic_index_flat_id.html">flat_id</a></li> \
 <li><a href="functions_support_generic_dim_flatten.html">flatten</a></li> \
+<li><a href="functions_support_image_flip_x.html">flip_x</a></li> \
+<li><a href="functions_support_image_flip_y.html">flip_y</a></li> \
 <li><a href="functions_support_thread_fork.html">fork</a></li> \
 <li><a href="functions_support_math_reduce_fraction_of.html">fraction_of</a></li> \
 <li><a href="functions_support_string_convert_from_string.html">from_string</a></li> \
@@ -266,12 +268,14 @@ document.write('\
 <li><a href="functions_support_generic_rearrange_reverse.html">reverse</a></li> \
 <li><a href="functions_support_math_sequence_rgen.html">rgen</a></li> \
 <li><a href="functions_support_math_sequence_rgen.html">rgen_log</a></li> \
+<li><a href="functions_support_image_rotate.html">rotate</a></li> \
 <li><a href="functions_support_math_algebra_rotation_matrix.html">rotation_matrix</a></li> \
 <li><a href="functions_support_math_reduce_run_dim.html">run_dim</a></li> \
 <li><a href="functions_support_math_reduce_run_dim_idx.html">run_dim_idx</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">S</span><br> \
 <ul> \
+<li><a href="functions_support_image_scale.html">scale</a></li> \
 <li><a href="functions_support_math_algebra_scale_matrix.html">scale_matrix</a></li> \
 <li><a href="functions_support_time_seconds_str.html">seconds_str</a></li> \
 <li><a href="functions_support_astro_flux_sed2flux.html">sed2flux</a></li> \
@@ -321,6 +325,7 @@ document.write('\
 </ul><br></li> \
 <li><span class="menu-alpha-heading">V</span><br> \
 <ul> \
+<li><a href="functions_support_generic_vectorize_vectorize_lambda.html">vectorize_lambda</a></li> \
 <li><a href="functions_support_astro_cosmo_vuniverse.html">vuniverse</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">W</span><br> \
