@@ -3207,8 +3207,8 @@ struct vectorized_lambda_t {
 
     template<typename T, std::size_t D, typename ... Args>
     auto operator()(const vec<D,T>& t, Args&& ... args) ->
-        vec<D,decltype(lambda(std::declval<const T&>(), std::forward<Args>(args)...))> {
-        vec<D,decltype(lambda(std::declval<const T&>(), std::forward<Args>(args)...))> ret(t.dims);
+        vec<D,decltype(lambda(std::declval<const rtype_t<T>&>(), std::forward<Args>(args)...))> {
+        vec<D,decltype(lambda(std::declval<const rtype_t<T>&>(), std::forward<Args>(args)...))> ret(t.dims);
         for (uint_t i : range(t)) {
             ret.safe[i] = lambda(t.safe[i], std::forward<Args>(args)...);
         }
@@ -3217,8 +3217,8 @@ struct vectorized_lambda_t {
 
     template<typename T, std::size_t D, typename ... Args>
     auto operator()(vec<D,T>&& t, Args&& ... args) ->
-        vec<D,decltype(lambda(std::declval<T>(), std::forward<Args>(args)...))> {
-        vec<D,decltype(lambda(std::declval<T>(), std::forward<Args>(args)...))> ret(t.dims);
+        vec<D,decltype(lambda(std::declval<rtype_t<T>>(), std::forward<Args>(args)...))> {
+        vec<D,decltype(lambda(std::declval<rtype_t<T>>(), std::forward<Args>(args)...))> ret(t.dims);
         for (uint_t i : range(t)) {
             ret.safe[i] = lambda(std::move(t.safe[i]), std::forward<Args>(args)...);
         }
