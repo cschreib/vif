@@ -104,6 +104,7 @@ namespace fits {
         static bool is_convertible(int type) {
             if (type == TSHORT) return true;
             if (type == TLONG) return true;
+            if (type == TLONGLONG) return true;
             if (type == TBIT) return true;
             if (type == TBYTE) return true;
             if (type == TINT32BIT) return true;
@@ -126,6 +127,7 @@ namespace fits {
         static bool is_convertible(int type) {
             if (type == TSHORT) return true;
             if (type == TLONG) return true;
+            if (type == TLONGLONG) return true;
             if (type == TBIT) return true;
             if (type == TBYTE) return true;
             if (type == TINT32BIT) return true;
@@ -148,6 +150,7 @@ namespace fits {
         static bool is_convertible(int type) {
             if (type == TSHORT) return true;
             if (type == TLONG) return true;
+            if (type == TLONGLONG) return true;
             if (type == TFLOAT) return true;
             if (type == TBIT) return true;
             if (type == TBYTE) return true;
@@ -171,6 +174,7 @@ namespace fits {
         static bool is_convertible(int type) {
             if (type == TSHORT) return true;
             if (type == TLONG) return true;
+            if (type == TLONGLONG) return true;
             if (type == TFLOAT) return true;
             if (type == TDOUBLE) return true;
             if (type == TBIT) return true;
@@ -1186,6 +1190,7 @@ namespace fits {
         if (type == TSTRING) return "string";
         if (type == TSHORT) return "short";
         if (type == TLONG) return "long";
+        if (type == TLONGLONG) return "long long";
         if (type == TFLOAT) return "float";
         if (type == TDOUBLE) return "double";
         if (type == TLOGICAL) return "bool";
@@ -1194,7 +1199,7 @@ namespace fits {
         if (type == TINT32BIT) return "int32";
         if (type == TCOMPLEX) return "complex float";
         if (type == TDBLCOMPLEX) return "complex double";
-        return "unknown";
+        return "unknown ("+strn(type)+")";
     }
 
     // Load the content of a FITS file into a set of arrays.
