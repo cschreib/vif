@@ -103,6 +103,7 @@ int main(int argc, char* argv[]) {
 }
 
 void print_help() {
+    using namespace format;
     print("psffit v1.0");
     paragraph("usage: psffit img.fits x y psf=...");
 }
