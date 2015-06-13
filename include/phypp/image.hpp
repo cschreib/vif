@@ -240,6 +240,10 @@ vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
     return partial_mean(2,m);
 }
 
+vec2d circular_mask(const std::array<uint_t,2>& dims, double radius) {
+    return circular_mask({dims[0], dims[1]}, {dims[0]/2.0, dims[1]/2.0}, radius);
+}
+
 template<typename Type>
 vec<1, rtype_t<Type>> radial_profile(const vec<2,Type>& img, uint_t npix) {
     // TODO: optimize this, really
