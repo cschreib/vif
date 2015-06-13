@@ -1996,6 +1996,21 @@ void merge_add(const vec<1,TX1>& x1, const vec<1,TX2>& x2,
     }
 }
 
+// Find the first value in 'x' where 'y' equals zero, using linear interpolation
+template<typename TypeX, typename TypeY>
+double find_zero(const vec<1,TypeX>& x, const vec<1,TypeY>& y) {
+    phypp_check(x.size() == y.size(),
+        "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+
+    for (uint_t i : range(1, x.size())) {
+        if (y.safe[i]*y.safe[i-1] <= 0) {
+            return interpolate(x.safe[i-1], x.safe[i], y.safe[i-1], y.safe[i], 0.0);
+        }
+    }
+
+    return dnan;
+};
+
 template<typename TypeX, typename TypeY>
 auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y)
     -> decltype(0.5*y[0]*(x[1]-x[0])) {
