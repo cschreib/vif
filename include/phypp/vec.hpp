@@ -3232,6 +3232,34 @@ vectorized_lambda_t<typename std::decay<T>::type> vectorize_lambda(T&& t) {
     return func;
 }
 
+// Increment a list of indices, step by step
+// This is an alternative to a recursive loop.
+void increment_index_list(vec1u& ids, const vec1u& n) {
+    uint_t i = ids.size();
+    do {
+        --i;
+        ++(ids.safe[i]);
+        if (ids.safe[i] == n.safe[i]) {
+            ids.safe[i] = 0;
+        } else {
+            break;
+        }
+    } while (i != 0);
+}
+
+void increment_index_list(vec1u& ids, const uint_t& n) {
+    uint_t i = ids.size();
+    do {
+        --i;
+        ++(ids.safe[i]);
+        if (ids.safe[i] == n) {
+            ids.safe[i] = 0;
+        } else {
+            break;
+        }
+    } while (i != 0);
+}
+
 // Print a vector into a stream.
 template<typename O, std::size_t Dim, typename Type, typename enable = typename std::enable_if<!std::is_same<Type, bool>::value>::type>
 O& operator << (O& o, const vec<Dim,Type>& v) {
