@@ -2106,6 +2106,24 @@ auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y, double x0, double x
     }
 }
 
+template<typename TypeX, typename TypeY>
+auto cumul(const vec<1,TypeX>& x, const vec<1,TypeY>& y) -> vec<1,decltype(integrate(x,y))> {
+    vec<1,decltype(integrate(x,y))> dr(y.dims);
+
+    phypp_check(x.size() == y.size(),
+        "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+
+    dr[0] = y[0];
+    decltype(0.5*y[0]*(x[1]-x[0])) r = y[0];
+    for (uint_t i : range(x.size()-1)) {
+        r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
+
+        dr[i+1] = r;
+    }
+
+    return dr;
+}
+
 template<typename F, typename T, typename U>
 auto integrate_trap(F f, T x0, U x1, uint_t n) -> decltype(0.5*f(x0)*x0) {
     using rtype = decltype(0.5*f(x0)*x0);
