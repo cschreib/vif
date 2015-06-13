@@ -4,21 +4,28 @@
 #include "phypp/astro.hpp"
 #include "phypp/mpfit.hpp"
 
+// Convolve each SED with the response curve of the filters
 template<typename TLib, typename TFi>
-vec2d template_observed(const TLib& lib, double z, double d, const vec<1,TFi>& filters) {
-    // Move each SED to the observed frame
-    vec2d rflam = lib.lam*(1.0 + z);
-    vec2d rfsed = lsun2uJy(z, d, lib.lam, lib.sed);
-
-    // Convolve each SED with the response curve of the filters
-    const uint_t nsed = rfsed.dims[0];
+vec2d template_observed(const TLib& lib, const vec<1,TFi>& filters) {
+    const uint_t nsed = lib.sed.dims[0];
     const uint_t nfilter = filters.size();
-    vec2d flux = dblarr(nsed, nfilter);
+
+    vec2d flux(nsed, nfilter);
     for (uint_t f = 0; f < nfilter; ++f) {
-        flux.safe(_,f) = sed2flux(filters[f], rflam, rfsed);
+        flux.safe(_,f) = sed2flux(filters[f], lib.lam, lib.sed);
     }
 
     return flux;
+}
+
+template<typename TLib, typename TFi>
+vec2d template_observed(TLib lib, double z, double d, const vec<1,TFi>& filters) {
+    // Move each SED to the observed frame
+    lib.sed = lsun2uJy(z, d, lib.lam, lib.sed);
+    lib.lam *= (1.0 + z);
+
+    // Convolve each SED with the response curve of the filters
+    return template_observed(lib, filters);
 }
 
 template<typename TLib, typename TFi, typename TZ, typename TD>
@@ -28,28 +35,22 @@ vec2d template_observed(const TLib& lib, const vec<1,TZ>& z, const vec<1,TD>& d,
     phypp_check(z.size() == d.size(),
         "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
 
-    vec2d rflam = lib.lam*(1.0 + mean(z));
-    vec2d rfsed = dblarr(lib.sed.dims);
+    lib_t tlib;
+    tlib.lam = lib.lam*(1.0 + mean(z));
+    tlib.sed.resize(lib.sed.dims);
 
     // Combine the SEDs of each source to build an effective "redshift convolved" SED in the
     // observed frame
     for (uint_t i = 0; i < z.size(); ++i) {
         auto tlam = lib.lam*(1.0 + z[i]);
         auto tsed = lsun2uJy(z[i], d[i], lib.lam, lib.sed);
-        rfsed += interpolate(tsed, tlam, rflam);
+        tlib.sed += interpolate(tsed, tlam, tlib.lam);
     }
 
-    rfsed /= z.size();
+    tlib.sed /= z.size();
 
     // Convolve each SED with the response curve of the filters
-    const uint_t nsed = rfsed.dims[0];
-    const uint_t nfilter = filters.size();
-    vec2d flux = dblarr(nsed, nfilter);
-    for (uint_t f = 0; f < nfilter; ++f) {
-        flux.safe(_,f) = sed2flux(filters[f], rflam, rfsed);
-    }
-
-    return flux;
+    return template_observed(tlib, filters);
 }
 
 // Return the weight of an upper limit in a chi2 merit function.
@@ -92,6 +93,7 @@ struct template_fit_params {
     uint_t nsim = 200;   // number of random realizations to perform to estimate errors
     bool renorm = false; // if true, allow templates to be renormalized when fitted
     bool ulim = false;   // if true, use upper limits to constrain the fit (negative errors)
+    bool lib_obs = false; // if true, the input library is assumed to be in observer frame
 };
 
 // Note: Errors on the fit are computed by adding a random offset to the measured photometry (upper
@@ -127,7 +129,11 @@ template_fit_res_t template_fit(const TLib& lib, TypeSeed& seed, const TZ& z,
    const vec<1,TFi>& filters, template_fit_params params = template_fit_params()) {
 
     template_fit_res_t res;
-    res.flux = template_observed(lib, z, d, filters);
+    if (params.lib_obs) {
+        res.flux = template_observed(lib, filters);
+    } else {
+        res.flux = template_observed(lib, z, d, filters);
+    }
 
     const uint_t nsed = res.flux.dims[0];
     const uint_t nfilter = filters.size();
@@ -338,20 +344,8 @@ struct multi_template_fit_res_t {
 struct multi_template_fit_params {
     uint_t nsim = 200; // number of random realizations to perform to estimate errors
     bool ulim = false; // if true, use upper limits to constrain the fit (negative errors)
+    bool lib_obs = false; // if true, the input library is assumed to be in observer frame
 };
-
-void increment_index_list(vec1u& ids, const vec1u& n) {
-    uint_t i = ids.size();
-    do {
-        --i;
-        ++(ids.safe[i]);
-        if (ids.safe[i] == n.safe[i]) {
-            ids.safe[i] = 0;
-        } else {
-            break;
-        }
-    } while (i != 0);
-}
 
 template<typename TLibs, typename TFi, typename TypeSeed,
     typename TZ, typename TD, typename TConst>
@@ -371,7 +365,11 @@ multi_template_fit_res_t multi_template_fit(const TLibs& libs, TypeSeed& seed, c
         nsed[l] = libs[l].sed.dims[0];
         nseds *= nsed[l];
 
-        convflux[l] = template_observed(libs[l], z, d, filters);
+        if (params.lib_obs) {
+            convflux[l] = template_observed(libs[l], filters);
+        } else {
+            convflux[l] = template_observed(libs[l], z, d, filters);
+        }
     }
 
     const uint_t nfilter = filters.size();
