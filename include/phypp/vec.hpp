@@ -621,7 +621,7 @@ namespace vec_access {
         template<typename T, typename enable = typename std::enable_if<is_range<T>::value>::type>
         static type access(itype& v, const T& rng) {
             type t(vec_ref_tag, get_parent(v));
-            t.dims[0] = range_impl::range_size(range, v.dims[0]);
+            t.dims[0] = range_impl::range_size(rng, v.dims[0]);
             t.resize();
 
             uint_t itx = 0;
