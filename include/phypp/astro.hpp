@@ -1159,6 +1159,9 @@ filter_db_t read_filter_db(const std::string& filename) {
     while (!file.eof()) {
         std::string line;
         std::getline(file, line);
+        line = trim(line);
+        if (!line.empty() && line[0] == '#') continue;
+
         vec1s slice = split(line, "=");
         if (slice.size() != 2) continue;
 
