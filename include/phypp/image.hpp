@@ -218,30 +218,25 @@ typename vec<2,TypeV>::effective_type rotate(const vec<2,TypeV>& v, double angle
     return r;
 }
 
-vec2d circular_mask(vec1u dim, const vec1d& center, double radius) {
-    if (n_elements(dim) == 0) {
-        dim = {uint_t(radius), uint_t(radius)};
-    } else if (n_elements(dim) == 1) {
-        dim = {dim[0], dim[0]};
+vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
+    vec2d m(dims);
+
+    radius *= radius;
+    for (uint_t ix : range(dims[0]))
+    for (uint_t iy : range(dims[1])) {
+        m.safe(ix,iy) = 0.25*(
+            (sqr(ix-0.5 - x) + sqr(iy-0.5 - y) <= radius) +
+            (sqr(ix+0.5 - x) + sqr(iy-0.5 - y) <= radius) +
+            (sqr(ix+0.5 - x) + sqr(iy+0.5 - y) <= radius) +
+            (sqr(ix-0.5 - x) + sqr(iy+0.5 - y) <= radius)
+        );
     }
 
-    assert(n_elements(center) == 2);
-
-    vec3d m(dim[0], dim[1], 4);
-
-    vec2d px = replicate(dindgen(dim[1]), dim[0]);
-    vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
-
-    m.safe(_,_,0) = vec2d{pow(px-0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius};
-    m.safe(_,_,1) = vec2d{pow(px+0.5 - center.safe[1],2) + pow(py-0.5 - center.safe[0],2) <= radius*radius};
-    m.safe(_,_,2) = vec2d{pow(px+0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius};
-    m.safe(_,_,3) = vec2d{pow(px-0.5 - center.safe[1],2) + pow(py+0.5 - center.safe[0],2) <= radius*radius};
-
-    return partial_mean(2,m);
+    return m;
 }
 
 vec2d circular_mask(const std::array<uint_t,2>& dims, double radius) {
-    return circular_mask({dims[0], dims[1]}, {dims[0]/2.0, dims[1]/2.0}, radius);
+    return circular_mask(dims, radius, dims[0]/2.0, dims[1]/2.0);
 }
 
 template<typename Type>
@@ -252,8 +247,8 @@ vec<1, rtype_t<Type>> radial_profile(const vec<2,Type>& img, uint_t npix) {
     uint_t hsy = img.dims[1]/2;
     res[0] = img(hsx,hsy);
     for (uint_t i : range(1u, npix)) {
-        vec2d mask = circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i)*
-            (1.0 - circular_mask({img.dims[0], img.dims[1]}, {double(hsx), double(hsy)}, i-1));
+        vec2d mask = circular_mask(img.dims, double(hsx), double(hsy), i)*
+            (1.0 - circular_mask(img.dims, double(hsx), double(hsy), i-1));
         res.safe[i] = total(mask*img)/total(mask);
     }
 

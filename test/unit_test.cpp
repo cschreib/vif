@@ -596,7 +596,7 @@ int main(int argc, char* argv[]) {
         fits::write("out/py.fits", py);
 #endif
 
-        vec2d m = circular_mask({51,51}, {25,25}, 8);
+        vec2d m = circular_mask({{51,51}}, 25, 25, 8);
 #ifndef NO_CCFITS
         fits::write("out/circular.fits", m);
 #endif
