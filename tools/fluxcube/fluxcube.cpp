@@ -204,7 +204,10 @@ struct flux_extractor {
 
         result = replicate(dnan, nresult);
         err = replicate(dnan, nresult);
-        for (uint_t i : range(nresult)) {
+
+        uint_t tnr = residual ? nresult : nresult - 2;
+
+        for (uint_t i : range(tnr)) {
             if (mea) {
                 result[i] = fmean(rs(_,i));
             } else {
