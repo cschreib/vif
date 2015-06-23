@@ -122,6 +122,7 @@ document.write('\
 <li><a href="functions_support_astro_catalog_get_band.html">get_band</a></li> \
 <li><a href="functions_support_astro_cosmo_get_cosmo.html">get_cosmo</a></li> \
 <li><a href="functions_support_astro_flux_get_filter.html">get_filter</a></li> \
+<li><a href="functions_support_astro_flux_get_filter_id.html">get_filter_id</a></li> \
 <li><a href="functions_support_astro_flux_get_filter.html">get_filters</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">H</span><br> \
@@ -253,6 +254,7 @@ document.write('\
 <li><a href="functions_support_generic_range_range.html">range</a></li> \
 <li><a href="functions_support_cmd_read_args.html">read_args</a></li> \
 <li><a href="functions_support_astro_flux_read_filter_db.html">read_filter_db</a></li> \
+<li><a href="functions_support_astro_flux_read_filter_map.html">read_filter_map</a></li> \
 <li><a href="functions_support_math_interpol_rebin.html">rebin</a></li> \
 <li><a href="functions_support_generic_dim_reform.html">reform</a></li> \
 <li><a href="functions_support_string_modify_regex_extract.html">regex_extract</a></li> \
