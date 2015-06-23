@@ -35,7 +35,10 @@ vec2d template_observed(const TLib& lib, const vec<1,TZ>& z, const vec<1,TD>& d,
     phypp_check(z.size() == d.size(),
         "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
 
-    lib_t tlib;
+    struct {
+        vec2d lam, sed;
+    } tlib;
+
     tlib.lam = lib.lam*(1.0 + mean(z));
     tlib.sed.resize(lib.sed.dims);
 
