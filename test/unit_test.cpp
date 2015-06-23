@@ -995,7 +995,7 @@ int main(int argc, char* argv[]) {
     {
         print("string 'match' regex");
         vec1s s = {"[u]=5", "[v]=2", "plop", "3=[c]", "5]=[b"};
-        check(match(s, "\\[.\\]"), "{1, 1, 0, 1, 0}");
+        check(regex_match(s, "\\[.\\]"), "{1, 1, 0, 1, 0}");
     }
 
     {
