@@ -1010,6 +1010,27 @@ namespace fits {
 #endif
     }
 
+    // Obtain the pixel size of a given image in arsec/pixel.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
+    bool get_pixel_size(const fits::wcs& wcs, double& aspix) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        if (!wcs.is_valid()) {
+            return false;
+        }
+
+        // Convert radius to number of pixels
+        vec1d r, d;
+        fits::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
+        aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
+
+        return true;
+#endif
+    }
+
     void header2fits_(fitsfile* fptr, const std::string& hdr) {
         int status = 0;
         std::size_t nentry = hdr.size()/80 + 1;
