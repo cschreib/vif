@@ -12,9 +12,15 @@
 
 \funcitem \cppinline|auto read_filter_db(string)| \itt{read_filter_db}
 
-\funcitem \cppinline|auto get_filter(auto db, string name)| \itt{get_filter}
+\funcitem \cppinline|bool get_filter(auto db, string name, filter_t& f)| \itt{get_filter}
 
-\cppinline|auto get_filters(auto db, vec1s names)| \itt{get_filters}
+\cppinline|bool get_filters(auto db, vec1s names, filter_bank_t& fb)| \itt{get_filters}
+
+\funcitem \cppinline|auto read_filter_map(string)| \itt{read_filter_map}
+
+\funcitem \cppinline|bool get_filter_id(auto map, string name, uint_t& i)| \itt{get_filter_id}
+
+\cppinline|bool get_filter_id(auto db, vec1s names, vec1u& i)|
 
 \funcitem \cppinline|double sed2flux(auto fil, vec<1,T> lam, sed)| \itt{sed2flux}
 
