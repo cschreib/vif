@@ -1171,13 +1171,134 @@ filter_db_t read_filter_db(const std::string& filename) {
     return db;
 }
 
-filter_t get_filter(const filter_db_t& db, const std::string& str) {
-    auto iter = db.find(str);
-    if (iter == db.end()) {
-        warning("get_filter: unknown filter '", str,"'");
+bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
+    vec1s spl = split(str, ":");
+
+    if (spl.size() == 1) {
+        auto iter = db.find(str);
+        if (iter == db.end()) {
+            error("get_filter: unknown filter '", str,"'");
+            uint_t best_d = -1;
+            vec1s candidates;
+            for (auto& i : db) {
+                uint_t d = distance(str, i.first);
+                if (d < best_d) {
+                    best_d = d;
+                    candidates.data.clear();
+                    candidates.data.push_back(i.first);
+                } else if (d == best_d) {
+                    candidates.data.push_back(i.first);
+                }
+            }
+
+            if (candidates.size() == 1) {
+                note("get_filter: did you mean '", candidates[0], "'? ");
+            } else if (!candidates.empty()) {
+                note("get_filter: did you mean one of ", candidates, "?");
+            }
+
+            return false;
+        } else {
+            fits::read_table(iter->second, ftable(f.lam, f.res));
+            f.rlam = integrate(f.lam, f.res*f.lam);
+            return true;
+        }
+    } else {
+        if (spl[1] == "range") {
+            if (spl.size() != 4) {
+                error("get_filter: 'range' filter needs 4 arguments (name, 'range', "
+                    "lambda_min, lambda_max)");
+                note("got: ", str);
+                return false;
+            }
+
+            float lmin, lmax;
+            if (!from_string(spl[2], lmin)) {
+                error("get_filter: '"+str+"': cannot convert lambda_min to number");
+                return false;
+            }
+
+            if (!from_string(spl[3], lmax)) {
+                error("get_filter: '"+str+"': cannot convert lambda_max to number");
+                return false;
+            }
+
+            f.lam = {lmin*0.5, lmin*0.99, lmin, lmax, lmax*1.01, lmax*2.0};
+            f.res = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
+            f.res /= integrate(f.lam, f.res);
+            f.rlam = 0.5*(lmin + lmax);
+
+            return true;
+        } else {
+            error("unknown filter type '", spl[1], "'");
+            return false;
+        }
+    }
+}
+
+template<typename Type = std::string>
+bool get_filters(const filter_db_t& db, const vec<1,Type>& str, filter_bank_t& fils) {
+    for (auto& s : str) {
+        filter_t f;
+        if (get_filter(db, s, f)) {
+            fils.push_back(f);
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void print_filters(const filter_db_t& db) {
+    for (auto& sf : db) {
+        filter_t f;
+        fits::read_table(sf.second, ftable(f.lam, f.res));
+        f.rlam = integrate(f.lam, f.res*f.lam);
+        print(sf.first, ": ", f.rlam);
+    }
+}
+
+using filter_map_t = std::map<std::string, uint_t>;
+
+filter_map_t read_filter_map(const std::string& filename) {
+    std::ifstream file(filename);
+
+    filter_map_t db;
+    if (!file.is_open()) {
+        error("read_filter_map: cannot find '"+filename+"'");
+        return db;
+    }
+
+    while (!file.eof()) {
+        std::string line;
+        std::getline(file, line);
+        line = trim(line);
+        if (!line.empty() && line[0] == '#') continue;
+
+        vec1s slice = split(line, "=");
+        if (slice.size() != 2) continue;
+
+
+        uint_t id;
+        if (from_string(slice[1], id)) {
+            db.insert(std::make_pair(slice[0], id));
+        }
+    }
+
+    return db;
+}
+
+bool get_filter_id(const filter_map_t& map, const std::string& str, uint_t& id) {
+    auto iter = map.find(str);
+    if (iter != map.end()) {
+        id = iter->second;
+        return true;
+    } else {
+        error("get_filter_id: unknown filter '", str,"'");
         uint_t best_d = -1;
         vec1s candidates;
-        for (auto& i : db) {
+        for (auto& i : map) {
             uint_t d = distance(str, i.first);
             if (d < best_d) {
                 best_d = d;
@@ -1189,37 +1310,23 @@ filter_t get_filter(const filter_db_t& db, const std::string& str) {
         }
 
         if (candidates.size() == 1) {
-            note("get_filter: did you mean '", candidates[0], "'? ");
+            note("get_filter_id: did you mean '", candidates[0], "'? ");
         } else if (!candidates.empty()) {
-            note("get_filter: did you mean one of ", candidates, "?");
+            note("get_filter_id: did you mean one of ", candidates, "?");
         }
 
-        return filter_t();
-    } else {
-        filter_t f;
-        fits::read_table(iter->second, ftable(f.lam, f.res));
-        f.rlam = integrate(f.lam, f.res*f.lam);
-        return f;
+        return false;
     }
 }
 
 template<typename Type = std::string>
-filter_bank_t get_filters(const filter_db_t& db, const vec<1,Type>& str) {
-    filter_bank_t fils;
-    for (auto& s : str) {
-        fils.push_back(get_filter(db, s));
+bool get_filter_id(const filter_map_t& map, const vec<1,Type>& str, vec1u& id) {
+    id.resize(str.size());
+    for (uint_t i : range(str.size())) {
+        if (!get_filter_id(map, str[i], id[i])) return false;
     }
 
-    return fils;
-}
-
-void print_filters(const filter_db_t& db) {
-    for (auto& sf : db) {
-        filter_t f;
-        fits::read_table(sf.second, ftable(f.lam, f.res));
-        f.rlam = integrate(f.lam, f.res*f.lam);
-        print(sf.first, ": ", f.rlam);
-    }
+    return true;
 }
 
 #endif

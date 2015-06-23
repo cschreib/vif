@@ -34,8 +34,12 @@ int main(int argc, char* argv[]) {
     if (cat.lambda.empty()) {
         cat.lambda = fltarr(cat.bands.size());
         for (uint_t i = 0; i < cat.bands.size(); ++i) {
-            auto filter = get_filter(fdb, cat.bands[i]);
-            cat.lambda[i] = filter.rlam;
+            filter_t filter;
+            if (get_filter(fdb, cat.bands[i], filter)) {
+                cat.lambda[i] = filter.rlam;
+            } else {
+                cat.lambda[i] = fnan;
+            }
         }
     }
 
