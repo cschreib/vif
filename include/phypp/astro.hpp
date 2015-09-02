@@ -197,7 +197,6 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
             auto mi = min(z[idz]); \
             auto ma = max(z[idz]); \
             auto tz = e10(rgen(log10(mi), log10(ma), npt)); \
-            prepend(tz, {0.0}); \
             using rtype = rtype_t<Type>; \
             vec<1,rtype> td = arr<rtype>(tz.dims); \
             for (uint_t i : range(tz)) { \
