@@ -1022,8 +1022,8 @@ void data_info_(const vec<Dim,Type>& v) {
     data_info_(x);
 
 template<typename T>
-auto sign(const T& t) -> decltype(2*(t > 0) - 1) {
-    return 2*(t > 0) - 1;
+auto sign(const T& t) -> decltype(2*(t >= 0) - 1) {
+    return 2*(t >= 0) - 1;
 }
 
 template<std::size_t Dim, typename Type, typename U,
