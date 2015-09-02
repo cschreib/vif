@@ -187,18 +187,11 @@ namespace file {
         return dst;
     }
 
-    vec1s list_directories(const std::string& path = "") {
+    vec1s list_directories(const std::string& pattern = "*") {
         vec1s dlist;
 
         long handle, res;
         struct impl::_finddata_t tagData;
-
-        std::string pattern;
-        if (path.empty()) {
-            pattern = "*";
-        } else {
-            pattern = path + "/*";
-        }
 
         handle = impl::_findfirst(pattern.c_str(), &tagData);
         res = 0;
