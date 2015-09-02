@@ -1090,6 +1090,47 @@ namespace fits {
         write(name, v, "");
     }
 
+    // Write an image in a FITS file within a given HDU
+    template<std::size_t Dim, typename Type>
+    void update_hdu(const std::string& name, uint_t hdu, const vec<Dim,Type>& v) {
+#ifdef NO_CCFITS
+        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
+            "please enable the CCfits library to use this function");
+#else
+        std::array<long,Dim> isize;
+        for (uint_t i = 0; i < Dim; ++i) {
+            isize[i] = v.dims[Dim-1-i];
+        }
+
+        std::valarray<rtype_t<Type>> tv(v.size());
+        for (uint_t i = 0; i < v.size(); ++i) {
+            tv[i] = v.safe[i];
+        }
+
+        try {
+            fits::FITS f(name, fits::Write);
+            fits::ExtHDU& ehdu = f.extension(hdu+1);
+
+            phypp_check_fits(ehdu.axes() == Dim, "FITS file does not match array dimensions ("+
+                strn(ehdu.axes())+" vs. "+strn(Dim)+")");
+
+            std::array<uint_t,Dim> d;
+            for (uint_t i : range(Dim)) {
+                d[i] = ehdu.axis(Dim-1-i);
+            }
+
+            phypp_check_fits(v.dims == d, "incompatible array dimensions ("+strn(v.dims)+
+                " vs. "+strn(d)+")");
+
+            ehdu.write(1, tv.size(), tv);
+            f.flush();
+        } catch (fits::FitsException& e) {
+            print("error: FITS: "+e.message());
+            throw;
+        }
+#endif
+    }
+
 
     struct column_info {
         std::string name;
