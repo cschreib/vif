@@ -109,8 +109,10 @@ std::string latex_math(context_t& con, std::string s) {
         file::remove(temporary_dir+"tmp.dvi");
         spawn("cd "+temporary_dir+"; latex -interaction batchmode tmp.tex");
         if (!file::exists(temporary_dir+"tmp.dvi")) {
-            error("reading ", con.file_name);
-            error("parsing $"+s+"$ on l.", con.l);
+            error("reading ", con.file_name, " on l.", con.l);
+            error("latex code: $"+s+"$");
+            error("did not compile");
+            note("if this code is valid LaTeX, check the files header.tex and footer.tex");
             return "$"+s+"$";
         }
 
@@ -124,8 +126,8 @@ std::string latex_math(context_t& con, std::string s) {
         if (!from_string(erase_end(split(spl[0], "=")[1], "pt"), bh) ||
             !from_string(erase_end(split(spl[1], "=")[1], "pt"), bd) ||
             !from_string(erase_end(split(spl[2], "=")[1], "pt"), bw)) {
-            warning("reading ", con.file_name);
-            warning("parsing $"+s+"$ on l.", con.l);
+            warning("reading ", con.file_name, " on l.", con.l);
+            warning("parsing $"+s+"$");
             warning("could not read LaTeX info from tmp.dat");
         }
 
@@ -150,8 +152,8 @@ std::string latex_math(context_t& con, std::string s) {
             }
 
             if (!found) {
-                warning("reading ", con.file_name);
-                warning("parsing $"+s+"$ on l.", con.l);
+                warning("reading ", con.file_name, " on l.", con.l);
+                warning("parsing $"+s+"$");
                 warning("could not read SVG file height");
             }
         }
