@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
     std::ifstream file(con.file_name);
 
     sorted_cache_t index;
+    sorted_cache_t catfun_cache;
 
     section_t mainsec;
     section_t* sec = &mainsec;
@@ -146,6 +147,16 @@ int main(int argc, char* argv[]) {
                 }
 
                 sec->funcfile = p[0];
+
+                if (sec == &mainsec) {
+                    insert_cache(catfun_cache, sec->funcfile,
+                        "__("+sec->title+")__"+con.base+".html");
+                } else {
+                    insert_cache(catfun_cache, sec->funcfile,
+                        "__("+mainsec.title+")__"+con.base+".html"
+                        "|||"
+                        "__("+sec->title+")__"+con.base+".html#"+sec->fid);
+                }
             }
         } else if (start_with(tline, "\\begin{cppcode}")) {
             incode = true;
@@ -265,6 +276,7 @@ int main(int argc, char* argv[]) {
     write_cache(con.pygment_cache, cache_dir+con.base+"_pygment.cache");
     write_cache(con.latex_cache, cache_dir+con.base+"_latex.cache");
     write_cache(index, cache_dir+con.base+"_index.cache");
+    write_cache(catfun_cache, cache_dir+con.base+"_catfun.cache");
 
     return 0;
 }

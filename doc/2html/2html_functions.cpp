@@ -56,6 +56,29 @@ int main(int argc, char* argv[]) {
         read_cache(con.section_index, cache_dir+ifile);
     }
 
+    // Find the categories associated with this file
+    std::vector<std::pair<std::string, std::string>> categories; {
+        sorted_cache_t catfun_cache;
+        for (auto ifile : file::list_files(cache_dir+"category*_catfun.cache")) {
+            read_cache(catfun_cache, cache_dir+ifile);
+        }
+
+        auto iter = catfun_cache.find(file::get_basename(con.file_name));
+        if (iter != catfun_cache.end()) {
+            vec1s spl = split(iter->second, "|||");
+            for (auto& ts : spl) {
+                std::string tit, link;
+                link = replace_block(ts, "__(", ")__", [&](std::string s) {
+                    tit = s;
+                    return "";
+                });
+
+                categories.push_back(std::make_pair(tit, link));
+            }
+        }
+    }
+
+
     std::string line;
 
     auto find_function = [&]() {
@@ -144,7 +167,24 @@ int main(int argc, char* argv[]) {
             std::ofstream out(con.out_dir+con.base+"_"+funcs[0].fname+".html");
             out << header << std::endl;
 
-            out << "<div class=\"content\"><span class=\"section\">Signature"
+            out << "<div class=\"content\">\n";
+
+            if (!categories.empty()) {
+                out << "<span class=\"section\">Categories</span><br>\n"
+                    << "<div class=\"catlist\">\n";
+
+                vec1s scats;
+
+                for (auto& c : categories) {
+                    scats.push_back("<a href=\""+c.second+"\">"+c.first+"</a>");
+                }
+
+                out << collapse(scats, "<span class=\"catsep\">&gt;</span>") << "\n";
+
+                out << "</div><br>\n";
+            }
+
+            out << "<span class=\"section\">Signature"
                 << (funcs.size() > 1 ? "s" : "")
                 << "</span>\n";
             out << "<table style=\"signatures\">\n";
@@ -188,7 +228,6 @@ int main(int argc, char* argv[]) {
             latexify(con, desc);
             for (auto& d : desc) {
                 out << d.content;
-
             }
 
             out << "</div>\n";

@@ -420,3 +420,28 @@ a.menu-cat-sec:hover, a.menu-cat-sec:active {
   margin-left: 1em;
   padding: 0;
 }
+
+.catsep {
+  font-family: monospace;
+  margin-left: 0.3em;
+  margin-right: 0.3em;
+  font-size: 130%;
+  color: #999999;
+}
+
+.catlist {
+  display: block;
+  margin: 0.5em auto;
+}
+
+.catlist a:link, a:visited {
+  width: 100%;
+  color: #000000;
+  background-color: #FFFFFF;
+  text-align: left;
+  text-decoration: none;
+}
+
+.catlist a:hover, a:active {
+  background-color: #DDDDDD;
+}
