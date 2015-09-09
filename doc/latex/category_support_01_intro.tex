@@ -90,7 +90,7 @@ uint_t flat_id(vec<D,T>, Args&& ...);
 \end{cppcode}
 \end{example}
 
-\item The \cppinline{std} namespace is omitted for common standard types, like \cppinline{std::string} or \cppinline{std::array}.
+\item The \cppinline{std} namespace is omitted for common standard types, in particular \cppinline{std::string} and \cppinline{std::array}.
 
 \begin{example}
 \begin{cppcode}
@@ -101,7 +101,7 @@ uint_t length(const std::string&);
 \end{cppcode}
 \end{example}
 
-\item For the particular case of \cppinline{std::array}, the individual elements inside the array can be named by placing the names inside curly braces after the type of the array.
+\item For the particular case of \cppinline{std::array}, the individual elements inside the array can be named by placing the names inside curly braces after the type of the array. These names are just used for descriptive purposes inside this documentation, and have no concrete meaning in actual C++ code.
 
 \begin{example}
 \begin{cppcode}
@@ -116,8 +116,8 @@ uint_t length(const std::array<T,2>& a) {
 \end{cppcode}
 \end{example}
 
-\item If the return type of a function in pseudo-code is \cppinline{auto}, it means that this return value is ``complex'' (usually a structure or a class) and it is not important to know its precise type. The description of the function must therefore make it clear how this return value can be used.
+\item If the return type of a function in pseudo-code is \cppinline{auto}, it means that this return value is ``complex'' (usually a structure or a class) and it is not immediately important to know its precise type. The description of the function must therefore make it clear how this return value can be used.
 
 \end{itemize}
 
-With this in mind, it is clear that this chapter focuses on the \emph{interface} that is provided by the library, rather than on the individual function themselves. In fact, a single interface may be composed of many different functions to take care of all the combination of types that the interface supports. If the reader is interested in all these overloads, or is experiencing a particular compiler error that cannot be easily fixed just by looking at the interface, then it is best to look directly into the code of the library. Although less readable than the pseudo-code used in this document, most of the time an effort is made to make the code as clear as possible. However, if a function is too hard to understand, I consider this as a bug that should be reported on the \texttt{github} issue tracker (seriously). Similarly, if you end up doing something wrong with the library, but that the compiler error message is too cryptic or too long, you may also fill in a bug report. Ensuring that clear error messages are sent to the user is a shared responsibility between compiler writers and library authors.
+With this in mind, it is clear that this chapter focuses on the \emph{interface} that is provided by the library, rather than on the individual C++ functions themselves. In fact, a single interface may be composed of many different functions to take care of all the combination of types that the interface supports. If the reader is interested in all these overloads, or is experiencing a particular compiler error that cannot be easily fixed just by looking at the interface, then it is best to look directly into the code of the library. Although less readable than the pseudo-code used in this document, most of the time an effort is made to make the code as clear as possible. However, if a function is too hard to understand, I consider this as a bug that should be reported on the \texttt{github} issue tracker (seriously). Similarly, if you end up doing something wrong with the library, but that the compiler error message is too cryptic or too long, you may also fill in a bug report. Ensuring that clear error messages are sent to the user is a shared responsibility between compiler writers and library authors.

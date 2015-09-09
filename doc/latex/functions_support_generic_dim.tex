@@ -86,8 +86,8 @@ v; // {4,5,6,1,2,3,4,5,6}
 
 // For multidimensional vectors
 vec2i x = {{1,2}, {3,4}};         // x is (2x2)
-vec2i y = {{0}, {0}};             // y is (1x2)
-vec2i z = {{5,6,7}};              // z is (3x1)
+vec2i y = {{0}, {0}};             // y is (2x1)
+vec2i z = {{5,6,7}};              // z is (1x3)
 append<1>(x, y);
 x; // {{1,2,0}, {3,4,0}}          // x is (2x3)
 prepend<0>(x, z);
