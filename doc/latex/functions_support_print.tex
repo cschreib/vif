@@ -70,8 +70,8 @@ This function interacts with the user of the program through the standard output
 Currently, the function can only return after successfully reading a value, and always returns \cppinline{true}. In the future, it may fail and return \cppinline{false}, for example after the user has failed a given number of times. If possible, try to keep the possibility of failure into account.
 
 \begin{example}
+Consider the following program.
 \begin{cppcode}
-// Consider the following program
 uint_t age;
 if (prompt("please enter your age: ", age,
     "it better just be an integral number...")) {
@@ -79,18 +79,19 @@ if (prompt("please enter your age: ", age,
 } else {
     print("you will do better next time");
 }
-
-// Here is a possible interaction scenario with a naive user
-
-// please enter your age: 15.5
-// error: it better just be an integral number...
-// please enter your age: what?
-// error: it better just be an integral number...
-// please enter your age: oh I see, it is 15
-// error: it better just be an integral number...
-// please enter your age: ok...
-// error: it better just be an integral number...
-// please enter your age: 15
-// your age is: 15
 \end{cppcode}
+
+Here is a possible interaction scenario with a naive user:
+\begin{bashcode}
+please enter your age: 15.5
+error: it better just be an integral number...
+please enter your age: what?
+error: it better just be an integral number...
+please enter your age: oh I see, it is 15
+error: it better just be an integral number...
+please enter your age: ok...
+error: it better just be an integral number...
+please enter your age: 15
+your age is: 15
+\end{bashcode}
 \end{example}
