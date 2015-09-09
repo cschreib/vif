@@ -135,3 +135,59 @@ for (uint_t i : range(nelem)) {
 // format, it is normally substantially larger.
 \end{cppcode}
 \end{example}
+
+\begin{advanced}
+The function \cppinline{print_progress()} should be used in a situation where a calculation will be done in a fixed number of steps, but each iteration of the loop corresponds to zero or more than one such step, in an unpredictable way. In this case, you have the responsibility of figuring out how many steps were done during each iteration, and feed this progress to \cppinline{print_progress()} which will take care of estimating the time remaining.
+
+The typical use case is when a loop is executed over multiple threads, each taking care of a fraction of the whole loop. In this case, the main thread only maintains a global iteration counter and regularly update the progress to display a time estimate.
+
+\begin{example}
+\begin{cppcode}
+// The global counter, must be an atomic type for thread-safe
+// simultaneous read and write.
+std::atomic<uint_t> iter(0);
+
+// Some data to work on
+vec1d in = dindgen(1e8);
+vec1d out(1e8);
+
+// The calculation to do
+auto do_stuff = [&](uint_t begin, uint_t end) mutable {
+    for (uint_t i = begin; i < end; ++i) {
+        out[i] = 2*in[i] + sqr(in[i]) - log10(pow(in[i],3.5));
+
+        // Do not forget to update the global counter
+        ++iter;
+    }
+};
+
+// Create a thread pool and launch them
+uint_t nthreads = 4;
+auto pool = thread::pool(nthreads);
+uint_t last = 0;
+for (uint_t i : range(pool)) {
+    uint_t begin = last;
+    if (i == nthreads-1) {
+        last = in.size();
+    } else {
+        last += in.size()/nthreads;
+    }
+
+    pool[i].start(do_stuff, begin, last);
+}
+
+// Wait here for the calculation to finish and display the
+// progress
+auto p = progress_start(in.size());
+while (iter < in.size()) {
+    thread::sleep_for(0.2);
+    print_progress(p, iter);
+}
+
+// Do not forget to close the threads
+for (auto& t : pool) {
+    t.join();
+}
+\end{cppcode}
+\end{example}
+\end{advanced}
