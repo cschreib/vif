@@ -1,13 +1,137 @@
 \funcitem \cppinline|double now()| \itt{now}
 
-\funcitem \cppinline|string today()| \itt{today}
+\cppinline|double profile(F func)| \itt{profile}
+
+\cppinline|double profile(F func, uin_t n)|
+
+The function \cppinline{now()} returns the current time, in seconds, with microsecond resolution (or better). The reference point (i.e., the precise moment when \cppinline{now()} returned zero) is unspecified. Therefore, \cppinline{now()} is only meant to be used for measuring the time elapsed between two calls, for example to time the execution of a given piece of code.
+
+\begin{example}
+\begin{cppcode}
+double begin = now();
+vec1d v = dindgen(1e8);
+v = 2*v + sqr(v) - log10(pow(v,3.5));
+double end = now();
+
+// How fast can you go?
+// Warning if you try this at home: the above cove needs a lot of RAM
+// memory to run (about 4 GB on my machine).
+print("total time: ", end - begin);
+// On my computer:
+// total time: 15.8251
+\end{cppcode}
+\end{example}
+
+The function \cppinline{profile()} is just a shortcut that simplifies writing the above example. The code that must be timed is to be provided as the first argument of the function through a C++ lambda (\cppinline{func}). An additional parameter \cppinline{n} will control how many times this piece of code must be executed. Indeed, sometimes the code is so fast that it takes less than a microsecond to run, and therefore \cppinline{now()} doesn't have the resolution to properly quantify the execution time. To solve this, the code can be run multiple times to ensure that the execution time goes above one microsecond. This is of course to be reserved for profiling and optimizing purposes, not for production code.
+
+\begin{example}
+\begin{cppcode}
+double duration = profile([]() {
+    vec1d v = dindgen(1e8);
+    v = 2*v + sqr(v) - log10(pow(v,3.5));
+});
+
+// How fast can you go?
+print("total time: ", duration);
+\end{cppcode}
+\end{example}
+
+See also \cppinline{time_str()} and \cppinline{seconds_str()} for a pretty printing of such durations.
+
 
 \funcitem \cppinline|string time_str(double)| \itt{time_str}
 
-\funcitem \cppinline|string seconds_str(double)| \itt{seconds_str}
+\cppinline|string seconds_str(double)| \itt{seconds_str}
+
+These functions will convert a given duration (floating point number in seconds) into a string with a pretty (but completely arbitrary) format. This duration is typically obtained using the functions \cppinline{now()} or \cppinline{profile()}.
+
+\cppinline{seconds_str()} is meant for short durations, typically of the order of a few seconds or less. The format is \cppinline{"ss:ms:us:ns"}, i.e., seconds, milliseconds, microseconds and nanoseconds. Seconds will only be displayed if the duration is larger than one second, and similarly for the other elements. This function will not convert seconds to minutes or higher time intervals. The typical use case is to display the time spent inside a given function, which is expected to be very short (e.g., for profiling purposes).
+
+\begin{example}
+\begin{cppcode}
+seconds_str(15.778199195); // "15s778ms199us194ns"
+seconds_str(0.778199195); // "778ms199us195ns"
+seconds_str(0.000199195); // "199us194ns"
+// Notice that the last digit is changing, since we are reaching here
+// the limits of the double precision.
+\end{cppcode}
+\end{example}
+
+\cppinline{time_str()} is meant for longer durations of the order of (or larger than) one minute, but can display properly durations down to the nanosecond. The format is variable and depends on the actual duration. Typically, the format is \cppinline{"[dd]d[hh]h[mm]m[ss]s"}, i.e., days, hours, minutes and seconds, however days will only be displayed if the duration is larger than one day, and similarly for the other elements. If the duration is less than a second, then it will be printed either as \cppinline{"[ms.]ms"}, \cppinline{"[us.]us"} or \cppinline{"[ns.]ns"} depending on how small is the duration.
+
+\begin{example}
+\begin{cppcode}
+print(time_str(94115.778199195)); // "1d02h48m35s"
+print(time_str(7715.778199195)); // "2h08m35s"
+print(time_str(515.778199195)); // "8m35s"
+print(time_str(15.778199195)); // "15s"
+print(time_str(0.778199195)); // "778ms"
+print(time_str(0.000199195)); // "199us"
+print(time_str(0.000000195)); // "195ns"
+\end{cppcode}
+\end{example}
+
+
+\funcitem \cppinline|string today()| \itt{today}
+
+This function returns the date of today in a compact format, \cppinline{"yyyymmdd"} (native English users be warned, this date format makes sense), which is meant to name files or directories created by a program to provide a simple automatic versioning system.
+
+This format cannot be changed. It was chosen to take the least possible amount of space while retaining completeness of information. The order in which the elements of the date are printed ensures that a lexicographical sorting of multiple such dates (i.e., the sorting criterion used for strings in C++ and the way most file managers sort files by name) will yield a chronologically ordered set.
+
+\begin{example}
+\begin{cppcode}
+// Assuming today is the 20th of September 2015
+today(); // "20150920"
+\end{cppcode}
+\end{example}
 
 \funcitem \cppinline|auto progress_start(uint_t)| \itt{progress_start}
 
-\cppinline|void progress(auto p, uint_t m)| \itt{progress}
+\cppinline|void progress(auto p, uint_t m = 1)| \itt{progress}
 
 \cppinline|void print_progress(auto p, T i, uint_t m)| \itt{print_progress}
+
+These functions are used to estimate and display in the terminal the time it will take to complete a given loop as well as a progress bar. At first, this time is unknown. After the first iteration is done, we have an estimate of how long it takes to perform one single iteration. Assuming that the calculation load is evenly spread over the whole loop (i.e., that each iteration will roughly take the same amount of time to execute), we can extrapolate how long it will take to complete. Since a single iteration can be relatively short, and since there can be small variation in execution time from one iteration to another, the estimate of the remaining time is refined after each iteration until the end of the loop.
+
+\cppinline{progress_start()} is used to initialize the prediction code before the loop begins, and inform it of how many iterations it will go through. Then, \cppinline{progress()} is called at the end of \emph{each} iteration (be careful of early exits with \cppinline{continue} keywords) to update the statistics and update the time estimate in the terminal. Be careful that printing to the terminal is costly, and doing so for each iteration can dramatically slow down your program. Therefore \cppinline{progress()} has an optional argument \cppinline{m} that specifies that printing should be done only every \cppinline{m} iterations. Advice: for cosmetic purposes, avoid choosing values of \cppinline{m} that end with an even digit (\cppinline{0} included) or \cppinline{5}, and avoid using \cppinline{0} for any digit; for example \cppinline{13} or \cppinline{621} are fine. This will make it less obvious that printing is not done for all iterations.
+
+Also, make sure that the terminal window is sufficiently large to display the whole progress bar. If not enough space is available, the output may look bad. A future version of these functions will
+fetch the width of the terminal programmatically and adjust the size of the progress bar accordingly.
+
+\begin{example}
+\begin{cppcode}
+uint_t nelem = 10000;
+
+// Initialize the estimation
+auto p = progress_start(nelem);
+
+// Enter the loop
+for (uint_t i : range(nelem)) {
+    // Do some complex stuff...
+    // Here we simulate that with a sleep() command that will block
+    // the program for the provided duration (in seconds).
+    thread::sleep_for(0.05);
+
+    // Estimate the time and print the estimate every 13 iterations
+    progress(p, 13);
+}
+
+// During the execution of the loop, the user will see something
+// similar to:
+//
+// [--            ] 1207  12%, 1m00s elapsed, 7m20s left, 8m21s total
+//
+//        (1)        (2)  (3)      (4)           (5)          (6)
+//
+// Legend:
+//  (1) progress bar, dashes indicate the progress
+//  (2) current iteration
+//  (3) percentage of the loop currently completed
+//  (4) elapsed time since the beginning
+//  (5) estimate of the time remaining
+//  (6) estimate of the total time it will take to complete
+//
+// NB: The progress bar has been shrank to fit the documentation
+// format, it is normally substantially larger.
+\end{cppcode}
+\end{example}
