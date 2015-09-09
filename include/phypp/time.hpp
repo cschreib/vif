@@ -11,7 +11,7 @@ double now() {
     ).count()*1e-6;
 }
 
-// Return the current date [yymmdd]
+// Return the current date [yyyymmdd]
 std::string today() {
     std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm tm = *std::localtime(&t);
