@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <array>
 #include "phypp/reflex.hpp"
 
@@ -38,14 +39,18 @@ bool prompt(const std::string& msg, T& value, const std::string& err_msg = "") {
 
     do {
         std::cout << msg;
-        std::cin >> value;
+        std::string answer;
+        std::getline(std::cin, answer);
 
-        if (!std::cin.fail()) {
-            if (std::cin.eof()) {
+        std::istringstream ss(std::move(answer));
+        ss >> value;
+
+        if (!ss.fail()) {
+            if (ss.eof()) {
                 ok = true;
             } else {
                 std::string rem;
-                std::cin >> rem;
+                ss >> rem;
                 ok = rem.find_first_not_of(" \t") == rem.npos;
             }
         } else {
@@ -53,8 +58,6 @@ bool prompt(const std::string& msg, T& value, const std::string& err_msg = "") {
         }
 
         if (!ok) {
-            std::cin.clear();
-            std::cin.ignore();
             if (!err_msg.empty()) {
                 error(err_msg);
             }
