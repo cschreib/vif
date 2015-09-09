@@ -6,4 +6,91 @@
 
 \cppinline|void note(...)| \itt{note}
 
+These functions will print to the standard output the content of each of their argument, side by side without any spacing or separator, and end the current line. The only difference between the various functions listed above is that \cppinline{error()}, \cppinline{warning()} and \cppinline{note()} will append a prefix to the message, respectively \cppinline{"error: "}, \cppinline{"warning: "} and \cppinline{"note: "}. In some systems, these particular messages (including the prefix and the print arguments) may be colored to make them stand out better from the regular \cppinline{print()} output.
+
+\begin{example}
+\begin{cppcode}
+// print() is rather used for debugging purposes
+uint_t a = 5, b = 12;
+print("the program reached this location, a=", a, ", and b=", b);
+
+// The other functions are meant to inform the user of a (working)
+// program that something went wrong. If this is serious and the
+// program has to stop, use error(), else if this is recoverable or
+// if you think the user may have done something wrong, use
+// warning(). note() is there to bring complementary information to
+// a previous error() or warning(), such as suggestions on how to fix
+// the problem.
+if (!file::exist("toto.txt")) {
+    error("cannot open toto.txt");
+    note("make sure the program is run inside the data directory");
+}
+\end{cppcode}
+\end{example}
+
+If you are used to C functions like \cppinline{prinft()}, note from the example above how they behave quite differently! The \phypp functions do not work with format strings. The character \cppinline{'%'} is not special and can be used safely without escaping.
+
+\begin{advanced}
+Arguments are converted to strings using the \cppinline{std::ostream} \cppinline{operator<<}. This means that all the standard literal types and \phypp vectors can be printed, and that most other types from external C++ libraries will be printable out of the box as well. If you encounter some errors while printing a particular type, this probably means that the \cppinline{operator<<} is missing and you have to write it yourself.
+
+\begin{example}
+\begin{cppcode}
+// We want to make this structure printable
+struct test {
+    std::string name;
+    int i, j;
+};
+
+// We just need to write this function
+std::ostream& operator<< (std::ostream& o, const test& t) {
+    o << t.name << ":{i=" << i << " j=" << j << "}";
+    return o; // do not forget to always return the std::ostream!
+}
+
+// The idea is always to rely on the existence of an operator<<
+// function for the types that are contained by your structure
+// or class. In our case, std::string and int are already printable.
+// This is the standard C++ way of printing stuff, but it can be
+// annoying to use regularly because the "<<" are taking a lot of
+// screen space.
+
+// Now we can print!
+test t = {"toto", 5, 12};
+print("the value is: ", t);
+// ...prints:
+// the value is: toto:{i=5 j=12}
+\end{cppcode}
+\end{example}
+\end{advanced}
+
 \funcitem \cppinline|bool prompt(string msg, T& v, string err = "")| \itt{prompt}
+
+This function interacts with the user of the program through the standard output and input (i.e., usually the terminal). It first prints \cppinline{msg}, waits for the user to enter a value and press the Enter key, then try to load it inside \cppinline{v}. If the value entered by the user is invalid and cannot be converted into the type \cppinline{T}, the program asks again and optionally writes an error message \cppinline{err} to clarify the situation.
+
+Currently, the function can only return after successfully reading a value, and always returns \cppinline{true}. In the future, it may fail and return \cppinline{false}, for example after the user has failed a given number of times. If possible, try to keep the possibility of failure into account.
+
+\begin{example}
+\begin{cppcode}
+// Consider the following program
+uint_t age;
+if (prompt("please enter your age: ", age,
+    "it better just be an integral number...")) {
+    print("your age is: ", age);
+} else {
+    print("you will do better next time");
+}
+
+// Here is a possible interaction scenario with a naive user
+
+// please enter your age: 15.5
+// error: it better just be an integral number...
+// please enter your age: what?
+// error: it better just be an integral number...
+// please enter your age: oh I see, it is 15
+// error: it better just be an integral number...
+// please enter your age: ok...
+// error: it better just be an integral number...
+// please enter your age: 15
+// your age is: 15
+\end{cppcode}
+\end{example}

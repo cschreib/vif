@@ -258,6 +258,15 @@ a.section-link {
   font-weight: bold;
 }
 
+.advanced {
+  background-color: #F9F9FF;
+  color: #000000;
+}
+
+.advanced-title {
+  font-weight: bold;
+}
+
 .emphasis {
   font-style: italic;
 }

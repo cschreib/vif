@@ -291,6 +291,11 @@ int main(int argc, char* argv[]) {
             desc.push_back(text_line(text_line::begin, "<br><br><span class=\"example\">Example</span><br><hr>"));
         } else if (start_with(tline, "\\end{example}")) {
             desc.push_back(text_line(text_line::end, "<hr><br>"));
+        } else if (start_with(tline, "\\begin{advanced}")) {
+            desc.push_back(text_line(text_line::begin, "<br><br><span class=\"advanced-title\">Advanced</span>"
+                "<div class=\"advanced\"><hr>"));
+        } else if (start_with(tline, "\\end{advanced}")) {
+            desc.push_back(text_line(text_line::end, "<hr></div><br>"));
         } else {
             if (incode) {
                 if (!code.empty()) code += "\n";
