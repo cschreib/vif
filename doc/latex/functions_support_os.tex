@@ -1,1 +1,31 @@
 \funcitem \cppinline|string system_var(string v, string d = "")| \itt{system_var}
+
+This function looks inside the operating system environment for a variable named \cppinline{v} (using the C function \cppinline{getenv}). If this variable exists, its value is returned as a string. Else, the default value \cppinline{d} is returned (which is empty by default).
+
+Environment variables are complementary to command line arguments: they are mostly used to store system specific configurations that usually only change from one machine (or user) to another. Because they seldom change, it would be tedious to have to specify these configurations as command line arguments and provide them for each call of a given program. Instead, environment variables are set once and for all at the beginning of the user's session (on Linux this is usually done in the \texttt{.bashrc} file, or equivalent), and are read on demand by each program that needs them.
+
+By convention and for portability issues, it is recommended to specify environment variable names in full upper case (i.e., \cppinline{"PATH"} and not \cppinline{"Path"} or \cppinline{"path"}).
+
+\begin{example}
+\begin{cppcode}
+// One typical use case is to get a path to some external component
+std::string sed_library_dir = system_var("SUPERFIT_LIB_PATH");
+if (sed_library_dir.empty()) {
+    // This component is missing, try to do without or print an error
+} else {
+    // The directory has been provided, look what is inside...
+}
+
+// It can also be used to modify generic behaviors, for example
+// configure how many threads we want to use by default in all the
+// programs of a given tool suite.
+std::string nthread_str = system_var("MYTOOLS_NTHREADS", "1");
+uint_t nthread = 1;
+if (!from_string(nthread_str, nthread)) {
+    // Oops, this is not a number...
+    // Make sure to check this, as environment variables are always
+    // given as strings, hence there is no guarantee that a variable
+    // will always parse into a proper number.
+}
+\end{cppcode}
+\end{example}
