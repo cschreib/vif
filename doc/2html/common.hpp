@@ -55,6 +55,8 @@ struct context_t {
     std::string out_dir;
     std::string file_name;
     uint_t l = 0;
+
+    uint_t latex_count = 0;
 };
 
 std::string pygmentize(context_t& con, std::string lang, std::string s) {
@@ -98,14 +100,13 @@ std::string latex_math(context_t& con, std::string s) {
     std::string hsh = hash(s);
     auto iter = con.latex_cache.find(hsh);
     if (iter == con.latex_cache.end()) {
-        static uint_t count = 0;
         std::ofstream out(temporary_dir+"tmp.tex");
         out << latex_header;
         out << "\\newcommand\\formula{$" << s << "$}\n";
         out << latex_footer;
         out.close();
 
-        std::string out_file = "latex/"+con.base+"_"+strn(count)+".svg";
+        std::string out_file = "latex/"+con.base+"_"+strn(con.latex_count);
         file::remove(temporary_dir+"tmp.dvi");
         spawn("cd "+temporary_dir+"; latex -interaction batchmode tmp.tex");
         if (!file::exists(temporary_dir+"tmp.dvi")) {
@@ -116,7 +117,7 @@ std::string latex_math(context_t& con, std::string s) {
             return "$"+s+"$";
         }
 
-        spawn("dvisvgm -v 0 -S -c 1.3 -n -o "+con.out_dir+out_file+" "+
+        spawn("dvisvgm -v 0 -S -c 1.3 -n -o "+con.out_dir+out_file+"_tmp.svg "+
             temporary_dir+"tmp.dvi");
 
         std::string info = file::to_string(temporary_dir+"tmp.dat");
@@ -132,23 +133,38 @@ std::string latex_math(context_t& con, std::string s) {
         }
 
         double h = 0; {
-            std::ifstream svg(con.out_dir+out_file);
+            std::ifstream svgin(con.out_dir+out_file+"_tmp.svg");
+            std::ofstream svgout(con.out_dir+out_file+".svg");
             std::string tline;
 
             bool found = false;
-            while (std::getline(svg, tline)) {
-                tline = trim(tline);
+            while (std::getline(svgin, tline)) {
+                if (!found) {
+                    tline = replace_block(tline, "<svg height='", "'", [&](std::string ts) {
+                        ts = erase_end(ts, "pt");
+                        if (!found && from_string(ts, h)) {
+                            found = true;
+                        }
 
-                replace_block(tline, "<svg height='", "'", [&](std::string ts) {
-                    ts = erase_end(ts, "pt");
-                    if (!found && from_string(ts, h)) {
-                        found = true;
-                    }
+                        return "<svg height='"+strn(h+0.4)+"pt'";
+                    });
 
-                    return "";
-                });
+                    tline = replace_block(tline, "viewBox='", "'", [&](std::string ts) {
+                        vec1s tspl = split(ts, " ");
+                        float x = 0, y = 0;
+                        if (!from_string(tspl[1], x) ||
+                            !from_string(tspl[3], y)) {
+                            warning("reading ", con.file_name, " on l.", con.l);
+                            warning("parsing $"+s+"$");
+                            warning("could not parse SVG");
+                        }
 
-                if (found) break;
+                        return "viewBox='"+tspl[0]+" "+strn(x-0.2)+" "+tspl[2]+" "+strn(y+0.2)+"'";
+                    });
+
+                }
+
+                svgout << tline << '\n';
             }
 
             if (!found) {
@@ -156,14 +172,17 @@ std::string latex_math(context_t& con, std::string s) {
                 warning("parsing $"+s+"$");
                 warning("could not read SVG file height");
             }
+
+            file::remove(con.out_dir+out_file+"_tmp.svg");
         }
 
         double d = round(h*bd/(bh+bd));
 
         ret = "<img class=\"latex\" style=\"vertical-align: -"+strn(d)+"pt\" "
-            "src="+out_file+">";
+            "src=\""+out_file+".svg\">";
 
         con.latex_cache.insert(std::make_pair(hsh, ret));
+        ++con.latex_count;
     } else {
         ret = iter->second;
     }
