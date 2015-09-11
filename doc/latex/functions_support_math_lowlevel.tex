@@ -1,13 +1,63 @@
-\funcitem \vectorfunc \cppinline|double e10(double)| \itt{e10}
+\funcitem \vectorfunc \cppinline|T e10(T)| \itt{e10}
 
-\funcitem \vectorfunc \cppinline|T sqr(T)| \itt{sqr}
+\vectorfunc \cppinline|T sqr(T)| \itt{sqr}
 
-\funcitem \vectorfunc \cppinline|T invsqr(T)| \itt{invsqr}
+\vectorfunc \cppinline|T invsqr(T)| \itt{invsqr}
+
+These functions are just convenient shortcut for the \cppinline{pow()} function:
+\begin{itemize}
+\item \cppinline{e10(x)} computes the exponentiation in base $10$, i.e., $10^x$, and is equivalent to \cppinline{pow(10, x)},
+\item \cppinline{sqr(x)} computes the square of its argument, i.e., $x^2$, and is equivalent to \cppinline{pow(x, 2)},
+\item \cppinline{invsqr(x)} computes the inverse square of its argument, i.e., $1/x^2$, and is equivalent to \cppinline{pow(x, -2)}.
+\end{itemize}
+
+Because they are less generic, calling these functions instead of \cppinline{pow()} \emph{can} result in faster code, however any improvement should be marginal.
 
 \funcitem \vectorfunc \cppinline|T clamp(T t, mi, ma)| \itt{clamp}
 
+This function will compare its first argument against \cppinline{mi} and keep the largest value. Then, it will compare this latter value against \cppinline{ma} and return the smallest of both. In other words, the goal of this function is to make sure that a given value \cppinline{t} is bound to a specified interval \cppinline{[mi, ma]}. It is a more readable equivalent to \cppinline{min(max(t, mi), ma)}.
+
+\begin{example}
+\begin{cppcode}
+vec1d x = {0.0, -0.05, 1.0, 0.5, 0.2, 1.06, 0.95, dnan};
+// Make sure that the input values are between 0 and 1
+clamp(x, 0.0, 1.0); // {0.0,0.0,1.0,0.5,0.2,1.0,0.95,nan}
+\end{cppcode}
+\end{example}
+
 \funcitem \vectorfunc \cppinline|bool is_finite(T)| \itt{is_finite}
 
-\funcitem \vectorfunc \cppinline|bool is_nan(T)| \itt{is_nan}
+\vectorfunc \cppinline|bool is_nan(T)| \itt{is_nan}
+
+The \cppinline{is_finite()} function will check if the provided argument is a finite number. In particular, for floating point numbers, it will return \cppinline{false} if the provided argument is either positive or negative infinity, or not a number (NaN). It will always return \cppinline{true} for integer numbers.
+
+The \cppinline{is_nan()} function will only return \cppinline{true} if its argument is NaN, and is the safest way to isolate these values. Indeed, remember that NaN values have the special properties that \cppinline{x == fnan} will be \cppinline{false} even if the value of \cppinline{x} is NaN.
+
+\begin{example}
+\begin{cppcode}
+vec1f x = {0.0, 1.0, finf, -finf, fnan};
+is_finite(x); // {true,true,false,false,false}
+is_nan(x);    // {false,false,false,false,true}
+\end{cppcode}
+\end{example}
 
 \funcitem \vectorfunc \cppinline|int_t sign(T)| \itt{sign}
+
+This function will return the sign of its argument. The most convenient way to achieve this is by returning an integer whose value is \cppinline{+1} for positive (or null) numbers, and \cppinline{-1} for strictly negative numbers. This allows convenient usage of this function inside more complex mathematical expressions without having to write conditional statements.
+
+The result of calling this function on ``not a number'' values is undefined.
+
+\begin{example}
+\begin{cppcode}
+// A stupid example.
+vec1d x = {-1.0, 0.0, -1000.5, 20.0, 5.0};
+// By computing the square of 'x', we loose its sign.
+vec1d x2 = x*x;
+// Say we want to get back to 'x'
+// If we write: x2 = sqrt(x2)
+// ... the value is right, but not the sign.
+// Instead we can write:
+x2 = sign(x)*sqrt(x2);
+x2; // {-1.0,0.0,-1000.5,20.0,5.0}
+\end{cppcode}
+\end{example}
