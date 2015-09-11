@@ -1,4 +1,4 @@
-\funcitem \cppinline|vec1u rgen(T)| \itt{rgen}
+\funcitem \cppinline|vec1u rgen(T n)| \itt{rgen}
 
 \cppinline|vec<1,T> rgen(T i, j)|
 
@@ -6,11 +6,52 @@
 
 \cppinline|vec1d rgen_log(T i, j, n)| \itt{rgen_log}
 
+The \cppinline{rgen()} functions generate a sequence of numbers that increase linearly. The first version is equivalent to \cppinline{uindgen()} and will generate \cppinline{n} integer values starting from \cppinline{0} and increasing by step of \cppinline{1}. The second version generates integer values between \cppinline{i} and \cppinline{j} (inclusive) with step of \cppinline{1}. The third version generates \cppinline{n} floating point values between \cppinline{i} and \cppinline{j} (inclusive) with step \cppinline{(j-i)/(n-1.0)}.
+
+The \cppinline{rgen_log()} function does the same as the third \cppinline{rgen()} function except that the steps are logarithmic (i.e., linear in logarithmic space) so that the size of the step increases continuously.
+
+\begin{example}
+\begin{cppcode}
+rgen(5); // {0,1,2,3,4}
+rgen(1,4); // {1,2,3,4}
+rgen(1,4,8); // {1,1.5,2,2.5,3,3.5,4}
+rgen_log(1,4,8); // {1,1.219,1.486,1.811,2.208,2.692,3.281,4}
+\end{cppcode}
+\end{example}
+
 \funcitem \cppinline|vec<2,T> make_bins(T mi, ma)| \itt{make_bins}
 
 \cppinline|vec<2,T> make_bins(T mi, ma, uint_t n)|
 
-\cppinline|vec<2,T> make_bins(vec<1,T>)|
+\cppinline|vec<2,T> make_bins(vec<1,T> v)|
+
+These functions will create a ``bin vector'', i.e., a special kind of 2D vector of dimension \cppinline{[2,n]}. Such a vector contains \cppinline{n} bins, such that \cppinline{v(0,i)} and \cppinline{v(1,i)} are respectively the lower and upper bounds of the bin \cppinline{i}.
+
+The first version will create a single bin with \cppinline{mi} and \cppinline{ma} as lower and upper bound, respectively. The second version will create \cppinline{n} bins of equal size, the lower bound of the first bin being equal to \cppinline{mi} and the upper bound of the last bin being equal to \cppinline{ma}. The third and last version will create bins from a 1D vector such that \cppinline{v[i]} and \cppinline{v[i+1]} are respectively the lower and upper bounds of the bin \cppinline{i}, and assumes that \cppinline{v} is a sorted vector.
+
+\begin{example}
+\begin{cppcode}
+// Note that 2D vectors generally do not print well.
+// Here we adopt a clearer notation, such that the lower and upper
+// bounds are displayed on two lines, aligned so that the bins stand
+// out clearly.
+
+make_bins(1.0, 2.0); // {1.0}
+                     // {2.0}
+
+make_bins(1.0, 2.0, 4); // {1.0,  1.25, 1.5,  1.75}
+                        // {1.25, 1.5,  1.75, 2.0}
+
+vec1u x = {1,4,5,9,12,60,1000}; // has to be sorted
+make_bins(x);
+// {1, 4, 5, 9,  12, 60}
+// {4, 5, 9, 12, 60, 1000}
+\end{cppcode}
+\end{example}
+
+Note that by construction these three functions will only create \emph{contiguous} bin vectors, meaning that the upper bound of the bin \cppinline{i} is the lower bound of the bin \cppinline{i+1}. You can also create bin vectors manually, in which case you are free to choose non-contiguous bins. Note however that some algorithms require contiguous bin vectors, so pay attention to their respective documentation.
+
+If a bin vector is not contiguous, it is important that the upper bound of a bin is always larger than its lower bound, which is a strict requirement for most (if not all) the algorithms. However, the bins can be overlapping, or not being sorted. Again, some algorithms may tolerate this, and some others may not.
 
 \funcitem \vectorfunc \cppinline|bool in_bin(T v, vec<1,U> b)| \itt{in_bin}
 
@@ -18,8 +59,51 @@
 
 \vectorfunc \cppinline|bool in_bin_open(T v, vec<2,U> b, uint_t ib)| \itt{in_bin_open}
 
+These functions check if the provided argument lies within a given bin.
+
+The first version of \cppinline{in_bin()} expects the bin to be given as a 1D vector with two elements, such that the first element is the lower bound of the bin and the second element is the upper bound of the bin. Such a vector is created simply by accessing a bin vector (see \cppinline{make_bins()}) like \cppinline{v(_,i)}.
+
+The second version as well as \cppinline{in_bin_open()} expect the bin to be specified by providing a whole bin vector and the index of the bin. These versions are faster, safer and will provide clearer error messages, but they are maybe a little less straightforward to use. There is no requirement on the bin vector, which can be non-contiguous, overlapping and/or non-sorted, however \cppinline{in_bin_open()} only makes sense for contiguous bins.
+
+The difference between \cppinline{in_bin()} and \cppinline{in_bin_open()} is that the latter will treat the first and the last bins in a specific way. For the first (respectively last) bin, any value that is below (above) the upper (lower) bound will count as being inside the bin.
+
+\begin{example}
+\begin{cppcode}
+// First create a bin vector
+vec2d b = make_bins(1.0, 2.0, 4);
+// {1.0,  1.25, 1.5,  1.75}
+// {1.25, 1.5,  1.75, 2.0}
+
+in_bin(1.2, b(_,0)); // true
+in_bin(1.2, b(_,1)); // false
+in_bin(1.2, b, 0);   // true
+in_bin(1.2, b, 1);   // false
+
+in_bin(3.0,  b, 3);      // false
+in_bin(-1.0, b, 0);      // false
+in_bin_open(3.0,  b, 3); // true
+in_bin_open(-1.0, b, 0); // true
+\end{cppcode}
+\end{example}
+
 \funcitem \cppinline|vec<1,T> bin_center(vec<2,T>)| \itt{bin_center}
+
 \cppinline|T bin_center(vec<1,T>)|
 
-\funcitem \cppinline|vec<1,T> bin_width(vec<2,T>)| \itt{bin_width}
+\cppinline|vec<1,T> bin_width(vec<2,T>)| \itt{bin_width}
+
 \cppinline|T bin_width(vec<1,T>)|
+
+The function \cppinline{bin_center()} computes the center of each bin inside a bin vector, i.e., the value that is halfway between the lower and upper bound. The function \cppinline{bin_width()} computes the width (or size) of each bin, i.e., the distance between the upper and lower bounds. Both functions work for any bin vector.
+
+\begin{example}
+\begin{cppcode}
+// First create a bin vector
+vec2d b = make_bins(1.0, 2.0, 4);
+// {1.0,  1.25, 1.5,  1.75}
+// {1.25, 1.5,  1.75, 2.0}
+
+bin_center(b); // {1.125, 1.375, 1.625, 1.875}
+bin_width(b); // {0.25, 0.25, 0.25, 0.25}
+\end{cppcode}
+\end{example}
