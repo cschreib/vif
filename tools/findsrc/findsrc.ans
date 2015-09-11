@@ -1,0 +1,13 @@
+hmenu phy++
+
+# Get regions around the selected point
+param findreg
+catalog menu   Catalog gn|gs|uds|cosmos|cosmos2d
+regtxt  entry  Text
+nsrc    entry  Number  10
+end
+
+Find neighbors
+*.fits
+menu
+$param(findreg); findsrc /home/cschreib/programming/phypp/data/fits/$catalog/$catalog_cmp.fits $regions(source,xy,wcs,fk5,degrees) region=/tmp/ds9.reg show=[$regtxt] region_text=[$regtxt] nsrc=$nsrc | $text
