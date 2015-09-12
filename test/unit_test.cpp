@@ -556,10 +556,10 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("'run_dim' function");
+        print("'reduce' function");
         vec2i v = {{1,2,3},{4,5,6}};
         vec1d mv = partial_mean(0, v);
-        vec1d tmv = run_dim(v, 0, [](const vec1d& d) { return mean(d); });
+        vec1d tmv = reduce(0, v, [](vec1d d) { return mean(d); });
         check(total(mv != tmv), "0");
     }
 

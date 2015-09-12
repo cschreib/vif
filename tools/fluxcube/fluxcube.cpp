@@ -350,7 +350,7 @@ struct logdisp_extractor {
         med.resize(cube.dims[1], cube.dims[2]);
         dsp.resize(cube.dims[1], cube.dims[2]);
 
-        run_dim_idx(cube, 0, [&](uint_t i, vec1d& d) {
+        run_dim(0, cube, [&](uint_t i, vec1d& d) {
             med[i] = inplace_median(d);
             for (uint_t j : range(d)) {
                 d[j] = fabs(d[j] - med[i]);
