@@ -839,7 +839,7 @@ double stddev(const vec<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
-double mad(const vec<Dim,Type>& v) {
+rtype_t<Type> mad(const vec<Dim,Type>& v) {
     return median(fabs(v - median(v)));
 }
 
