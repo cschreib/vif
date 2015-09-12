@@ -462,7 +462,7 @@ int main(int argc, char* argv[]) {
         print("File system functions");
         check(file::exists("unit_test.cpp"), "1");
         check(file::exists("unit_test_not_gonna_work.cpp"), "0");
-        vec1s dlist = file::list_directories("../");
+        vec1s dlist = file::list_directories("../*");
         print(dlist);
         check(where(dlist == "bin").empty(), "0");
         vec1s flist = file::list_files();
