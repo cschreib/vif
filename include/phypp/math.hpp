@@ -436,13 +436,13 @@ vec<Dim-1,typename return_type<F>::type> {
 //      ((u/mpitch)*dim[d] + i)*mpitch + (u%mpitch)
 
     vec<1,rtype_t<Type>> tmp(v.dims[dim]);
-    for (uint_t i = 0; i < r.size(); ++i) {
+    for (uint_t i : range(r)) {
         uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
-        for (uint_t j = 0; j < v.dims[dim]; ++j) {
-            tmp[j] = v.safe[base + j*mpitch];
+        for (uint_t j : range(tmp)) {
+            tmp.safe[j] = v.safe[base + j*mpitch];
         }
 
-        r[i] = (*f)(tmp, args...);
+        r.safe[i] = (*f)(tmp, args...);
     }
 
     return r;
@@ -980,7 +980,7 @@ void histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
             vec1u tids(npts);
             uint_t k0 = i0 - ids.data.begin();
             for (uint_t k : range(npts)) {
-                tids[k] = ids[k0 + k];
+                tids.safe[k] = ids.safe[k0 + k];
             }
 
             func(i, j, std::move(tids));
