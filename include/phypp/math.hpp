@@ -448,42 +448,20 @@ vec<Dim-1,typename return_type<F>::type> {
     return r;
 }
 
-// Iterate over one dimension of the provided vector and call a function for each slice.
-// Note: the slice provided to the function is mutable. It is allowed to modify its elements or
-// swap them, but the slice should never be resized. No check will be performed.
-template<typename F, std::size_t Dim, typename Type>
-void run_dim_idx(const vec<Dim,Type>& v, uint_t dim, F&& func) {
-    uint_t nint = v.dims[dim];
-    uint_t np = v.size()/nint;
-    uint_t mpitch = 1;
-    for (uint_t i = dim+1; i < Dim; ++i) {
-        mpitch *= v.dims[i];
-    }
-
-    vec<1,rtype_t<Type>> tmp(nint);
-    for (uint_t i = 0; i < np; ++i) {
-        uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
-        for (uint_t j = 0; j < nint; ++j) {
-            tmp[j] = v.safe[base + j*mpitch];
-        }
-
-        func(i, tmp);
-    }
-}
-
 template<std::size_t Dim, typename Type>
-vec<1,rtype_t<Type>> run_dim_idx_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v) {
+vec<1,rtype_t<Type>> run_dim_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v) {
     return v.safe[ids].concretise();
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-std::array<uint_t,Dim> run_dim_idx_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
+std::array<uint_t,Dim> run_dim_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
+    // TODO: add a check here to make sure that all the other dims are the same
     return v.dims;
 }
 
 template<typename F, typename ... Args>
-void run_dim_idx(uint_t dim, F&& func, const Args& ... vs) {
-    auto ds = run_dim_idx_get_dim_(vs...);
+void run_dim_final_(uint_t dim, F&& func, const Args& ... vs) {
+    auto ds = run_dim_get_dim_(vs...);
     const uint_t N = array_size<decltype(ds)>::size;
 
     uint_t nint = ds[dim];
@@ -495,18 +473,38 @@ void run_dim_idx(uint_t dim, F&& func, const Args& ... vs) {
     }
 
     vec1u ids(nint);
-    for (uint_t i = 0; i < np; ++i) {
+    for (uint_t i : range(np)) {
         uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
-        for (uint_t j = 0; j < nint; ++j) {
-            ids[j] = base + j*mpitch;
+        for (uint_t j : range(ids)) {
+            ids.safe[j] = base + j*mpitch;
         }
 
-        func(i, run_dim_idx_apply_ids_<N>(ids, vs)...);
+        func(i, run_dim_apply_ids_<N>(ids, vs)...);
     }
 }
 
+template<typename ... Args1>
+struct run_dim_unroll_ {
+    template<typename T>
+    static void run(uint_t dim, Args1&&... a1, placeholder_t, T&& t) {
+        run_dim_final_(dim, std::forward<T>(t), std::forward<Args1>(a1)...);
+    }
+
+    template<typename T, typename ... Args2>
+    static void run(uint_t dim, Args1&&... a1, placeholder_t, T&& t, Args2&&... a2) {
+        run_dim_unroll_<Args1..., T>::run(dim, std::forward<Args1>(a1)...,
+            std::forward<T>(t), _, std::forward<Args2>(a2)...);
+    }
+};
+
+// Iterate over one dimension of the provided vector and call a function for each slice.
+template<typename ... Args>
+void run_dim(uint_t dim, Args&& ... args) {
+    run_dim_unroll_<>::run(dim, _, std::forward<Args>(args)...);
+}
+
 template<typename F, std::size_t Dim, typename Type>
-auto run_dim(const vec<Dim,Type>& v, uint_t dim, F&& func) ->
+auto reduce(uint_t dim, const vec<Dim,Type>& v, F&& func) ->
     vec<Dim-1,typename return_type<F>::type> {
 
     vec<Dim-1,typename return_type<F>::type> r;
@@ -519,8 +517,8 @@ auto run_dim(const vec<Dim,Type>& v, uint_t dim, F&& func) ->
 
     r.resize();
 
-    run_dim_idx(v, dim, [&](uint_t i, vec<1, rtype_t<Type>>& tv) {
-        r[i] = func(tv);
+    run_dim(dim, v, [&](uint_t i, vec<1,rtype_t<Type>> tv) {
+        r.safe[i] = func(std::move(tv));
     });
 
     return r;
