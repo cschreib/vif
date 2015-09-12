@@ -946,7 +946,6 @@ void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
 
     uint_t nxbin = xbins.dims[1];
     uint_t nybin = ybins.dims[1];
-    vec2u counts(nxbin, nybin);
 
     auto firstx = ids.data.begin();
     for (uint_t i : range(nxbin)) {
@@ -969,8 +968,6 @@ void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
         if (lastx == ids.data.end()) break;
         firstx = lastx;
     }
-
-    return counts;
 }
 
 template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX, typename TypeBY>
