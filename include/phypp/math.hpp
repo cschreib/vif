@@ -667,27 +667,11 @@ typename vec<1,Type>::effective_type percentiles(const vec<Dim,Type>& v, const A
 }
 
 template<std::size_t Dim, typename Type>
-vec<Dim,bool> sigma_clip(const vec<Dim,Type>& v, double percl = 0.15, double percu = fnan) {
-    if (percl > 0.5) percl = 1.0 - percl;
-    if (percl < 0.0) percl = 0.0;
-
-    if (!is_finite(percu)) {
-        percu = 1 - percl;
-    } else {
-        if (percu < 0.5) percu = 1.0 - percu;
-        if (percu > 1.0) percu = 1.0;
-        if (percu < percl) std::swap(percu, percl);
-    }
-
-    auto p = percentiles(v, percl, percu);
-    return v > p.safe[0] && v < p.safe[1];
-}
-
-template<std::size_t Dim, typename Type>
-vec<Dim,bool> mad_clip(const vec<Dim,Type>& tv, double sigma) {
+vec<Dim,bool> sigma_clip(const vec<Dim,Type>& tv, double sigma) {
     auto v = tv.concretise();
     auto med = inplace_median(v);
     auto mad = median(fabs(v - med));
+    // Note: cannot use 'v' below, since the order of the values has changed!
     return fabs(tv - med) < sigma*mad;
 }
 
