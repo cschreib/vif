@@ -107,9 +107,9 @@ vec<2,T> make_bins(T mi, T ma) {
 }
 
 template<typename T>
-vec<2,T> make_bins(T mi, T ma, uint_t n) {
-    vec<2,T> b(2,n);
-    T d = (ma - mi)/n;
+vec2d make_bins(T mi, T ma, uint_t n) {
+    vec2d b(2,n);
+    double d = (ma - mi)/double(n);
     for (uint_t i : range(n)) {
         b.safe(0,i) = mi + i*d;
         b.safe(1,i) = mi + (i+1)*d;
