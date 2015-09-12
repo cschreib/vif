@@ -341,6 +341,16 @@ auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) ->
 }
 
 template<typename T, typename TypeX, typename TypeY, typename ... Args>
+rtype_t<TypeX> random_pdf(T& seed, const vec<1,TypeX>& px, const vec<1,TypeY>& py) {
+    // TODO: make an alternative version for integers using std::discrete_distribution.
+
+    using rtype = rtype_t<TypeX>;
+    vec<dim_total<Args...>::value,rtype> v(std::forward<Args>(args)...);
+    std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
+    return distribution(seed);
+}
+
+template<typename T, typename TypeX, typename TypeY, typename ... Args>
 vec<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec<1,TypeX>& px,
     const vec<1,TypeY>& py, Args&& ... args) {
 
