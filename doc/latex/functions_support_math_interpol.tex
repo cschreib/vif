@@ -1,11 +1,122 @@
-\funcitem \cppinline|double interpolate(double y1, y2, x1, x2, x)| \itt{interpolate}
+\funcitem \cppinline|double interpolate(double y1, y2, x1, x2, nx)| \itt{interpolate}
 
 \cppinline|T interpolate(vec<D,T> y, vec<D,U> x, V nx)|
 
 \cppinline|vec<D2,T> interpolate(vec<D1,T> y, vec<D1,U> x, vec<D2,V> nx)|
 
+The first \cppinline{interpolate()} function performs a linear interpolation between the points \cppinline{(x1,y1)} and \cppinline{(x2,y2)} at the position \cppinline{nx}. The only requirement is that \cppinline{x1 < x2}. If \cppinline{nx} is lower than \cppinline{x1} or larger than \cppinline{x2}, then the function performs an extrapolation following the same linear trend. This is a low-level function, most code will in fact use the other two functions described below.
+
+The second and third \cppinline{interpolate()} functions perform a linear interpolation of the data \cppinline{(x,y)} at the position(s) \cppinline{nx}. The only difference between the second and the third functions is that the second function takes a single value for \cppinline{nx} and therefore also returns a single interpolated value, while the third function works with multiple \cppinline{nx} values and also returns an array.
+
+The requirements for these functions to work properly is that the vector \cppinline{x} is \emph{sorted}. This is very important, as no check is done at runtime to ensure that this requirement is fulfilled (making this check is computationally expensive). The result of calling \cppinline{interpolate()} with a non-sorted \cppinline{x} vector is unspecified and will likely result in incorrect return values. The vector \cppinline{nx}, however, does not need to be sorted.
+
+Another requirement is that \cppinline{nx} and \cppinline{x} are always finite numbers, else the behavior of the function is non specified. The \cppinline{y} array can have non-finite values (either infinities or NaN), in which case the return value can also be non-finite.
+
+Lastly, if some values in \cppinline{nx} are smaller than \cppinline{min(x)} or larger than \cppinline{max(x)}, these functions will perform a linear extrapolation using the first or last two data points (respectively).
+
+\begin{example}
+\begin{cppcode}
+// One interesting use case for interpolation is to pre-compute
+// computationally expensive functions at a limited number of
+// positions, and estimate other positions by interpolation.
+// If the function is well sampled, the error that is made will
+// be small and the performances will improve tremendously.
+
+// Pre-compute some values
+vec1d x = dindgen(1000)/100.0;
+vec1d y = cos(dpi*(1/(1 + x*x) - exp(-1/(x*x))));
+// That is very complex...
+
+// Now we can estimate the value of this expression for any other
+// position using interpolate().
+vec1d nx = {5.5, 12.05, 0.2, 0.7, 1};
+vec1d ny = interpolate(y, x, nx);
+
+// The result (and exact values below)
+ny; // {-0.979529, -0.99965, -0.992709, -0.12913, 0.915089}
+    // {-0.979529, -0.99907, -0.992709, -0.12913, 0.915089}
+
+// Not too far, huh?
+// Note that the only value that is a bit wrong (the second one)
+// is in fact an extrapolation.
+
+// This trick is used internally in phy++ for some expensive
+// functions, for example lumdist().
+\end{cppcode}
+\end{example}
+
 \funcitem \cppinline|T bilinear(vec<2,T> m, double x, y)| \itt{bilinear}
+
+\cppinline|T bilinear_strict(vec<2,T> m, double x, y, T d = 0)| \itt{bilinear}
+
+Both \cppinline{bilinear()} and \cppinline{bilinear_strict()} functions perform a bilinear interpolation of the 2D map \cppinline{m} at the positions \cppinline{x} and \cppinline{y}. Choosing \cppinline{x=i} and \cppinline{y=j}, with \cppinline{i} and \cppinline{j} integers, makes the function return the value \cppinline{m(i,j)}. Any floating point value will actually interpolate between the values of \cppinline{m}.
+
+The difference between the two functions arises when either \cppinline{x} or \cppinline{y} reach out of the boundaries of \cppinline{m}, i.e., are either negative or larger than \cppinline{m.dims[0]-1} or \cppinline{m.dims[1]-1} (respectively), in which case an extrapolation would be required. The \cppinline{bilinear()} function will do the extrapolation, whereas \cppinline{bilinear_strict()} will not and will instead return the default value \cppinline{d}.
+
+\begin{example}
+\begin{cppcode}
+// Bilinear interpolation is typically used to get a sub-pixel
+// value in an image
+vec2d img = {
+    {0, 0, 0, 0, 0},
+    {0, 0, 1, 4, 0},
+    {0, 1, 2, 3, 2},
+    {0, 0, 1, 2, 0},
+    {0, 0, 0, 0, 0}
+};
+
+bilinear(img, 2.2, 1.405); // 1.205
+// The above value is somewhere in between the values of
+// img[2,1], img[3,1], img[2,2] and img[3,2], i.e.,
+//
+//  {0, 0, 0, 0, 0},
+//  {0, 0, 1, 4, 0},
+//          *          somewhere around the '*'
+//  {0, 1, 2, 3, 2},
+//  {0, 0, 1, 2, 0},
+//  {0, 0, 0, 0, 0}
+//
+// In a way, one could say that this value is equivalent to
+// "img[2.2, 1.405]", even though this is invalid code.
+\end{cppcode}
+\end{example}
 
 \funcitem \cppinline|vec<2,T> rebin(vec<2,T> m, vec1d mx, my, nx, ny)| \itt{rebin}
 
-\funcitem \cppinline|void merge_add(vec<1,T> x1, x2, y1, y2, x, y)| \itt{merge_add}
+This function will resample (or rebin) the map \cppinline{m}, assuming that the previous pixel coordinates were bound to the values \cppinline{mx} and \cppinline{my} (i.e., \cppinline{m(i,j)} is the value at the ``real'' position \cppinline{(mx[i], my[j])}) and that the new pixel coordinates will be bound to the values \cppinline{nx} and \cppinline{ny}.
+
+The algorithm will perform a linear interpolation if sub-pixel values are requested. Also, depending on the chosen values of \cppinline{nx} and \cppinline{ny}, some extrapolation may occur.
+
+\begin{example}
+\begin{cppcode}
+// We have this images which gives the amplitude of some signal on
+// each point of the grid defined by 'x' and 'y'
+vec2d img = {
+    {0, 0, 0, 0, 0},
+    {0, 0, 1, 4, 0},
+    {0, 1, 2, 3, 2},
+    {0, 0, 1, 2, 0},
+    {0, 0, 0, 0, 0}
+};
+vec1d x = {10,20,30,40,50};
+vec1d y = {20,25,30,35,40};
+
+// We now want to resample this map to cover only the range
+// x=[15,35] and y=[27,32] with another sampling
+
+// We first define the new grid
+vec1d nx = {15,20,25,30,35};
+vec1d ny = {27,28,29,30,31,32};
+
+// And we can get the new map with rebin()
+vec2d nimg = rebin(img, x, y, nx, ny);
+
+// The result is essentially a "zoom in" on the central region
+// of 'img':
+// {0.2, 0.3, 0.4, 0.5, 0.8, 1.1}
+// {0.4, 0.6, 0.8, 1.0, 1.6, 2.2}
+// {0.9, 1.1, 1.3, 1.5, 1.9, 2.3}
+// {1.4, 1.6, 1.8, 2.0, 2.2, 2.4}
+// {0.9, 1.1, 1.3, 1.5, 1.7, 1.9}
+\end{cppcode}
+\end{example}

@@ -1930,6 +1930,8 @@ vec<2,rtype_t<Type>> rebin(const vec<2,Type>& map, const vec1d& mx,
     return v;
 }
 
+// TODO: move this function back into gencat.cpp, it is too specific and will
+// likely not be used for anything else
 template<typename TX1, typename TX2, typename TY1, typename TY2, typename TX, typename TY>
 void merge_add(const vec<1,TX1>& x1, const vec<1,TX2>& x2,
     const vec<1,TY1>& y1, const vec<1,TY2>& y2,
