@@ -1204,7 +1204,7 @@ bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
         }
     } else {
         if (spl[1] == "range") {
-            if (spl.size() != 4) {
+            if (spl.size() != 4) {
                 error("get_filter: 'range' filter needs 4 arguments (name, 'range', "
                     "lambda_min, lambda_max)");
                 note("got: ", str);
