@@ -156,16 +156,29 @@ int main(int argc, char* argv[]) {
     }
 
     vec1s tsplit;
-    vec1s exclude, include;
+    vec1s exclude, include, rename;
     std::string ids_file;
     bool verbose = false;
 
     read_args(argc-2, argv+2, arg_list(name(tsplit, "split"), exclude, include,
-        name(ids_file, "ids"), verbose));
+        rename, name(ids_file, "ids"), verbose));
 
     std::string in_file = argv[1];
     std::string out_file = argv[2];
     auto cols = fits::read_table_columns(in_file);
+
+    vec1s rename_from, rename_to;
+    for (auto& n : rename) {
+        vec1s spl = split(n, ":");
+        if (spl.size() != 2) {
+            error("wrong format for renaming '", n, "'");
+            note("expected '<old name>:<new name>'");
+            return 1;
+        }
+
+        rename_from.push_back(trim(spl[0]));
+        rename_to.push_back(trim(spl[1]));
+    }
 
     uint_t nsplit = tsplit.size();
     vec1s split_cols(nsplit);
@@ -263,8 +276,16 @@ int main(int argc, char* argv[]) {
             if (next == do_next::skip) continue;
             if (next == do_next::abort) return 1;
 
+            std::string name;
+            vec1u idr = where(rename_from == c.name);
+            if (!idr.empty()) {
+                name = rename_to[idr.back()];
+            } else {
+                name = c.name;
+            }
+
             out_cols.push_back(v);
-            names.push_back(tolower(c.name));
+            names.push_back(tolower(name));
             types.push_back("["+type+"]");
         } else if (c.dims.size() == 2) {
             vec1u i2c = where(split_cols == c.name);
