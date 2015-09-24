@@ -1036,8 +1036,9 @@ double lir_8_1000(const TL& lam, const TS& sed) {
     return sed_luminosity(lam, sed, 8.0, 1000.0);
 }
 
+template <typename T>
 bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
-    const std::string& psf_model, vec2d& psf) {
+    const std::string& psf_model, vec<2,T>& psf) {
 
     vec1s params = trim(split(psf_model, ","));
     if (params[0] == "gaussian") {
