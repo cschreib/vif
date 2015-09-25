@@ -197,7 +197,6 @@ T vuniverse(const T& z, const cosmo_t& cosmo) {
             auto mi = min(z[idz]); \
             auto ma = max(z[idz]); \
             auto tz = e10(rgen(log10(mi), log10(ma), npt)); \
-            prepend(tz, {0.0}); \
             using rtype = rtype_t<Type>; \
             vec<1,rtype> td = arr<rtype>(tz.dims); \
             for (uint_t i : range(tz)) { \
@@ -1037,8 +1036,9 @@ double lir_8_1000(const TL& lam, const TS& sed) {
     return sed_luminosity(lam, sed, 8.0, 1000.0);
 }
 
+template <typename T>
 bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
-    const std::string& psf_model, vec2d& psf) {
+    const std::string& psf_model, vec<2,T>& psf) {
 
     vec1s params = trim(split(psf_model, ","));
     if (params[0] == "gaussian") {
@@ -1205,7 +1205,7 @@ bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
         }
     } else {
         if (spl[1] == "range") {
-            if (spl.size() != 4) {
+            if (spl.size() != 4) {
                 error("get_filter: 'range' filter needs 4 arguments (name, 'range', "
                     "lambda_min, lambda_max)");
                 note("got: ", str);
