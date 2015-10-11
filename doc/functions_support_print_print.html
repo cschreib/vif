@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_07_print.html">Printing to the terminal</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">print</span><span class="p">(...)</span>
 </pre></div></td></tr>
@@ -30,6 +35,71 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+These functions will print to the standard output the content of each of their argument, side by side without any spacing or separator, and end the current line. The only difference between the various functions listed above is that <div class="highlight-inline"><pre><span class="n">error</span><span class="p">()</span></pre></div>, <div class="highlight-inline"><pre><span class="n">warning</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span class="n">note</span><span class="p">()</span></pre></div> will append a prefix to the message, respectively <div class="highlight-inline"><pre><span class="s">&quot;error: &quot;</span></pre></div>, <div class="highlight-inline"><pre><span class="s">&quot;warning: &quot;</span></pre></div> and <div class="highlight-inline"><pre><span class="s">&quot;note: &quot;</span></pre></div>. In some systems, these particular messages (including the prefix and the print arguments) may be colored to make them stand out better from the regular <div class="highlight-inline"><pre><span class="n">print</span><span class="p">()</span></pre></div> output.
+<br><br>
+<div class="highlight-inline"><pre><span class="n">print</span><span class="p">()</span></pre></div> is rather used for debugging purposes:
+<div class="highlight"><pre><span class="kt">uint_t</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
+<span class="n">vec1u</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">10</span><span class="p">};</span>
+<span class="c1">// Most likely, this line of code below will disappear once we are</span>
+<span class="c1">// sure the program is working properly</span>
+<span class="n">print</span><span class="p">(</span><span class="s">&quot;the program reached this location, a=&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;, and x=&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+</pre></div>
+The above code will simply display:
+<div class="highlight"><pre>the program reached this location, <span class="nv">a</span><span class="o">=</span>5, and <span class="nv">x</span><span class="o">={</span>1,2,3,4,9,10<span class="o">}</span>
+</pre></div>
+The other functions are much more important, as they are meant to talk to the <span class="emphasis">user</span> of a program, for example to tell him/her that something went wrong. If this is a serious error and the program has to stop, use <div class="highlight-inline"><pre><span class="n">error</span><span class="p">()</span></pre></div>. This could indicate an error from the user of the program (i.e., wrong input), or from the person who wrote the code (i.e., &ldquo;the program should never go there, I'll just make it an explicit error just in case&rdquo;. This is good practice!). Else if this is a recoverable error or simply a potential problem (maybe important, maybe not), use <div class="highlight-inline"><pre><span class="n">warning</span><span class="p">()</span></pre></div> (i.e., the user has specified two program arguments that are incompatible, one making the other useless). <div class="highlight-inline"><pre><span class="n">note</span><span class="p">()</span></pre></div> is there to bring complementary information to a previous <div class="highlight-inline"><pre><span class="n">error</span><span class="p">()</span></pre></div> or <div class="highlight-inline"><pre><span class="n">warning</span><span class="p">()</span></pre></div>, such as suggestions on how to fix the problem or more detail on where/why the error occurred. Alternatively, it can also be used to inform the user of the progress of a program (in this case, a good practice is to only enable these messages if the user asks for a &ldquo;verbose&rdquo; output).
+<div class="highlight"><pre><span class="kt">bool</span> <span class="n">verbose</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span> <span class="c1">// let the user enable this only if needed</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">datafile</span> <span class="o">=</span> <span class="s">&quot;toto.txt&quot;</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">file</span><span class="o">::</span><span class="n">exist</span><span class="p">(</span><span class="n">datafile</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">error</span><span class="p">(</span><span class="s">&quot;cannot open &#39;&quot;</span><span class="p">,</span> <span class="n">datafile</span><span class="p">,</span> <span class="s">&quot;&#39;&quot;</span><span class="p">);</span>
+    <span class="n">note</span><span class="p">(</span><span class="s">&quot;make sure the program is run inside the data directory&quot;</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">// typically, exit the program</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">note</span><span class="p">(</span><span class="s">&quot;analysing the data, please wait...&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Do the stuff...</span>
+</pre></div>
+The above code, if the file does not exist, will display:
+<div class="highlight"><pre>error: cannot open <span class="s1">&#39;toto.txt&#39;</span>
+note: make sure the program is run inside the data directory
+</pre></div>
+A few words about formatting. First, since the text is meant to be sent to a simple terminal window, there are very few options to affect the look and feel of the output. Each character will be printed as it is. There is no option for boldface or color (that may come in the future though, but it will always be fairly limited). The only thing you can actually control is when to start a new line. This is done with the special character <div class="highlight-inline"><pre><span class="sc">&#39;\n&#39;</span></pre></div>, and such a line break is always made at the end of each printed message. If you need a finer control, you will have to come back to the standard C++ functions for output (i.e., <div class="highlight-inline"><pre><span class="n">std</span><span class="o">::</span><span class="n">cout</span></pre></div> and the likes).
+<br><br>
+Second, if you are used to C functions like <div class="highlight-inline"><pre><span class="n">prinft</span><span class="p">()</span></pre></div>, note from the examples above how they behave quite differently! The <i>phy</i><sub>++</sub> functions do not work with format strings, hence the character <div class="highlight-inline"><pre><span class="sc">&#39;%&#39;</span></pre></div> is not special and can be used safely without escaping. One can print a value that is not a string (see the &ldquo;Advanced&rdquo; section below for more details) simply by adding it to the list of the function arguments, which will result in automatic conversion to string. However, the way this conversion is made is not customizable. Integers will always be displayed in base <img class="latex" style="vertical-align: -0pt" src="latex/functions_support_print_0.svg"> (i.e., no hexadecimal or binary format), and floating point numbers will always have a maximum number of digits that depends on the numerical precision. If a fancier output is desired, the conversion to string can always be done manually and the resulting string can then be fed to the print function.
+<br><br><span class="advanced-title">Advanced</span><div class="advanced"><hr>
+Non-string arguments are internally converted to strings using the <div class="highlight-inline"><pre><span class="n">std</span><span class="o">::</span><span class="n">ostream</span></pre></div> <div class="highlight-inline"><pre><span class="k">operator</span><span class="o">&lt;&lt;</span></pre></div>. This means that all the standard literal types and <i>phy</i><sub>++</sub> vectors can be printed, and that most other types from external C++ libraries will be printable out of the box as well. If you encounter some errors while printing a particular type, this probably means that the <div class="highlight-inline"><pre><span class="k">operator</span><span class="o">&lt;&lt;</span></pre></div> is missing and you have to write it yourself.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// We want to make this structure printable</span>
+<span class="k">struct</span> <span class="n">test</span> <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">name</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// We just need to write this function</span>
+<span class="n">std</span><span class="o">::</span><span class="n">ostream</span><span class="o">&amp;</span> <span class="k">operator</span><span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">ostream</span><span class="o">&amp;</span> <span class="n">o</span><span class="p">,</span> <span class="k">const</span> <span class="n">test</span><span class="o">&amp;</span> <span class="n">t</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">o</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="p">.</span><span class="n">name</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;:{i=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; j=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;}&quot;</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">o</span><span class="p">;</span> <span class="c1">// do not forget to always return the std::ostream!</span>
+<span class="p">}</span>
+
+<span class="c1">// The idea is always to rely on the existence of an operator&lt;&lt;</span>
+<span class="c1">// function for the types that are contained by your structure</span>
+<span class="c1">// or class. In our case, std::string and int are already printable.</span>
+<span class="c1">// This is the standard C++ way of printing stuff, but it can be</span>
+<span class="c1">// annoying to use regularly because the &quot;&lt;&lt;&quot; are taking a lot of</span>
+<span class="c1">// screen space.</span>
+
+<span class="c1">// Now we can print!</span>
+<span class="n">test</span> <span class="n">t</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;toto&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">12</span><span class="p">};</span>
+<span class="n">print</span><span class="p">(</span><span class="s">&quot;the value is: &quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">);</span>
+<span class="c1">// ...prints:</span>
+<span class="c1">// the value is: toto:{i=5 j=12}</span>
+</pre></div>
+<hr><br>
+<hr></div><br>
 </div>
 </div>
   </div>

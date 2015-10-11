@@ -17,13 +17,34 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_lowlevel">Low level mathematics</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">int_t</span> <span class="n">sign</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">int_t</span> <span class="n">sign</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+This function will return the sign of its argument. The most convenient way to achieve this is by returning an integer whose value is <div class="highlight-inline"><pre><span class="o">+</span><span class="mi">1</span></pre></div> for positive (or null) numbers, and <div class="highlight-inline"><pre><span class="o">-</span><span class="mi">1</span></pre></div> for strictly negative numbers. This allows convenient usage of this function inside more complex mathematical expressions without having to write conditional statements.
+<br><br>
+The result of calling this function on &ldquo;not a number&rdquo; values is undefined.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// A stupid example.</span>
+<span class="n">vec1d</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1000.5</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">};</span>
+<span class="c1">// By computing the square of &#39;x&#39;, we loose its sign.</span>
+<span class="n">vec1d</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">;</span>
+<span class="c1">// Say we want to get back to &#39;x&#39;</span>
+<span class="c1">// If we write: x2 = sqrt(x2)</span>
+<span class="c1">// ... the value is right, but not the sign.</span>
+<span class="c1">// Instead we can write:</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">sign</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x2</span><span class="p">);</span>
+<span class="n">x2</span><span class="p">;</span> <span class="c1">// {-1.0,0.0,-1000.5,20.0,5.0}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

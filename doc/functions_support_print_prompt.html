@@ -17,13 +17,44 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_07_print.html">Printing to the terminal</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">prompt</span><span class="p">(</span><span class="n">string</span> <span class="n">msg</span><span class="p">,</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">v</span><span class="p">,</span> <span class="n">string</span> <span class="n">err</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+This function interacts with the user of the program through the standard output and input (i.e., usually the terminal). It first prints <div class="highlight-inline"><pre><span class="n">msg</span></pre></div>, waits for the user to enter a value and press the Enter key, then try to load it inside <div class="highlight-inline"><pre><span class="n">v</span></pre></div>. If the value entered by the user is invalid and cannot be converted into the type <div class="highlight-inline"><pre><span class="n">T</span></pre></div>, the program asks again and optionally writes an error message <div class="highlight-inline"><pre><span class="n">err</span></pre></div> to clarify the situation.
+<br><br>
+Currently, the function can only return after successfully reading a value, and always returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>. In the future, it may fail and return <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>, for example after the user has failed a given number of times. If possible, try to keep the possibility of failure into account.
+<br><br><span class="example">Example</span><br><hr>
+Consider the following program.
+<div class="highlight"><pre><span class="kt">uint_t</span> <span class="n">age</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">prompt</span><span class="p">(</span><span class="s">&quot;please enter your age: &quot;</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span>
+    <span class="s">&quot;it better just be an integral number...&quot;</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s">&quot;your age is: &quot;</span><span class="p">,</span> <span class="n">age</span><span class="p">);</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">print</span><span class="p">(</span><span class="s">&quot;you will do better next time&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+Here is a possible interaction scenario with a naive user:
+<div class="highlight"><pre>please enter your age: 15.5
+error: it better just be an integral number...
+please enter your age: what?
+error: it better just be an integral number...
+please enter your age: oh I see, it is 15
+error: it better just be an integral number...
+please enter your age: ok...
+error: it better just be an integral number...
+please enter your age: 15
+your age is: 15
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

@@ -17,13 +17,29 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_lowlevel">Low level mathematics</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">is_finite</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">is_nan</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+The <div class="highlight-inline"><pre><span class="n">is_finite</span><span class="p">()</span></pre></div> function will check if the provided argument is a finite number. In particular, for floating point numbers, it will return <div class="highlight-inline"><pre><span class="nb">false</span></pre></div> if the provided argument is either positive or negative infinity, or not a number (NaN). It will always return <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> for integer numbers.
+<br><br>
+The <div class="highlight-inline"><pre><span class="n">is_nan</span><span class="p">()</span></pre></div> function will only return <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> if its argument is NaN, and is the safest way to isolate these values. Indeed, remember that NaN values have the special properties that <div class="highlight-inline"><pre><span class="n">x</span> <span class="o">==</span> <span class="n">fnan</span></pre></div> will be <div class="highlight-inline"><pre><span class="nb">false</span></pre></div> even if the value of <div class="highlight-inline"><pre><span class="n">x</span></pre></div> is NaN.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1f</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">finf</span><span class="p">,</span> <span class="o">-</span><span class="n">finf</span><span class="p">,</span> <span class="n">fnan</span><span class="p">};</span>
+<span class="n">is_finite</span><span class="p">(</span><span class="n">x</span><span class="p">);</span> <span class="c1">// {true,true,false,false,false}</span>
+<span class="n">is_nan</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>    <span class="c1">// {false,false,false,false,true}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

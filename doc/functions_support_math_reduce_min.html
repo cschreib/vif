@@ -17,23 +17,49 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_reduce">Reduction</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">min</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">min</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">uint_t</span><span class="o">&amp;</span> <span class="n">i</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">min</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="kt">uint_t</span><span class="o">&amp;</span> <span class="n">i</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">partial_min</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">partial_min</span><span class="p">(</span><span class="kt">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 <tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">max</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">max</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">uint_t</span><span class="o">&amp;</span> <span class="n">i</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">max</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="kt">uint_t</span><span class="o">&amp;</span> <span class="n">i</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">partial_max</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">partial_max</span><span class="p">(</span><span class="kt">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+The first <div class="highlight-inline"><pre><span class="n">min</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span class="n">max</span><span class="p">()</span></pre></div> functions return respectively the minimum and maximum value of the vector <div class="highlight-inline"><pre><span class="n">v</span><span class="p">()</span></pre></div>. The second <div class="highlight-inline"><pre><span class="n">min</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span class="n">max</span><span class="p">()</span></pre></div> functions do the same, but also store the index of this value in the output parameter <div class="highlight-inline"><pre><span class="n">i</span></pre></div>.
+<br><br>
+Calling <div class="highlight-inline"><pre><span class="n">min</span><span class="p">()</span></pre></div> or <div class="highlight-inline"><pre><span class="n">max</span><span class="p">()</span></pre></div> on an empty vector will trigger an error.
+<br><br>
+The functions <div class="highlight-inline"><pre><span class="n">partial_min</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span class="n">partial_max</span><span class="p">()</span></pre></div> will apply respectively <div class="highlight-inline"><pre><span class="n">min</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span class="n">min</span><span class="p">()</span></pre></div> on the <div class="highlight-inline"><pre><span class="n">d</span></pre></div>th dimension of the vector (zero being the first dimension) and reduce its number of dimensions by one.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">1.5</span><span class="p">};</span>
+<span class="n">min</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// -1</span>
+<span class="n">max</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// 2</span>
+
+<span class="kt">uint_t</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">min</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span> <span class="c1">// -1</span>
+<span class="n">id</span><span class="p">;</span>         <span class="c1">// 0</span>
+<span class="n">max</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span> <span class="c1">// 2</span>
+<span class="n">id</span><span class="p">;</span>         <span class="c1">// 3</span>
+
+<span class="n">vec2d</span> <span class="n">w</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">}};</span>
+<span class="n">partial_min</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">);</span> <span class="c1">// {-1,0,1,3,4}</span>
+<span class="n">partial_max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">);</span> <span class="c1">// {0,2,3,3,6}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

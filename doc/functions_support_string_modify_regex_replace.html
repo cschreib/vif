@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_04_string.html">String manipulation</a><span class="catsep">&gt;</span><a href="category_support_04_string.html#SEC_support_string_modify">String operations</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">regex_replace</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">T</span> <span class="n">fun</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -37,7 +42,7 @@ This function is very similar to the <div class="highlight-inline"><pre><span cl
 <span class="c1">// add parentheses around &quot;Y&quot;.</span>
 <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">n</span> <span class="o">=</span> <span class="n">regex_replace</span><span class="p">(</span>
     <span class="n">s</span><span class="p">,</span>                    <span class="c1">// the string to analyze</span>
-    <span class="s">R&quot;(([a-z])=([0-9]))&quot;</span><span class="p">,</span> <span class="c1">// the regular expression</span>
+    <span class="n">R</span><span class="s">&quot;(([a-z])=([0-9]))&quot;</span><span class="p">,</span> <span class="c1">// the regular expression</span>
     <span class="c1">// the replacement function</span>
     <span class="p">[](</span><span class="n">vec1s</span> <span class="n">m</span><span class="p">)</span> <span class="p">{</span>
         <span class="c1">// &quot;X&quot; is in m[0], &quot;Y&quot; is in m[1].</span>
@@ -66,18 +71,18 @@ This function is very similar to the <div class="highlight-inline"><pre><span cl
 <span class="c1">// change &quot;X&quot; to upper case and increment &quot;Y&quot; by one.</span>
 <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">n</span> <span class="o">=</span> <span class="n">regex_replace</span><span class="p">(</span>
     <span class="n">s</span><span class="p">,</span>                    <span class="c1">// the string to analyze</span>
-    <span class="s">R&quot;(([a-z])=([0-9]))&quot;</span><span class="p">,</span> <span class="c1">// the regular expression</span>
+    <span class="n">R</span><span class="s">&quot;(([a-z])=([0-9]))&quot;</span><span class="p">,</span> <span class="c1">// the regular expression</span>
     <span class="c1">// the replacement function</span>
     <span class="p">[](</span><span class="n">vec1s</span> <span class="n">m</span><span class="p">)</span> <span class="p">{</span>
         <span class="c1">// Again, &quot;X&quot; is in m[0], &quot;Y&quot; is in m[1].</span>
 
         <span class="c1">// Read the integer &quot;Y&quot; and increment it</span>
-        <span class="n">uint_t</span> <span class="n">k</span><span class="p">;</span>
+        <span class="kt">uint_t</span> <span class="n">k</span><span class="p">;</span>
         <span class="n">from_string</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">k</span><span class="p">);</span>
         <span class="o">++</span><span class="n">k</span><span class="p">;</span>
 
         <span class="c1">// Build the replacement string</span>
-        <span class="k">return</span> <span class="n">toupper</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;=&quot;</span><span class="o">+</span><span class="n">strn</span><span class="p">(</span><span class="n">k</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nf">toupper</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;=&quot;</span><span class="o">+</span><span class="n">strn</span><span class="p">(</span><span class="n">k</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">);</span>
 

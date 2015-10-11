@@ -17,14 +17,19 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_02_generic.html">Generic vector functions</a><span class="catsep">&gt;</span><a href="category_support_02_generic.html#SEC_support_generic_error">Error checking</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">phypp_check</span><span class="p">(</span><span class="kt">bool</span> <span class="n">b</span><span class="p">,</span> <span class="p">...)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function makes error checking easier. When called, it checks the value of <div class="highlight-inline"><pre><span class="n">b</span></pre></div>. If <div class="highlight-inline"><pre><span class="n">b</span></pre></div> is <div class="highlight-inline"><pre><span class="kc">true</span></pre></div>, then nothing happens. However if <div class="highlight-inline"><pre><span class="n">b</span></pre></div> is <div class="highlight-inline"><pre><span class="kc">false</span></pre></div>, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the <i>phy</i><sub>++</sub> library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
+This function makes error checking easier. When called, it checks the value of <div class="highlight-inline"><pre><span class="n">b</span></pre></div>. If <div class="highlight-inline"><pre><span class="n">b</span></pre></div> is <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>, then nothing happens. However if <div class="highlight-inline"><pre><span class="n">b</span></pre></div> is <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>, then the current file and line are printed to the standard output, followed by the other arguments of this function (they are supposed to be an error message explaining what went wrong), and an assertion is raised, immediately stopping the program. This function is used everywhere in the <i>phy</i><sub>++</sub> library to make sure that certain conditions are properly satisfied before doing a calculation, and it is essential to make the program crash in case something is unexpected (rather than letting it run hoping for the best, and often getting the worst).
 <br><br>
 Since this function is actually implemented by a preprocessor macro, you should not worry about its performance impact. It will only affect the performances when something goes wrong and the program is about to crash. However the calculation of <div class="highlight-inline"><pre><span class="n">b</span></pre></div> can itself be costly (for example, you may want to check that a vector is sorted), and there is no way around this.
 <br><br><span class="example">Example</span><br><hr>

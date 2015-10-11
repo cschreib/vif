@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_reduce">Reduction</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">histogram</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">b</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -26,6 +31,22 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+The first <div class="highlight-inline"><pre><span class="n">histogram</span><span class="p">()</span></pre></div> function computes the histogram of the values inside the vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> using the bins defined in <div class="highlight-inline"><pre><span class="n">b</span></pre></div> (see <div class="highlight-inline"><pre><span class="n">make_bins</span><span class="p">()</span></pre></div>). In other words, it counts the number of values of <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that fall in each bin of <div class="highlight-inline"><pre><span class="n">b</span></pre></div>, and returns a new vector containing these counts.
+<br><br>
+The second <div class="highlight-inline"><pre><span class="n">histogram</span><span class="p">()</span></pre></div> function produces a weighed histogram, where each value in <div class="highlight-inline"><pre><span class="n">v</span></pre></div> comes with a weight as given in <div class="highlight-inline"><pre><span class="n">w</span></pre></div>. The weights of all the values that fall within a given bin are summed and stored inside the returned vector. The first function is equivalent to the second function with all the weights equal to one.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// First generate some values</span>
+<span class="k">auto</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">make_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+<span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="n">randomn</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+
+<span class="c1">// Then build 7 bins covering -5 to +5</span>
+<span class="n">vec2d</span> <span class="n">b</span> <span class="o">=</span> <span class="n">make_bins</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+
+<span class="c1">// Compute the histogram</span>
+<span class="n">vec1u</span> <span class="n">c</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+<span class="n">c</span><span class="p">;</span> <span class="c1">// {0, 18, 216, 506, 237, 23, 0}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

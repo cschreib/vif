@@ -17,18 +17,23 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_02_generic.html">Generic vector functions</a><span class="catsep">&gt;</span><a href="category_support_02_generic.html#SEC_support_generic_index">Index manipulation</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">mult_ids</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">i</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">mult_ids</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">i</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">mult_ids</span><span class="p">(</span><span class="n">array</span><span class="o">&lt;</span><span class="n">uint_t</span><span class="o">&gt;</span> <span class="n">dims</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">i</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">mult_ids</span><span class="p">(</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">uint_t</span><span class="o">&gt;</span> <span class="n">dims</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">i</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
 This is only useful for multidimensional vectors. This function converts a &ldquo;flat&rdquo; index <div class="highlight-inline"><pre><span class="n">i</span></pre></div> (\ref{SEC:core:vec:indexing}) into an array of multidimensional indices, following the dimensions of the provided vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> (or, in the second version, following the dimensions <div class="highlight-inline"><pre><span class="n">dims</span></pre></div>). The <div class="highlight-inline"><pre><span class="n">flat_id</span></pre></div> function does the inverse job.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec2i</span> <span class="n">v</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span>
+<div class="highlight"><pre><span class="n">vec2i</span> <span class="nf">v</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">);</span>
 <span class="n">mult_ids</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// {0,0}</span>
 <span class="n">mult_ids</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// {0,1}</span>
 <span class="n">mult_ids</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span> <span class="c1">// {0,3}</span>

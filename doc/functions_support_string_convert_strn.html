@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_04_string.html">String manipulation</a><span class="catsep">&gt;</span><a href="category_support_04_string.html#SEC_support_string_convert">String conversions</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">strn</span><span class="p">(</span><span class="n">T</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -29,7 +34,7 @@
 These functions will convert the value <div class="highlight-inline"><pre><span class="n">v</span></pre></div> into a string. This value can be of any type, as long as it is convertible to string. In particular, <div class="highlight-inline"><pre><span class="n">v</span></pre></div> can be a vector, in which case the output string will contain all the values of the vector, separated by commas, and enclosed inside curly braces <div class="highlight-inline"><pre><span class="s">&quot;{...}&quot;</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="n">strn</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>            <span class="c1">// &quot;2&quot;</span>
-<span class="n">strn</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>         <span class="c1">// &quot;1&quot;</span>
+<span class="n">strn</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>         <span class="c1">// &quot;1&quot;</span>
 <span class="n">strn</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">);</span>        <span class="c1">// &quot;foo&quot;</span>
 <span class="n">strn</span><span class="p">(</span><span class="n">vec1i</span><span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">9</span><span class="p">});</span> <span class="c1">// &quot;{2, 5, 9}&quot;</span>
 </pre></div>

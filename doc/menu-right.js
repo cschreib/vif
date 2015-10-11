@@ -19,7 +19,7 @@ document.write('\
 <ul> \
 <li><a href="functions_support_math_interpol_bilinear.html">bilinear</a></li> \
 <li><a href="functions_support_math_sequence_bin_center.html">bin_center</a></li> \
-<li><a href="functions_support_math_sequence_bin_width.html">bin_width</a></li> \
+<li><a href="functions_support_math_sequence_bin_center.html">bin_width</a></li> \
 <li><a href="functions_support_generic_find_lower_bound.html">bounds</a></li> \
 <li><a href="functions_support_image_boxcar.html">boxcar</a></li> \
 </ul><br></li> \
@@ -152,11 +152,11 @@ document.write('\
 <li><a href="functions_support_math_interpol_interpolate.html">interpolate</a></li> \
 <li><a href="functions_support_math_algebra_invert.html">invert</a></li> \
 <li><a href="functions_support_math_algebra_invert_symmetric.html">invert_symmetric</a></li> \
-<li><a href="functions_support_math_lowlevel_invsqr.html">invsqr</a></li> \
+<li><a href="functions_support_math_lowlevel_e10.html">invsqr</a></li> \
 <li><a href="functions_support_generic_find_is_any_of.html">is_any_of</a></li> \
 <li><a href="functions_support_math_lowlevel_is_finite.html">is_finite</a></li> \
 <li><a href="functions_support_math_geometry_is_hull_closed.html">is_hull_closed</a></li> \
-<li><a href="functions_support_math_lowlevel_is_nan.html">is_nan</a></li> \
+<li><a href="functions_support_math_lowlevel_is_finite.html">is_nan</a></li> \
 <li><a href="functions_support_generic_rearrange_is_sorted.html">is_sorted</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">K</span><br> \
@@ -179,7 +179,7 @@ document.write('\
 </ul><br></li> \
 <li><span class="menu-alpha-heading">M</span><br> \
 <ul> \
-<li><a href="functions_support_math_reduce_mad_clip.html">mad_clip</a></li> \
+<li><a href="functions_support_math_reduce_mad.html">mad</a></li> \
 <li><a href="functions_support_astro_flux_lsun2mag.html">mag2lsun</a></li> \
 <li><a href="functions_support_astro_flux_uJy2mag.html">mag2uJy</a></li> \
 <li><a href="functions_support_math_sequence_make_bins.html">make_bins</a></li> \
@@ -192,7 +192,6 @@ document.write('\
 <li><a href="functions_support_math_reduce_min_id.html">max_id</a></li> \
 <li><a href="functions_support_math_reduce_mean.html">mean</a></li> \
 <li><a href="functions_support_math_reduce_median.html">median</a></li> \
-<li><a href="functions_support_math_interpol_merge_add.html">merge_add</a></li> \
 <li><a href="functions_support_math_reduce_min.html">min</a></li> \
 <li><a href="functions_support_math_reduce_min_id.html">min_id</a></li> \
 <li><a href="functions_support_math_algebra_mmul.html">mmul</a></li> \
@@ -210,11 +209,14 @@ document.write('\
 <ul> \
 <li><a href="functions_support_math_reduce_count.html">partial_count</a></li> \
 <li><a href="functions_support_math_reduce_fraction_of.html">partial_fraction_of</a></li> \
+<li><a href="functions_support_math_reduce_mad.html">partial_mad</a></li> \
 <li><a href="functions_support_math_reduce_min.html">partial_max</a></li> \
 <li><a href="functions_support_math_reduce_mean.html">partial_mean</a></li> \
 <li><a href="functions_support_math_reduce_median.html">partial_median</a></li> \
 <li><a href="functions_support_math_reduce_min.html">partial_min</a></li> \
 <li><a href="functions_support_math_reduce_percentile.html">partial_percentile</a></li> \
+<li><a href="functions_support_math_reduce_rms.html">partial_rms</a></li> \
+<li><a href="functions_support_math_reduce_stddev.html">partial_stddev</a></li> \
 <li><a href="functions_support_math_reduce_total.html">partial_total</a></li> \
 <li><a href="functions_support_math_reduce_percentile.html">percentile</a></li> \
 <li><a href="functions_support_math_reduce_percentile.html">percentiles</a></li> \
@@ -224,6 +226,7 @@ document.write('\
 <li><a href="functions_support_generic_dim_append.html">prepend</a></li> \
 <li><a href="functions_support_print_print.html">print</a></li> \
 <li><a href="functions_support_time_progress_start.html">print_progress</a></li> \
+<li><a href="functions_support_time_now.html">profile</a></li> \
 <li><a href="functions_support_time_progress_start.html">progress</a></li> \
 <li><a href="functions_support_time_progress_start.html">progress_start</a></li> \
 <li><a href="functions_support_print_prompt.html">prompt</a></li> \
@@ -248,6 +251,7 @@ document.write('\
 <li><a href="functions_support_math_random_random_pdf.html">random_pdf</a></li> \
 <li><a href="functions_support_math_random_randomi.html">randomi</a></li> \
 <li><a href="functions_support_math_random_randomn.html">randomn</a></li> \
+<li><a href="functions_support_math_random_randomu.html">randomu</a></li> \
 <li><a href="functions_support_astro_sky_randpos_power.html">randpos_power</a></li> \
 <li><a href="functions_support_astro_sky_randpos_power_circle.html">randpos_power_circle</a></li> \
 <li><a href="functions_support_astro_sky_randpos_uniform.html">randpos_uniform</a></li> \
@@ -256,6 +260,7 @@ document.write('\
 <li><a href="functions_support_astro_flux_read_filter_db.html">read_filter_db</a></li> \
 <li><a href="functions_support_astro_flux_read_filter_map.html">read_filter_map</a></li> \
 <li><a href="functions_support_math_interpol_rebin.html">rebin</a></li> \
+<li><a href="functions_support_math_reduce_reduce.html">reduce</a></li> \
 <li><a href="functions_support_generic_dim_reform.html">reform</a></li> \
 <li><a href="functions_support_string_modify_regex_extract.html">regex_extract</a></li> \
 <li><a href="functions_support_string_modify_regex_match.html">regex_match</a></li> \
@@ -270,16 +275,16 @@ document.write('\
 <li><a href="functions_support_generic_rearrange_reverse.html">reverse</a></li> \
 <li><a href="functions_support_math_sequence_rgen.html">rgen</a></li> \
 <li><a href="functions_support_math_sequence_rgen.html">rgen_log</a></li> \
+<li><a href="functions_support_math_reduce_rms.html">rms</a></li> \
 <li><a href="functions_support_image_rotate.html">rotate</a></li> \
 <li><a href="functions_support_math_algebra_rotation_matrix.html">rotation_matrix</a></li> \
 <li><a href="functions_support_math_reduce_run_dim.html">run_dim</a></li> \
-<li><a href="functions_support_math_reduce_run_dim_idx.html">run_dim_idx</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">S</span><br> \
 <ul> \
 <li><a href="functions_support_image_scale.html">scale</a></li> \
 <li><a href="functions_support_math_algebra_scale_matrix.html">scale_matrix</a></li> \
-<li><a href="functions_support_time_seconds_str.html">seconds_str</a></li> \
+<li><a href="functions_support_time_time_str.html">seconds_str</a></li> \
 <li><a href="functions_support_astro_flux_sed2flux.html">sed2flux</a></li> \
 <li><a href="functions_support_astro_flux_sed_convert.html">sed_convert</a></li> \
 <li><a href="functions_support_astro_sky_sex2deg.html">sex2deg</a></li> \
@@ -292,8 +297,9 @@ document.write('\
 <li><a href="functions_support_generic_rearrange_sort.html">sort</a></li> \
 <li><a href="functions_support_thread_fork.html">spawn</a></li> \
 <li><a href="functions_support_string_modify_split.html">split</a></li> \
-<li><a href="functions_support_math_lowlevel_sqr.html">sqr</a></li> \
+<li><a href="functions_support_math_lowlevel_e10.html">sqr</a></li> \
 <li><a href="functions_support_string_modify_start_with.html">start_with</a></li> \
+<li><a href="functions_support_math_reduce_stddev.html">stddev</a></li> \
 <li><a href="functions_support_string_convert_strn.html">strn</a></li> \
 <li><a href="functions_support_string_convert_strn.html">strn_sci</a></li> \
 <li><a href="functions_support_string_convert_strna.html">strna</a></li> \

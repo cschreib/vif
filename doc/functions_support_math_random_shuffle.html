@@ -17,15 +17,32 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_random">Randomization</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="k">auto</span> <span class="n">seed</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span> <span class="n">shuffle</span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span> <span class="n">seed</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">inplace_shuffle</span><span class="p">(</span><span class="n">vec</span><span class="o">&amp;</span><span class="p">,</span> <span class="k">auto</span> <span class="n">seed</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">inplace_shuffle</span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span> <span class="n">seed</span><span class="p">,</span> <span class="n">vec</span><span class="o">&amp;</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+These functions will randomly modify the order of all the values inside the vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div>. The function <div class="highlight-inline"><pre><span class="n">shuffle</span><span class="p">()</span></pre></div> will re-order a copy of the provided vector, while <div class="highlight-inline"><pre><span class="n">inplace_shuffle</span><span class="p">()</span></pre></div> will modify the provided vector directly and is therefore faster. Note that there is a non-zero probability that the order will remain the same.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// We create the seed (see make_seed())</span>
+<span class="k">auto</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">make_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+
+<span class="n">vec1u</span> <span class="n">v</span> <span class="o">=</span> <span class="n">indgen</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+<span class="n">v</span><span class="p">;</span> <span class="c1">// {0,1,2,3,4}</span>
+
+<span class="n">inplace_shuffle</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+<span class="n">v</span><span class="p">;</span> <span class="c1">// could be {3,1,2,4,0}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

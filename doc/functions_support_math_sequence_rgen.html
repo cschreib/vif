@@ -17,9 +17,14 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_sequence">Sequences and bins</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">rgen</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">rgen</span><span class="p">(</span><span class="n">T</span> <span class="n">n</span><span class="p">)</span>
 </pre></div></td></tr>
 <tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">rgen</span><span class="p">(</span><span class="n">T</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -30,6 +35,16 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+The <div class="highlight-inline"><pre><span class="n">rgen</span><span class="p">()</span></pre></div> functions generate a sequence of numbers that increase linearly. The first version is equivalent to <div class="highlight-inline"><pre><span class="n">uindgen</span><span class="p">()</span></pre></div> and will generate <div class="highlight-inline"><pre><span class="n">n</span></pre></div> integer values starting from <div class="highlight-inline"><pre><span class="mi">0</span></pre></div> and increasing by step of <div class="highlight-inline"><pre><span class="mi">1</span></pre></div>. The second version generates integer values between <div class="highlight-inline"><pre><span class="n">i</span></pre></div> and <div class="highlight-inline"><pre><span class="n">j</span></pre></div> (inclusive) with step of <div class="highlight-inline"><pre><span class="mi">1</span></pre></div>. The third version generates <div class="highlight-inline"><pre><span class="n">n</span></pre></div> floating point values between <div class="highlight-inline"><pre><span class="n">i</span></pre></div> and <div class="highlight-inline"><pre><span class="n">j</span></pre></div> (inclusive) with step <div class="highlight-inline"><pre><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span></pre></div>.
+<br><br>
+The <div class="highlight-inline"><pre><span class="n">rgen_log</span><span class="p">()</span></pre></div> function does the same as the third <div class="highlight-inline"><pre><span class="n">rgen</span><span class="p">()</span></pre></div> function except that the steps are logarithmic (i.e., linear in logarithmic space) so that the size of the step increases continuously.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">rgen</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">// {0,1,2,3,4}</span>
+<span class="n">rgen</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">);</span> <span class="c1">// {1,2,3,4}</span>
+<span class="n">rgen</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">);</span> <span class="c1">// {1,1.5,2,2.5,3,3.5,4}</span>
+<span class="n">rgen_log</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">);</span> <span class="c1">// {1,1.219,1.486,1.811,2.208,2.692,3.281,4}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

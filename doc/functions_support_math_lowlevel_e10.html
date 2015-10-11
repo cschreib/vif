@@ -17,13 +17,29 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_lowlevel">Low level mathematics</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">e10</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">e10</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">sqr</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">invsqr</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+These functions are just convenient shortcut for the <div class="highlight-inline"><pre><span class="n">pow</span><span class="p">()</span></pre></div> function:
+<ul>
+<li> <div class="highlight-inline"><pre><span class="n">e10</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></pre></div> computes the exponentiation in base <img class="latex" style="vertical-align: -0pt" src="latex/functions_support_math_lowlevel_0.svg">, i.e., <img class="latex" style="vertical-align: -0pt" src="latex/functions_support_math_lowlevel_1.svg">, and is equivalent to <div class="highlight-inline"><pre><span class="n">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span></pre></div>,</li>
+<li> <div class="highlight-inline"><pre><span class="n">sqr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></pre></div> computes the square of its argument, i.e., <img class="latex" style="vertical-align: -0pt" src="latex/functions_support_math_lowlevel_2.svg">, and is equivalent to <div class="highlight-inline"><pre><span class="n">pow</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></pre></div>,</li>
+<li> <div class="highlight-inline"><pre><span class="n">invsqr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></pre></div> computes the inverse square of its argument, i.e., <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_lowlevel_3.svg">, and is equivalent to <div class="highlight-inline"><pre><span class="n">pow</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span></pre></div>.</li>
+</ul>
+Because they are less generic, calling these functions instead of <div class="highlight-inline"><pre><span class="n">pow</span><span class="p">()</span></pre></div> <span class="emphasis">can</span> result in faster code, however any improvement should be marginal.
 </div>
 </div>
   </div>

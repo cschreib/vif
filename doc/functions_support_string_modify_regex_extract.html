@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_04_string.html">String manipulation</a><span class="catsep">&gt;</span><a href="category_support_04_string.html#SEC_support_string_modify">String operations</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="n">vec2s</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -30,7 +35,7 @@ This function will analyze the string <div class="highlight-inline"><pre><span c
 
 <span class="c1">// We want to find all floating point numbers in this mess, and</span>
 <span class="c1">// extract their integer and fractional parts separately.</span>
-<span class="n">vec2s</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">R&quot;(([0-9]+)\.([0-9]+))&quot;</span><span class="p">);</span>
+<span class="n">vec2s</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">R</span><span class="s">&quot;(([0-9]+)\.([0-9]+))&quot;</span><span class="p">);</span>
 
 <span class="c1">// The regular expression can be read like:</span>
 <span class="c1">// &#39;(&#39;   : open a new sub-expression containing...</span>

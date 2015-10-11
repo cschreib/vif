@@ -17,9 +17,14 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_interp">Interpolation</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">interpolate</span><span class="p">(</span><span class="kt">double</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">interpolate</span><span class="p">(</span><span class="kt">double</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">nx</span><span class="p">)</span>
 </pre></div></td></tr>
 <tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">y</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">U</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">V</span> <span class="n">nx</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -28,6 +33,44 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+The first <div class="highlight-inline"><pre><span class="n">interpolate</span><span class="p">()</span></pre></div> function performs a linear interpolation between the points <div class="highlight-inline"><pre><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="n">y1</span><span class="p">)</span></pre></div> and <div class="highlight-inline"><pre><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="n">y2</span><span class="p">)</span></pre></div> at the position <div class="highlight-inline"><pre><span class="n">nx</span></pre></div>. The only requirement is that <div class="highlight-inline"><pre><span class="n">x1</span> <span class="o">&lt;</span> <span class="n">x2</span></pre></div>. If <div class="highlight-inline"><pre><span class="n">nx</span></pre></div> is lower than <div class="highlight-inline"><pre><span class="n">x1</span></pre></div> or larger than <div class="highlight-inline"><pre><span class="n">x2</span></pre></div>, then the function performs an extrapolation following the same linear trend. This is a low-level function, most code will in fact use the other two functions described below.
+<br><br>
+The second and third <div class="highlight-inline"><pre><span class="n">interpolate</span><span class="p">()</span></pre></div> functions perform a linear interpolation of the data <div class="highlight-inline"><pre><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span></pre></div> at the position(s) <div class="highlight-inline"><pre><span class="n">nx</span></pre></div>. The only difference between the second and the third functions is that the second function takes a single value for <div class="highlight-inline"><pre><span class="n">nx</span></pre></div> and therefore also returns a single interpolated value, while the third function works with multiple <div class="highlight-inline"><pre><span class="n">nx</span></pre></div> values and also returns an array.
+<br><br>
+The requirements for these functions to work properly is that the vector <div class="highlight-inline"><pre><span class="n">x</span></pre></div> is <span class="emphasis">sorted</span>. This is very important, as no check is done at runtime to ensure that this requirement is fulfilled (making this check is computationally expensive). The result of calling <div class="highlight-inline"><pre><span class="n">interpolate</span><span class="p">()</span></pre></div> with a non-sorted <div class="highlight-inline"><pre><span class="n">x</span></pre></div> vector is unspecified and will likely result in incorrect return values. The vector <div class="highlight-inline"><pre><span class="n">nx</span></pre></div>, however, does not need to be sorted.
+<br><br>
+Another requirement is that <div class="highlight-inline"><pre><span class="n">nx</span></pre></div> and <div class="highlight-inline"><pre><span class="n">x</span></pre></div> are always finite numbers, else the behavior of the function is non specified. The <div class="highlight-inline"><pre><span class="n">y</span></pre></div> array can have non-finite values (either infinities or NaN), in which case the return value can also be non-finite.
+<br><br>
+Lastly, if some values in <div class="highlight-inline"><pre><span class="n">nx</span></pre></div> are smaller than <div class="highlight-inline"><pre><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></pre></div> or larger than <div class="highlight-inline"><pre><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></pre></div>, these functions will perform a linear extrapolation using the first or last two data points (respectively).
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// One interesting use case for interpolation is to pre-compute</span>
+<span class="c1">// computationally expensive functions at a limited number of</span>
+<span class="c1">// positions, and estimate other positions by interpolation.</span>
+<span class="c1">// If the function is well sampled, the error that is made will</span>
+<span class="c1">// be small and the performances will improve tremendously.</span>
+
+<span class="c1">// Pre-compute some values</span>
+<span class="n">vec1d</span> <span class="n">x</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">/</span><span class="mf">100.0</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">y</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">dpi</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">))));</span>
+<span class="c1">// That is very complex...</span>
+
+<span class="c1">// Now we can estimate the value of this expression for any other</span>
+<span class="c1">// position using interpolate().</span>
+<span class="n">vec1d</span> <span class="n">nx</span> <span class="o">=</span> <span class="p">{</span><span class="mf">5.5</span><span class="p">,</span> <span class="mf">12.05</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+<span class="n">vec1d</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">nx</span><span class="p">);</span>
+
+<span class="c1">// The result (and exact values below)</span>
+<span class="n">ny</span><span class="p">;</span> <span class="c1">// {-0.979529, -0.99965, -0.992709, -0.12913, 0.915089}</span>
+    <span class="c1">// {-0.979529, -0.99907, -0.992709, -0.12913, 0.915089}</span>
+
+<span class="c1">// Not too far, huh?</span>
+<span class="c1">// Note that the only value that is a bit wrong (the second one)</span>
+<span class="c1">// is in fact an extrapolation.</span>
+
+<span class="c1">// This trick is used internally in phy++ for some expensive</span>
+<span class="c1">// functions, for example lumdist().</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

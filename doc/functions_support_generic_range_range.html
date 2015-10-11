@@ -17,13 +17,18 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_02_generic.html">Generic vector functions</a><span class="catsep">&gt;</span><a href="category_support_02_generic.html#SEC_support_generic_range">Range-based iteration</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="kt">uint_t</span> <span class="n">n</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">i0</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">range</span><span class="p">(</span><span class="kt">uint_t</span> <span class="n">i0</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">n</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
@@ -33,7 +38,7 @@ This function returns a C++ <span class="emphasis">range</span>, i.e., an object
 <div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">8</span><span class="p">};</span>
 
 <span class="c1">// First version</span>
-<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="p">{</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="p">{</span>
     <span class="c1">// &#39;i&#39; goes from 0 to 3</span>
     <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...;</span>
 <span class="p">}</span>
@@ -44,13 +49,13 @@ This function returns a C++ <span class="emphasis">range</span>, i.e., an object
 <span class="c1">// ... generates *values* from the vector.</span>
 
 <span class="c1">// Second version</span>
-<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
     <span class="c1">// &#39;i&#39; goes from 0 to 2</span>
     <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...;</span>
 <span class="p">}</span>
 
 <span class="c1">// Third version</span>
-<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
     <span class="c1">// &#39;i&#39; goes from 1 to 3</span>
     <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...;</span>
 <span class="p">}</span>

@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_04_string.html">String manipulation</a><span class="catsep">&gt;</span><a href="category_support_04_string.html#SEC_support_string_modify">String operations</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">regex_match</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -26,18 +31,18 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will return <div class="highlight-inline"><pre><span class="kc">true</span></pre></div> if the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> matches the regular expression (regex) <div class="highlight-inline"><pre><span class="n">r</span></pre></div>. This regular expression can be used to identify complex patterns in a string, far more advanced than just matching the existence of a sub-string. This particular implementation uses POSIX regular expressions. The syntax is complex and not particularly intuitive, but it has become a well known standard and is therefore understood by most programmers. A gentle tutorial can be found <a href=http://www.zytrax.com/tech/web/regex.htm>here</a>. Note that if the regular expression is invalid, an error will be reported to diagnose the problem, and the program will stop.
+This function will return <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> if the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> matches the regular expression (regex) <div class="highlight-inline"><pre><span class="n">r</span></pre></div>. This regular expression can be used to identify complex patterns in a string, far more advanced than just matching the existence of a sub-string. This particular implementation uses POSIX regular expressions. The syntax is complex and not particularly intuitive, but it has become a well known standard and is therefore understood by most programmers. A gentle tutorial can be found <a href=http://www.zytrax.com/tech/web/regex.htm>here</a>. Note that if the regular expression is invalid, an error will be reported to diagnose the problem, and the program will stop.
 <br><br>
-The function <div class="highlight-inline"><pre><span class="n">regex_match_any_of</span></pre></div> will do the same, but for a list of regular expressions. <div class="highlight-inline"><pre><span class="kc">true</span></pre></div> will be returned if the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> matches at least one of these.
+The function <div class="highlight-inline"><pre><span class="n">regex_match_any_of</span></pre></div> will do the same, but for a list of regular expressions. <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> will be returned if the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> matches at least one of these.
 <br><br>
-Lastly, it is advised to use <span class="emphasis">raw string literals</span> to specify the regex in C++ code. Indeed, one often needs to use the backslash character (<div class="highlight-inline"><pre>\</pre></div>), but this character is used in C++ to create escape sequences like <div class="highlight-inline"><pre><span class="sc">&#39;\n&#39;</span></pre></div> (new line). For this reason, to feed the backslash to the regex compiler you actually need to escape it: <div class="highlight-inline"><pre><span class="s">&quot;</span><span class="se">\\</span><span class="s">&quot;</span></pre></div>. To avoid this inconvenience, just enclose the regular expression in <div class="highlight-inline"><pre><span class="s">R&quot;(...)&quot;</span></pre></div>, and you will not need to worry about escaping characters from the C++ compiler. Note however that you will still need to escape characters from the regular expression compiler itself, when needed.
+Lastly, it is advised to use <span class="emphasis">raw string literals</span> to specify the regex in C++ code. Indeed, one often needs to use the backslash character (<div class="highlight-inline"><pre>\</pre></div>), but this character is used in C++ to create escape sequences like <div class="highlight-inline"><pre><span class="sc">&#39;\n&#39;</span></pre></div> (new line). For this reason, to feed the backslash to the regex compiler you actually need to escape it: <div class="highlight-inline"><pre><span class="s">&quot;</span><span class="se">\\</span><span class="s">&quot;</span></pre></div>. To avoid this inconvenience, just enclose the regular expression in <div class="highlight-inline"><pre><span class="n">R</span><span class="s">&quot;(...)&quot;</span></pre></div>, and you will not need to worry about escaping characters from the C++ compiler. Note however that you will still need to escape characters from the regular expression compiler itself, when needed.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="n">vec1s</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;abc,def&quot;</span><span class="p">,</span> <span class="s">&quot;abc:def&quot;</span><span class="p">,</span> <span class="s">&quot;956,fgt&quot;</span><span class="p">,</span> <span class="s">&quot;9g5,hij&quot;</span><span class="p">,</span> <span class="s">&quot;ghji,abc&quot;</span><span class="p">};</span>
 
 <span class="c1">// We want to find which strings have the &quot;XXX,YYY&quot; format</span>
 <span class="c1">// where &quot;XXX&quot; can be any combination of three letters or numbers</span>
 <span class="c1">// and &quot;YYY&quot; can be a combination of three letters</span>
-<span class="n">vec1b</span> <span class="n">b</span> <span class="o">=</span> <span class="n">regex_match</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s">R&quot;(^[a-z0-9]{3},[a-z]{3}$)&quot;</span><span class="p">);</span>
+<span class="n">vec1b</span> <span class="n">b</span> <span class="o">=</span> <span class="n">regex_match</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">R</span><span class="s">&quot;(^[a-z0-9]{3},[a-z]{3}$)&quot;</span><span class="p">);</span>
 
 <span class="c1">// This regular expression can be read like:</span>
 <span class="c1">//  &#39;^&#39;   : at the beginning of the string, match...</span>

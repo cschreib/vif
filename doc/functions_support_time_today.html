@@ -17,13 +17,26 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_08_time.html">Measuring time</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">today</span><span class="p">()</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+This function returns the date of today in a compact format, <div class="highlight-inline"><pre><span class="s">&quot;yyyymmdd&quot;</span></pre></div> (native English users be warned, this date format makes sense), which is meant to name files or directories created by a program to provide a simple automatic versioning system.
+<br><br>
+This format cannot be changed. It was chosen to take the least possible amount of space while retaining completeness of information. The order in which the elements of the date are printed ensures that a lexicographical sorting of multiple such dates (i.e., the sorting criterion used for strings in C++ and the way most file managers sort files by name) will yield a chronologically ordered set.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Assuming today is the 20th of September 2015</span>
+<span class="n">today</span><span class="p">();</span> <span class="c1">// &quot;20150920&quot;</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

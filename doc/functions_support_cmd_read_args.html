@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_03_cmd.html">Parsing command line arguments</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">read_args</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[],</span> <span class="p">...)</span>
 </pre></div></td></tr>
@@ -32,11 +37,11 @@ Let us assume that we want to build a simple program that will print <a class="s
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="c1">// This is the standard entry point of every C++ program.</span>
 <span class="c1">// The signature of the main function is imposed by the C++ standard</span>
-<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
     <span class="c1">// Declare the main parameters of the program</span>
 
     <span class="c1">// The number of powers of two to display</span>
-    <span class="n">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
 
     <span class="c1">// Then read command line arguments...</span>
     <span class="n">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
@@ -80,10 +85,10 @@ we exposed the variable <div class="highlight-inline"><pre><span class="n">n</sp
 </pre></div>
 You immediately see the interest of this approach. Instead of recompiling the whole program just to change <div class="highlight-inline"><pre><span class="n">n</span></pre></div>, we expose it in the program arguments. We can then compile the program once, and change its behavior without recompiling. This saves a lot of time when trying to figure out what is the best value of a parameter in a given problem, or if we have created an algorithm that depends on some parameters, and we want to see how the results change when we change the values of these parameters. And of course, this is most useful when writing <span class="emphasis">tools</span> (see, e.g., the tools presented in Chapter \ref{SEC:tool}).
 <br><br>
-In the previous example, we chose to expose a simple integer. But in fact, the interface also allows virtually any type, provided that there is a way to convert a string into a value of this type. In particular, this is the case for vectors. There is a little subtlety though: the values of the vector must be separated by commas, <span class="emphasis">without any space</span> (unless you put the whole argument inside quotes), and surrounded by brackets <div class="highlight-inline"><pre><span class="p">[...]</span></pre></div>. Again, let us illustrate this with an example. We will modify the previous program to allow it to show not only powers of <img class="latex" style="vertical-align: -0pt" src=latex/functions_support_cmd_0.svg>, but the powers of multiple, arbitrary numbers. Note: in the following, we will not repeat the whole <div class="highlight-inline"><pre><span class="n">main</span><span class="p">()</span></pre></div> function, just the important bits.
+In the previous example, we chose to expose a simple integer. But in fact, the interface also allows virtually any type, provided that there is a way to convert a string into a value of this type. In particular, this is the case for vectors. There is a little subtlety though: the values of the vector must be separated by commas, <span class="emphasis">without any space</span> (unless you put the whole argument inside quotes), and surrounded by brackets <div class="highlight-inline"><pre><span class="p">[...]</span></pre></div>. Again, let us illustrate this with an example. We will modify the previous program to allow it to show not only powers of <img class="latex" style="vertical-align: -0pt" src="latex/functions_support_cmd_0.svg">, but the powers of multiple, arbitrary numbers. Note: in the following, we will not repeat the whole <div class="highlight-inline"><pre><span class="n">main</span><span class="p">()</span></pre></div> function, just the important bits.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre>    <span class="c1">// The number of powers of two to display</span>
-    <span class="n">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
     <span class="c1">// The powers to display</span>
     <span class="n">vec1f</span> <span class="n">p</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">};</span>
 
@@ -107,7 +112,7 @@ The program can now change the powers it displays, for example
 Finally, you may think that <div class="highlight-inline"><pre><span class="n">p</span></pre></div> is not a very explicit name for this last parameter. It would be clearer if we could call it <div class="highlight-inline"><pre><span class="n">pow</span></pre></div>. Unfortunately, <div class="highlight-inline"><pre><span class="n">pow</span></pre></div> is already the name of a function in C++, so we cannot give this name to the variable. However, the <div class="highlight-inline"><pre><span class="n">read_args</span><span class="p">()</span></pre></div> interface allows you to manually give a name to any parameter using the <div class="highlight-inline"><pre><span class="n">name</span><span class="p">()</span></pre></div> function. Let us do that and modify the previous example.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre>    <span class="c1">// The number of powers of two to display</span>
-    <span class="n">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
     <span class="c1">// The powers to display, we still call it &#39;p&#39; in the program</span>
     <span class="n">vec1f</span> <span class="n">p</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">};</span>
 

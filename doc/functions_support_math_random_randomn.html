@@ -17,15 +17,47 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_random">Randomization</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">randomu</span><span class="p">(</span><span class="k">auto</span> <span class="n">seed</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">randomn</span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span> <span class="n">seed</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">N</span><span class="p">,</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">randomu</span><span class="p">(</span><span class="k">auto</span> <span class="n">seed</span><span class="p">,</span> <span class="p">...)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">N</span><span class="p">,</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">randomn</span><span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span> <span class="n">seed</span><span class="p">,</span> <span class="p">...)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+This function generates random double precision floating point values that are distributed according to the canonical Gaussian (or normal) probability distribution. This distribution has a mean, median and mode of zero and a standard deviation of one.
+<br><br>
+Both versions need a random seed as first argument (see <div class="highlight-inline"><pre><span class="n">make_seed</span><span class="p">()</span></pre></div>). The first version generates one number, while the second will create a new vector and fill it with random values. The other arguments after the seed are the dimensions of the generated vector.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// We create the seed (see make_seed())</span>
+<span class="k">auto</span> <span class="n">seed</span> <span class="o">=</span> <span class="n">make_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+
+<span class="c1">// Generate one random number</span>
+<span class="kt">double</span> <span class="n">rnd</span> <span class="o">=</span> <span class="n">randomn</span><span class="p">(</span><span class="n">seed</span><span class="p">);</span>
+<span class="c1">// Generate 1000 numbers</span>
+<span class="n">vec1d</span> <span class="n">rv</span> <span class="o">=</span> <span class="n">randomn</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<span class="c1">// Generate 500 x 100 numbers</span>
+<span class="n">vec2d</span> <span class="n">rv2</span> <span class="o">=</span> <span class="n">randomn</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
+
+<span class="c1">// Properties of the distribution</span>
+<span class="n">mean</span><span class="p">(</span><span class="n">rv</span><span class="p">);</span> <span class="c1">// should be close to zero</span>
+<span class="n">stddev</span><span class="p">(</span><span class="n">rv</span><span class="p">);</span> <span class="c1">// should be close to one</span>
+<span class="n">min</span><span class="p">(</span><span class="n">rv</span><span class="p">);</span> <span class="c1">// can be anything, most likely negative</span>
+<span class="n">max</span><span class="p">(</span><span class="n">rv</span><span class="p">);</span> <span class="c1">// can be anything, most likely positive</span>
+
+<span class="c1">// Other distributions can be generated from this one.</span>
+<span class="c1">// For example if one says that a value is measured to be equal to</span>
+<span class="c1">// &#39;x&#39; plus or minus &#39;dx&#39;, then this value can be simulated using</span>
+<span class="kt">double</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">obs</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span><span class="o">*</span><span class="n">randomn</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

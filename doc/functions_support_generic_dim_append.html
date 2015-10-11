@@ -17,7 +17,12 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_02_generic.html">Generic vector functions</a><span class="catsep">&gt;</span><a href="category_support_02_generic.html#SEC_support_generic_dims">Modifying dimensions</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">append</span><span class="o">&lt;</span><span class="n">N</span><span class="o">&gt;</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T1</span><span class="o">&gt;&amp;</span> <span class="n">t1</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T2</span><span class="o">&gt;</span> <span class="n">t2</span><span class="p">)</span>
 </pre></div></td></tr>
@@ -42,8 +47,8 @@ These functions behave similarly to <div class="highlight-inline"><pre><span cla
 
 <span class="c1">// For multidimensional vectors</span>
 <span class="n">vec2i</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">}};</span>         <span class="c1">// x is (2x2)</span>
-<span class="n">vec2i</span> <span class="n">y</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">}};</span>             <span class="c1">// y is (1x2)</span>
-<span class="n">vec2i</span> <span class="n">z</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">}};</span>              <span class="c1">// z is (3x1)</span>
+<span class="n">vec2i</span> <span class="n">y</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">}};</span>             <span class="c1">// y is (2x1)</span>
+<span class="n">vec2i</span> <span class="n">z</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">}};</span>              <span class="c1">// z is (1x3)</span>
 <span class="n">append</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
 <span class="n">x</span><span class="p">;</span> <span class="c1">// {{1,2,0}, {3,4,0}}          // x is (2x3)</span>
 <span class="n">prepend</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">);</span>

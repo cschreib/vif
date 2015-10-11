@@ -17,15 +17,33 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signatures</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_reduce">Reduction</a>
+</div><br>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">mean</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">partial_mean</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">partial_mean</span><span class="p">(</span><span class="kt">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+The function <div class="highlight-inline"><pre><span class="n">mean</span><span class="p">()</span></pre></div> computes the average of the values in <div class="highlight-inline"><pre><span class="n">v</span></pre></div>, i.e., the sum divided by the number of elements.
+<br><br>
+Calling <div class="highlight-inline"><pre><span class="n">mean</span><span class="p">()</span></pre></div> on an empty vector returns not-a-number.
+<br><br>
+The function <div class="highlight-inline"><pre><span class="n">partial_mean</span><span class="p">()</span></pre></div> will apply <div class="highlight-inline"><pre><span class="n">mean</span><span class="p">()</span></pre></div> on the <div class="highlight-inline"><pre><span class="n">d</span></pre></div>th dimension of the vector (zero being the first dimension) and reduce its number of dimensions by one.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">1.5</span><span class="p">};</span>
+<span class="n">mean</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// 0.8</span>
+
+<span class="n">vec2d</span> <span class="n">w</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">}};</span>
+<span class="n">partial_mean</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">);</span> <span class="c1">// {0,0.5,1.5,3,5}</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

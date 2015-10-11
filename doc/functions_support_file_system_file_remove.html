@@ -17,14 +17,19 @@
   <script src="menu-left.js"></script>
   <script src="menu-right.js"></script>
 
-<div class="content"><span class="section">Signature</span>
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_06_file.html">File input/output</a><span class="catsep">&gt;</span><a href="category_support_06_file.html#SEC_support_file_system">File system</a>
+</div><br>
+<span class="section">Signature</span>
 <table style="signatures">
 <tr><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">remove</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will delete the file given in argument and return <div class="highlight-inline"><pre><span class="kc">true</span></pre></div> on success, or if the file does not exists. It will return <div class="highlight-inline"><pre><span class="kc">false</span></pre></div> only if the file exists but could not be removed (i.e., because you are lacking the right permissions).
+This function will delete the file given in argument and return <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> on success, or if the file does not exists. It will return <div class="highlight-inline"><pre><span class="nb">false</span></pre></div> only if the file exists but could not be removed (i.e., because you are lacking the right permissions).
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="c1">// That&#39;s a bad idea, but for the sake of the example...</span>
 <span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;/home/joe/.phypprc&quot;</span><span class="p">);</span>

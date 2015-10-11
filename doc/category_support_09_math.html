@@ -25,8 +25,8 @@ The mathematics support library is among the largest inside <i>phy</i><sub>++</s
 <br><br>
 This library provides the following global constants:
 <ul>
-<li> <div class="highlight-inline"><pre><span class="n">fnan</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dnan</span></pre></div>. These are the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> representation of the &ldquo;not-a-number&rdquo; (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., <div class="highlight-inline"><pre><span class="mf">2.0</span> <span class="o">+</span> <span class="n">fnan</span> <span class="o">==</span> <span class="n">fnan</span></pre></div>). More troubling, any comparison operation involving a NaN will return <div class="highlight-inline"><pre><span class="kc">false</span></pre></div>, e.g., <div class="highlight-inline"><pre><span class="p">(</span><span class="mf">10.0</span> <span class="o">&lt;</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="kc">false</span></pre></div> and <div class="highlight-inline"><pre><span class="p">(</span><span class="mf">10.0</span> <span class="o">&gt;=</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="kc">false</span></pre></div> too. The only notable exception to this rule is that <div class="highlight-inline"><pre><span class="p">(</span><span class="n">fnan</span> <span class="o">!=</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="kc">true</span></pre></div>. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as <div class="highlight-inline"><pre><span class="o">-</span><span class="mi">99</span></pre></div>. Using NaN in this case is clearer.</li>
-<li> <div class="highlight-inline"><pre><span class="n">fpi</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dpi</span></pre></div>. This is the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> closest representation of the number <img class="latex" style="vertical-align: -0pt" src=latex/category_support_09_math_0.svg>.</li>
+<li> <div class="highlight-inline"><pre><span class="n">fnan</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dnan</span></pre></div>. These are the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> representation of the &ldquo;not-a-number&rdquo; (NaN) special value. This value is returned by some operations that are mathematically undefined in the real domain. For example, dividing zero by zero, or taking the square root of a negative number. NaN has some very peculiar properties that can surprise the newcomer. In particular, it propagates extremely fast, since any operation involving at least a NaN value will always return NaN, e.g., <div class="highlight-inline"><pre><span class="mf">2.0</span> <span class="o">+</span> <span class="n">fnan</span> <span class="o">==</span> <span class="n">fnan</span></pre></div>). More troubling, any comparison operation involving a NaN will return <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>, e.g., <div class="highlight-inline"><pre><span class="p">(</span><span class="mf">10.0</span> <span class="o">&lt;</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="nb">false</span></pre></div> and <div class="highlight-inline"><pre><span class="p">(</span><span class="mf">10.0</span> <span class="o">&gt;=</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="nb">false</span></pre></div> too. The only notable exception to this rule is that <div class="highlight-inline"><pre><span class="p">(</span><span class="n">fnan</span> <span class="o">!=</span> <span class="n">fnan</span><span class="p">)</span> <span class="o">==</span> <span class="nb">true</span></pre></div>. Knowing this, NaN is a very useful return value to indicate that giving an actual value would not make sense. For example, in a galaxy catalog, some galaxies may have been observed at a certain wavelength, but not all of them. For those that are not observed, we do not know their flux. In this case, astronomers typically assign them a special, weird value, such as <div class="highlight-inline"><pre><span class="o">-</span><span class="mi">99</span></pre></div>. Using NaN in this case is clearer.</li>
+<li> <div class="highlight-inline"><pre><span class="n">fpi</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dpi</span></pre></div>. This is the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> closest representation of the number <img class="latex" style="vertical-align: -0pt" src="latex/category_support_09_math_0.svg">.</li>
 <li> <div class="highlight-inline"><pre><span class="n">finf</span></pre></div> and <div class="highlight-inline"><pre><span class="n">dinf</span></pre></div>. This is the <div class="highlight-inline"><pre><span class="kt">float</span></pre></div> and <div class="highlight-inline"><pre><span class="kt">double</span></pre></div> representation of the positive infinity. The positive infinity is larger than any other finite value.</li>
 </ul>
 We now present the functions provided by this support library. One of the responsibilities of this library is to bring vectorized versions of standard mathematical functions that only work for scalar values. Since these functions are fairly common and well known, we will not describe their signature and behavior, and instead just list them here:
@@ -47,11 +47,11 @@ We now list the other, less common functions provided in this library. These are
 <div class="section-content">
 <ul class="category-funclist">
 <li><a href="functions_support_math_lowlevel_e10.html">e10</a></li>
-<li><a href="functions_support_math_lowlevel_sqr.html">sqr</a></li>
-<li><a href="functions_support_math_lowlevel_invsqr.html">invsqr</a></li>
+<li><a href="functions_support_math_lowlevel_e10.html">sqr</a></li>
+<li><a href="functions_support_math_lowlevel_e10.html">invsqr</a></li>
 <li><a href="functions_support_math_lowlevel_clamp.html">clamp</a></li>
 <li><a href="functions_support_math_lowlevel_is_finite.html">is_finite</a></li>
-<li><a href="functions_support_math_lowlevel_is_nan.html">is_nan</a></li>
+<li><a href="functions_support_math_lowlevel_is_finite.html">is_nan</a></li>
 <li><a href="functions_support_math_lowlevel_sign.html">sign</a></li>
 </ul>
 </div>
@@ -64,7 +64,7 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_sequence_in_bin.html">in_bin</a></li>
 <li><a href="functions_support_math_sequence_in_bin.html">in_bin_open</a></li>
 <li><a href="functions_support_math_sequence_bin_center.html">bin_center</a></li>
-<li><a href="functions_support_math_sequence_bin_width.html">bin_width</a></li>
+<li><a href="functions_support_math_sequence_bin_center.html">bin_width</a></li>
 </ul>
 </div>
 <span class="subsection"><a name="SEC_support_math_random"></a>Randomization</span>
@@ -72,6 +72,7 @@ We now list the other, less common functions provided in this library. These are
 <ul class="category-funclist">
 <li><a href="functions_support_math_random_make_seed.html">make_seed</a></li>
 <li><a href="functions_support_math_random_randomn.html">randomn</a></li>
+<li><a href="functions_support_math_random_randomu.html">randomu</a></li>
 <li><a href="functions_support_math_random_randomi.html">randomi</a></li>
 <li><a href="functions_support_math_random_random_pdf.html">random_pdf</a></li>
 <li><a href="functions_support_math_random_random_coin.html">random_coin</a></li>
@@ -82,7 +83,7 @@ We now list the other, less common functions provided in this library. These are
 <span class="subsection"><a name="SEC_support_math_reduce"></a>Reduction</span>
 <div class="section-content">
 <ul class="category-funclist">
-<li><a href="functions_support_math_reduce_run_dim_idx.html">run_dim_idx</a></li>
+<li><a href="functions_support_math_reduce_reduce.html">reduce</a></li>
 <li><a href="functions_support_math_reduce_run_dim.html">run_dim</a></li>
 <li><a href="functions_support_math_reduce_total.html">total</a></li>
 <li><a href="functions_support_math_reduce_total.html">partial_total</a></li>
@@ -98,6 +99,12 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_reduce_percentile.html">percentile</a></li>
 <li><a href="functions_support_math_reduce_percentile.html">partial_percentile</a></li>
 <li><a href="functions_support_math_reduce_percentile.html">percentiles</a></li>
+<li><a href="functions_support_math_reduce_rms.html">rms</a></li>
+<li><a href="functions_support_math_reduce_rms.html">partial_rms</a></li>
+<li><a href="functions_support_math_reduce_stddev.html">stddev</a></li>
+<li><a href="functions_support_math_reduce_stddev.html">partial_stddev</a></li>
+<li><a href="functions_support_math_reduce_mad.html">mad</a></li>
+<li><a href="functions_support_math_reduce_mad.html">partial_mad</a></li>
 <li><a href="functions_support_math_reduce_min.html">min</a></li>
 <li><a href="functions_support_math_reduce_min.html">partial_min</a></li>
 <li><a href="functions_support_math_reduce_min.html">max</a></li>
@@ -107,7 +114,6 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_reduce_histogram.html">histogram</a></li>
 <li><a href="functions_support_math_reduce_histogram2d.html">histogram2d</a></li>
 <li><a href="functions_support_math_reduce_sigma_clip.html">sigma_clip</a></li>
-<li><a href="functions_support_math_reduce_mad_clip.html">mad_clip</a></li>
 </ul>
 </div>
 <span class="subsection"><a name="SEC_support_math_interp"></a>Interpolation</span>
@@ -116,7 +122,6 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_interpol_interpolate.html">interpolate</a></li>
 <li><a href="functions_support_math_interpol_bilinear.html">bilinear</a></li>
 <li><a href="functions_support_math_interpol_rebin.html">rebin</a></li>
-<li><a href="functions_support_math_interpol_merge_add.html">merge_add</a></li>
 </ul>
 </div>
 <span class="subsection"><a name="SEC_support_math_calculus"></a>Calculus</span>
