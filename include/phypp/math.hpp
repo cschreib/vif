@@ -365,10 +365,23 @@ vec<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec<1,Ty
     return v;
 }
 
-template<typename T>
-bool random_coin(T& seed, double prob) {
+template<typename TSeed>
+bool random_coin(TSeed& seed, double prob) {
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
     return distribution(seed) <= prob;
+}
+
+template<typename TSeed, uint_t D, typename T>
+vec<D,bool> random_coin(TSeed& seed, const vec<D,T>& prob) {
+    vec<D,bool> v(prob.dims);
+
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
+    for (uint_t i : range(v)) {
+        v.safe[i] = distribution(seed) <= prob.safe[i];
+    }
+
+    return v;
 }
 
 template<typename T, typename ... Args>
