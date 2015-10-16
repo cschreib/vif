@@ -30,7 +30,7 @@ namespace reflex {
     void foreach_member_(reflex::struct_t<T> d, F& f, cte_t<I>, cte_t<N>) {
         using type = typename reflex::struct_t<T>::member_types::template get<I>;
         auto& m = d.data.members[I];
-        f(m, reflex::wrap(*(constify<T,type>*)d.data.members[I].value));
+        f(m, reflex::wrap(*reinterpret_cast<constify<T,type>*>(d.data.members[I].value)));
         foreach_member_(d, f, cte_t<I+1>(), cte_t<N>());
     }
 

@@ -82,11 +82,17 @@ namespace reflex {
         template<typename T>
         void copy_members_(T&& d) {
             members.reserve(d.members.size());
-            int_t diff = (char*)this - (const char*)&d;
+            int_t diff = reinterpret_cast<char*>(this) - reinterpret_cast<const char*>(&d);
             for (auto& m : d.members) {
-                members.push_back({m.name, m.type, this, (void*)((char*)m.value + diff)});
+                members.push_back({m.name, m.type, this,
+                    reinterpret_cast<void*>(reinterpret_cast<char*>(m.value) + diff)
+                });
+
                 if (m.reflex) {
-                    members.back().reflex = (data_t*)(void*)((char*)m.reflex + diff);
+                    members.back().reflex = reinterpret_cast<data_t*>(
+                        reinterpret_cast<char*>(m.reflex) + diff
+                    );
+
                     members.back().reflex->parent = this;
                 }
             }
@@ -168,7 +174,7 @@ namespace reflex {
             // (type is necessary because some objects, although different, share the same address,
             // for example a structure and its first member)
             for (auto& m : data->members) {
-                if (m.type == typeid(t) && m.value == (const void*)&t) {
+                if (m.type == typeid(t) && m.value == reinterpret_cast<const void*>(&t)) {
                     return data->full_name() + "." + m.name;
                 }
             }
@@ -182,7 +188,7 @@ namespace reflex {
 
     template<typename T>
     struct has_reflex {
-        template <typename U> static std::true_type dummy(decltype(((U*)0)->_reflex)*);
+        template <typename U> static std::true_type dummy(decltype(std::declval<U>()._reflex)*);
         template <typename U> static std::false_type dummy(...);
         static const bool value = decltype(dummy<T>(0))::value;
     };
@@ -201,14 +207,14 @@ namespace reflex {
     auto get_value(type_list<Args...> tl, member_t& m) ->
         typename std::add_lvalue_reference<typename type_list<Args...>::template get<N>>::type {
         using type = typename type_list<Args...>::template get<N>;
-        return *(type*)m.value;
+        return *reinterpret_cast<type*>(m.value);
     }
 
     template<std::size_t N, typename ... Args>
     auto get_value(type_list<Args...> tl, const member_t& m) ->
         const typename std::add_lvalue_reference<typename type_list<Args...>::template get<N>>::type {
         using type = typename type_list<Args...>::template get<N>;
-        return *(const type*)m.value;
+        return *reinterpret_cast<const type*>(m.value);
     }
 
     template<typename ... Args, typename T>
@@ -284,14 +290,14 @@ namespace reflex {
     auto get_value(struct_t<T>& t) ->
         typename std::add_lvalue_reference<typename struct_t<T>::member_types::template get<N>>::type {
         using type = typename struct_t<T>::member_types::template get<N>;
-        return *(type*)t.data.members[N].value;
+        return *reinterpret_cast<type*>(t.data.members[N].value);
     }
 
     template<std::size_t N, typename T>
     auto get_value(const struct_t<T>& t) ->
         const typename std::add_lvalue_reference<typename struct_t<T>::member_types::template get<N>>::type {
         using type = typename struct_t<T>::member_types::template get<N>;
-        return *(const type*)t.data.members[N].value;
+        return *reinterpret_cast<const type*>(t.data.members[N].value);
     }
 
     template<bool reflexed>
@@ -339,7 +345,7 @@ namespace reflex {
 }
 
 #ifndef NO_REFLECTION
-    #define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, (void*)&name}
+    #define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, reinterpret_cast<void*>(&name)}
 
     #define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
 

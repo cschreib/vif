@@ -889,15 +889,15 @@ struct vec {
     using vtype = std::vector<dtype>;
     using dim_type = std::array<std::size_t, Dim>;
     struct comparator {
-        constexpr bool operator() (const dtype& t1, const dtype& t2) {
+        constexpr bool operator() (const dtype& t1, const dtype& t2) const {
             return t1 < t2;
         }
         template<typename U>
-        constexpr bool operator() (const dtype& t1, const U& t2) {
+        constexpr bool operator() (const dtype& t1, const U& t2) const {
             return t1 < t2;
         }
         template<typename U>
-        constexpr bool operator() (const U& t1, const dtype& t2) {
+        constexpr bool operator() (const U& t1, const dtype& t2) const {
             return t1 < t2;
         }
     };
@@ -905,10 +905,10 @@ struct vec {
     vtype    data;
     dim_type dims = {{0}};
 
-    vec() = default;
-    vec(const vec&) = default;
+    vec() : safe(*this) {}
+    vec(const vec& v) : data(v.data), dims(v.dims), safe(*this) {}
 
-    vec(vec&& v) : data(std::move(v.data)), dims(v.dims) {
+    vec(vec&& v) : data(std::move(v.data)), dims(v.dims), safe(*this) {
         for (uint_t i = 0; i < Dim; ++i) {
             v.dims[i] = 0;
         }
@@ -916,17 +916,17 @@ struct vec {
 
     template<typename ... Args, typename enable =
         typename std::enable_if<is_dim_list<Args...>::value>::type>
-    explicit vec(Args&& ... d) {
+    explicit vec(Args&& ... d) : safe(*this) {
         set_array(dims, std::forward<Args>(d)...);
         resize();
     }
 
-    vec(nested_initializer_list<Dim,Type> il) {
+    vec(nested_initializer_list<Dim,Type> il) : safe(*this) {
         ilist_t<Dim, Type>::fill(*this, il);
     }
 
     template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
-    vec(const vec<Dim,T>& v) : dims(v.dims) {
+    vec(const vec<Dim,T>& v) : dims(v.dims), safe(*this) {
         static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
             "non-convertible types");
 
@@ -937,7 +937,7 @@ struct vec {
     }
 
     template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
-    explicit vec(const vec<Dim,bool>& v) : dims(v.dims) {
+    explicit vec(const vec<Dim,bool>& v) : dims(v.dims), safe(*this) {
         static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
             "non-convertible types");
         data.resize(v.data.size());
@@ -947,7 +947,7 @@ struct vec {
     }
 
     template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
-    explicit vec(const vec<Dim,bool*>& v) : dims(v.dims) {
+    explicit vec(const vec<Dim,bool*>& v) : dims(v.dims), safe(*this) {
         static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
             "non-convertible types");
         data.resize(v.data.size());
@@ -956,7 +956,7 @@ struct vec {
         }
     }
 
-    vec(const vec<Dim,Type*>& v) : dims(v.dims) {
+    vec(const vec<Dim,Type*>& v) : dims(v.dims), safe(*this) {
         data.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
             data[i] = *v.data[i];
@@ -977,8 +977,17 @@ struct vec {
         return *this;
     }
 
-    vec& operator = (const vec&) = default;
-    vec& operator = (vec&&) = default;
+    vec& operator = (const vec& v) {
+        data = v.data;
+        dims = v.dims;
+        return *this;
+    }
+
+    vec& operator = (vec&& v) {
+        data = std::move(v.data);
+        dims = std::move(v.dims);
+        return *this;
+    }
 
     template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
     vec& operator = (const vec<Dim,T>& v) {
@@ -1293,17 +1302,11 @@ struct vec {
     struct safe_proxy {
         vec& parent;
 
-        vec& get_vec_() {
-            return *reinterpret_cast<vec*>(
-                reinterpret_cast<char*>(this) - offsetof(vec, safe));
-        }
-
-        safe_proxy() : parent(get_vec_()) {}
-        safe_proxy(const safe_proxy&) : parent(get_vec_()) {}
-        safe_proxy(safe_proxy&&) : parent(get_vec_()) {}
-
-        safe_proxy& operator=(const safe_proxy&) { return *this; }
-        safe_proxy& operator=(safe_proxy&&) { return *this; }
+        safe_proxy(vec& p) : parent(p) {}
+        safe_proxy(const vec&) = delete;
+        safe_proxy(vec&&) = delete;
+        safe_proxy& operator=(const vec&) = delete;
+        safe_proxy& operator=(vec&&) = delete;
 
         Type& operator [] (uint_t i) {
             return const_cast<Type&>(const_cast<const safe_proxy&>(*this)[i]);
@@ -1562,15 +1565,15 @@ struct vec<Dim,Type*> {
             return t1 < *t2;
         }
 
-        constexpr bool operator() (const dtype& t1, const dtype& t2) {
+        constexpr bool operator() (const dtype& t1, const dtype& t2) const {
             return t1 < t2;
         }
         template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
-        constexpr bool operator() (const dtype& t1, const U& t2) {
+        constexpr bool operator() (const dtype& t1, const U& t2) const {
             return t1 < t2;
         }
         template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
-        constexpr bool operator() (const U& t1, const dtype& t2) {
+        constexpr bool operator() (const U& t1, const dtype& t2) const {
             return t1 < t2;
         }
     };
@@ -1580,16 +1583,16 @@ struct vec<Dim,Type*> {
     dim_type dims = {{0}};
 
     vec() = delete;
-    vec(const vec&) = default;
-    vec(vec&&) = default;
+    vec(const vec& v) : parent(v.parent), data(v.data), dims(v.dims), safe(*this) {}
+    vec(vec&& v) : parent(v.parent), data(std::move(v.data)), dims(std::move(v.dims)), safe(*this) {}
 
     template<std::size_t D, typename T, typename enable =
         typename std::enable_if<std::is_same<rtype_t<T>, rtype>::value>::type>
-    explicit vec(vec_ref_tag_t, const vec<D,T>& p) {
+    explicit vec(vec_ref_tag_t, const vec<D,T>& p) : safe(*this) {
         parent = static_cast<void*>(const_cast<vec<D,T>*>(&p));
     }
 
-    explicit vec(vec_ref_tag_t, void* p) {
+    explicit vec(vec_ref_tag_t, void* p) : safe(*this) {
         parent = p;
     }
 
@@ -1850,17 +1853,11 @@ struct vec<Dim,Type*> {
     struct safe_proxy {
         vec& parent;
 
-        vec& get_vec_() {
-            return *reinterpret_cast<vec*>(
-                reinterpret_cast<char*>(this) - offsetof(vec, safe));
-        }
-
-        safe_proxy() : parent(get_vec_()) {}
-        safe_proxy(const safe_proxy&) : parent(get_vec_()) {}
-        safe_proxy(safe_proxy&&) : parent(get_vec_()) {}
-
-        safe_proxy& operator=(const safe_proxy&) { return *this; }
-        safe_proxy& operator=(safe_proxy&&) { return *this; }
+        safe_proxy(vec& p) : parent(p) {}
+        safe_proxy(const vec&) = delete;
+        safe_proxy(vec&&) = delete;
+        safe_proxy& operator=(const vec&) = delete;
+        safe_proxy& operator=(vec&&) = delete;
 
         Type& operator [] (uint_t i) {
             return const_cast<Type&>(const_cast<const safe_proxy&>(*this)[i]);
@@ -3119,7 +3116,7 @@ template<typename Type>
 vec<1,rtype_t<Type>> shift(const vec<1,Type>& v, int_t n, rtype_t<Type> def = 0) {
     vec<1,rtype_t<Type>> tmp;
 
-    if (uint_t(abs(n)) > v.dims[0]) {
+    if (uint_t(std::abs(n)) > v.dims[0]) {
         tmp = replicate(def, v.dims[0]);
         return tmp;
     }
@@ -3153,7 +3150,6 @@ bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
     vec2b visit(map.dims);
     visit.safe(x,y) = true;
 
-    bool found = false;
     while (!open.empty()) {
         vec_pair old_open = std::move(open);
 

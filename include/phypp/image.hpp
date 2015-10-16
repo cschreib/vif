@@ -416,7 +416,7 @@ vec2b mask_inflate(vec2b m, uint_t d) {
                     int_t tx = j.safe[0] + x.safe[k];
                     int_t ty = j.safe[1] + y.safe[k];
 
-                    if (tx >= 0 && tx < m.dims[0] && ty >= 0 && ty < m.dims[1]) {
+                    if (tx >= 0 && uint_t(tx) < m.dims[0] && ty >= 0 && uint_t(ty) < m.dims[1]) {
                         m.safe(uint_t(tx), uint_t(ty)) = true;
                     }
                 }

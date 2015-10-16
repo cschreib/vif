@@ -161,8 +161,15 @@ bool empty(const std::string& s) {
 }
 
 uint_t distance(const std::string& t, const std::string& u) {
-    uint_t n = std::min(t.size(), u.size());
-    uint_t d = abs(t.size() - u.size());
+    uint_t n, d;
+    if (t.size() < u.size()) {
+        n = t.size();
+        d = u.size() - t.size();
+    } else {
+        n = u.size();
+        d = t.size() - u.size();
+    }
+
     for (uint_t i : range(n)) {
         if (t[i] != u[i]) ++d;
     }
@@ -430,7 +437,7 @@ std::string keep_end(std::string s, uint_t n = 1) {
 namespace sha1 {
     namespace {
         // Rotate an integer value to left.
-        inline const unsigned int rol(const unsigned int value,
+        inline unsigned int rol(const unsigned int value,
                 const unsigned int steps) {
             return ((value << steps) | (value >> (32 - steps)));
         }
@@ -523,10 +530,10 @@ namespace sha1 {
             for (int roundPos = 0; currentBlock < endCurrentBlock; currentBlock += 4) {
                 // This line will swap endian on big endian and keep endian
                 // on little endian.
-                w[roundPos++] = (unsigned int) sarray[currentBlock + 3]
-                        | (((unsigned int) sarray[currentBlock + 2]) << 8)
-                        | (((unsigned int) sarray[currentBlock + 1]) << 16)
-                        | (((unsigned int) sarray[currentBlock]) << 24);
+                w[roundPos++] = static_cast<unsigned int>(sarray[currentBlock + 3])
+                        | ((static_cast<unsigned int>(sarray[currentBlock + 2])) << 8)
+                        | ((static_cast<unsigned int>(sarray[currentBlock + 1])) << 16)
+                        | ((static_cast<unsigned int>(sarray[currentBlock])) << 24);
             }
 
             innerHash(result, w);
@@ -539,7 +546,7 @@ namespace sha1 {
         int lastBlockBytes = 0;
         for (; lastBlockBytes < endCurrentBlock; ++lastBlockBytes) {
             w[lastBlockBytes >> 2] |=
-                (unsigned int)sarray[lastBlockBytes + currentBlock] <<
+                static_cast<unsigned int>(sarray[lastBlockBytes + currentBlock]) <<
                 ((3 - (lastBlockBytes & 3)) << 3);
         }
 

@@ -53,7 +53,7 @@ namespace file {
             if (mask) {
                 fs->dirlen = mask - pattern;
                 mask++;
-                fs->directory = (char *)malloc(fs->dirlen + 1);
+                fs->directory = reinterpret_cast<char*>(malloc(fs->dirlen + 1));
                 memcpy(fs->directory, pattern, fs->dirlen);
                 fs->directory[fs->dirlen] = 0;
             } else {
@@ -64,7 +64,7 @@ namespace file {
 
             fs->dirfd = opendir(fs->directory);
             if (!fs->dirfd) {
-                _findclose((long)fs);
+                _findclose(reinterpret_cast<long>(fs));
                 return -1;
             }
 
@@ -74,16 +74,16 @@ namespace file {
 
             fs->pattern = strdup(mask);
 
-            if (_findnext((long)fs, data) < 0) {
-                _findclose((long)fs);
+            if (_findnext(reinterpret_cast<long>(fs), data) < 0) {
+                _findclose(reinterpret_cast<long>(fs));
                 return -1;
             }
 
-            return (long)fs;
+            return reinterpret_cast<long>(fs);
         }
 
         int _findnext(long id, struct _finddata_t *data) {
-            _find_search_t *fs = (_find_search_t*)id;
+            _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
 
             dirent *entry;
             for (;;) {
@@ -131,7 +131,7 @@ namespace file {
 
         int _findclose(long id) {
             int ret;
-            _find_search_t *fs = (_find_search_t *)id;
+            _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
 
             ret = fs->dirfd ? closedir(fs->dirfd) : 0;
             free(fs->pattern);
