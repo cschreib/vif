@@ -515,79 +515,89 @@ randpos_status randpos_uniform(TSeed& seed, vec1d rra, vec1d rdec, F&& in_region
     return status;
 }
 
+template<std::size_t N1, typename TR1, typename TD1, typename TSeed>
+void randpos_uniform_circle(TSeed& seed, double tra0, double tdec0, double tr0,
+    uint_t nsrc, vec<N1,TR1>& ra, vec<N1,TD1>& dec) {
+
+    vec1d theta = randomu(seed, nsrc)*2*dpi;
+    vec1d r = tr0*sqrt(randomu(seed, nsrc));
+
+    dec = tdec0 + r*sin(theta);
+    ra  = tra0 + r*cos(theta)/cos(dec*dpi/180.0);
+};
+
 struct randpos_power_options {
-    double power = 1.0;
-    uint_t levels = 5;
-    double inflate = 1.0;
-    double overload = 1.0;
-    uint_t nsrc = 1000;
-    uint_t max_iter = 1000;
+    double lambda = 1.5;    // Circle shrinking factor
+    uint_t eta = 4;         // number of positions per circle
+    uint_t levels = 6;      // number of levels (ignored in randpos_power)
+    uint_t max_iter = 1000; // Maximum number of internal iterations
+                            // (ignored in randpos_power_base)
 };
 
 template<std::size_t N1, typename TR1, typename TD1, typename TSeed>
-randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double r0,
+void randpos_power_base(TSeed& seed, double ra0, double dec0, double r0,
     vec<N1,TR1>& ra, vec<N1,TD1>& dec, randpos_power_options options) {
+
+    // Initial conditions
+    ra = {ra0};
+    dec = {dec0};
+    double r = r0;
+
+    // Loop over the levels
+    for (uint_t l : range(options.levels)) {
+        // Generate positions of this level
+        vec1d nra, ndec;
+        uint_t nprod = ra.size()*options.eta;
+        nra.reserve(nprod);
+        ndec.reserve(nprod);
+
+        for (uint_t i : range(ra)) {
+            vec1d tra, tdec;
+            randpos_uniform_circle(seed, ra[i], dec[i], r, options.eta, tra, tdec);
+            append(nra, tra);
+            append(ndec, tdec);
+        }
+
+        // Keep these positions for the next level
+        std::swap(nra, ra);
+        std::swap(ndec, dec);
+
+        // Shrink for next level
+        r /= options.lambda;
+    }
+}
+
+template<std::size_t N1, typename TR1, typename TD1, typename TSeed, typename F>
+randpos_status randpos_power_region(TSeed& seed, double ra0, double dec0, double r0,
+    vec<N1,TR1>& ra, vec<N1,TD1>& dec, F&& in_region, randpos_power_options options) {
 
     randpos_status status;
 
-    if (options.nsrc == 0) {
-        // Nothing to do...
-        ra.clear(); dec.clear();
-        return status;
-    }
+    auto get_fill = [&in_region, &seed](double ra1, double dec1,
+        double r1, uint_t nfil, double threshold) mutable {
 
-    // If asked, inflate the initial generation radius
-    double rr0 = options.inflate*r0;
-
-    // Choose the number of objects to generate
-    uint_t nsim = options.overload*options.nsrc;
-    // Increase it to compensate area inflation
-    double inflate_fudge_factor = 1.1;
-    nsim = ceil(nsim*sqr(options.inflate)*inflate_fudge_factor);
-
-    // If the wanted number of object is too low, the algorithm will not work
-    // well, so we generate more and will randomly pick among those afterwards.
-    if (nsim < 1000) nsim = 1000;
-
-    // The number of object per cell
-    uint_t eta = ceil(pow(nsim, 1.0/options.levels));
-    if (eta <= 1) {
-        eta = 2;
-        options.levels = ceil(log10(nsim)/log10(eta));
-    }
-
-    // The radius shrinking factor
-    double lambda = pow(eta, 1.0/(2.0 - options.power));
-
-    auto in_circle = [&ra0, &dec0, rr0](vec1d tra, vec1d tdec, double threshold) {
-        return angdist_less(tra, tdec, ra0, dec0, (rr0+threshold)*3600.0);
-    };
-
-    auto get_fill = [&in_circle, &seed](double ra1, double dec1,
-        double r1, uint_t num, double threshold) mutable {
-
-        vec1d tdec = (randomu(seed, num) - 0.5)*2*r1 + dec1;
-        vec1d tra  = (randomu(seed, num) - 0.5)*2*r1/cos(tdec*dpi/180.0) + ra1;
+        vec1d tdec = (randomu(seed, nfil) - 0.5)*2*r1 + dec1;
+        vec1d tra  = (randomu(seed, nfil) - 0.5)*2*r1/cos(tdec*dpi/180.0) + ra1;
 
         vec1u id = where(angdist_less(tra, tdec, ra1, dec1, r1*3600.0));
 
-        return fraction_of(in_circle(tra[id], tdec[id], threshold));
+        return fraction_of(in_region(tra[id], tdec[id], threshold));
     };
 
-    auto gen = [&in_circle, &seed, &options](double ra1, double dec1,
+    auto gen = [&in_region, &seed, &options](double ra1, double dec1,
         double r1, uint_t num, double threshold, vec1d& tra, vec1d& tdec) mutable {
 
         tdec = (randomu(seed, num) - 0.5)*2*r1 + dec1;
         tra  = (randomu(seed, num) - 0.5)*2*r1/cos(tdec*dpi/180.0) + ra1;
 
-        vec1u bid = where(!in_circle(tra, tdec, threshold) ||
+        vec1u bid = where(!in_region(tra, tdec, threshold) ||
             !angdist_less(tra, tdec, ra1, dec1, r1*3600.0));
 
         uint_t iter = 0;
         while (!bid.empty() && iter < options.max_iter) {
             tdec[bid] = (randomu(seed, bid.size()) - 0.5)*2*r1 + dec1;
             tra[bid]  = (randomu(seed, bid.size()) - 0.5)*2*r1/cos(tdec[bid]*dpi/180.0) + ra1;
-            bid = bid[where(!in_circle(tra[bid], tdec[bid], threshold) ||
+            bid = bid[where(!in_region(tra[bid], tdec[bid], threshold) ||
                 !angdist_less(tra[bid], tdec[bid], ra1, dec1, r1*3600.0))];
             ++iter;
         }
@@ -596,19 +606,22 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
     };
 
     // Initialize the algorithm with random positions in the whole area
-    uint_t bad = gen(ra0, dec0, rr0, eta, (options.levels <= 1 ? 0.0 : rr0), ra, dec);
+    uint_t bad = gen(ra0, dec0, r0, options.eta,
+        (options.levels <= 1 ? 0.0 : 0.8*r0/options.lambda), ra, dec);
+
     if (bad != 0) {
         status.success = false;
         status.failure = "could not place all random positions "
-            "("+strn(bad)+"/"+strn(eta)+") in initial radius "
-            "("+strn(rr0*3600)+"\", "+strn(ra0)+", "+strn(dec0)+")";
+            "("+strn(bad)+"/"+strn(options.eta)+") in initial radius "
+            "("+strn(r0*3600)+"\", "+strn(ra0)+", "+strn(dec0)+")";
         return status;
     }
 
-    for (int_t l : range(options.levels-1)) {
+    double r1 = r0;
+    for (uint_t l : range(options.levels-1)) {
         // For each position, generate new objects within a "cell" of radius 'r1'
-        double r1 = rr0*pow(lambda, -l-1);
-        double rth = (uint_t(l) == options.levels-2 ? 0.0 : 0.8*r1/lambda);
+        r1 /= options.lambda;
+        double rth = (l+2 == options.levels ? 0.0 : 0.8*r1/options.lambda);
 
         // First, compute the filling factor of each cell, i.e. what fraction of the
         // area of the cell is inside the convex hull. Each cell will then only
@@ -624,9 +637,9 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
         fill /= mean(fill);
 
         // Assign a number of objects to each positions
-        vec1u ngal = floor(eta*fill);
-        vec1d dngal = eta*fill - ngal;
-        uint_t miss0 = pow(eta, l+2) - total(ngal);
+        vec1u ngal = floor(options.eta*fill);
+        vec1d dngal = options.eta*fill - ngal;
+        uint_t miss0 = pow(options.eta, l+2) - total(ngal);
         uint_t miss = miss0;
 
         // Randomly assign fractional number of objects to make sure that the total
@@ -664,9 +677,9 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
             if (bad != 0) {
                 status.success = false;
                 status.failure = "could not place all random positions "
-                    "("+strn(bad)+"/"+strn(eta)+") in level "+strn(l+1)+" "
+                    "("+strn(bad)+"/"+strn(options.eta)+") in level "+strn(l+1)+" "
                     "radius ("+strn(r1*3600)+"\", "+strn(ra[i])+", "+strn(dec[i])+") "
-                    "and requested circle ("+strn(rr0*3600)+"\", "+strn(ra0)+", "+strn(dec0)+")";
+                    "and requested circle ("+strn(r0*3600)+"\", "+strn(ra0)+", "+strn(dec0)+")";
                 return status;
             }
 
@@ -679,77 +692,99 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
         std::swap(dec, dec1);
     }
 
-    // Remove sources outside of asked radius
-    vec1u idi = where(angdist_less(ra, dec, ra0, dec0, r0*3600.0));
-    if (idi.size() < options.nsrc) {
-        status.success = false;
-        status.failure = "too few generated positions end up in the requested circle "
-            "("+strn(idi.size())+" vs "+strn(options.nsrc)+"): try increasing the "
-            "'overload'";
-        return status;
-    }
-
-    // Trim catalog to match the input number of sources
-    vec1u fids = shuffle(seed, idi)[uindgen(options.nsrc)];
-    ra = ra[fids];
-    dec = dec[fids];
-
     return status;
 }
 
 template<std::size_t N1, typename TR1, typename TD1,
     std::size_t N2, typename TR2, typename TD2, typename TSeed>
-randpos_status randpos_power(TSeed& seed,
+randpos_status randpos_power(TSeed& seed, uint_t nsrc, double r0,
     const vec1u& hull, const vec<N2,TR2>& hra, const vec<N2,TD2>& hdec,
     vec<N1,TR1>& ra, vec<N1,TD1>& dec, randpos_power_options options) {
 
     randpos_status status;
 
-    if (options.nsrc == 0) {
+    if (nsrc == 0) {
         // Nothing to do...
         ra.clear(); dec.clear();
         return status;
     }
 
+    // Compute the hull area
+    double area = field_area_hull(hull, hra, hdec);
+    // Compute the maximum distance and field center
+    double rmax = 0;
+    double ra0 = 0, dec0 = 0;
+    for (uint_t i : range(hull))
+    for (uint_t j : range(i+1, hull.size())) {
+        double d = angdist(hra[hull[i]], hdec[hull[i]], hra[hull[j]], hdec[hull[j]])/3600.0;
+        if (d > rmax) {
+            ra0 = 0.5*(hra[hull[i]] + hra[hull[j]]);
+            dec0 = 0.5*(hdec[hull[i]] + hdec[hull[j]]);
+            rmax = d;
+        }
+    }
+
+    rmax /= 2.0; // we want a radius, not a diameter
+
     // Compute bounding box of the provided hull
     vec1d rra = {min(hra[hull]), max(hra[hull])};
     vec1d rdec = {min(hdec[hull]), max(hdec[hull])};
 
-    // The initial radius is taken as the maximum distance from the field center.
-    double r0 = max(angdist(hra[hull], hdec[hull], mean(rra), mean(rdec)))/3600.0;
+    // Compute the expected source density
+    double rho = nsrc/area;
 
-    // Compute the ratio between the area of the generation circle and the final
-    // request convex hull to keep the source density constant
-    double filling_factor = dpi*sqr(r0)/field_area_hull(hull, hra, hdec);
+    // Compute how many deeper levels we need to go with respect to r0
+    // to reach the extents of the requested area
+    uint_t tm = max(0, round(log(r0/rmax)/log(options.lambda)));
 
-    // Add some overload to make sure that enough objects are created
-    double circle_overload = 4.0;
+    // The initial radius
+    double rstart = r0/pow(options.lambda, tm);
+    // double rstart = r0;
 
-    auto circle_options = options;
-    circle_options.nsrc *= circle_overload*filling_factor*sqr(options.inflate);
-    if (circle_options.nsrc < 3000) circle_options.nsrc = 3000;
-    circle_options.inflate = 1.0;
+    // Compute how many deeper levels we need to go with respect to rstart
+    // to reach the local density
+    double fudge = 1.5;
+    options.levels = ceil(log(fudge*rho*dpi*sqr(rstart))/log(options.eta));
 
-    status = randpos_power_circle(
-        seed, mean(rra), mean(rdec), options.inflate*r0, ra, dec, circle_options
-    );
+    // Compute how many homogeneous starting positions we need above rstart
+    uint_t nstart = ceil(nsrc/pow(options.eta, options.levels));
 
-    if (!status.success) {
-        return status;
+    vec1d sra, sdec;
+    if (nstart <= 1) {
+        // Just use the center of the field
+        sra = {ra0}; sdec = {dec0};
+    } else {
+        // Generate honogenous positions
+        randpos_uniform_options uopts;
+        uopts.nsrc = nstart;
+        status = randpos_uniform(seed, rra, rdec, [&](vec1d tra, vec1d tdec) {
+            return in_convex_hull(tra, tdec, hull, hra, hdec);
+        }, sra, sdec, uopts);
+
+        if (!status.success) {
+            return status;
+        }
     }
 
-    vec1u idi = where(in_convex_hull(ra, dec, hull, hra, hdec));
-    if (idi.size() < options.nsrc) {
-        status.success = false;
-        status.failure = "too few generated positions end up in the requested hull "
-            "("+strn(idi.size())+" vs "+strn(options.nsrc)+"): try increasing the "
-            "'overload'";
-        return status;
+    for (uint_t i : range(sra)) {
+        // Now generate the positions using the original Soneira & Pebbles algorithm
+        vec1d tra, tdec;
+        status = randpos_power_region(seed, sra[i], sdec[i], rstart, tra, tdec,
+            [&](vec1d ttra, vec1d ttdec, double threshold) {
+            return convex_hull_distance(ttra, ttdec, hull, hra, hdec) > -threshold;
+        }, options);
+
+        if (!status.success) {
+            return status;
+        }
+
+        append(ra, tra);
+        append(dec, tdec);
     }
 
-    vec1u fids = shuffle(seed, idi)[uindgen(options.nsrc)];
-    ra = ra[fids];
-    dec = dec[fids];
+    // Now we should have too many positions, just pick the amount we need
+    vec1u idg = shuffle(seed, uindgen(ra.size()))[_-(nsrc-1)];
+    ra = ra[idg]; dec = dec[idg];
 
     return status;
 }
