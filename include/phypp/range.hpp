@@ -80,7 +80,7 @@ range_t<T> range(T i, U e, std::size_t n) {
 
 template<typename T, typename U = T>
 range_t<T> range(T i, U e) {
-    return range(i, e, abs(range_dtype<T>(e)-range_dtype<T>(i)));
+    return range(i, e, std::abs(range_dtype<T>(e)-range_dtype<T>(i)));
 }
 
 template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>

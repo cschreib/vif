@@ -380,17 +380,17 @@ double field_area_h2d(const TX& ra, const TY& dec) {
             return sde*sde + sra*sra*dcdec.safe[j]*dcdec.safe[i];
         };
 
-        auto distance = [](double d) {
-            return (180.0/dpi)*2*asin(sqrt(d));
+        auto distance = [](double td) {
+            return (180.0/dpi)*2*asin(sqrt(td));
         };
 
         uint_t m = ids.size();
         vec1d dmin = replicate(dinf, m);
         for (uint_t i : range(m))
         for (uint_t j : range(i+1, m)) {
-            double d = distance_proxy(i,j);
-            if (d < dmin.safe[i]) dmin.safe[i] = d;
-            if (d < dmin.safe[j]) dmin.safe[j] = d;
+            double td = distance_proxy(i,j);
+            if (td < dmin.safe[i]) dmin.safe[i] = td;
+            if (td < dmin.safe[j]) dmin.safe[j] = td;
         }
 
         double dist = distance(mean(dmin));
@@ -559,8 +559,8 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
     // The radius shrinking factor
     double lambda = pow(eta, 1.0/(2.0 - options.power));
 
-    auto in_circle = [&ra0, &dec0, rr0](vec1d ra, vec1d dec, double threshold) {
-        return angdist_less(ra, dec, ra0, dec0, (rr0+threshold)*3600.0);
+    auto in_circle = [&ra0, &dec0, rr0](vec1d tra, vec1d tdec, double threshold) {
+        return angdist_less(tra, tdec, ra0, dec0, (rr0+threshold)*3600.0);
     };
 
     auto get_fill = [&in_circle, &seed](double ra1, double dec1,
@@ -608,7 +608,7 @@ randpos_status randpos_power_circle(TSeed& seed, double ra0, double dec0, double
     for (int_t l : range(options.levels-1)) {
         // For each position, generate new objects within a "cell" of radius 'r1'
         double r1 = rr0*pow(lambda, -l-1);
-        double rth = (l == options.levels-2 ? 0.0 : 0.8*r1/lambda);
+        double rth = (uint_t(l) == options.levels-2 ? 0.0 : 0.8*r1/lambda);
 
         // First, compute the filling factor of each cell, i.e. what fraction of the
         // area of the cell is inside the convex hull. Each cell will then only
