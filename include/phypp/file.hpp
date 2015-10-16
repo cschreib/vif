@@ -42,9 +42,9 @@ namespace file {
         #define _A_ARCH   0x20  /* Archive file */
 
         int _findclose(long id);
-        int _findnext(long id, struct _finddata_t *data);
+        int _findnext(long id, _finddata_t *data);
 
-        long _findfirst(const char *pattern, struct _finddata_t *data) {
+        long _findfirst(const char *pattern, _finddata_t *data) {
             _find_search_t *fs = new _find_search_t;
             fs->curfn = NULL;
             fs->pattern = NULL;
@@ -53,7 +53,7 @@ namespace file {
             if (mask) {
                 fs->dirlen = mask - pattern;
                 mask++;
-                fs->directory = reinterpret_cast<char*>(malloc(fs->dirlen + 1));
+                fs->directory = static_cast<char*>(malloc(fs->dirlen + 1));
                 memcpy(fs->directory, pattern, fs->dirlen);
                 fs->directory[fs->dirlen] = 0;
             } else {
@@ -82,7 +82,7 @@ namespace file {
             return reinterpret_cast<long>(fs);
         }
 
-        int _findnext(long id, struct _finddata_t *data) {
+        int _findnext(long id, _finddata_t *data) {
             _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
 
             dirent *entry;
