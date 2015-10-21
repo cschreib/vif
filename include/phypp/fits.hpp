@@ -843,7 +843,13 @@ namespace fits {
         }
     };
 #else
-    struct wcs {};
+    struct wcs {
+        template <typename T, typename ... Args>
+        wcs(Args&&...) {
+            static_assert(!std::is_same<T,T>::value, "WCS support is is disabled, "
+                "please enable the WCSLib library to use this function");
+        }
+    };
 #endif
 
     template<typename Dummy = void>
