@@ -1,14 +1,53 @@
-\funcitem \cppinline|double derivate1(F f, double x, e)| \itt{derivate1}
+\funcitem \cppinline|double derivate1_func(F f, double x, e)| \itt{derivate1_func}
 
-\cppinline|double derivate1(F f, vec1d x, double e, uint_t i)| \itt{derivate1}
+\cppinline|double derivate1_func(F f, vec1d x, double e, uint_t i)|
 
-\funcitem \cppinline|double derivate2(F f, double x, e)| \itt{derivate2}
+\cppinline|double derivate2_func(F f, double x, e)| \itt{derivate2_func}
 
-\cppinline|double derivate2(F f, vec1d x, double e, uint_t i)| \itt{derivate2}
+\cppinline|double derivate2_func(F f, vec1d x, double e, uint_t i)|
 
-\funcitem \cppinline|double integrate_trap(F f, double x, uint_t n)| \itt{integrate_trap}
+\cppinline|double derivate2_func(F f, vec1d x, double e, uint_t i1, i2)|
 
-\cppinline|double integrate(F f, double x, e = default)| \itt{integrate}
+The \cppinline{derivate1} functions compute a numerical approximation of the first derivative of a function \cppinline{f} at point \cppinline{x}, with step \cppinline{e}. To do so, the algorithm uses a $5$ point symmetric sampling of the function around \cppinline{x}, ranging from \cppinline{(x - 2*e)} to \cppinline{(x + 2*e)}, and assumes that \cppinline{f} is continuous and can be well approximated by a $4^{\rm th}$ order polynomial within this range (the result will be exact if \cppinline{f} \emph{is} a polynomial of order less or equal to $4$).
+
+The first version assumes that \cppinline{f} has a single scalar argument and returns ${\rm d}f/{\rm d}x$, while the second version assumes that \cppinline{f} has a single vector argument $x = \{x_i\}$, in which case the index \cppinline{i} is used to choose with respect to which of the vector's element the partial derivative should be taken, so the function returns $\partial f/\partial x_i$.
+
+The \cppinline{derivate2} functions approximate instead the second derivative of \cppinline{f}. The first version assumes that \cppinline{f} has a single scalar argument and returns ${\rm d}^2f/{\rm d}x^2$, while the second version assumes that \cppinline{f} has a single vector argument $x = \{x_i\}$, in which case the index \cppinline{i} is used to choose with respect to which of the vector's element the partial second derivative should be taken, so the function returns $\partial^2 f/\partial {x_i}^2$. The third version computes the partial first derivatives with respect to elements \cppinline{i1} and \cppinline{i2}, so the function returns $\partial^2 f/(\partial x_{i1} \partial x_{i2})$.
+
+The value of \cppinline{e} should be as small as possible, while preserving the fact that \cppinline{x+e} and \cppinline{x} are different numbers within the accuracy of \cppinline{double}, as well as \cppinline{f(x+e)} and \cppinline{f(x)} if the analytic form of \cppinline{f} would indeed predict that these are two different numbers.
+
+\begin{example}
+\begin{cppcode}
+// A simple function
+auto f1 = [](double x) {
+    return cos(x*x);
+};
+
+// Estimate the derivative at x = pi
+double df;
+// The analytic value is
+df = -2*dpi*sin(dpi*dpi);
+df; // 2.70366
+// First try with a poor precision
+df = derivate1_func(f1, dpi, 1e-1);
+df; // 2.70416, error of order 0.001
+// And a little bit better
+df = derivate1_func(f1, dpi, 1e-2);
+df; // 2.70366, good enough
+
+// We can also work with multiple arguments
+auto f2 = [](vec1d x) {
+    return cos(x[0])*sin(x[1]);
+};
+
+// Estimate the derivative with respect to x[0] at x = {pi, pi}
+df = derivate1_func(f2, {dpi, dpi}, 1e-2, 0);
+// Estimate the derivative with respect to x[1] at x = {pi, pi}
+df = derivate1_func(f2, {dpi, dpi}, 1e-2, 1);
+\end{cppcode}
+\end{example}
+
+\funcitem \cppinline|double integrate_func(F f, double x, e = default)| \itt{integrate_func}
 
 \funcitem \cppinline|double integrate(vec<1,T> x, y)| \itt{integrate}
 

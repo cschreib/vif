@@ -1221,7 +1221,7 @@ VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
 #undef VECTORIZE
 
 template<typename F>
-auto derivate1(F func, double x, double ep) -> decltype(0.5*func(x)) {
+auto derivate1_func(F&& func, double x, double ep) -> decltype(0.5*func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
 
     double tmp = x - 2*ep;
@@ -1235,7 +1235,7 @@ auto derivate1(F func, double x, double ep) -> decltype(0.5*func(x)) {
 }
 
 template<typename F>
-auto derivate2(F func, double x, double ep) -> decltype(0.5*func(x)) {
+auto derivate2_func(F&& func, double x, double ep) -> decltype(0.5*func(x)) {
     static const double a[5] = {-1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0};
 
     double tmp = x - 2*ep;
@@ -1249,7 +1249,7 @@ auto derivate2(F func, double x, double ep) -> decltype(0.5*func(x)) {
 }
 
 template<typename F>
-auto derivate1(F func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*func(x)) {
+auto derivate1_func(F&& func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
 
     vec1d tmp = x;
@@ -1265,7 +1265,7 @@ auto derivate1(F func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*fun
 }
 
 template<typename F>
-auto derivate2(F func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*func(x)) {
+auto derivate2_func(F&& func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*func(x)) {
     static const double a[5] = {-1.0/12.0, 4.0/3.0, -5.0/2.0, 4.0/3.0, -1.0/12.0};
 
     vec1d tmp = x;
@@ -1281,7 +1281,7 @@ auto derivate2(F func, const vec1d& x, double ep, uint_t ip) -> decltype(0.5*fun
 }
 
 template<typename F>
-auto derivate2(F func, const vec1d& x, double ep, uint_t ip1, uint_t ip2) -> decltype(0.5*func(x)) {
+auto derivate2_func(F&& func, const vec1d& x, double ep, uint_t ip1, uint_t ip2) -> decltype(0.5*func(x)) {
     static const double a[5] = {1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0};
 
     vec1d tmp = x;
@@ -2202,26 +2202,9 @@ auto cumul(const vec<1,TypeX>& x, const vec<1,TypeY>& y) -> vec<1,decltype(integ
     return dr;
 }
 
-template<typename F, typename T, typename U>
-auto integrate_trap(F f, T x0, U x1, uint_t n) -> decltype(0.5*f(x0)*x0) {
-    using rtype = decltype(0.5*f(x0)*x0);
-    rtype r = 0;
-    rtype y0 = f(x0);
-    T x = x0;
-    auto dx = (x1 - x0)/double(n);
-    for (uint_t i = 0; i < n; ++i) {
-        x += dx;
-        rtype y1 = f(x);
-        r += 0.5*(y1+y0)*dx;
-        y0 = y1;
-    }
-
-    return r;
-}
-
 template<typename F, typename T, typename U,
     typename enable = typename std::enable_if<!is_vec<F>::value>::type>
-auto integrate(F f, T x0, U x1,
+auto integrate_func(F f, T x0, U x1,
     double e = std::numeric_limits<typename std::result_of<F(T)>::type>::epsilon()) ->
     decltype(0.5*f(x0)*x0) {
 
