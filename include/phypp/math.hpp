@@ -1078,6 +1078,80 @@ auto invsqr(T t) -> decltype(1.0/(t*t)) {
         return std::move(v); \
     }
 
+#define VECTORIZE2(name) \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(const vec<D,T1>& v1, const vec<D,T2>& v2, const Args& ... args) -> \
+        vec<D,decltype(name(v1[0], v2[0], args...))> { \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            v1.dims, " vs. ", v2.dims, ")"); \
+        using ntype = decltype(name(v1[0], v2[0], args...)); \
+        vec<D,ntype> r; r.dims = v1.dims; r.data.reserve(v1.size()); \
+        for (uint_t i : range(v1)) { \
+            r.data.push_back(name(v1.safe[i], v2.safe[i], args...)); \
+        } \
+        return r; \
+    } \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(vec<D,T1>&& v1, const vec<D,T2>& v2, const Args& ... args) -> typename std::enable_if< \
+        !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T1>::value, \
+        vec<D,T1>>::type { \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            v1.dims, " vs. ", v2.dims, ")"); \
+        for (uint_t i : range(v1)) { \
+            v1.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
+        } \
+        return v1; \
+    } \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(const vec<D,T1>& v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if< \
+        !std::is_pointer<T2>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T2>::value, \
+        vec<D,T2>>::type { \
+        phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            v1.dims, " vs. ", v2.dims, ")"); \
+        for (uint_t i : range(v1)) { \
+            v2.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
+        } \
+        return v2; \
+    } \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(T1 v1, const vec<D,T2>& v2, const Args& ... args) -> typename std::enable_if<!is_vec<T1>::value, \
+        vec<D,decltype(name(v1, v2[0], args...))>>::type { \
+        using ntype = decltype(name(v1, v2[0], args...)); \
+        vec<D,ntype> r; r.dims = v2.dims; r.data.reserve(v2.size()); \
+        for (uint_t i : range(v2)) { \
+            r.data.push_back(name(v1, v2.safe[i], args...)); \
+        } \
+        return r; \
+    } \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(const vec<D,T1>& v1, T2 v2, const Args& ... args) -> typename std::enable_if<!is_vec<T2>::value, \
+        vec<D,decltype(name(v1[0], v2, args...))>>::type { \
+        using ntype = decltype(name(v1[0], v2, args...)); \
+        vec<D,ntype> r; r.dims = v1.dims; r.data.reserve(v1.size()); \
+        for (uint_t i : range(v1)) { \
+            r.data.push_back(name(v1.safe[i], v2, args...)); \
+        } \
+        return r; \
+    } \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(T1 v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if<!is_vec<T1>::value && \
+        !std::is_pointer<T2>::value && std::is_same<decltype(name(v1, v2[0], args...)), T2>::value, \
+        vec<D,decltype(name(v1, v2[0], args...))>>::type { \
+        for (uint_t i : range(v2)) { \
+            v2.safe[i] = name(v1, v2.safe[i], args...); \
+        } \
+        return v2; \
+    } \
+    template<std::size_t D, typename T1, typename T2, typename ... Args> \
+    auto name(vec<D,T1>&& v1, T2 v2, const Args& ... args) -> typename std::enable_if<!is_vec<T2>::value && \
+        !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2, args...)), T1>::value, \
+        vec<D,decltype(name(v1[0], v2, args...))>>::type { \
+        for (uint_t i : range(v1)) { \
+            v1.safe[i] = name(v1.safe[i], v2, args...); \
+        } \
+        return v1; \
+    } \
+
 #define VECTORIZE_REN(name, orig) \
     template<std::size_t Dim, typename Type, typename ... Args> \
     auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
@@ -1113,6 +1187,7 @@ VECTORIZE(tan);
 VECTORIZE(acos);
 VECTORIZE(asin);
 VECTORIZE(atan);
+VECTORIZE2(atan2);
 VECTORIZE(cosh);
 VECTORIZE(sinh);
 VECTORIZE(tanh);
