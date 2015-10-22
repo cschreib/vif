@@ -479,6 +479,7 @@ struct randpos_uniform_options {
     uint_t max_iter = 1000;
 };
 
+
 template<typename TX, typename TY, typename F1, typename F2>
 bool rejection_sampling(vec<1,TX>& x, vec<1,TY>& y, uint_t nsrc, uint_t max_iter,
     F1&& genpos, F2&& in_region) {
@@ -489,15 +490,17 @@ bool rejection_sampling(vec<1,TX>& x, vec<1,TY>& y, uint_t nsrc, uint_t max_iter
     x.reserve(nsrc);
     y.reserve(nsrc);
 
-    uint_t iter = 0;
     for (uint_t i : range(nsrc)) {
         rtx_t tx; rty_t ty;
         genpos(tx, ty);
+        uint_t iter = 0;
         while (!in_region(tx, ty)) {
             genpos(tx, ty);
             ++iter;
 
-            if (iter == max_iter) return false;
+            if (iter == max_iter) {
+                return false;
+            }
         }
 
         x.push_back(tx);
