@@ -1178,13 +1178,19 @@ int main(int argc, char* argv[]) {
         } cat;
 
         fits::read_table("data/sources.fits", ftable(cat.ra, cat.dec));
-        cat.hull = convex_hull(cat.ra, cat.dec);
-        fits::write_table("out/hull.fits", ftable(cat.ra, cat.dec, cat.hull));
+        auto hull = build_convex_hull(cat.ra, cat.dec);
 
-        print(field_area(cat.ra, cat.dec));
+        vec1d tra = 1.2*(cat.ra - mean(cat.ra)) + mean(cat.ra);
+        vec1d tdec = 1.2*(cat.dec - mean(cat.dec)) + mean(cat.dec);
 
-        check(in_convex_hull(mean(cat.ra), mean(cat.dec), cat.hull, cat.ra, cat.dec), "1");
-        check(in_convex_hull(2*mean(cat.ra), 2*mean(cat.dec), cat.hull, cat.ra, cat.dec), "0");
+        vec1b inhull = in_convex_hull(tra, tdec, hull);
+        vec1d hdist = convex_hull_distance(tra, tdec, hull);
+        fits::write_table("out/hull.fits", ftable(tra, tdec, inhull, hdist, hull.x, hull.y));
+
+        print(field_area_hull(hull));
+
+        check(in_convex_hull(mean(cat.ra), mean(cat.dec), hull), "1");
+        check(in_convex_hull(2*mean(cat.ra), 2*mean(cat.dec), hull), "0");
     }
 
     {

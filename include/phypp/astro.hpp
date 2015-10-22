@@ -290,26 +290,26 @@ auto mag2uJy(const T& x, double zp = 23.9) -> decltype(e10(0.4*(zp - x))) {
 // Coordinates are assumed to be given in degrees.
 // NOTE: this algorithm assumes that the field is well characterized by a *convex* hull, meaning
 // that is has no hole (masked stars, ...) and the borders are not concave (no "zigzag" shape, ...).
-// If these hypotheses do not hold, use field_area_h2d instead.
-template<typename TX, typename TY, typename TH>
-double field_area_hull(const TH& hull, const TX& ra, const TY& dec) {
-    phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+// If these hypotheses do not hold, the area might be overestimated. Use field_area_h2d instead.
+template<typename H>
+double field_area_hull(const convex_hull<H>& hull) {
+    hull.validate();
+    phypp_check(hull.closed, "the provided must be closed");
 
-    decltype(1.0*ra[0]*dec[0]) area = 0;
+    double area = 0;
 
     auto d2r = dpi/180.0;
-    typename TX::effective_type hx = ra[hull]*d2r;
-    typename TY::effective_type hy = dec[hull]*d2r;
-    uint_t nh = hull.size();
-    for (uint_t i = 2; i < nh; ++i) {
-        double e1 = angdistr(hx[0],   hy[0],   hx[i-1], hy[i-1]);
-        double e2 = angdistr(hx[i-1], hy[i-1], hx[i],   hy[i]);
-        double e3 = angdistr(hx[i],   hy[i],   hx[0],   hy[0]);
+    auto hx = hull.x*d2r;
+    auto hy = hull.y*d2r;
+    for (uint_t i : range(2, hull.size())) {
+        double e1 = angdistr(hx.safe[0],   hy.safe[0],   hx.safe[i-1], hy.safe[i-1]);
+        double e2 = angdistr(hx.safe[i-1], hy.safe[i-1], hx.safe[i],   hy.safe[i]);
+        double e3 = angdistr(hx.safe[i],   hy.safe[i],   hx.safe[0],   hy.safe[0]);
         double p = 0.5*(e1 + e2 + e3);
         area += sqrt(p*(p-e1)*(p-e2)*(p-e3));
     }
 
-    area /= d2r*d2r;
+    area /= sqr(d2r);
 
     return area;
 }
@@ -318,7 +318,7 @@ double field_area_hull(const TH& hull, const TX& ra, const TY& dec) {
 // Coordinates are assumed to be given in degrees.
 template<typename TX, typename TY>
 double field_area_hull(const TX& ra, const TY& dec) {
-    return field_area_hull(convex_hull(ra, dec), ra, dec);
+    return field_area_hull(build_convex_hull(ra, dec));
 }
 
 // Compute the area covered by a field given a set of source coordinates [deg^2] by iteratively

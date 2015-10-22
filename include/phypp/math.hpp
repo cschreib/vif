@@ -2294,12 +2294,92 @@ auto convolve(const vec<1,TypeX>& x, const vec<1,TypeY1>& y1, const vec<1,TypeY2
     return r;
 }
 
+struct no_check {};
+
+template <typename T>
+struct convex_hull {
+    // Default constructed hull is empty
+    convex_hull() {}
+
+    // Build a new convex hull and make sure it is valid
+    convex_hull(vec<1,T> tx, vec<1,T> ty) : x(std::move(tx)), y(std::move(ty)) {
+        validate();
+    }
+
+    // Build a hull without security checks
+    // example: convex_hull(x, y, no_check{});
+    convex_hull(vec<1,T> tx, vec<1,T> ty, no_check) :
+        x(std::move(tx)), y(std::move(ty)), validated(true) {}
+
+    // Number of vertices in the hull
+    uint_t size() const {
+        return x.size();
+    }
+
+    // Check the validity of this convex hull
+    // Will only be done once unless 'force' is set to 'true'.
+    void validate(bool force = false) const {
+        if (!validated || force) {
+            phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+                "(", x.dims, " vs. ", y.dims, ")");
+            phypp_check(x.size() >= 3, "a hull must have at least 3 elements "
+                "(got ", x.size(), ")");
+
+            const auto eps = std::numeric_limits<T>::epsilon();
+            const uint_t hend = size()-1;
+            closed = (fabs(x.safe[0] - x.safe[hend]) < eps &&
+                 fabs(y.safe[0] - y.safe[hend]) < eps);
+
+            orient = ((x.safe[1] - x.safe[0])*(y.safe[2] - y.safe[1]) -
+                     (y.safe[1] - y.safe[0])*(x.safe[2] - x.safe[1]) > 0) ? 1 : -1;
+
+            validated = true;
+        }
+    }
+
+    // Create the (ux, uy, nx, ny) vectors if they do not exist yet
+    void build_vectors() const {
+        if (!vectors_built) {
+            ux.resize(size()-1); uy.resize(size()-1);
+            nx.resize(size()-1); ny.resize(size()-1);
+            length.resize(size()-1);
+
+            for (uint_t i : range(size()-1)) {
+                // Get unit vector
+                ux.safe[i] = x.safe[i+1] - x.safe[i];
+                uy.safe[i] = y.safe[i+1] - y.safe[i];
+                // Get perpendicular vector, pointing inside the hull
+                nx.safe[i] = orient == 1 ? y.safe[i+1] - y.safe[i] : y.safe[i] - y.safe[i+1];
+                ny.safe[i] = orient == 1 ? x.safe[i] - x.safe[i+1] : x.safe[i+1] - x.safe[i];
+                // Normalize
+                auto l = sqrt(sqr(nx.safe[i]) + sqr(ny.safe[i]));
+                length.safe[i] = l;
+                ux.safe[i] /= l; uy.safe[i] /= l; nx.safe[i] /= l; ny.safe[i] /= l;
+            }
+
+            vectors_built = true;
+        }
+    }
+
+    vec<1,T> x, y; // vertices
+
+    // Cached computations
+    mutable bool validated = false; // flag if the hull has been validated or not
+    mutable bool closed = false;    // is first vertex = last vertex ?
+    mutable int_t orient = 0;       // orientation of the hull, 1: ccw, -1: cw
+
+    mutable bool vectors_built = false; // flag if segment data has been computed
+    mutable vec<1,T> ux, uy;            // unit vector
+    mutable vec<1,T> nx, ny;            // normal vector
+    mutable vec<1,T> length;            // vector length
+};
+
 // Build the convex hull of a set of points, returning the indices of the points that form the hull
 // in counter-clockwise order.
 // Uses the monotone chain algorithm, taken from:
 // http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#C.2B.2B
-template<typename TX, typename TY>
-vec1u convex_hull(const TX& x, const TY& y) {
+template<typename T>
+convex_hull<T> build_convex_hull(const vec<1,T>& x, const vec<1,T>& y) {
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
         "(", x.dims, " vs. ", y.dims, ")");
 
@@ -2335,61 +2415,47 @@ vec1u convex_hull(const TX& x, const TY& y) {
     res.data.resize(k);
     res.dims[0] = k;
 
-    return res;
+    convex_hull<T> hull(x.safe[res], y.safe[res], no_check{});
+    hull.orient = 1; // counter-clockwise by construction
+    hull.closed = true; // closed by construction
+
+    return hull;
 }
 
-template<typename THX, typename THY>
-bool is_hull_closed(const vec1u& hull, const THX& hx, const THY& hy) {
-    phypp_check(hull.size() >= 3, "a hull must have at least 3 elements "
-        "(got ", hull.size(), ")");
-    phypp_check(hx.dims == hy.dims, "incompatible dimensions between HX and HY "
-        "(", hx.dims, " vs. ", hy.dims, ")");
-
-    using rtype = typename THX::rtype;
-    const auto eps = std::numeric_limits<rtype>::epsilon();
-    const uint_t hend = hull.size()-1;
-    return hull.safe[0] == hull.safe[hend] ||
-        (fabs(hx[hull.safe[0]] - hx[hull.safe[hend]]) < eps &&
-         fabs(hy[hull.safe[0]] - hy[hull.safe[hend]]) < eps);
-}
-
-template<typename TX, typename TY, typename THX, typename THY>
-bool in_convex_hull(const TX& x, const TY& y, const vec1u& hull, const THX& hx, const THY& hy) {
-    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
+template<typename TX, typename TY, typename H>
+bool in_convex_hull(const TX& x, const TY& y, const convex_hull<H>& hull) {
+    hull.validate();
+    phypp_check(hull.closed, "the provided hull must be closed");
 
     // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
-    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
-
-    for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
-        auto cross = (hx[p2] - hx[p1])*(y - hy[p1]) - (hy[p2] - hy[p1])*(x - hx[p1]);
-        if ((cross < 0) == sign) return false;
+    for (uint_t i : range(hull.size()-1)) {
+        auto cross = (hull.x.safe[i+1] - hull.x.safe[i])*(y - hull.y.safe[i]) -
+                     (hull.y.safe[i+1] - hull.y.safe[i])*(x - hull.x.safe[i]);
+        if (cross*hull.orient < 0) return false;
     }
 
     return true;
 }
 
-template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
-vec<Dim,bool> in_convex_hull(const vec<Dim,TX>& x, const vec<Dim,TY>& y, const vec1u& hull,
-    const THX& hx, const THY& hy) {
-
-    phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
-        "(", x.dims, " vs. ", y.dims, ")");
-    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
-
-    // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
-    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
+template<std::size_t Dim, typename TX, typename TY, typename H>
+vec<Dim,bool> in_convex_hull(const vec<Dim,TX>& x, const vec<Dim,TY>& y,
+    const convex_hull<H>& hull) {
 
     vec<Dim,bool> res = replicate(true, x.dims);
-    for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
-        for (uint_t p = 0; p < x.size(); ++p) {
+
+    hull.validate();
+    phypp_check(hull.closed, "the provided hull must be closed");
+    phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        "(", x.dims, " vs. ", y.dims, ")");
+
+    for (uint_t i : range(hull.size()-1)) {
+        for (uint_t p : range(x)) {
             if (!res.safe[p]) continue;
-            auto cross = (hx[p2] - hx[p1])*(y.safe[p] - hy[p1])
-                       - (hy[p2] - hy[p1])*(x.safe[p] - hx[p1]);
-            if ((cross < 0) == sign) res.safe[p] = false;
+
+            auto cross = (hull.x.safe[i+1] - hull.x.safe[i])*(y.safe[p] - hull.y.safe[i]) -
+                         (hull.y.safe[i+1] - hull.y.safe[i])*(x.safe[p] - hull.x.safe[i]);
+
+            if (cross*hull.orient < 0) res.safe[p] = false;
         }
     }
 
@@ -2398,37 +2464,23 @@ vec<Dim,bool> in_convex_hull(const vec<Dim,TX>& x, const vec<Dim,TY>& y, const v
 
 // Compute the signed distance of a set of points with respect to the provided convex
 // hull. Positive distances mean that the point lies inside the hull.
-template<typename TX, typename TY, typename THX, typename THY, typename enable =
+template<typename TX, typename TY, typename H, typename enable =
     typename std::enable_if<!is_vec<TX>::value && !is_vec<TY>::value>::type>
-auto convex_hull_distance(const TX& x, const TY& y, const vec1u& hull,
-    const THX& hx, const THY& hy) -> decltype(sqrt(x*y)) {
+auto convex_hull_distance(const TX& x, const TY& y, const convex_hull<H>& hull)
+    -> decltype(sqrt(x*y)) {
 
-    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
-
-    // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
-    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
+    hull.validate();
+    phypp_check(hull.closed, "the provided hull must be closed");
+    hull.build_vectors();
 
     decltype(sqrt(x*y)) res = finf;
     bool inhull = true;
 
-    for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
-
-        // Get unit vector
-        auto ux = hx[p2] - hx[p1];
-        auto uy = hy[p2] - hy[p1];
-        // Get perpendicular vector, pointing inside the hull
-        auto nx = sign ? hy[p2] - hy[p1] : hy[p1] - hy[p2];
-        auto ny = sign ? hx[p1] - hx[p2] : hx[p2] - hx[p1];
-        // Normalize hull segment
-        auto l = sqrt(sqr(nx) + sqr(ny));
-        ux /= l; uy /= l; nx /= l; ny /= l;
-
+    for (uint_t i : range(hull.size()-1)) {
         // Compute signed distance to current hull face line
-        auto dx = x - hx[p1];
-        auto dy = y - hy[p1];
-        auto d = dx*nx + dy*ny;
+        auto dx = x - hull.x.safe[i];
+        auto dy = y - hull.y.safe[i];
+        auto d  = dx*hull.nx.safe[i] + dy*hull.ny.safe[i];
 
         // Check if the point is inside the hull or not
         if (d > 0) {
@@ -2438,13 +2490,13 @@ auto convex_hull_distance(const TX& x, const TY& y, const vec1u& hull,
         d = fabs(d);
         if (res > d) {
             // Find if the projection of the point on the face lies on the segment
-            auto proj = dx*ux + dy*uy;
+            auto proj = dx*hull.ux.safe[i] + dy*hull.uy.safe[i];
             if (proj < 0) {
                 // Projection lies before starting point
                 d = sqrt(sqr(dx) + sqr(dy));
-            } else if (proj > l) {
+            } else if (proj > hull.length.safe[i]) {
                 // Projection lies after ending point
-                d = sqrt(sqr(x - hx[p2]) + sqr(y - hy[p2]));
+                d = sqrt(sqr(x - hull.x.safe[i+1]) + sqr(y - hull.y.safe[i+1]));
             }
 
             // Keep this distance if it is minimal
@@ -2462,39 +2514,25 @@ auto convex_hull_distance(const TX& x, const TY& y, const vec1u& hull,
 
 // Compute the signed distance of a set of points with respect to the provided convex
 // hull. Positive distances mean that the point lies inside the hull.
-template<std::size_t Dim, typename TX, typename TY, typename THX, typename THY>
-auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y, const vec1u& hull,
-    const THX& hx, const THY& hy) -> vec<Dim, decltype(sqrt(x[0]*y[0]))> {
+template<std::size_t Dim, typename TX, typename TY, typename H>
+auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y,
+    const convex_hull<H>& hull) -> vec<Dim, decltype(sqrt(x[0]*y[0]))> {
 
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
         "(", x.dims, " vs. ", y.dims, ")");
-    phypp_check(is_hull_closed(hull, hx, hy), "the provided hull is not closed");
-
-    // Find out if the hull is built counter-clockwise or not
-    uint_t i0 = hull.safe[0], i1 = hull.safe[1], i2 = hull.safe[2];
-    bool sign = (hx[i1] - hx[i0])*(hy[i2] - hy[i1]) - (hy[i1] - hy[i0])*(hx[i2] - hx[i1]) > 0;
+    hull.validate();
+    phypp_check(hull.closed, "the provided must be closed");
+    hull.build_vectors();
 
     vec<Dim,decltype(sqrt(x[0]*y[0]))> res = replicate(finf, x.dims);
     vec<Dim,bool> inhull = replicate(true, x.dims);
 
-    for (uint_t i = 0; i < hull.size()-1; ++i) {
-        uint_t p1 = hull.safe[i], p2 = hull.safe[i+1];
-
-        // Get unit vector
-        auto ux = hx[p2] - hx[p1];
-        auto uy = hy[p2] - hy[p1];
-        // Get perpendicular vector, pointing inside the hull
-        auto nx = sign ? hy[p2] - hy[p1] : hy[p1] - hy[p2];
-        auto ny = sign ? hx[p1] - hx[p2] : hx[p2] - hx[p1];
-        // Normalize hull segment
-        auto l = sqrt(sqr(nx) + sqr(ny));
-        ux /= l; uy /= l; nx /= l; ny /= l;
-
-        for (uint_t p = 0; p < x.size(); ++p) {
+    for (uint_t i : range(hull.size()-1)) {
+        for (uint_t p : range(x)) {
             // Compute signed distance to current hull face line
-            auto dx = x.safe[p] - hx[p1];
-            auto dy = y.safe[p] - hy[p1];
-            auto d = dx*nx + dy*ny;
+            auto dx = x.safe[p] - hull.x.safe[i];
+            auto dy = y.safe[p] - hull.y.safe[i];
+            auto d  = dx*hull.nx.safe[i] + dy*hull.ny.safe[i];
 
             // Check if the point is inside the hull or not
             if (d > 0) {
@@ -2504,13 +2542,13 @@ auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y, const vec1
             d = fabs(d);
             if (res.safe[p] > d) {
                 // Find if the projection of the point on the face lies on the segment
-                auto proj = dx*ux + dy*uy;
+                auto proj = dx*hull.ux.safe[i] + dy*hull.uy.safe[i];
                 if (proj < 0) {
                     // Projection lies before starting point
                     d = sqrt(sqr(dx) + sqr(dy));
-                } else if (proj > l) {
+                } else if (proj > hull.length.safe[i]) {
                     // Projection lies after ending point
-                    d = sqrt(sqr(x.safe[p] - hx[p2]) + sqr(y.safe[p] - hy[p2]));
+                    d = sqrt(sqr(x.safe[p] - hull.x.safe[i+1]) + sqr(y.safe[p] - hull.y.safe[i+1]));
                 }
 
                 // Keep this distance if it is minimal
