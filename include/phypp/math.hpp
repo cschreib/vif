@@ -2656,4 +2656,94 @@ void move_ra_dec(vec<D,T>& ra, vec<D,U>& dec, double dra, double ddec) {
     }
 }
 
+// Adjust RA and Dec coordinates to remain within the range [0,360] and [-90,90].
+// The geometry is not modified, this is just a convention for the standard
+// representation of the coordinates.
+template<typename T, typename U, typename enable = typename std::enable_if<
+    !is_vec<T>::value && !is_vec<U>::value>::type>
+void normalize_coordinates(T& ra, U& dec) {
+    while (dec > 90.0) {
+        dec = 180.0 - dec;
+        ra += 180.0;
+    }
+    while (dec < -90.0) {
+        dec = -180.0 - dec;
+        ra += 180.0;
+    }
+
+    while (ra > 360.0) {
+        ra -= 360.0;
+    }
+    while (ra < 0.0) {
+        ra += 360.0;
+    }
+}
+
+template<std::size_t D, typename T, typename U>
+void normalize_coordinates(vec<D,T>& ra, vec<D,U>& dec) {
+    phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
+        ra.dims, " vs ", dec.dims, ")");
+
+    for (auto i : range(ra)) {
+        normalize_coordinates(ra.safe[i], dec.safe[i]);
+    }
+}
+
+// Return the rotation angle in degrees between the equator and the geodesic that passes
+// through the celestial origin (i.e., the point of coordinates RA=0 and Dec=0) and the
+// provided position.
+template <typename T=void>
+double vernal_angle(double ra, double dec) {
+    ra *= dpi/180;
+    dec *= dpi/180;
+
+    double p = sqr(sin(dec/2)) + cos(dec)*sqr(sin(ra/2));
+    double e = (180/dpi)*asin(sin(dec)/(2*(sqrt(p-p*p))));
+
+    if (ra > 180.0) e = -e;
+
+    return e;
+}
+
+// Rotate one set of RA/Dec positions around the vernal equinox by an angle 'e' given in
+// degrees. NB: the vernal equinox is the line that goes from the center of Earth and
+// passes through the celestial origin (i.e., the point of coordinates RA=0 and Dec=0).
+// It is the 'x' axis in cartesian coordinates.
+template <typename T1, typename T2, typename T3, typename T4>
+void angrot_vernal(const T1& tr1, const T2& td1, double e, T3& r2, T4& d2) {
+    phypp_check(tr1.dims == td1.dims, "incompatible dimensions between RA and Dec "
+        "(", tr1.dims, " vs. ", td1.dims, ")");
+
+    e *= dpi/180.0;
+    double ce = cos(e);
+    double se = sin(e);
+
+    auto r1 = tr1*dpi/180.0;
+    auto d1 = td1*dpi/180.0;
+
+    auto cr1 = cos(r1), sr1 = sin(r1);
+    auto cd1 = cos(d1), sd1 = sin(d1);
+
+    auto x1 = cd1*cr1, y1 = cd1*sr1, z1 = sd1;
+
+    auto y2 = ce*y1 - se*z1;
+    auto z2 = ce*z1 + se*y1;
+
+    d2 = asin(z2);
+    r2 = atan2(y2, x1);
+
+    // Other solutions
+    // d2 = asin(sin(d1)*ce + cos(d1)*sin(r1)*se);
+    // r2 = acos(cos(r1)*cos(d1)/cos(d2));
+    // r2 = acos(x1/sqrt(1-sqr(z2)));
+
+    r2 *= 180/dpi;
+    d2 *= 180/dpi;
+
+    // Come back to [0, 360]
+    for (auto& r : r2) {
+        if (r < 0) r += 360.0;
+    }
+}
+
 #endif
