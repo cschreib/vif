@@ -699,8 +699,8 @@ int main(int argc, char* argv[]) {
 
     {
         print("Calculus functions");
-        check(float(derivate1([](double x) { return cos(x); }, 1.0, 0.001)), "-0.841471");
-        check(float(derivate2([](double x) { return cos(x); }, 1.0, 0.001)), "-0.540302");
+        check(float(derivate1_func([](double x) { return cos(x); }, 1.0, 0.001)), "-0.841471");
+        check(float(derivate2_func([](double x) { return cos(x); }, 1.0, 0.001)), "-0.540302");
 
         vec1d x = {0,1,2};
         vec1d y = {0,1,0};
@@ -726,7 +726,7 @@ int main(int argc, char* argv[]) {
         y = cos(x);
         check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
 
-        check(float(integrate([](float t) -> float {
+        check(float(integrate_func([](float t) -> float {
                 return (2.0/sqrt(3.14159))*exp(-t*t);
             }, 0.0, 1.0)), strn(float(erf(1.0)))
         );
