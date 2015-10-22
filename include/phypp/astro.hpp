@@ -148,7 +148,7 @@ T propsize(const T& z, const cosmo_t& cosmo) {
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 T lumdist(const T& z, const cosmo_t& cosmo) {
     if (z <= 0) return 0.0;
-    return (1.0+z)*(2.99792458e5/cosmo.H0)*integrate([&](T t) {
+    return (1.0+z)*(2.99792458e5/cosmo.H0)*integrate_func([&](T t) {
         return pow(pow((1.0+t),3)*cosmo.wm + cosmo.wL, -0.5);
     }, 0, z);
 }
@@ -160,7 +160,7 @@ T lumdist(const T& z, const cosmo_t& cosmo) {
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
 T lookback_time(const T& z, const cosmo_t& cosmo) {
     if (z <= 0) return 0.0;
-    return (3.09/(cosmo.H0*3.155e-3))*integrate([&](T t) {
+    return (3.09/(cosmo.H0*3.155e-3))*integrate_func([&](T t) {
         return pow(pow((1+t),3)*cosmo.wm + cosmo.wL + pow(1+t,2)*cosmo.wk, -0.5)/(1+t);
     }, 0, z);
 }
