@@ -47,14 +47,19 @@ template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value
 void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, T& t) {
     auto p = arg.find_first_of('=');
     if (p == arg.npos) {
-        if (arg != name) {
+        if (arg[0] == '-') {
+            if (arg.substr(1) != name) {
+                return;
+            }
+        } else if (arg != name) {
             return;
         }
 
         read = true;
         valid = read_args_n2T_(t, 1);
     } else {
-        std::string aname = trim(arg.substr(0, p));
+        int_t p0 = arg[0] == '-' ? 1 : 0;
+        std::string aname = trim(arg.substr(p0, p - p0));
         if (aname != name) {
             return;
         }
@@ -69,14 +74,19 @@ template<typename T>
 void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, vec<1,T>& t) {
     auto p = arg.find_first_of('=');
     if (p == arg.npos) {
-        if (arg != name) {
+        if (arg[0] == '-') {
+            if (arg.substr(1) != name) {
+                return;
+            }
+        } else if (arg != name) {
             return;
         }
 
         read = true;
         valid = read_args_n2T_(t, 1);
     } else {
-        std::string aname = trim(arg.substr(0, p));
+        int_t p0 = arg[0] == '-' ? 1 : 0;
+        std::string aname = trim(arg.substr(p0, p - p0));
         if (aname != name) {
             return;
         }
