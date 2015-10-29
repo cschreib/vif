@@ -85,21 +85,17 @@ int main(int argc, char* argv[]) {
 
             vec1u idg3s = where(is_finite(f) && is_finite(e) && f > 0 && e > 0 && f/e > 3);
             if (!idg3s.empty()) {
-                vec1u hull = convex_hull(cat.ra[idg3s], cat.dec[idg3s]);
-                areas[i] = field_area_hull(cat.ra[idg3s], cat.dec[idg3s]);
-
-                vec1d hx = cat.ra[idg3s[hull]];
-                vec1d hy = cat.dec[idg3s[hull]];
-                hull = uindgen(hull.size()+1);
-                hull[-1] = hull[0];
+                auto hull = build_convex_hull(cat.ra[idg3s], cat.dec[idg3s]);
+                areas[i] = field_area_hull(hull);
 
                 if (idg3s.size() > 1000) {
-                    double mx = 0.5*(max(hx) + min(hx)), my = 0.5*(max(hy) + min(hy));
-                    hx = (hx - mx)*sqrt(1000.0/idg3s.size()) + mx;
-                    hy = (hy - my)*sqrt(1000.0/idg3s.size()) + my;
+                    double mx = 0.5*(max(hull.x) + min(hull.x));
+                    double my = 0.5*(max(hull.y) + min(hull.y));
+                    hull.x = (hull.x - mx)*sqrt(1000.0/idg3s.size()) + mx;
+                    hull.y = (hull.y - my)*sqrt(1000.0/idg3s.size()) + my;
                 }
 
-                vec1u central = idg3s[where(in_convex_hull(cat.ra[idg3s], cat.dec[idg3s], hull, hx, hy))];
+                vec1u central = idg3s[where(in_convex_hull(cat.ra[idg3s], cat.dec[idg3s], hull))];
                 if (!central.empty()) {
                     qxmatch_params p; p.thread = central.size() > 800 ? 2 : 1;
                     auto res = qxmatch(cat.ra[central], cat.dec[central], p);
