@@ -2365,6 +2365,12 @@ struct convex_hull {
         }
     }
 
+    // If manual adjustments are made on the vertices, call this function
+    void mark_as_dirty() {
+        vectors_built = false;
+        validated = false;
+    }
+
     vec<1,T> x, y; // vertices
 
     // Cached computations
