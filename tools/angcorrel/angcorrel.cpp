@@ -28,22 +28,20 @@ int main(int argc, char* argv[]) {
     vec2d bins = e10(make_bins(log10(range[0]), log10(range[1]), nbin));
     vec1d ang = 0.5*(bins(0,_) + bins(1,_));
 
-    vec1u hull = convex_hull(fcat.ra, fcat.dec);
-
-    auto in_hull = [&](const vec1d& ra, const vec1d& dec) {
-        return in_convex_hull(ra, dec, hull, fcat.ra, fcat.dec);
+    auto hull = build_convex_hull(fcat.ra, fcat.dec);
+    auto in_hull = [&](double ra, double dec) {
+        return in_convex_hull(ra, dec, hull);
     };
 
     vec1d rra, rdec;
-    randpos_uniform_options options;
-    options.nsrc = cat.ra.size();
-    if (options.nsrc < 1000) options.nsrc = 1000;
-
+    uint_t nsrc = cat.ra.size();
+    if (nsrc < 1000) nsrc = 1000;
     auto seed = make_seed(tseed);
-    auto status = randpos_uniform(seed,
-        {min(fcat.ra[hull]),  max(fcat.ra[hull])},
-        {min(fcat.dec[hull]), max(fcat.dec[hull])},
-        in_hull, rra, rdec, options
+
+    auto status = randpos_uniform_box(seed, nsrc,
+        {min(hull.x), max(hull.x)},
+        {min(hull.y), max(hull.y)},
+        rra, rdec, in_hull
     );
 
     if (!status.success) {
