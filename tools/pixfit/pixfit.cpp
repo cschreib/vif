@@ -528,10 +528,10 @@ int main(int argc, char* argv[]) {
         vec1u idbg;
         if (x.size() > 2) {
             // Pick the pixels of the map that are within the coverage of our prior list
-            vec1u hull = convex_hull(x, y);
+            auto hull = build_convex_hull(x, y);
             vec2d tix = replicate(dindgen(snr.dims[1]), snr.dims[0]);
             vec2d tiy = transpose(replicate(dindgen(snr.dims[0]), snr.dims[1]));
-            idbg = where(in_convex_hull(tix, tiy, hull, x, y));
+            idbg = where(in_convex_hull(tix, tiy, hull));
         }
 
         if (idbg.size() < 5) {
