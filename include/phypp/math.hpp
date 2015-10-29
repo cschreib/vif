@@ -2298,6 +2298,10 @@ struct no_check {};
 
 template <typename T>
 struct convex_hull {
+    static_assert(!std::is_pointer<T>::value,
+        "convex_hull can only be created from plain types, pointers and vector views "
+        "are not supported");
+
     // Default constructed hull is empty
     convex_hull() {}
 
@@ -2379,7 +2383,7 @@ struct convex_hull {
 // Uses the monotone chain algorithm, taken from:
 // http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#C.2B.2B
 template<typename T>
-convex_hull<T> build_convex_hull(const vec<1,T>& x, const vec<1,T>& y) {
+convex_hull<rtype_t<T>> build_convex_hull(const vec<1,T>& x, const vec<1,T>& y) {
     phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
         "(", x.dims, " vs. ", y.dims, ")");
 
@@ -2415,7 +2419,7 @@ convex_hull<T> build_convex_hull(const vec<1,T>& x, const vec<1,T>& y) {
     res.data.resize(k);
     res.dims[0] = k;
 
-    convex_hull<T> hull(x.safe[res], y.safe[res], no_check{});
+    convex_hull<rtype_t<T>> hull(x.safe[res], y.safe[res], no_check{});
     hull.orient = 1; // counter-clockwise by construction
     hull.closed = true; // closed by construction
 
