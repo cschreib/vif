@@ -204,20 +204,15 @@ int main(int argc, char* argv[]) {
         if (randomize > 0) {
             if (randomize == 1) randomize = fcat.ra.size();
 
-            auto ocat = fcat;
-            vec1d rra = {min(ocat.ra), max(ocat.ra)};
-            vec1d rdec = {min(ocat.dec), max(ocat.dec)};
-            vec1u hull = convex_hull(ocat.ra, ocat.dec);
+            vec1d rra = {min(fcat.ra), max(fcat.ra)};
+            vec1d rdec = {min(fcat.dec), max(fcat.dec)};
+            auto hull = build_convex_hull(fcat.ra, fcat.dec);
 
-            fcat.ra = randomu(seed, randomize)*(rra[1] - rra[0]) + rra[0];
-            fcat.dec = randomu(seed, randomize)*(rdec[1] - rdec[0]) + rdec[0];
-
-            vec1u bid = where(!in_convex_hull(fcat.ra, fcat.dec, hull, ocat.ra, ocat.dec));
-            while (!bid.empty()) {
-                fcat.ra[bid] = randomu(seed, bid.size())*(rra[1] - rra[0]) + rra[0];
-                fcat.dec[bid] = randomu(seed, bid.size())*(rdec[1] - rdec[0]) + rdec[0];
-                bid = bid[where(!in_convex_hull(fcat.ra[bid], fcat.dec[bid], hull, ocat.ra, ocat.dec))];
-            }
+            randpos_uniform_box(seed, randomize, rra, rdec, fcat.ra, fcat.dec,
+                [&](double tra, double tdec) {
+                    return in_convex_hull(tra, tdec, hull);
+                }
+            );
         }
     }
 
