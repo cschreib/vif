@@ -1,9 +1,6 @@
 #ifndef FITS_HPP
 #define FITS_HPP
 
-#ifndef NO_CCFITS
-#include <CCfits/CCfits>
-#endif
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcserr.h>
@@ -17,10 +14,6 @@
 #include "phypp/math.hpp"
 
 namespace fits {
-#ifndef NO_CCFITS
-    using namespace CCfits;
-#endif
-
     struct exception : std::exception {
         explicit exception(const std::string& m) : msg(m) {}
         std::string msg;
@@ -197,25 +190,55 @@ namespace fits {
 
     using header = std::string;
 
+    int bitpix_to_type(int bitpix) {
+        switch(bitpix) {
+            case BYTE_IMG   : return TBYTE;
+            case SHORT_IMG  : return TSHORT;
+            case LONG_IMG   : return TLONG;
+            case FLOAT_IMG  : return TFLOAT;
+            case DOUBLE_IMG : return TDOUBLE;
+            default : throw fits::exception("unknown image type '"+strn(bitpix)+"'");
+        }
+    }
+
+    std::string type_to_string_(int type) {
+        if (type == TSTRING) return "string";
+        if (type == TSHORT) return "short";
+        if (type == TLONG) return "long";
+        if (type == TLONGLONG) return "long long";
+        if (type == TFLOAT) return "float";
+        if (type == TDOUBLE) return "double";
+        if (type == TLOGICAL) return "bool";
+        if (type == TBIT) return "bool";
+        if (type == TBYTE) return "char";
+        if (type == TINT32BIT) return "int32";
+        if (type == TCOMPLEX) return "complex float";
+        if (type == TDBLCOMPLEX) return "complex double";
+        return "unknown ("+strn(type)+")";
+    }
+
     // Return the number of dimensions of a FITS file
-    template<typename Dummy = void>
-    uint_t file_axes(const std::string& name) {
-#ifdef NO_CCFITS
-        static_assert(!std::is_same<Dummy,Dummy>::value, "CCfits is disabled, "
-            "please enable the CCfits library to use this function");
-#else
+    // Note: will return 0 for FITS tables
+    uint_t file_axes(const std::string& filename) {
+        fitsfile* fptr;
+        int status = 0;
+
         try {
-            return fits::FITS(name, fits::Read).pHDU().axes();
-        } catch (fits::FitsException& e) {
-            error("reading: "+name);
-            error("FITS: "+e.message());
-            throw;
+            fits_open_image(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file");
+
+            int naxis;
+            fits_get_img_dim(fptr, &naxis, &status);
+
+            fits_close_file(fptr, &status);
+
+            return naxis;
         } catch (fits::exception& e) {
-            error("reading: "+name);
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
             error(e.msg);
             throw;
         }
-#endif
     }
 
     // Return the dimensions of a FITS image
@@ -226,7 +249,7 @@ namespace fits {
 
         try {
             fits_open_image(&fptr, filename.c_str(), READONLY, &status);
-            fits::phypp_check_cfitsio(status, "cannot open file '"+filename+"'");
+            fits::phypp_check_cfitsio(status, "cannot open file");
 
             vec1u dims;
             int naxis = 0;
@@ -249,113 +272,89 @@ namespace fits {
         }
     }
 
-    template<typename Dummy = void>
     bool is_cube(const std::string& name) {
-        return file_axes<Dummy>(name) == 3;
+        return file_axes(name) == 3;
     }
 
-    template<typename Dummy = void>
     bool is_image(const std::string& name) {
-        return file_axes<Dummy>(name) == 2;
+        return file_axes(name) == 2;
     }
 
-#ifndef NO_CCFITS
-    template<typename THDU, std::size_t Dim, typename Type>
-    void read_impl__(THDU& hdu, vec<Dim, Type>& v, std::string& hdr) {
-        phypp_check_fits(hdu.axes() == Dim, "FITS file does not match array dimensions ("+
-            strn(hdu.axes())+" vs "+strn(Dim)+")");
-
-        std::size_t n = 1;
-        for (uint_t j = 0; j < Dim; ++j) {
-            v.dims[j] = hdu.axis(Dim-1-j);
-            n *= v.dims[j];
-        }
-
-        std::valarray<Type> tv(n);
-        hdu.read(tv, 1, n);
-
-        v.data.assign(std::begin(tv), std::end(tv));
-
-        // Read the header as a string
-        char* hstr = nullptr;
-        int nkeys  = 0;
+    // Load the content of a FITS file into an array.
+    template<std::size_t Dim, typename Type>
+    void read_hdu(const std::string& filename, vec<Dim,Type>& v, uint_t hdu, fits::header& hdr) {
+        fitsfile* fptr;
         int status = 0;
-        fits_hdr2str(hdu.fitsPointer(), 0, nullptr, 0, &hstr, &nkeys, &status);
-        hdr = hstr;
-        free(hstr);
-    }
-#endif
 
-    // Load the content of a FITS file into an array.
-    template<std::size_t Dim, typename Type>
-    void read(const std::string& name, vec<Dim, Type>& v, fits::header& hdr) {
-#ifdef NO_CCFITS
-        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
-            "please enable the CCfits library to use this function");
-#else
         try {
-            fits::FITS file(name, fits::Read);
-            fits::PHDU& phdu = file.pHDU();
-            if (phdu.axes() == 0) {
-                fits::ExtHDU* hdu = nullptr;
-                uint_t i = 1;
-                while (!hdu && i <= file.extension().size()) {
-                    hdu = &file.extension(i);
-                    if (hdu->axes() == 0) hdu = nullptr;
-                }
+            fits_open_file(&fptr, filename.c_str(), READONLY, &status);
+            phypp_check_cfitsio(status, "cannot open file");
 
-                phypp_check_fits(hdu, "FITS file does not contain any data");
+            if (hdu != npos) {
+                int nhdu = 0;
+                fits_get_num_hdus(fptr, &nhdu, &status);
+                phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+                    "FITS file (", hdu, " vs. ", nhdu, ")");
 
-                read_impl__(*hdu, v, hdr);
-            } else {
-                read_impl__(phdu, v, hdr);
+                fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
             }
-        } catch (fits::FitsException& e) {
-            error("reading: "+name);
-            error("FITS: "+e.message());
-            throw;
+
+            int naxis;
+            fits_get_img_dim(fptr, &naxis, &status);
+            phypp_check_fits(naxis == Dim, "FITS file has wrong number of dimensions "
+                "(expected "+strn(Dim)+", got "+strn(naxis)+")");
+
+            int bitpix;
+            std::vector<long> naxes(naxis);
+            fits_get_img_param(fptr, naxis, &bitpix, &naxis, naxes.data(), &status);
+
+            int type = bitpix_to_type(bitpix);
+            phypp_check_fits(traits<Type>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(Type)+", got "+type_to_string_(type)+")");
+
+            type = traits<Type>::ttype;
+
+            for (uint_t i : range(naxis)) {
+                v.dims[i] = naxes[naxis-1-i];
+            }
+
+            v.resize();
+
+            Type def = traits<Type>::def();
+            int anynul;
+            fits_read_img(fptr, type, 1, v.size(), &def, v.data.data(), &anynul, &status);
+
+            // Read the header as a string
+            char* hstr = nullptr;
+            int nkeys  = 0;
+            fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
+            hdr = hstr;
+            free(hstr);
+
+            fits_close_file(fptr, &status);
         } catch (fits::exception& e) {
-            error("reading: "+name);
+            fits_close_file(fptr, &status);
+            error("reading: "+filename);
             error(e.msg);
             throw;
         }
-#endif
-    }
-
-    template<std::size_t Dim, typename Type>
-    void read(const std::string& name, vec<Dim, Type>& v) {
-        std::string hdr;
-        read(name, v, hdr);
-    }
-
-    // Load the content of a FITS file into an array.
-    template<std::size_t Dim, typename Type>
-    void read_hdu(const std::string& name, vec<Dim, Type>& v, uint_t hdu, fits::header& hdr) {
-#ifdef NO_CCFITS
-        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
-            "please enable the CCfits library to use this function");
-#else
-        try {
-            fits::FITS file(name, fits::Read);
-            fits::ExtHDU& thdu = file.extension(hdu+1);
-            phypp_check_fits(thdu.axes() != 0, "FITS HDU does not contain any data");
-            read_impl__(thdu, v, hdr);
-        } catch (fits::FitsException& e) {
-            error("reading: "+name);
-            error("FITS: "+e.message());
-            throw;
-        } catch (fits::exception& e) {
-            error("reading: "+name);
-            error(e.msg);
-            throw;
-        }
-#endif
     }
 
     template<std::size_t Dim, typename Type>
     void read_hdu(const std::string& name, vec<Dim, Type>& v, uint_t hdu) {
         std::string hdr;
         read_hdu(name, v, hdu, hdr);
+    }
+
+    template<std::size_t Dim, typename Type>
+    void read(const std::string& filename, vec<Dim,Type>& v, fits::header& hdr) {
+        read_hdu(filename, v, npos, hdr);
+    }
+
+    template<std::size_t Dim, typename Type>
+    void read(const std::string& name, vec<Dim, Type>& v) {
+        std::string hdr;
+        read(name, v, hdr);
     }
 
     template<std::size_t Dim = 2, typename Type = double>
@@ -1042,7 +1041,7 @@ namespace fits {
         std::size_t nentry = hdr.size()/80 + 1;
         fits_set_hdrsize(fptr, nentry, &status);
 
-        for (uint_t i = 0; i < nentry; ++i) {
+        for (uint_t i : range(nentry)) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             if (start_with(entry, "END ")) continue;
 
@@ -1060,35 +1059,43 @@ namespace fits {
         }
     }
 
+    template<std::size_t Dim, typename Type>
+    void write_(fitsfile* fptr, const vec<Dim,Type>& v, int* status) {
+        fits_write_img(fptr, traits<Type>::ttype, 1, v.size(),
+            const_cast<typename vec<Dim,Type>::dtype*>(v.data.data()), status);
+    }
+
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
-    void write(const std::string& name, const vec<Dim,Type>& v, const fits::header& hdr) {
-#ifdef NO_CCFITS
-        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
-            "please enable the CCfits library to use this function");
-#else
-        std::array<long,Dim> isize;
-        for (uint_t i = 0; i < Dim; ++i) {
-            isize[i] = v.dims[Dim-1-i];
-        }
-
-        std::valarray<rtype_t<Type>> tv(v.size());
-        for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = v.safe[i];
-        }
+    void write(const std::string& filename, const vec<Dim,Type>& v, const fits::header& hdr) {
+        fitsfile* fptr;
+        int status = 0;
 
         try {
-            fits::FITS f("!"+name, traits<rtype_t<Type>>::image_type, Dim, isize.data());
-            f.pHDU().write(1, tv.size(), tv);
-            if (!hdr.empty()) {
-                header2fits_(f.pHDU().fitsPointer(), hdr);
+            fits_create_file(&fptr, ("!"+filename).c_str(), &status);
+            phypp_check_cfitsio(status, "cannot open file");
+
+            std::array<long,Dim> naxes;
+            for (uint_t i : range(Dim)) {
+                naxes[i] = v.dims[Dim-1-i];
             }
-            f.flush();
-        } catch (fits::FitsException& e) {
-            print("error: FITS: "+e.message());
+
+            fits_create_img(fptr, traits<rtype_t<Type>>::image_type, Dim,
+                naxes.data(), &status);
+
+            write_(fptr, v.concretise(), &status);
+
+            if (!hdr.empty()) {
+                header2fits_(fptr, hdr);
+            }
+
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
             throw;
         }
-#endif
     }
 
     template<std::size_t Dim, typename Type>
@@ -1096,45 +1103,53 @@ namespace fits {
         write(name, v, "");
     }
 
-    // Write an image in a FITS file within a given HDU
+    // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
-    void update_hdu(const std::string& name, uint_t hdu, const vec<Dim,Type>& v) {
-#ifdef NO_CCFITS
-        static_assert(!std::is_same<Type,Type>::value, "CCfits is disabled, "
-            "please enable the CCfits library to use this function");
-#else
-        std::array<long,Dim> isize;
-        for (uint_t i = 0; i < Dim; ++i) {
-            isize[i] = v.dims[Dim-1-i];
-        }
-
-        std::valarray<rtype_t<Type>> tv(v.size());
-        for (uint_t i = 0; i < v.size(); ++i) {
-            tv[i] = v.safe[i];
-        }
+    void update_hdu(const std::string& filename, const vec<Dim,Type>& v, uint_t hdu) {
+        fitsfile* fptr;
+        int status = 0;
 
         try {
-            fits::FITS f(name, fits::Write);
-            fits::ExtHDU& ehdu = f.extension(hdu+1);
+            fits_open_file(&fptr, filename.c_str(), READWRITE, &status);
+            phypp_check_cfitsio(status, "cannot open file");
 
-            phypp_check_fits(ehdu.axes() == Dim, "FITS file does not match array dimensions ("+
-                strn(ehdu.axes())+" vs. "+strn(Dim)+")");
+            int nhdu = 0;
+            fits_get_num_hdus(fptr, &nhdu, &status);
+            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+                "FITS file (", hdu, " vs. ", nhdu, ")");
+
+            fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
+
+            int naxis;
+            fits_get_img_dim(fptr, &naxis, &status);
+            phypp_check_fits(naxis == Dim, "FITS file has wrong number of dimensions "
+                "(expected "+strn(Dim)+", got "+strn(naxis)+")");
+
+            int bitpix;
+            std::vector<long> naxes(naxis);
+            fits_get_img_param(fptr, naxis, &bitpix, &naxis, naxes.data(), &status);
+
+            int type = bitpix_to_type(bitpix);
+            phypp_check_fits(traits<rtype_t<Type>>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(rtype_t<Type>)+", got "+type_to_string_(type)+")");
 
             std::array<uint_t,Dim> d;
             for (uint_t i : range(Dim)) {
-                d[i] = ehdu.axis(Dim-1-i);
+                d[i] = naxes[Dim-1-i];
             }
 
             phypp_check_fits(v.dims == d, "incompatible array dimensions ("+strn(v.dims)+
                 " vs. "+strn(d)+")");
 
-            ehdu.write(1, tv.size(), tv);
-            f.flush();
-        } catch (fits::FitsException& e) {
-            print("error: FITS: "+e.message());
+            write_(fptr, v.concretise(), &status);
+
+            fits_close_file(fptr, &status);
+        } catch (fits::exception& e) {
+            fits_close_file(fptr, &status);
+            error("writing: "+filename);
+            error(e.msg);
             throw;
         }
-#endif
     }
 
 
@@ -1254,22 +1269,6 @@ namespace fits {
         return toupper(file::bake_macroed_name(s));
     }
 
-    std::string type_to_string_(int type) {
-        if (type == TSTRING) return "string";
-        if (type == TSHORT) return "short";
-        if (type == TLONG) return "long";
-        if (type == TLONGLONG) return "long long";
-        if (type == TFLOAT) return "float";
-        if (type == TDOUBLE) return "double";
-        if (type == TLOGICAL) return "bool";
-        if (type == TBIT) return "bool";
-        if (type == TBYTE) return "char";
-        if (type == TINT32BIT) return "int32";
-        if (type == TCOMPLEX) return "complex float";
-        if (type == TDBLCOMPLEX) return "complex double";
-        return "unknown ("+strn(type)+")";
-    }
-
     // Load the content of a FITS file into a set of arrays.
     template<std::size_t Dim, typename Type,
         typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
@@ -1369,20 +1368,20 @@ namespace fits {
 
         v.resize();
 
-        char* buffer = new char[n_elements(v)*naxes[0]];
+        char* buffer = new char[v.size()*naxes[0]];
         char def = '\0';
         int null;
         fits_read_col(
-            fptr, traits<std::string>::ttype, id, 1, 1, n_elements(v)*naxes[0], &def,
+            fptr, traits<std::string>::ttype, id, 1, 1, v.size()*naxes[0], &def,
             buffer, &null, &status
         );
 
-        for (uint_t i = 0; i < n_elements(v); ++i) {
-            v[i].reserve(naxes[0]);
+        for (uint_t i : range(v)) {
+            v.safe[i].reserve(naxes[0]);
             for (uint_t j = 0; j < uint_t(naxes[0]); ++j) {
                 char c = buffer[i*naxes[0] + j];
                 if (c == '\0') break;
-                v[i].push_back(c);
+                v.safe[i].push_back(c);
             }
         }
 
@@ -1622,7 +1621,7 @@ namespace fits {
     void write_table_impl_(fitsfile* fptr, int& id, const std::string& colname,
         const vec<Dim,Type>& v) {
 
-        std::string tform = strn(n_elements(v))+traits<Type>::tform;
+        std::string tform = strn(v.size())+traits<Type>::tform;
         int status = 0;
         fits_insert_col(
             fptr, id, const_cast<char*>(colname.c_str()), const_cast<char*>(tform.c_str()), &status
@@ -1635,7 +1634,7 @@ namespace fits {
 
         fits_write_tdim(fptr, id, Dim, dims.data(), &status);
 
-        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, n_elements(v),
+        fits_write_col(fptr, traits<Type>::ttype, id, 1, 1, v.size(),
             const_cast<typename vec<Dim,Type>::dtype*>(v.data.data()), &status);
 
         ++id;
@@ -1667,7 +1666,7 @@ namespace fits {
             }
         }
 
-        std::string tform = strn(nmax*n_elements(v))+traits<std::string>::tform;
+        std::string tform = strn(nmax*v.size())+traits<std::string>::tform;
 
         int status = 0;
         fits_insert_col(
@@ -1682,7 +1681,7 @@ namespace fits {
 
         fits_write_tdim(fptr, id, Dim+1, dims.data(), &status);
 
-        char* buffer = new char[nmax*n_elements(v)];
+        char* buffer = new char[nmax*v.size()];
         uint_t p = 0;
         for (auto& s : v) {
             for (auto c : s) {
@@ -1696,7 +1695,7 @@ namespace fits {
         }
 
         fits_write_col(
-            fptr, traits<std::string>::ttype, id, 1, 1, nmax*n_elements(v), buffer, &status
+            fptr, traits<std::string>::ttype, id, 1, 1, nmax*v.size(), buffer, &status
         );
 
         delete[] buffer;

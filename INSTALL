@@ -10,10 +10,9 @@ Pre-requisites
 3) You must have the following library installed: 'cfitsio' (see Appendix below
    for instructions on how to install this library).
 
-4) Installing also the 'CCfits', 'wcslib', 'lapack', 'libclang', 'gsl', 'fftw'
-   and 'tcmalloc' libraries is not mandatory, but recommended to use all the
-   features of the phy++ library (see Appendix below for instructions on how to
-   install these libraries).
+4) Installing also the 'wcslib', 'lapack', 'libclang', 'gsl', 'fftw' and 'tcmalloc'
+   libraries is not mandatory, but recommended to use all the features of the phy++
+   library (see Appendix below for instructions on how to install these libraries).
 
 5) Installing the GNU debugger 'gdb' is recommended but not mandatory.
 
@@ -34,7 +33,6 @@ Install the 'phy++' library with CMake
    add the following command line arguments to the 'cmake ../' command:
 
     - for cfitsio: -DCFITSIO_ROOT_DIR=...
-    - for CCfits: -DCCFITS_ROOT_DIR=...
     - for wcslib: -DWCSLIB_ROOT_DIR=...
     - for lapack: -DLAPACK_ROOT_DIR=...
     - for libclang: -DCLANG_ROOT=...
@@ -98,7 +96,7 @@ need to run the following command:
 
 If you want, you can also install the optional (but recommanded) libraries and
 tools:
-  sudo apt-get install libccfits-dev liblapack-dev wcslib-dev libgsl0-dev libgoogle-perftools-dev libfftw3-dev gdb
+  sudo apt-get install liblapack-dev wcslib-dev libgsl0-dev libgoogle-perftools-dev libfftw3-dev gdb
 
 Lastly, if you want to use reflection, you will need to get a recent version
 of libclang.
@@ -139,9 +137,6 @@ contact the libraries' respective authors.
 
 cfitsio:
 http://heasarc.nasa.gov/fitsio/fitsio.html
-
-CCfits:
-http://heasarc.gsfc.nasa.gov/fitsio/CCfits/
 
 wcslib:
 http://www.atnf.csiro.au/people/mcalabre/WCS/

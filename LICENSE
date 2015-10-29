@@ -78,27 +78,6 @@ Note: I didn't write any of those scripts myself. They were all taken from other
   projects, each with a different license.
 
 
-License for FindCCFITS.cmake:
------------------------------
-
-Copyright (c) 2012 Brian Kloppenborg
-
-This file is part of the C++ OIFITS Library (CCFITS).
-
-CCFITS is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License
-as published by the Free Software Foundation, either version 3
-of the License, or (at your option) any later version.
-
-CCFITS is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with CCFITS. If not, see <http://www.gnu.org/licenses/>.
-
-
 License for FindCFITSIO.cmake:
 ------------------------------
 
