@@ -346,7 +346,8 @@ namespace reflex {
 }
 
 #ifndef NO_REFLECTION
-    #define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, reinterpret_cast<void*>(&name)}
+    #define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, \
+        reinterpret_cast<void*>(remove_const(&name))}
 
     #define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
 

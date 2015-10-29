@@ -357,5 +357,15 @@ using nth_type = typename nth_type_impl<sizeof...(Args), N+1, Args...>::type;
 template<typename T, typename C>
 using constify = typename std::conditional<std::is_const<C>::value, const T, T>::type;
 
+template<typename T>
+T& remove_const(const T& t) {
+    return const_cast<T&>(t);
+}
+
+template<typename T>
+T* remove_const(const T* t) {
+    return const_cast<T*>(t);
+}
+
 #endif
 
