@@ -1,5 +1,19 @@
 #! /bin/bash
 
+# Source local phy++ configuration if running from root ("sudo" only)
+if [ -z "$PHYPP_COMPILER" ]; then
+    if [ "$(id -u)" -eq "0" ]; then
+        if [ ! -z "$SUDO_USER" ]; then
+            eval source "~$SUDO_USER/.phypprc"
+        fi
+    fi
+fi
+
+if [ -z "$PHYPP_COMPILER" ]; then
+    echo error: the phy++ library is not installed for this user
+    exit
+fi
+
 if [ -f $1 ]; then
     if [ $1 -ot $1.cpp ]; then
         echo phy++: re-compiling \'$1\'...
