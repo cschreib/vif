@@ -116,41 +116,14 @@ typename vec<2,TypeV>::effective_type subregion(const vec<2,TypeV>& v,
     return sub;
 }
 
-template<typename TypeV, typename TypeD = double>
+template<typename TypeV>
 typename vec<2,TypeV>::effective_type translate(const vec<2,TypeV>& v, double dx, double dy,
-    const typename vec<2,TypeV>::rtype& def = 0.0) {
+    typename vec<2,TypeV>::rtype def = 0.0) {
 
-    vec<2,rtype_t<TypeV>> trs = replicate(rtype_t<TypeV>(def), v.dims);
+    vec<2,rtype_t<TypeV>> trs(v.dims);
     for (uint_t x : range(v.dims[0]))
     for (uint_t y : range(v.dims[1])) {
-        double tx = x - dx;
-        double ty = y - dy;
-        int_t rx = round(tx);
-        int_t ry = round(ty);
-
-        if (rx < 0 || rx > int_t(v.dims[0])-1 || ry < 0 || ry > int_t(v.dims[1])-1) continue;
-        int_t nx, ny;
-        if (tx - rx > 0) {
-            nx = rx + 1;
-            if (nx > int_t(v.dims[0]-1)) continue;
-        } else {
-            nx = rx;
-            rx = nx - 1;
-            if (rx < 0) continue;
-        }
-        if (ty - ry > 0) {
-            ny = ry + 1;
-            if (ny > int_t(v.dims[1]-1)) continue;
-        } else {
-            ny = ry;
-            ry = ny - 1;
-            if (ry < 0) continue;
-        }
-
-        trs.safe(x,y) = v.safe(rx,ry)*(nx - tx)*(ny - ty) +
-                        v.safe(nx,ry)*(tx - rx)*(ny - ty) +
-                        v.safe(rx,ny)*(nx - tx)*(ty - ry) +
-                        v.safe(nx,ny)*(tx - rx)*(ty - ry);
+        trs.safe(x,y) = bilinear_strict(v, x - dx, y - dy, def);
     }
 
     return trs;
