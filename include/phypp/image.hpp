@@ -153,7 +153,7 @@ typename vec<2,TypeV>::effective_type flip_y(const vec<2,TypeV>& v) {
 
 template<typename TypeV, typename TypeD = double>
 typename vec<2,TypeV>::effective_type scale(const vec<2,TypeV>& v, double factor,
-    TypeD def = 0.0) {
+    typename vec<2,TypeV>::rtype def = 0.0) {
 
     auto r = v.concretise();
 
