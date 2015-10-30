@@ -46,14 +46,15 @@ vec<2,rtype_t<Type>> shrink(const vec<2,Type>& v, uint_t upix) {
     return shrink(v, {{upix, upix, upix, upix}});
 }
 
-// Get a sub region 'reg' inside an image, with reg = {x0, y0, x1, y1} (inclusive).
+// Get a sub region 'reg' inside an image 'v', with reg = {x0, y0, x1, y1} (inclusive)
+// assuming that "x" and "y" correspond to v(x,y).
 // The sub region is returned as two index vectors, the first containing indices in the
-// image, and the second containing indices in the region. The number of returned indices
-// may be smaller than the size of the requested region, if a fraction of the region falls
-// out of the image boundaries. In particular, the index vectors will be empty if there is
-// no overlap between the image and the requested region.
+// image 'v', and the second containing indices in the region 'reg'. The number of
+// returned indices may be smaller than the size of the requested region, if a fraction of
+// the region falls out of the image boundaries. In particular, the index vectors will be
+// empty if there is no overlap between the image and the requested region.
 template<typename TypeV, typename TypeR = int_t>
-void subregion(const vec<2,TypeV>& v, const vec<1,TypeR>& reg, vec1u& rr, vec1u& rs) {
+void subregion(const vec<2,TypeV>& v, const vec<1,TypeR>& reg, vec1u& rv, vec1u& rr) {
     phypp_check(reg.size() == 4, "invalid region parameter "
         "(expected 4 components, got ", reg.size(), ")");
 
@@ -66,7 +67,7 @@ void subregion(const vec<2,TypeV>& v, const vec<1,TypeR>& reg, vec1u& rr, vec1u&
     // Early exit when not covered
     if (reg.safe[0] >= nvx || reg.safe[2] < 0 || reg.safe[0] > reg.safe[2] ||
         reg.safe[1] >= nvy || reg.safe[3] < 0 || reg.safe[1] > reg.safe[3]) {
-        rr.clear(); rs.clear();
+        rv.clear(); rr.clear();
         return;
     }
 
@@ -92,11 +93,11 @@ void subregion(const vec<2,TypeV>& v, const vec<1,TypeR>& reg, vec1u& rr, vec1u&
     int_t nny = vreg.safe[3]-vreg.safe[1]+1;
     uint_t npix = nnx*nny;
 
+    rv.resize(npix);
     rr.resize(npix);
-    rs.resize(npix);
     for (uint_t i : range(npix)) {
-        rs[i] = (i%nny) + sreg.safe[1] + (i/nny + sreg.safe[0])*ny;
-        rr[i] = (i%nny) + vreg.safe[1] + (i/nny + vreg.safe[0])*nvy;
+        rv.safe[i] = (i%nny) + vreg.safe[1] + (i/nny + vreg.safe[0])*nvy;
+        rr.safe[i] = (i%nny) + sreg.safe[1] + (i/nny + sreg.safe[0])*ny;
     }
 }
 
