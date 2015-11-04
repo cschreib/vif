@@ -465,9 +465,9 @@ vec1d angcorrel(const vec<N1,TR1>& ra, const vec<N1,TD1>& dec,
         rr += histogram(d, bins);
     }
 
-    vec1d dbin = bins(1,_) - bins(0,_);
-    double norm = rra.size()/double(ra.size());
-    return ((dd*sqr(norm) - dr*norm) + (rr - dr*norm))/(rr*dbin);
+    double norm1 = rra.size()/double(ra.size());
+    double norm2 = norm1*((rra.size() - 1.0)/(ra.size() - 1.0));
+    return ((dd*norm2 - dr*norm1) + (rr - dr*norm1))/rr;
 }
 
 struct randpos_status {
