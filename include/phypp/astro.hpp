@@ -615,6 +615,8 @@ randpos_status randpos_uniform_circle(TSeed& seed, uint_t nsrc,
 struct randpos_power_options {
     double lambda = 1.5;    // circle shrinking factor
     uint_t eta = 4;         // number of positions per circle
+    uint_t eta_end = npos;  // number of positions per circle in the last level
+                            // (default: same as 'eta')
     uint_t levels = 6;      // number of levels (ignored in randpos_power)
     uint_t max_iter = 1000; // maximum number of internal iterations for rejection
                             //   sampling (ignored in randpos_power_base)
@@ -696,9 +698,12 @@ randpos_status randpos_power_circle(TSeed& seed, double x0, double y0, double r0
         );
     };
 
+    if (options.eta_end == npos) options.eta_end = options.eta;
+
     // Initialize the algorithm with random positions in the whole area
     double rth = (options.levels <= 1 ? 0.0 : 0.8*r0/options.lambda);
-    status = genpos(x0, y0, r0, options.eta, rth, x, y);
+    uint_t eta_level = (options.levels <= 1 ? options.eta_end : options.eta);
+    status = genpos(x0, y0, r0, eta_level, rth, x, y);
 
     if (!status.success) {
         status.failure += "\n"
@@ -731,9 +736,10 @@ randpos_status randpos_power_circle(TSeed& seed, double x0, double y0, double r0
         fill /= mfill;
 
         // Assign a number of object to each positions
-        vec1u ngal = floor(options.eta*fill);
-        vec1d dngal = options.eta*fill - ngal;
-        uint_t miss0 = pow(options.eta, l+2) - total(ngal);
+        uint_t eta_level = (l+2 == options.levels ? options.eta_end : options.eta);
+        vec1u ngal = floor(eta_level*fill);
+        vec1d dngal = eta_level*fill - ngal;
+        uint_t miss0 = eta_level*x.size() - total(ngal);
         uint_t miss = miss0;
 
         // Randomly assign fractional number of objects to make sure that the total
@@ -771,7 +777,7 @@ randpos_status randpos_power_circle(TSeed& seed, double x0, double y0, double r0
 
             if (!status.success) {
                 status.failure += "\n"
-                    "context: placing "+strn(options.eta)+" random positions "
+                    "context: placing "+strn(ngal[i])+" random positions "
                     "in level "+strn(l+1)+", radius r="+strn(r1)+", x="+strn(x[i])+
                     ", y="+strn(y[i])+")";
                 return status;
