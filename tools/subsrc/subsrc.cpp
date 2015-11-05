@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
         struct {
             vec1u id;
             vec1d ra, dec;
-            vec2f flux;
             vec1s bands, notes;
         } fcat;
 
@@ -53,50 +52,75 @@ int main(int argc, char* argv[]) {
             fcat.id = uindgen(fcat.ra.size());
         }
 
-        vec1b bm, nm;
-        if (bands_notes.empty()) {
-            if (bands.empty() || fcat.bands.empty()) {
-                bm = replicate(true, fcat.flux.dims[1]);
-            } else {
-                bm = regex_match(fcat.bands, bands);
-            }
-            if (notes.empty() || fcat.notes.empty()) {
-                nm = replicate(true, fcat.flux.dims[1]);
-            } else {
-                nm = regex_match(fcat.notes, notes);
-            }
-        } else {
-            if (fcat.bands.empty()) {
-                bm = replicate(true, fcat.flux.dims[1]);
-            } else if (fcat.notes.empty()) {
-                bm = regex_match(fcat.bands, bands_notes);
-            } else {
-                bm = regex_match(fcat.bands+" "+fcat.notes, bands_notes);
-            }
+        vec1f flux;
+        bool found = false;
+        auto info = fits::read_table_columns(cat_file);
+        for (auto& i : info) {
+            i.name = tolower(i.name);
+            if (i.name == "flux") {
+                if (i.dims.size() == 2) {
+                    vec2f tflux;
+                    fits::read_table(cat_file, "flux", tflux);
+                    vec1b bm, nm;
 
-            nm = replicate(true, fcat.flux.dims[1]);
+                    if (bands_notes.empty()) {
+                        if (bands.empty() || fcat.bands.empty()) {
+                            bm = replicate(true, tflux.dims[1]);
+                        } else {
+                            bm = regex_match(fcat.bands, bands);
+                        }
+                        if (notes.empty() || fcat.notes.empty()) {
+                            nm = replicate(true, tflux.dims[1]);
+                        } else {
+                            nm = regex_match(fcat.notes, notes);
+                        }
+                    } else {
+                        if (fcat.bands.empty()) {
+                            bm = replicate(true, tflux.dims[1]);
+                        } else if (fcat.notes.empty()) {
+                            bm = regex_match(fcat.bands, bands_notes);
+                        } else {
+                            bm = regex_match(fcat.bands+" "+fcat.notes, bands_notes);
+                        }
+
+                        nm = replicate(true, tflux.dims[1]);
+                    }
+
+                    vec1u ib = where(nm && bm);
+                    if (ib.empty()) {
+                        error("could not find band");
+                        return 1;
+                    } else if (ib.size() != 1) {
+                        error("multiple matches for band");
+                        note(strn(fcat.bands[ib]+" "+fcat.notes[ib]));
+                        return 1;
+                    }
+
+                    flux = tflux(_,ib[0]);
+                } else if (i.dims.size() == 1) {
+                    fits::read_table(cat_file, "flux", flux);
+                } else {
+                    error("FLUX column must be 1 or 2 dimensional (got: ", i.dims, ")");
+                    return 1;
+                }
+                found = true;
+                break;
+            }
         }
 
-        vec1u ib = where(nm && bm);
-        if (ib.empty()) {
-            error("could not find band");
-            return 1;
-        } else if (ib.size() != 1) {
-            error("multiple matches for band");
-            note(strn(fcat.bands[ib]+" "+fcat.notes[ib]));
+        if (!found) {
+            error("could not find flux in this catalog (FLUX column)");
             return 1;
         }
-
-        uint_t band = ib[0];
 
         vec1u id = where(
             (include.empty() ? !is_any_of(fcat.id, exclude) : is_any_of(fcat.id, include)) &&
-            is_finite(fcat.flux(_,band)) && fcat.flux(_,band) > 0.0
+            is_finite(flux) && flux > 0.0
         );
 
         cat.ra = fcat.ra[id];
         cat.dec = fcat.dec[id];
-        cat.flux = fcat.flux(id,band);
+        cat.flux = flux[id];
     } else {
         vec1f flx;
         file::read_table(cat_file, file::find_skip(cat_file), cat.ra, cat.dec, cat.flux);
