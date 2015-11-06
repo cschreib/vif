@@ -3,6 +3,7 @@
 
 #include "phypp/astro.hpp"
 #include "phypp/astro/qxmatch.hpp"
+#include <list>
 
 struct comment_pool_t {
     std::map<std::string, std::string> var_pool;
