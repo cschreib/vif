@@ -356,8 +356,28 @@ namespace astro_impl {
             }
         }
 
-        template<typename P, typename enable2 =
-            typename std::enable_if<reflex::is_struct<M>::value>::type>
+        template<typename P>
+        void operator () (reflex::member_t& n, P&& p) {
+            phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                this->m.full_name(), "' into '", n.full_name(), "'"
+            );
+        }
+    };
+
+    template<typename M, typename V>
+    struct do_catalog_merge_run<reflex::struct_t<M>,V> {
+        const reflex::member_t& m;
+        const M& v;
+        const V& def;
+        catalog_t& cat;
+
+        void operator () (reflex::member_t& n, M& p) {
+            if (this->m.name == n.name) {
+                this->cat.merge(p, this->v, this->def);
+            }
+        }
+
+        template<typename P>
         void operator () (reflex::member_t& n, reflex::struct_t<P> p) {
             this->cat.merge(p, this->v, this->def);
         }
