@@ -22,6 +22,9 @@ static const float  finf = std::numeric_limits<float>::infinity();
 static const double dpi = 3.14159265359;
 static const float  fpi = 3.14159265359;
 
+// Import some standard functions into the global namespace for convenience
+using std::abs;
+
 template<typename T>
 auto e10(const T& t) -> decltype(pow(10.0, t)) {
     return pow(10.0, t);
@@ -681,9 +684,9 @@ template<std::size_t Dim, typename Type>
 vec<Dim,bool> sigma_clip(const vec<Dim,Type>& tv, double sigma) {
     auto v = tv.concretise();
     auto med = inplace_median(v);
-    auto mad = median(fabs(v - med));
+    auto mad = median(abs(v - med));
     // Note: cannot use 'v' below, since the order of the values has changed!
-    return fabs(tv - med) < sigma*mad;
+    return abs(tv - med) < sigma*mad;
 }
 
 template<std::size_t Dim, typename Type>
@@ -835,7 +838,7 @@ double stddev(const vec<Dim,Type>& v) {
 
 template<std::size_t Dim, typename Type>
 rtype_t<Type> mad(const vec<Dim,Type>& v) {
-    return median(fabs(v - median(v)));
+    return median(abs(v - median(v)));
 }
 
 #define RUN_INDEX(func) \
@@ -1204,7 +1207,7 @@ VECTORIZE(tgamma);
 VECTORIZE(ceil);
 VECTORIZE(floor);
 VECTORIZE(round);
-VECTORIZE(fabs);
+VECTORIZE(abs);
 VECTORIZE(clamp);
 VECTORIZE_REN(bessel_j0, j0);
 VECTORIZE_REN(bessel_j1, j1);
@@ -2234,7 +2237,7 @@ auto integrate_func(F f, T x0, U x1,
         }
 
         oid += n;
-    } while (fabs((buffer.back() - *(buffer.end()-2))/buffer.back()) > e);
+    } while (abs((buffer.back() - *(buffer.end()-2))/buffer.back()) > e);
 
     return buffer.back();
 }
@@ -2331,8 +2334,8 @@ struct convex_hull {
 
             const auto eps = std::numeric_limits<T>::epsilon();
             const uint_t hend = size()-1;
-            closed = (fabs(x.safe[0] - x.safe[hend]) < eps &&
-                 fabs(y.safe[0] - y.safe[hend]) < eps);
+            closed = (abs(x.safe[0] - x.safe[hend]) < eps &&
+                 abs(y.safe[0] - y.safe[hend]) < eps);
 
             orient = ((x.safe[1] - x.safe[0])*(y.safe[2] - y.safe[1]) -
                      (y.safe[1] - y.safe[0])*(x.safe[2] - x.safe[1]) > 0) ? 1 : -1;
@@ -2497,7 +2500,7 @@ auto convex_hull_distance(const TX& x, const TY& y, const convex_hull<H>& hull)
             inhull = false;
         }
 
-        d = fabs(d);
+        d = abs(d);
         if (res > d) {
             // Find if the projection of the point on the face lies on the segment
             auto proj = dx*hull.ux.safe[i] + dy*hull.uy.safe[i];
@@ -2549,7 +2552,7 @@ auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y,
                 inhull.safe[p] = false;
             }
 
-            d = fabs(d);
+            d = abs(d);
             if (res.safe[p] > d) {
                 // Find if the projection of the point on the face lies on the segment
                 auto proj = dx*hull.ux.safe[i] + dy*hull.uy.safe[i];

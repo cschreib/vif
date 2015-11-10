@@ -86,7 +86,7 @@ double mpfit_enorm(const vec1d& v) {
     const double dwarf = sqrt(std::numeric_limits<double>::min()*1.5)*10.0;
     const double giant = sqrt(std::numeric_limits<double>::max())*0.1;
 
-    double mx = std::max(fabs(min(v)), fabs(max(v)));
+    double mx = max(abs(min(v)), abs(max(v)));
     if (mx == 0.0) return 0.0;
 
     if (mx > giant/v.size() || mx < dwarf*v.size()) {
@@ -125,12 +125,12 @@ vec2d mpfit_fdjac2(F&& deviate, const vec1d& xall, const vec1u& ifree, const vec
 
         if (options.deriv_rstep[ip] != 0.0) {
             // If relative step is given, use that
-            h[p] = fabs(options.deriv_rstep[ip]*x[p]);
+            h[p] = abs(options.deriv_rstep[ip]*x[p]);
         } else if (options.deriv_step[ip] != 0.0) {
             // If step is given, use that
             h[p] = options.deriv_step[ip];
         } else {
-            h[p] = eps*fabs(x[p]);
+            h[p] = eps*abs(x[p]);
         }
 
         // Prevent zero step
@@ -274,7 +274,7 @@ void mpfit_qrsolv(vec2d& r, const vec1u& ipiv, const vec1d& diag, const vec1d& q
             if (sdiag[k] == 0.0) continue;
 
             double sine = 0.0, cosine = 0.0;
-            if (fabs(r(k,k)) < fabs(sdiag[k])) {
+            if (abs(r(k,k)) < abs(sdiag[k])) {
                 double cotan = r(k,k)/sdiag[k];
                 sine = 0.5/sqrt(0.25 + 0.25*sqr(cotan));
                 cosine = sine*cotan;
@@ -344,9 +344,9 @@ void mpfit_lmpar(vec2d& r, const vec1u& ipiv, const vec1d& diag, const vec1d& qt
     // jacobian is rank-deficient, obtain a least-squares solution
     uint_t nsing = n;
     vec1d wa1 = qtf;
-    double rthresh = max(fabs(r[delm]))*eps;
+    double rthresh = max(abs(r[delm]))*eps;
     for (uint_t j : range(delm)) {
-        if (fabs(r[delm[j]]) < rthresh) {
+        if (abs(r[delm[j]]) < rthresh) {
             nsing = j;
             wa1[rgen(j,n-1)] = 0.0;
             break;
@@ -426,7 +426,7 @@ void mpfit_lmpar(vec2d& r, const vec1u& ipiv, const vec1d& diag, const vec1d& qt
         temp = fp;
         fp = dxnorm - delta;
 
-        if (fabs(fp) <= 0.1*delta || (parl == 0.0 && fp <= temp && temp < 0.0)) {
+        if (abs(fp) <= 0.1*delta || (parl == 0.0 && fp <= temp && temp < 0.0)) {
             break;
         }
 
@@ -463,9 +463,9 @@ vec2d mpfit_covar(vec2d r, const vec1u& ipiv) {
     // Form the inverse of r in the full upper triangle of r
     uint_t l = 0;
     const double tol = 1e-14;
-    double tolr = tol*fabs(r(0,0));
+    double tolr = tol*abs(r(0,0));
     for (uint_t k : range(n)) {
-        if (fabs(r(k,k)) <= tolr) break;
+        if (abs(r(k,k)) <= tolr) break;
         r(k,k) = 1.0/r(k,k);
         for (uint_t j : range(k)) {
             vec1u rj = rgen(0,j);
@@ -638,7 +638,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
                 vec1u r = rgen(0,p);
                 uint_t l = ipiv[p];
                 if (wa2[l] != 0.0) {
-                    gnorm = std::max(gnorm, fabs(total(fjac(p,r)*qtf[r])/wa2[l]));
+                    gnorm = std::max(gnorm, abs(total(fjac(p,r)*qtf[r])/wa2[l]));
                 }
             }
         }
@@ -675,7 +675,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
                     wa1[ilow] = max(wa1[ilow], 0.0);
                     wa1[iup] = min(wa1[iup], 0.0);
 
-                    vec1b dwa1 = fabs(wa1) > eps;
+                    vec1b dwa1 = abs(wa1) > eps;
                     vec1u whl = where(dwa1 && x + wa1 < llim);
                     if (!whl.empty()) {
                         double mi = min((llim[whl] - x[whl])/wa1[whl]);
@@ -691,7 +691,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
 
                 if (anymima) {
                     vec1d nwa1 = wa1*alpha;
-                    double mrat = max(fabs(nwa1[imima])/fabs(mastep[imima]));
+                    double mrat = max(abs(nwa1[imima])/abs(mastep[imima]));
                     if (mrat > 1.0) {
                         alpha /= mrat;
                     }
@@ -789,7 +789,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
             }
 
             // Tests for convergence
-            bool ftol = fabs(actred) <= options.ftol && prered <= options.ftol && 0.5*ratio <= 1.0;
+            bool ftol = abs(actred) <= options.ftol && prered <= options.ftol && 0.5*ratio <= 1.0;
             bool xtol = delta <= options.xtol*xnorm;
             if (ftol || xtol) {
                 res.success = true;
@@ -812,7 +812,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
                 break;
             }
 
-            if (fabs(actred) <= eps && prered <= eps && 0.5*ratio <= 1.0) {
+            if (abs(actred) <= eps && prered <= eps && 0.5*ratio <= 1.0) {
                 res.success = false;
                 res.reason = mpfit_result::ftol;
                 stop = true;

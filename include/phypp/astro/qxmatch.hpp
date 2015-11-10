@@ -200,7 +200,7 @@ qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
         double cell_size = std::max(3600.0*sqrt(area2)/nc2, 1.0);
 
         // Be careful that RA and Dec are spherical coordinates
-        double dra = cell_size/fabs(cos(mean(rdec2)*dpi/180.0))/3600.0;
+        double dra = cell_size/abs(cos(mean(rdec2)*dpi/180.0))/3600.0;
         double ddec = cell_size/3600.0;
 
         // Add some padding to prevent border issues
