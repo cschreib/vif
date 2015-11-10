@@ -718,6 +718,36 @@ typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
 }
 
 template<std::size_t Dim, typename Type>
+std::pair<typename vec<Dim,Type>::const_iterator, typename vec<Dim,Type>::const_iterator>
+    minmax_(const vec<Dim,Type>& v) {
+    phypp_check(!v.empty(), "cannot find the maximum/minimum of an empty vector");
+
+    // We cannot take care of NaN using std::minmax_element and the trick of
+    // std::min_element and std::max_element. So we just roll our own...
+    // This naive version performs slightly more comparisons than the standard
+    // algorithm. This should not be noticeable, but could be improved by using a
+    // filtered iterator that automatically skips NaN values.
+    // See, e.g., boost::filter_iterator for a working implementation.
+    using iterator = typename vec<Dim,Type>::const_iterator;
+    std::pair<iterator,iterator> res;
+
+    iterator i = v.begin();
+    while (i != v.end() && is_nan(*i)) {
+        ++i;
+    }
+
+    res.first = i; res.second = i;
+
+    for (++i; i != v.end(); ++i) {
+        if (is_nan(*i)) continue;
+        if (*i < *res.first)          res.first = i;
+        else if (!(*i < *res.second)) res.second = i;
+    }
+
+    return res;
+}
+
+template<std::size_t Dim, typename Type>
 rtype_t<Type> min(const vec<Dim,Type>& v) {
     return *min_(v);
 }
@@ -725,6 +755,12 @@ rtype_t<Type> min(const vec<Dim,Type>& v) {
 template<std::size_t Dim, typename Type>
 rtype_t<Type> max(const vec<Dim,Type>& v) {
     return *max_(v);
+}
+
+template<std::size_t Dim, typename Type>
+std::pair<rtype_t<Type>,rtype_t<Type>> minmax(const vec<Dim,Type>& v) {
+    auto tmp = minmax_(v);
+    return std::make_pair(*tmp.first, *tmp.second);
 }
 
 template<std::size_t Dim, typename Type>
@@ -742,6 +778,14 @@ rtype_t<Type> max(const vec<Dim,Type>& v, uint_t& id) {
 }
 
 template<std::size_t Dim, typename Type>
+std::pair<rtype_t<Type>,rtype_t<Type>> minmax(const vec<Dim,Type>& v, std::pair<uint_t,uint_t>& ids) {
+    auto tmp = minmax_(v);
+    ids.first = tmp.first - v.begin();
+    ids.second = tmp.second - v.begin();
+    return std::make_pair(*tmp.first, *tmp.second);
+}
+
+template<std::size_t Dim, typename Type>
 uint_t min_id(const vec<Dim,Type>& v) {
     return min_(v) - v.begin();
 }
@@ -749,6 +793,12 @@ uint_t min_id(const vec<Dim,Type>& v) {
 template<std::size_t Dim, typename Type>
 uint_t max_id(const vec<Dim,Type>& v) {
     return max_(v) - v.begin();
+}
+
+template<std::size_t Dim, typename Type>
+std::pair<uint_t,uint_t> minmax_ids(const vec<Dim,Type>& v) {
+    auto tmp = minmax_(v);
+    return std::make_pair(uint_t(tmp.first - v.begin()), uint_t(tmp.second - v.begin()));
 }
 
 template<typename T1, typename T2>

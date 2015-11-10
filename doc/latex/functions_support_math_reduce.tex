@@ -262,9 +262,13 @@ mad(v); // 0.5
 
 \cppinline|vec<D-1,T> partial_max(uint_t d, vec<D,T> v)| \itt{partial_max}
 
-The first \cppinline{min()} and \cppinline{max()} functions return respectively the minimum and maximum value of the vector \cppinline{v()}. The second \cppinline{min()} and \cppinline{max()} functions do the same, but also store the index of this value in the output parameter \cppinline{i}.
+\cppinline|pair<T> minmax(vec<D,T> v)| \itt{minmax}
 
-Calling \cppinline{min()} or \cppinline{max()} on an empty vector will trigger an error.
+\cppinline|pair<T> minmax(vec<D,T> v, pair<uint_t>& i)|
+
+The first \cppinline{min()} and \cppinline{max()} functions return respectively the minimum and maximum value of the vector \cppinline{v()}. The second \cppinline{min()} and \cppinline{max()} functions do the same, but also store the index of this value in the output parameter \cppinline{i}. The \cppinline{minmax()} functions perform both operations at the same time, and return a \cppinline{std::pair} containing the value of the minimum and the maximum (as \cppinline{first} and \cppinline{second}, respectively). The second \cppinline{minmax()} function also puts the respective index of each value inside the pair \cppinline{i}.
+
+Calling any of these functions on an empty vector will trigger an error.
 
 The functions \cppinline{partial_min()} and \cppinline{partial_max()} will apply respectively \cppinline{min()} and \cppinline{max()} on the \cppinline{d}th dimension of the vector (zero being the first dimension) and reduce its number of dimensions by one.
 
@@ -290,7 +294,9 @@ partial_max(0, w); // {0,2,3,3,6}
 
 \cppinline|uint_t max_id(vec v)| \itt{max_id}
 
-These functions return respectively the index of the minimum and maximum values in \cppinline{v}. Calling them on an empty vector will trigger an error.
+\cppinline|pair<uint_t> minmax_ids(vec v)| \itt{max_id}
+
+The functions \cppinline{min_id()} and \cppinline{max_id()} return respectively the index of the minimum and maximum values in \cppinline{v}. The function \cppinline{minmax_ids()} does both at the same time. Calling them on an empty vector will trigger an error.
 
 \begin{example}
 \begin{cppcode}
