@@ -1240,7 +1240,12 @@ bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
 
             return false;
         } else {
-            fits::read_table(iter->second, ftable(f.lam, f.res));
+            if (end_with(iter->second, ".fits")) {
+                fits::read_table(iter->second, ftable(f.lam, f.res));
+            } else {
+                file::read_table(iter->second, file::find_skip(iter->second), f.lam, f.res);
+            }
+
             f.rlam = integrate(f.lam, f.res*f.lam);
             return true;
         }
