@@ -86,20 +86,21 @@ double mpfit_enorm(const vec1d& v) {
     const double dwarf = sqrt(std::numeric_limits<double>::min()*1.5)*10.0;
     const double giant = sqrt(std::numeric_limits<double>::max())*0.1;
 
-    double mx = max(abs(min(v)), abs(max(v)));
+    auto mm = minmax(v);
+    double mx = max(abs(mm.first), abs(mm.second));
     if (mx == 0.0) return 0.0;
 
     if (mx > giant/v.size() || mx < dwarf*v.size()) {
         double res = 0.0;
-        for (uint_t i : range(v)) {
-            res += (v[i]/mx)*(v[i]/mx);
+        for (double x : v) {
+            res += sqr(x/mx);
         }
 
         return mx*sqrt(res);
     } else {
         double res = 0.0;
-        for (uint_t i : range(v)) {
-            res += v[i]*v[i];
+        for (double x : v) {
+            res += sqr(x);
         }
 
         return sqrt(res);
