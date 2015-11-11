@@ -1,6 +1,6 @@
 \funcitem \cppinline|void file::read_table(string f, uint_t s, ...)| \itt{file::read_table}
 
-This function reads the content of the ASCII table \cppinline{f} and stores the data inside vectors. The second argument \cppinline{s} gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table. Note that, due to the lack of standard formatting for the header, there is no automatic way to ignore these lines.
+This function reads the content of the ASCII table \cppinline{f} and stores the data inside vectors. The second argument \cppinline{s} gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table (if unknown at the time of compilation, this number can also be computed automatically by the \cppinline{file::find_skip()} function).
 
 The vectors in which the data should be stored are given in argument, one after the other. Each column of the file will be stored in a different vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
 
@@ -119,6 +119,28 @@ file::read_table("some/ascii_table.dat", 11,
     file::columns(2, flux, _) // read (flux,_,flux,_)
 );
 \end{cppcode}
+
+\funcitem \cppinline|void file::find_skip(string f)| \itt{file::find_skip}
+
+This function scans the file whose path is given in the string \cppinline{f} and returns the number of lines at the beginning of the file that either: a) are empty, b) only contain spaces or tabs, or c) start with a \cppinline{'#'} (which is the \emph{de facto} standard for comments in ASCII tables). The return value is typically fed to \cppinline{file::read_table()}.
+
+\begin{example}
+\begin{cppcode}
+// Improving the first example of file::read_table().
+
+// We first compute the number of lines to skip
+uint_t nskip = file::find_skip("some/ascii_table.dat");
+
+// Declare the vectors and their types
+vec1u id;
+vec1d ra, dec;
+
+// Then read the data
+file::read_table("some/ascii_table.dat", nskip,
+    id, ra, dec // read three columns
+);
+\end{cppcode}
+\end{example}
 
 \funcitem \cppinline|void file::write_table(string f, uint_t w, ...)| \itt{file::write_table}
 
