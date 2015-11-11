@@ -8,11 +8,11 @@
 
 \cppinline|double derivate2_func(F f, vec1d x, double e, uint_t i1, i2)|
 
-The \cppinline{derivate1} functions compute a numerical approximation of the first derivative of a function \cppinline{f} at point \cppinline{x}, with step \cppinline{e}. To do so, the algorithm uses a $5$ point symmetric sampling of the function around \cppinline{x}, ranging from \cppinline{(x - 2*e)} to \cppinline{(x + 2*e)}, and assumes that \cppinline{f} is continuous and can be well approximated by a $4^{\rm th}$ order polynomial within this range (the result will be exact if \cppinline{f} \emph{is} a polynomial of order less or equal to $4$).
+The \cppinline{derivate1_func} functions compute a numerical approximation of the first derivative of a function \cppinline{f} at point \cppinline{x}, with step \cppinline{e}. To do so, the algorithm uses a $5$ point symmetric sampling of the function around \cppinline{x}, ranging from \cppinline{(x - 2*e)} to \cppinline{(x + 2*e)}, and assumes that \cppinline{f} is continuous and can be well approximated by a $4^{\rm th}$ order polynomial within this range (the result will be exact if \cppinline{f} \emph{is} a polynomial of order less or equal to $4$).
 
 The first version assumes that \cppinline{f} has a single scalar argument and returns ${\rm d}f/{\rm d}x$, while the second version assumes that \cppinline{f} has a single vector argument $x = \{x_i\}$, in which case the index \cppinline{i} is used to choose with respect to which of the vector's element the partial derivative should be taken, so the function returns $\partial f/\partial x_i$.
 
-The \cppinline{derivate2} functions approximate instead the second derivative of \cppinline{f}. The first version assumes that \cppinline{f} has a single scalar argument and returns ${\rm d}^2f/{\rm d}x^2$, while the second version assumes that \cppinline{f} has a single vector argument $x = \{x_i\}$, in which case the index \cppinline{i} is used to choose with respect to which of the vector's element the partial second derivative should be taken, so the function returns $\partial^2 f/\partial {x_i}^2$. The third version computes the partial first derivatives with respect to elements \cppinline{i1} and \cppinline{i2}, so the function returns $\partial^2 f/(\partial x_{i1} \partial x_{i2})$.
+The \cppinline{derivate2_func} functions approximate instead the second derivative of \cppinline{f}. The first version assumes that \cppinline{f} has a single scalar argument and returns ${\rm d}^2f/{\rm d}x^2$, while the second version assumes that \cppinline{f} has a single vector argument $x = \{x_i\}$, in which case the index \cppinline{i} is used to choose with respect to which of the vector's element the partial second derivative should be taken, so the function returns $\partial^2 f/\partial {x_i}^2$. The third version computes the partial first derivatives with respect to elements \cppinline{i1} and \cppinline{i2}, so the function returns $\partial^2 f/(\partial x_{i1} \partial x_{i2})$.
 
 The value of \cppinline{e} should be as small as possible, while preserving the fact that \cppinline{x+e} and \cppinline{x} are different numbers within the accuracy of \cppinline{double}, as well as \cppinline{f(x+e)} and \cppinline{f(x)} if the analytic form of \cppinline{f} would indeed predict that these are two different numbers.
 
@@ -47,12 +47,73 @@ df = derivate1_func(f2, {dpi, dpi}, 1e-2, 1);
 \end{cppcode}
 \end{example}
 
-\funcitem \cppinline|double integrate_func(F f, double x, e = default)| \itt{integrate_func}
+\funcitem \cppinline|auto integrate_func(F f, double x1, x2, e = default)| \itt{integrate_func}
+
+This function computes a numerical approximation of the integral of a function \cppinline{f} in the closed interval bounded by \cppinline{x1} and \cppinline{x2}, i.e., $\int_{x_1}^{x_2} {\rm d}x\,f(x)$. The algorithm uses the Simpson rule, iteratively doubling the degree $n$ (number of sampling points) until the result stabilizes within the chosen relative accuracy \cppinline{e} (which defaults to the machine epsilon matching the return type of \cppinline{f}). It is equivalent to the Numerical Recipe routine \cppinline{qsimp()}.
+
+The function \cppinline{f} can return any arithmetic scalar type, including complex numbers. Vectors are not supported at the moment.
+
+\begin{example}
+\begin{cppcode}
+// A simple function
+auto gauss = [](double x) {
+    return exp(-x*x);
+};
+
+double r = integrate_func(gauss, -10, 10);
+// The analytic value is "sqrt(pi) x erf(10)" = 1,772453850905516...
+r; // 1.77245385091... accurate indeed!
+\end{cppcode}
+\end{example}
 
 \funcitem \cppinline|double integrate(vec<1,T> x, y)| \itt{integrate}
 
 \cppinline|double integrate(vec<1,T> x, y, double x0, x1)|
 
-\cppinline|double integrate(vec<2,T> x, y)|
+\cppinline|double integrate(vec<2,T> x, vec<1,T> y)|
 
-\cppinline|double integrate(vec<2,T> x, y, double x0, x1)|
+\cppinline|double integrate(vec<2,T> x, vec<1,T> y, double x0, x1)|
+
+These functions perform the integral of a tabulated function $y(x)$, either covering the whole extent of the tabulated data, or only within a specified interval enclosed within \cppinline{x0} and \cppinline{x1}.
+
+For the first two functions, the integration is performed using the trapezoid rule. Here, each value of \cppinline{x} corresponds to a given value of the function $y(x)$ in \cppinline{y}. The sampling can be arbitrary. The algorithm only assumes that \cppinline{x} is sorted and that $y(x)$ is continuous (no check is performed). The result will be exact if $y(x)$ is (piece-wise) linear. Note that if the analytical form of $y(x)$ is known, using \cppinline{integrate_func()} will usually be more efficient unless many integrals need to be computed for the same function.
+
+The next two functions perform the integration of \emph{histogram} data by simply summing up the area of each ``bar'' of the histogram. In this case, \cppinline{x} is a two-dimensional vector such that \cppinline{x(0,_)} and \cppinline{x(1,_)} contain the lower and upper bound of each histogram point, respectively, while \cppinline{y} contains the average value of the function $y(x)$ between \cppinline{x(0,_)} and \cppinline{x(1,_)}. See the documentation of \cppinline{histogram()} for more detail about binned data. The values of \cppinline{x} need not be sorted, each interval can be of different size and the intervals can be disjoint. However, the algorithm assumes that the intervals do not overlap (no check is performed). This last condition is met by construction if \cppinline{x} was created from the \cppinline{make_bins()} function.
+
+\begin{example}
+\begin{cppcode}
+vec1d x = rgen(-10.0, 10.0, 20); // build a grid of 20 points
+vec1d y = exp(-x*x);             // sample a function
+
+double r = integrate(x, y);
+// The analytic value is "sqrt(pi) x erf(10)" = 1,772453850905516...
+r; // 1.77197... not too bad
+
+// Binned data example (see histogram())
+
+// Generate a random data set
+vec1d rnd = randomn(make_seed(42), 1000);
+
+// Build some bins
+vec2d xb = make_bins(-10, 10, 20);
+
+// Compute the histogram of the random data
+vec1d yb = histogram(rnd, xb);
+
+// Now we can compute the integral of this binned data
+
+// Note that the algorithm assumes that the 'y' parameter is the
+// *average* of the function between 'x(0,_)' and 'x(1,_)', so we
+// have to divide each value of 'yb' by the width of the
+// corresponding bin
+yb /= bin_width(xb);
+
+// There is the integral
+r = integrate(xb, yb);
+r; // 1000 most probably
+// The exact value here is simply "count(rnd >= -10 && rnd < 10)"
+\end{cppcode}
+\end{example}
+
+
+\funcitem \cppinline|vec<1,T> cumul(vec<1,T> x, y)| \itt{cumul}
