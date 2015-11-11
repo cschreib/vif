@@ -353,9 +353,7 @@ namespace file {
 
         std::size_t n = 0;
         std::ifstream file(name.c_str());
-        while (!file.eof()) {
-            std::getline(file, line);
-
+        while (std::getline(file, line)) {
             auto p = line.find_first_not_of(" \t");
             if (p != line.npos && line[p] != '#') {
                 break;
