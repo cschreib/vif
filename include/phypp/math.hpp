@@ -2244,12 +2244,10 @@ auto cumul(const vec<1,TypeX>& x, const vec<1,TypeY>& y) -> vec<1,decltype(integ
     phypp_check(x.size() == y.size(),
         "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
 
-    dr[0] = y[0];
-    decltype(0.5*y[0]*(x[1]-x[0])) r = y[0];
-    for (uint_t i : range(x.size()-1)) {
-        r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
-
-        dr[i+1] = r;
+    decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
+    for (uint_t i : range(1, x.size())) {
+        r += 0.5*(y.safe[i]+y.safe[i-1])*(x.safe[i]-x.safe[i-1]);
+        dr.safe[i] = r;
     }
 
     return dr;
