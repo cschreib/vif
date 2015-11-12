@@ -715,7 +715,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("Matrix 'invert', 'mmul', 'identity_matrix'");
+        print("Matrix 'invert', 'product', 'make_identity'");
         vec2d a = {
             {1.000, 2.000, 3.000},
             {4.000, 1.000, 6.000},
@@ -726,64 +726,64 @@ int main(int argc, char* argv[]) {
 
 #ifndef NO_LAPACK
         vec2d i;
-        check(invert(a,i), "1");
-        vec2d tid = mmul(a,i);
+        check(matrix::invert(a,i), "1");
+        vec2d tid = matrix::product(a,i);
         check(rms(tid - id) < 1e-10, "1");
 #endif
 
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
-        diagonal(sq) *= 5;
+        matrix::diagonal(sq) *= 5;
         check(sq, "{5, 1, 1, 1, 5, 1, 1, 1, 5}");
 
-        vec2d id2 = identity_matrix(3);
+        vec2d id2 = matrix::make_identity(3);
         check(rms(id2 - id) < 1e-10, "1");
 
-        check(total(mmul(id, a) != a) == 0, "1");
+        check(total(matrix::product(id, a) != a) == 0, "1");
     }
 
     {
-        print("Matrix 'translation_matrix', 'scale_matrix', 'rotation_matrix'");
+        print("Matrix 'make_translation', 'make_scale', 'make_rotation'");
         double x = 5, y = 2;
-        vec1d p = point2d(x, y);
+        vec1d p = matrix::make_point(x, y);
         check(p, "{5, 2, 1}");
 
-        vec2d tm = identity_matrix(3);
+        vec2d tm = matrix::make_identity(3);
 
-        vec2d m = translation_matrix(2,3);
-        vec1d tp = mmul(m, p);
-        tm = mmul(m, tm);
+        vec2d m = matrix::make_translation(2,3);
+        vec1d tp = matrix::product(m, p);
+        tm = matrix::product(m, tm);
         check(tp, "{7, 5, 1}");
 
-        m = scale_matrix(2,3);
-        tp = mmul(m, tp);
-        tm = mmul(m, tm);
+        m = matrix::make_scale(2,3);
+        tp = matrix::product(m, tp);
+        tm = matrix::product(m, tm);
         check(tp, "{14, 15, 1}");
 
-        m = rotation_matrix(dpi/2);
-        tp = mmul(m, tp);
-        tm = mmul(m, tm);
+        m = matrix::make_rotation(dpi/2);
+        tp = matrix::product(m, tp);
+        tm = matrix::product(m, tm);
         check(tp, "{-15, 14, 1}");
 
-        check(mmul(tm, p), "{-15, 14, 1}");
+        check(matrix::product(tm, p), "{-15, 14, 1}");
     }
 
 #ifndef NO_LAPACK
     {
-        print("'invert_symmetric' function");
-        vec2d alpha = identity_matrix(2);
+        print("Matrix 'invert_symmetric' function");
+        vec2d alpha = matrix::make_identity(2);
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
-        check(inplace_invert(talpha), "1");
-        check(inplace_invert_symmetric(alpha), "1");
-        symmetrize(alpha);
-        check(total(fabs(alpha - talpha) > 1e-6), "0");
+        check(matrix::inplace_invert(talpha), "1");
+        check(matrix::inplace_invert_symmetric(alpha), "1");
+        matrix::symmetrize(alpha);
+        check(total(abs(alpha - talpha) > 1e-6), "0");
     }
 
     {
-        print("'solve_symmetric' function");
+        print("Matrix 'solve_symmetric' function");
         vec1d beta = {1,2,3,4};
-        vec2d alpha = identity_matrix(4);
-        check(inplace_solve_symmetric(alpha, beta), "1");
+        vec2d alpha = matrix::make_identity(4);
+        check(matrix::inplace_solve_symmetric(alpha, beta), "1");
         check(beta, "{1, 2, 3, 4}");
 
         // x + 2*y = b1
@@ -792,22 +792,22 @@ int main(int argc, char* argv[]) {
         // -> y = (2*b1 - b2)/3
         beta = {1,2};
         vec1d tbeta = beta;
-        alpha = identity_matrix(2);
+        alpha = matrix::make_identity(2);
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
-        check(inplace_solve_symmetric(alpha, beta), "1");
-        check(total(fabs(beta - vec1d{1, 0}) > 1e-6), "0");
+        check(matrix::inplace_solve_symmetric(alpha, beta), "1");
+        check(total(abs(beta - vec1d{1, 0}) > 1e-6), "0");
 
-        vec1d ubeta = mmul(talpha, beta);
-        check(total(fabs(ubeta - tbeta)) > 1e-6, "0");
+        vec1d ubeta = matrix::product(talpha, beta);
+        check(total(abs(ubeta - tbeta)) > 1e-6, "0");
 
-        inplace_invert(talpha);
-        tbeta = mmul(talpha, tbeta);
-        check(total(fabs(beta - tbeta)) > 1e-6, "0");
+        matrix::inplace_invert(talpha);
+        tbeta = matrix::product(talpha, tbeta);
+        check(total(abs(beta - tbeta)) > 1e-6, "0");
     }
 
     {
-        print("'eigen_symmetric' function");
+        print("Matrix 'eigen_symmetric' function");
         vec2d alpha = {
             {1.0, -0.1, 0.1},
             {-0.1, 1.3, 0.1},
@@ -818,14 +818,14 @@ int main(int argc, char* argv[]) {
 
         vec1d vals;
         vec2d vecs;
-        check(eigen_symmetric(alpha, vals, vecs), "1");
+        check(matrix::eigen_symmetric(alpha, vals, vecs), "1");
         for (uint_t i : range(n)) {
             vec1d u1 = vecs(i,_);
-            vec1d u2 = mmul(alpha, u1)/u1;
+            vec1d u2 = matrix::product(alpha, u1)/u1;
             for (uint_t j : range(n-1)) {
-                check(fabs(u2[j] - u2[j+1]) < 1e-6, "1");
+                check(abs(u2[j] - u2[j+1]) < 1e-6, "1");
             }
-            check(fabs(u2[0] - vals[i]) < 1e-6, "1");
+            check(abs(u2[0] - vals[i]) < 1e-6, "1");
         }
     }
 

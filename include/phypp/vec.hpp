@@ -245,6 +245,8 @@ struct vec_iterator_type<vec<Dim,bool>> {
 
 // Tag type to mark initialization of a reference vector.
 struct vec_ref_tag_t {} vec_ref_tag;
+// Tag type to permit copy initialization without data copy.
+struct vec_nocopy_tag_t {} vec_nocopy_tag;
 
 // Helper to check if a given type is a generic vector.
 template<typename T>
@@ -907,6 +909,7 @@ struct vec {
 
     vec() : safe(*this) {}
     vec(const vec& v) : data(v.data), dims(v.dims), safe(*this) {}
+    vec(vec_nocopy_tag_t, const vec& v) : dims(v.dims), safe(*this) {}
 
     vec(vec&& v) : data(std::move(v.data)), dims(v.dims), safe(*this) {
         for (uint_t i = 0; i < Dim; ++i) {
@@ -1584,6 +1587,7 @@ struct vec<Dim,Type*> {
 
     vec() = delete;
     vec(const vec& v) : parent(v.parent), data(v.data), dims(v.dims), safe(*this) {}
+    vec(vec_nocopy_tag_t, const vec& v) : parent(v.parent), dims(v.dims), safe(*this) {}
     vec(vec&& v) : parent(v.parent), data(std::move(v.data)), dims(std::move(v.dims)), safe(*this) {}
 
     template<std::size_t D, typename T, typename enable =
@@ -2863,6 +2867,25 @@ template<typename Type>
 vec<1,Type> reverse(vec<1,Type> v) {
     std::reverse(v.data.begin(), v.data.end());
     return v;
+}
+
+template<typename Type>
+vec<2,Type> transpose(const vec<2,Type>& v) {
+    vec<2,Type> r(vec_nocopy_tag, v);
+    std::swap(r.dims[0], r.dims[1]);
+
+    for (uint_t i : range(v.size())) {
+        r.data.push_back(v.data[(i%v.dims[0])*v.dims[1] + i/v.dims[0]]);
+    }
+
+    // TODO: see who's faster
+    // r.resize();
+    // for (uint_t i : range(r.dims[0]))
+    // for (uint_t j : range(r.dims[1])) {
+    //     r.data[j+i*r.dims[1]] = v.data[i+j*v.dims[1]];
+    // }
+
+    return r;
 }
 
 template<std::size_t Dim, typename Type = double, typename ... Args>

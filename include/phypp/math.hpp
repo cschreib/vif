@@ -1361,189 +1361,169 @@ auto derivate2_func(F&& func, const vec1d& x, double ep, uint_t ip1, uint_t ip2)
     return res;
 }
 
-template<typename TypeA, typename TypeB>
-auto mmul(const vec<2,TypeA>& a, const vec<2,TypeB>& b) -> vec<2,decltype(a(0,0)*b(0,0))> {
-    phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrices "
-        "(", a.dims, " x ", b.dims, ")");
+namespace matrix {
+    template<typename TypeA, typename TypeB>
+    auto product(const vec<2,TypeA>& a, const vec<2,TypeB>& b) -> vec<2,decltype(a(0,0)*b(0,0))> {
+        phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-matrix multiplication "
+            "(", a.dims, " x ", b.dims, ")");
 
-    const uint_t o = a.dims[1];
+        const uint_t o = a.dims[1];
 
-    using ntype_t = decltype(a(0,0)*b(0,0));
-    const uint_t n = a.dims[0];
-    const uint_t m = b.dims[1];
+        using ntype_t = decltype(a(0,0)*b(0,0));
+        const uint_t n = a.dims[0];
+        const uint_t m = b.dims[1];
 
-    vec<2,ntype_t> r(n,m);
-    for (uint_t i = 0; i < n; ++i)
-    for (uint_t j = 0; j < m; ++j)
-    for (uint_t k = 0; k < o; ++k) {
-        r.safe(i,j) += a.safe(i,k)*b.safe(k,j);
-    }
-
-    return r;
-}
-
-template<typename TypeA, typename TypeB>
-auto mmul(const vec<2,TypeA>& a, const vec<1,TypeB>& b) -> vec<1,decltype(a(0,0)*b(0,0))> {
-    phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying matrix by vector "
-        "(", a.dims, " x ", b.dims, ")");
-
-    const uint_t o = a.dims[1];
-
-    using ntype_t = decltype(a(0,0)*b(0,0));
-    const uint_t n = a.dims[0];
-
-    vec<1,ntype_t> r(n);
-    for (uint_t i = 0; i < n; ++i)
-    for (uint_t k = 0; k < o; ++k) {
-        r.safe(i) += a.safe(i,k)*b.safe(k);
-    }
-
-    return r;
-}
-
-template<typename TypeA, typename TypeB>
-auto mmul(const vec<1,TypeB>& b, const vec<2,TypeA>& a) -> vec<1,decltype(a(0,0)*b(0,0))> {
-    phypp_check(a.dims[1] == b.dims[0], "wrong dimensions multiplying vector by matrix "
-        "(", a.dims, " x ", b.dims, ")");
-
-    const uint_t o = a.dims[0];
-
-    using ntype_t = decltype(a(0,0)*b(0,0));
-    const uint_t n = a.dims[1];
-
-    vec<1,ntype_t> r = arr<ntype_t>(n);
-    for (uint_t i = 0; i < n; ++i)
-    for (uint_t k = 0; k < o; ++k) {
-        r.safe(i) += b.safe(k)*a.safe(k,i);
-    }
-
-    return r;
-}
-
-template<typename Type>
-void mprint(const vec<2,Type>& m) {
-    for (uint_t i = 0; i < m.dims[0]; ++i) {
-        for (uint_t j = 0; j < m.dims[1]; ++j) {
-            if (j != 0) std::cout << ", ";
-            std::cout << m.safe(i,j);
+        vec<2,ntype_t> r(n,m);
+        for (uint_t i = 0; i < n; ++i)
+        for (uint_t j = 0; j < m; ++j)
+        for (uint_t k = 0; k < o; ++k) {
+            r.safe(i,j) += a.safe(i,k)*b.safe(k,j);
         }
 
-        std::cout << "\n";
+        return r;
     }
 
-    std::cout << std::flush;
-}
+    template<typename TypeA, typename TypeB>
+    auto product(const vec<2,TypeA>& a, const vec<1,TypeB>& b) -> vec<1,decltype(a(0,0)*b(0,0))> {
+        phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-vector multiplication "
+            "(", a.dims, " x ", b.dims, ")");
 
-template<typename Type>
-vec<2,rtype_t<Type>> transpose(const vec<2,Type>& v) {
-    vec<2,rtype_t<Type>> r(v.dims);
-    std::swap(r.dims[0], r.dims[1]);
+        const uint_t o = a.dims[1];
 
-    for (uint_t i : range(r.size())) {
-        r[i] = v.safe[(i%r.dims[1])*v.dims[1] + i/r.dims[1]];
+        using ntype_t = decltype(a(0,0)*b(0,0));
+        const uint_t n = a.dims[0];
+
+        vec<1,ntype_t> r(n);
+        for (uint_t i = 0; i < n; ++i)
+        for (uint_t k = 0; k < o; ++k) {
+            r.safe(i) += a.safe(i,k)*b.safe(k);
+        }
+
+        return r;
     }
 
-    // TODO: see who's faster
-    // for (uint_t i : range(r.dims[0]))
-    // for (uint_t j : range(r.dims[1])) {
-    //     r.safe[j+i*r.dims[1]] = v.safe[i+j*v.dims[1]];
-    //     // r.safe(i,j) = v.safe(j,i);
-    // }
+    template<typename TypeA, typename TypeB>
+    auto product(const vec<1,TypeB>& b, const vec<2,TypeA>& a) -> vec<1,decltype(a(0,0)*b(0,0))> {
+        phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in vector-matrix multiplication "
+            "(", a.dims, " x ", b.dims, ")");
 
-    return r;
-}
+        const uint_t o = a.dims[0];
 
-template<typename Type>
-auto diagonal(vec<2,Type>&& v) -> decltype(v(_,0).concretise()) {
-    phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
-        v.dims, ")");
+        using ntype_t = decltype(a(0,0)*b(0,0));
+        const uint_t n = a.dims[1];
 
-    decltype(v(_,0).concretise()) d(v.dims[0]);
-    for (uint_t i : range(d)) {
-        d.safe[i] = v.safe(i,i);
+        vec<1,ntype_t> r = arr<ntype_t>(n);
+        for (uint_t i = 0; i < n; ++i)
+        for (uint_t k = 0; k < o; ++k) {
+            r.safe(i) += b.safe(k)*a.safe(k,i);
+        }
+
+        return r;
     }
 
-    return d;
-}
+    template<typename Type>
+    auto diagonal(vec<2,Type>&& v) -> decltype(v(_,0).concretise()) {
+        phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+            v.dims, ")");
 
-template<typename Type>
-auto diagonal(const vec<2,Type>& v) -> decltype(v(_,0)) {
-    phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
-        v.dims, ")");
+        decltype(v(_,0).concretise()) d(v.dims[0]);
+        for (uint_t i : range(d)) {
+            d.safe[i] = v.safe(i,i);
+        }
 
-    decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
-    d.dims[0] = v.dims[0];
-    d.resize();
-    for (uint_t i : range(d)) {
-        d.safe[i] = ptr<Type>(v.safe(i,i));
+        return d;
     }
 
-    return d;
-}
+    template<typename Type>
+    auto diagonal(const vec<2,Type>& v) -> decltype(v(_,0)) {
+        phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+            v.dims, ")");
 
-template<typename Type>
-auto diagonal(vec<2,Type>& v) -> decltype(v(_,0)) {
-    phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
-        v.dims, ")");
+        decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
+        d.dims[0] = v.dims[0];
+        d.resize();
+        for (uint_t i : range(d)) {
+            d.safe[i] = ptr<Type>(v.safe(i,i));
+        }
 
-    decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
-    d.dims[0] = v.dims[0];
-    d.resize();
-    for (uint_t i : range(d)) {
-        d.data[i] = ptr<Type>(v.safe(i,i));
+        return d;
     }
 
-    return d;
-}
+    template<typename Type>
+    auto diagonal(vec<2,Type>& v) -> decltype(v(_,0)) {
+        phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+            v.dims, ")");
 
-template<typename Type = double>
-vec<2,Type> identity_matrix(uint_t dim) {
-    vec<2,Type> m(dim, dim);
-    diagonal(m) = 1;
-    return m;
-}
+        decltype(v(_,0)) d(vec_ref_tag, vec_access::get_parent(v));
+        d.dims[0] = v.dims[0];
+        d.resize();
+        for (uint_t i : range(d)) {
+            d.data[i] = ptr<Type>(v.safe(i,i));
+        }
 
-template<typename TX, typename TY>
-auto scale_matrix(const TX& sx, const TY& sy) -> vec<2,decltype(sx*sy)> {
-    vec<2,decltype(sx*sy)> m(3, 3);
-    m.safe(0,0) = sx;
-    m.safe(1,1) = sy;
-    m.safe(2,2) = 1;
-    return m;
-}
+        return d;
+    }
 
-template<typename T>
-vec<2,T> scale_matrix(const T& s) {
-    vec<2,T> m(3, 3);
-    m.safe(0,0) = s;
-    m.safe(1,1) = s;
-    m.safe(2,2) = 1;
-    return m;
-}
+    template<typename Type = double>
+    vec<2,Type> make_identity(uint_t dim) {
+        vec<2,Type> m(dim, dim);
+        diagonal(m) = 1;
+        return m;
+    }
 
-template<typename TX, typename TY>
-auto translation_matrix(const TX& tx, const TY& ty) -> vec<2,decltype(tx*ty)> {
-    vec<2,decltype(tx*ty)> m(3, 3);
-    diagonal(m) = 1;
-    m.safe(0,2) = tx;
-    m.safe(1,2) = ty;
-    return m;
-}
+    template<typename TX, typename TY>
+    auto make_scale(const TX& sx, const TY& sy) -> vec<2,decltype(sx*sy)> {
+        vec<2,decltype(sx*sy)> m(3, 3);
+        m.safe(0,0) = sx;
+        m.safe(1,1) = sy;
+        m.safe(2,2) = 1;
+        return m;
+    }
 
-template<typename A>
-auto rotation_matrix(const A& a) -> vec<2,decltype(cos(a))> {
-    vec<2,decltype(cos(a))> m(3, 3);
-    auto ca = cos(a), sa = sin(a);
-    m.safe(0,0) = m.safe(1,1) = ca;
-    m.safe(0,1) = -sa;
-    m.safe(1,0) = sa;
-    m.safe(2,2) = 1;
-    return m;
-}
+    template<typename T>
+    vec<2,T> make_scale(const T& s) {
+        vec<2,T> m(3, 3);
+        m.safe(0,0) = s;
+        m.safe(1,1) = s;
+        m.safe(2,2) = 1;
+        return m;
+    }
 
-template<typename TX, typename TY>
-auto point2d(const TX& x, const TY& y) -> vec<1,decltype(x*y)> {
-    return vec<1,decltype(x*y)>{x, y, 1};
+    template<typename TX, typename TY>
+    auto make_translation(const TX& tx, const TY& ty) -> vec<2,decltype(tx*ty)> {
+        vec<2,decltype(tx*ty)> m(3, 3);
+        diagonal(m) = 1;
+        m.safe(0,2) = tx;
+        m.safe(1,2) = ty;
+        return m;
+    }
+
+    template<typename A>
+    auto make_rotation(const A& a) -> vec<2,decltype(cos(a))> {
+        vec<2,decltype(cos(a))> m(3, 3);
+        auto ca = cos(a), sa = sin(a);
+        m.safe(0,0) = m.safe(1,1) = ca;
+        m.safe(0,1) = -sa;
+        m.safe(1,0) = sa;
+        m.safe(2,2) = 1;
+        return m;
+    }
+
+    template<typename Type>
+    void symmetrize(vec<2,Type>& alpha) {
+        phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
+            alpha.dims, ")");
+
+        for (uint_t i = 0; i < alpha.dims[0]; ++i)
+        for (uint_t j = i+1; j < alpha.dims[0]; ++j) {
+            alpha.safe(i,j) = alpha.safe(j,i);
+        }
+    }
+
+    template<typename TX, typename TY>
+    auto make_point(const TX& x, const TY& y) -> vec<1,decltype(x*y)> {
+        return vec<1,decltype(x*y)>{x, y, 1};
+    }
 }
 
 // LAPACK functions
@@ -1561,183 +1541,173 @@ extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, doub
     double* work, int* lwork, int* info);
 #endif
 
-template<typename Dummy = void>
-bool inplace_invert(vec2d& i) {
-#ifdef NO_LAPACK
-    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-        "please enable LAPACK to use this function");
-#else
-    phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
+namespace matrix {
+    template<typename Dummy = void>
+    bool inplace_invert(vec2d& i) {
+    #ifdef NO_LAPACK
+        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+            "please enable LAPACK to use this function");
+    #else
+        phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
-    int n = i.dims[0];
-    int lda = n;
-    int info;
+        int n = i.dims[0];
+        int lda = n;
+        int info;
 
-    vec<1,int> ipiv(n);
-    dgetrf_(&n, &n, i.data.data(), &lda, ipiv.data.data(), &info);
-    if (info < 0) {
-        return false;
+        vec<1,int> ipiv(n);
+        dgetrf_(&n, &n, i.data.data(), &lda, ipiv.data.data(), &info);
+        if (info < 0) {
+            return false;
+        }
+
+        vec1d work(n);
+        int lw = n;
+        dgetri_(&n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
+        if (info != 0) {
+            return false;
+        }
+
+        return true;
+    #endif
     }
 
-    vec1d work(n);
-    int lw = n;
-    dgetri_(&n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
-    if (info != 0) {
-        return false;
+    template<typename TypeA>
+    bool invert(const vec<2,TypeA>& a, vec2d& i) {
+        i = a;
+        return inplace_invert<TypeA>(i);
     }
 
-    return true;
-#endif
-}
+    template<typename Dummy = void>
+    bool inplace_invert_symmetric(vec2d& i) {
+    #ifdef NO_LAPACK
+        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+            "please enable LAPACK to use this function");
+    #else
+        phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
-template<typename TypeA>
-bool invert(const vec<2,TypeA>& a, vec2d& i) {
-    i = a;
-    return inplace_invert<TypeA>(i);
-}
+        char uplo = 'U';
+        int n = i.dims[0];
+        int lda = n;
+        int info;
 
-template<typename Dummy = void>
-bool inplace_invert_symmetric(vec2d& i) {
-#ifdef NO_LAPACK
-    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-        "please enable LAPACK to use this function");
-#else
-    phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
+        int lw = n*64;
+        // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+        // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+        // the Lapack User Guide.
 
-    char uplo = 'U';
-    int n = i.dims[0];
-    int lda = n;
-    int info;
+        vec1d work(lw);
+        vec<1,int> ipiv(n);
 
-    int lw = n*64;
-    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
-    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
-    // the Lapack User Guide.
+        dsytrf_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
+        if (info < 0) {
+            return false;
+        }
 
-    vec1d work(lw);
-    vec<1,int> ipiv(n);
+        dsytri_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &info);
+        if (info != 0) {
+            return false;
+        }
 
-    dsytrf_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
-    if (info < 0) {
-        return false;
+        return true;
+    #endif
     }
 
-    dsytri_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &info);
-    if (info != 0) {
-        return false;
+    template<typename TypeA>
+    bool invert_symmetric(const vec<2,TypeA>& a, vec2d& i) {
+        i = a;
+        return inplace_invert_symmetric<TypeA>(i);
     }
 
-    return true;
-#endif
-}
+    template<typename Dummy = void>
+    bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
+    #ifdef NO_LAPACK
+        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+            "please enable LAPACK to use this function");
+    #else
+        phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
+            alpha.dims, ")");
+        phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimensions (",
+            "got ", alpha.dims[0], " and ", beta.dims[0], ")");
 
-template<typename TypeA>
-bool invert_symmetric(const vec<2,TypeA>& a, vec2d& i) {
-    i = a;
-    return inplace_invert_symmetric<TypeA>(i);
-}
+        char uplo = 'U';
+        int n = alpha.dims[0];
+        int nrhs = 1;
+        int lda = n, ldb = n;
+        int info;
 
-template<typename Dummy = void>
-bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
-#ifdef NO_LAPACK
-    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-        "please enable LAPACK to use this function");
-#else
-    phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
-        alpha.dims, ")");
-    phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimensions (",
-        "got ", alpha.dims[0], " and ", beta.dims[0], ")");
+        int lw = n*64;
+        // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+        // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+        // the Lapack User Guide.
 
-    char uplo = 'U';
-    int n = alpha.dims[0];
-    int nrhs = 1;
-    int lda = n, ldb = n;
-    int info;
+        vec1d work(lw);
+        vec<1,int> ipiv(n);
 
-    int lw = n*64;
-    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
-    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
-    // the Lapack User Guide.
+        dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
+            &ldb, work.data.data(), &lw, &info);
+        if (info != 0) {
+            return false;
+        }
 
-    vec1d work(lw);
-    vec<1,int> ipiv(n);
-
-    dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
-        &ldb, work.data.data(), &lw, &info);
-    if (info != 0) {
-        return false;
+        return true;
+    #endif
     }
 
-    return true;
-#endif
-}
-
-template<typename Dummy = void>
-bool solve_symmetric(const vec2d& alpha, const vec1d& beta, vec1d& res) {
-    vec2d a = alpha;
-    res = beta;
-    return inplace_solve_symmetric<Dummy>(a, res);
-}
-
-template<typename Dummy = void>
-bool inplace_eigen_symmetric(vec2d& a, vec1d& vals) {
-#ifdef NO_LAPACK
-    static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-        "please enable LAPACK to use this function");
-#else
-    phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
-        a.dims, ")");
-
-    char jobz = 'V';
-    char uplo = 'U';
-    int n = a.dims[0];
-    int lda = n;
-    int info;
-
-    vals.resize(n);
-
-    int lw = n*64;
-    // Note: the optimal value for lw is n*nb, where nb is the optimal block size
-    // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
-    // the Lapack User Guide.
-
-    vec1d work(lw);
-
-    dsyev_(&jobz, &uplo, &n, a.data.data(), &lda, vals.data.data(), work.data.data(),
-        &lw, &info);
-    if (info != 0) {
-        return false;
+    template<typename Dummy = void>
+    bool solve_symmetric(const vec2d& alpha, const vec1d& beta, vec1d& res) {
+        vec2d a = alpha;
+        res = beta;
+        return inplace_solve_symmetric<Dummy>(a, res);
     }
 
-    // Eigen vectors are now stored in 'a' with the following layout:
-    // v0 = a(0,_), v1 = a(1,_), ...
-    // each corresponding to the eigen values given in 'vals'
+    template<typename Dummy = void>
+    bool inplace_eigen_symmetric(vec2d& a, vec1d& vals) {
+    #ifdef NO_LAPACK
+        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
+            "please enable LAPACK to use this function");
+    #else
+        phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
+            a.dims, ")");
 
-    return true;
-#endif
-}
+        char jobz = 'V';
+        char uplo = 'U';
+        int n = a.dims[0];
+        int lda = n;
+        int info;
 
-template<typename Dummy = void>
-bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
-    vecs = a;
-    return inplace_eigen_symmetric<Dummy>(vecs, vals);
+        vals.resize(n);
+
+        int lw = n*64;
+        // Note: the optimal value for lw is n*nb, where nb is the optimal block size
+        // This value can be obtained using ilaenv_, but 64 should be plenty enough, according to
+        // the Lapack User Guide.
+
+        vec1d work(lw);
+
+        dsyev_(&jobz, &uplo, &n, a.data.data(), &lda, vals.data.data(), work.data.data(),
+            &lw, &info);
+        if (info != 0) {
+            return false;
+        }
+
+        // Eigen vectors are now stored in 'a' with the following layout:
+        // v0 = a(0,_), v1 = a(1,_), ...
+        // each corresponding to the eigen values given in 'vals'
+
+        return true;
+    #endif
+    }
+
+    template<typename Dummy = void>
+    bool eigen_symmetric(const vec2d& a, vec1d& vals, vec2d& vecs) {
+        vecs = a;
+        return inplace_eigen_symmetric<Dummy>(vecs, vals);
+    }
 }
 
 
 // -----------------------
 // end of LAPACK functions
-
-
-template<typename Type>
-void symmetrize(vec<2,Type>& alpha) {
-    phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
-        alpha.dims, ")");
-
-    for (uint_t i = 0; i < alpha.dims[0]; ++i)
-    for (uint_t j = i+1; j < alpha.dims[0]; ++j) {
-        alpha.safe(i,j) = alpha.safe(j,i);
-    }
-}
 
 struct linfit_result {
     bool success;
@@ -1795,20 +1765,20 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
         }
     }
 
-    if (!inplace_invert_symmetric(alpha)) {
+    if (!matrix::inplace_invert_symmetric(alpha)) {
         fr.success = false;
         fr.chi2 = dnan;
         fr.params = replicate(dnan, np);
         fr.errors = replicate(dnan, np);
-        symmetrize(alpha);
+        matrix::symmetrize(alpha);
         fr.cov = alpha;
         return fr;
     }
 
-    symmetrize(alpha);
+    matrix::symmetrize(alpha);
     fr.success = true;
-    fr.params = mmul(alpha, beta);
-    fr.errors = sqrt(diagonal(alpha));
+    fr.params = matrix::product(alpha, beta);
+    fr.errors = sqrt(matrix::diagonal(alpha));
 
     vec1d model(nm);
     for (uint_t m = 0; m < nm; ++m) {

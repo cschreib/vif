@@ -587,7 +587,7 @@ int main(int argc, char* argv[]) {
     vec2d covar;
     if (has_groups) {
         covar = alpha;
-        symmetrize(covar);
+        matrix::symmetrize(covar);
     }
 
     if (cell_approx) {
@@ -596,7 +596,7 @@ int main(int argc, char* argv[]) {
         }
 
         // First fill in the symmetric complement of alpha to make our life simpler
-        symmetrize(alpha);
+        matrix::symmetrize(alpha);
 
         // Then estimate the error for each source
         vec1u idn; idn.reserve(nobs);
@@ -628,7 +628,7 @@ int main(int argc, char* argv[]) {
                 talpha(neib,neib) += alpha(nobs,nobs);
             }
 
-            if (!inplace_invert_symmetric(talpha)) {
+            if (!matrix::inplace_invert_symmetric(talpha)) {
                 error("could not invert sub-matrix for source ", idin[i]);
                 note("there are probably some prior source positions which are too "
                     "close and cannot be deblended");
@@ -645,7 +645,7 @@ int main(int argc, char* argv[]) {
             print("solve system...");
         }
 
-        if (!inplace_solve_symmetric(alpha, beta)) {
+        if (!matrix::inplace_solve_symmetric(alpha, beta)) {
             error("could not solve the linear problem");
             note("there are probably some prior source positions which are too close and "
                 "cannot be deblended");
@@ -674,7 +674,7 @@ int main(int argc, char* argv[]) {
             print("invert matrix...");
         }
 
-        if (!inplace_invert_symmetric(alpha)) {
+        if (!matrix::inplace_invert_symmetric(alpha)) {
             error("could not invert covariance matrix, it is singular");
             note("there are probably some prior source positions which are too close and "
                 "cannot be deblended");
@@ -682,11 +682,11 @@ int main(int argc, char* argv[]) {
         }
 
         // Compute covariance matrix to get the errors
-        symmetrize(alpha);
+        matrix::symmetrize(alpha);
 
         // Multiply the inverted alpha with beta to get the best fit values
-        best_fit = mmul(alpha, beta);
-        best_fit_err = sqrt(diagonal(alpha));
+        best_fit = matrix::product(alpha, beta);
+        best_fit_err = sqrt(matrix::diagonal(alpha));
 
         // Extract the background value if needed
         if (free_bg) {
