@@ -2217,7 +2217,7 @@ auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y, double x0, double x
     phypp_check(x.dims[1] == y.size(),
         "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
 
-    phypp_check(x[0] <= x0 && x[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
+    phypp_check(x.safe[0] <= x0 && x.safe[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
 
     uint_t i0 = upper_bound(x0, x(0,_));
     uint_t i1 = lower_bound(x1, x(0,_));
