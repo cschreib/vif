@@ -311,7 +311,7 @@ int main(int argc, char* argv[]) {
         fits::write("out/image_saved.fits", v, hdr);
         vec2d nv;
         fits::read("out/image_saved.fits", nv);
-        check(total(nv != v) == 0, "1");
+        check(count(nv != v) == 0, "1");
     }
 
     {
@@ -556,7 +556,7 @@ int main(int argc, char* argv[]) {
         vec2i v = {{1,2,3},{4,5,6}};
         vec1d mv = partial_mean(0, v);
         vec1d tmv = reduce(0, v, [](vec1d d) { return mean(d); });
-        check(total(mv != tmv), "0");
+        check(count(mv != tmv), "0");
     }
 
     {
@@ -608,17 +608,17 @@ int main(int argc, char* argv[]) {
 
         vec2i s = subregion(v, {0,0,4,4});
         vec2i tv = v;
-        check(total(s != tv) == 0, "1");
+        check(count(s != tv) == 0, "1");
         fits::write("out/sub1.fits", s);
 
         s = subregion(v, {0,1,4,3});
         tv = {{1,2,3},{6,7,8},{11,12,13},{16,17,18},{21,22,23}};
-        check(total(s != tv) == 0, "1");
+        check(count(s != tv) == 0, "1");
         fits::write("out/sub2.fits", s);
 
         s = subregion(v, {1,-1,3,5});
         tv = {{0,5,6,7,8,9,0},{0,10,11,12,13,14,0},{0,15,16,17,18,19,0}};
-        check(total(s != tv) == 0, "1");
+        check(count(s != tv) == 0, "1");
         fits::write("out/sub4.fits", s);
     }
 
@@ -738,7 +738,7 @@ int main(int argc, char* argv[]) {
         vec2d id2 = matrix::make_identity(3);
         check(rms(id2 - id) < 1e-10, "1");
 
-        check(total(matrix::product(id, a) != a) == 0, "1");
+        check(count(matrix::product(id, a) != a) == 0, "1");
     }
 
     {
@@ -776,7 +776,7 @@ int main(int argc, char* argv[]) {
         check(matrix::inplace_invert(talpha), "1");
         check(matrix::inplace_invert_symmetric(alpha), "1");
         matrix::symmetrize(alpha);
-        check(total(abs(alpha - talpha) > 1e-6), "0");
+        check(count(abs(alpha - talpha) > 1e-6), "0");
     }
 
     {
@@ -796,14 +796,14 @@ int main(int argc, char* argv[]) {
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
         check(matrix::inplace_solve_symmetric(alpha, beta), "1");
-        check(total(abs(beta - vec1d{1, 0}) > 1e-6), "0");
+        check(count(abs(beta - vec1d{1, 0}) > 1e-6), "0");
 
         vec1d ubeta = matrix::product(talpha, beta);
-        check(total(abs(ubeta - tbeta)) > 1e-6, "0");
+        check(count(abs(ubeta - tbeta)) > 1e-6, "0");
 
         matrix::inplace_invert(talpha);
         tbeta = matrix::product(talpha, tbeta);
-        check(total(abs(beta - tbeta)) > 1e-6, "0");
+        check(count(abs(beta - tbeta)) > 1e-6, "0");
     }
 
     {
@@ -1003,7 +1003,7 @@ int main(int argc, char* argv[]) {
         vec1f x = {0, 1, 2, 3, 4, 5};
         vec1f nx = {0.2, 0.5, 1.6, -0.5, 12};
         vec1f i = interpolate(y, x, nx);
-        check(total(i != nx), "0");
+        check(count(i != nx), "0");
 
         i = findgen(10);
 
