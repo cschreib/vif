@@ -1362,6 +1362,8 @@ auto derivate2_func(F&& func, const vec1d& x, double ep, uint_t ip1, uint_t ip2)
 }
 
 namespace matrix {
+    using ::transpose;
+
     template<typename TypeA, typename TypeB>
     auto product(const vec<2,TypeA>& a, const vec<2,TypeB>& b) -> vec<2,decltype(a(0,0)*b(0,0))> {
         phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-matrix multiplication "
