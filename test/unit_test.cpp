@@ -799,11 +799,11 @@ int main(int argc, char* argv[]) {
         check(count(abs(beta - vec1d{1, 0}) > 1e-6), "0");
 
         vec1d ubeta = matrix::product(talpha, beta);
-        check(count(abs(ubeta - tbeta)) > 1e-6, "0");
+        check(count(abs(ubeta - tbeta) > 1e-6), "0");
 
         matrix::inplace_invert(talpha);
         tbeta = matrix::product(talpha, tbeta);
-        check(count(abs(beta - tbeta)) > 1e-6, "0");
+        check(count(abs(beta - tbeta) > 1e-6), "0");
     }
 
     {
