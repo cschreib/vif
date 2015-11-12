@@ -287,6 +287,18 @@ namespace file {
         return s.substr(0u, p);
     }
 
+    std::string get_extension(std::string s) {
+        auto p = s.find_last_of('.');
+        if (p == s.npos) return "";
+        return s.substr(p);
+    }
+
+    std::pair<std::string,std::string> split_extension(std::string s) {
+        auto p = s.find_last_of('.');
+        if (p == s.npos) return std::make_pair(s, std::string{});
+        return std::make_pair(s.substr(0u, p), s.substr(p));
+    }
+
     // Same behavior as 'dirname'
     std::string get_directory(const std::string& path) {
         auto pos = path.find_last_of('/');
@@ -340,6 +352,9 @@ namespace file {
     VECTORIZE(directorize)
     VECTORIZE(get_basename)
     VECTORIZE(get_directory)
+    VECTORIZE(remove_extension)
+    VECTORIZE(get_extension)
+    VECTORIZE(split_extension)
     VECTORIZE(mkdir)
     VECTORIZE(exists)
     VECTORIZE(is_older)
