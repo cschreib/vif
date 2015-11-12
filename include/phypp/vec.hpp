@@ -2709,63 +2709,34 @@ vec<Dim1,bool> is_any_of(const vec<Dim1,Type1>& v1, const vec<Dim2,Type2>& v2) {
 }
 
 // Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
-// Each value is matched once, and cannot be used again. For example, if the content of the
-// two vectors is: [12,12,-1,-1] and [0,12,-1,5], then the function will return [0,2] and [1,2].
+// If both 'v1' and 'v2' are only composed of unique values, this function is symmetric. Else,
+// only the index of the first value of 'v2' that matches that of 'v1' is stored.
 template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
 void match(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
+    // TODO: (optimization) sort v2 and use a binary search
+    // must find the right criterion on each vector's size to see
+    // when this is profitable
+
     uint_t n1 = v1.size();
     uint_t n2 = v2.size();
-    if (n2 < n1) {
-        match(v2, v1, id2, id1);
-        return;
-    }
+    uint_t n = std::min(n1, n2);
 
-    id1.data.reserve(n1 + id1.size());
-    id2.data.reserve(n1 + id2.size());
+    id1.data.reserve(n/2 + id1.size());
+    id2.data.reserve(n/2 + id2.size());
 
-    for (uint_t i = 0; i < n1; ++i) {
-        vec1u r = where(v2 == v1.safe[i]);
-        if (r.empty()) continue;
-
-        id1.data.push_back(i);
-        id2.data.push_back(r.safe[0]);
+    for (uint_t i : range(n1))
+    for (uint_t j : range(n2)) {
+        if (v2.safe[j] == v1.safe[i]) {
+            id1.data.push_back(i);
+            id2.data.push_back(j);
+            break;
+        }
     }
 
     id1.dims[0] = id1.data.size();
     id1.data.shrink_to_fit();
     id2.dims[0] = id2.data.size();
     id2.data.shrink_to_fit();
-}
-
-// Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
-// Indices are returned for every matching pair (assuming 'v2' only contains unique values). Using
-// the sample example as 'match', with the two vectors containing [12,12,-1,-1] and
-// [0,12,-1,5], the function will return [0,1,2,3] and [1,2,1,2]. Contrary to 'match',
-// this function is not symmetric, in the sense that the result will be different if the two
-// input vectors are swapped. The order of the returned indices is unspecified.
-template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
-void match_dictionary(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
-    vec1u ids = sort(v1);
-    auto sv1 = v1.safe[ids].concretise();
-    vec1u idu = uniq(sv1);
-
-    vec1u tid1, tid2;
-    match(sv1.safe[idu], v2, tid1, tid2);
-
-    const uint_t nm = tid1.size();
-    const uint_t nplus = nm*(float(idu.size())/v1.size());
-    id1.reserve(id1.size() + nplus);
-    id2.reserve(id2.size() + nplus);
-
-    for (uint_t tu : range(nm)) {
-        uint_t iu = tid1.safe[tu];
-        uint_t u = idu.safe[iu];
-        uint_t n = iu == idu.size()-1 ? sv1.size() - u : idu.safe[iu+1] - u;
-        for (uint_t i : range(n)) {
-            id1.push_back(ids.safe[u+i]);
-            id2.push_back(tid2.safe[tu]);
-        }
-    }
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>

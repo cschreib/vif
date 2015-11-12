@@ -380,8 +380,8 @@ int main(int argc, char* argv[]) {
 
         vec1u id1, id2;
         match(t1, t2, id1, id2);
-        check(id1, "{5, 3, 1}");
-        check(id2, "{0, 2, 4}");
+        check(id1, "{1, 3, 5}");
+        check(id2, "{4, 2, 0}");
     }
 
     {
