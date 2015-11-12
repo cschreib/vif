@@ -68,7 +68,7 @@ struct flux_extractor {
     double psf_err_factor;
 
     bool update_masks_() {
-        ipsf = fabs(psf) >= frac*max(fabs(psf));
+        ipsf = abs(psf) >= frac*max(abs(psf));
         vec1u id = where(ipsf);
         if (id.empty()) {
             psf_err_factor = dnan;
@@ -104,7 +104,7 @@ struct flux_extractor {
             fits::read(tpsf, psf);
 
             if (norm) {
-                psf /= max(fabs(psf));
+                psf /= max(abs(psf));
             }
 
             if (beam_smoothed) {
@@ -114,10 +114,10 @@ struct flux_extractor {
                 } else {
                     kernel = psf;
                 }
-                vec1u idz = where(kernel < 1e-5*max(fabs(kernel)));
+                vec1u idz = where(kernel < 1e-5*max(abs(kernel)));
                 kernel[idz] = 0.0;
                 psf = convolve2d(psf, kernel);
-                psf /= max(fabs(psf));
+                psf /= max(abs(psf));
             }
 
             psf_orig = psf;
@@ -241,21 +241,21 @@ struct logdisp_extractor {
 
     bool update_masks_() {
         if (raper.empty()) {
-            ipsf = fabs(psf) >= frac*max(fabs(psf));
+            ipsf = abs(psf) >= frac*max(abs(psf));
             vec1u id = where(ipsf);
             if (id.empty()) {
                 error("no pixel to fit (frac=", frac,")");
                 return false;
             }
 
-            opsf = fabs(psf) < bfrac*max(fabs(psf));
+            opsf = abs(psf) < bfrac*max(abs(psf));
             id = where(opsf);
             if (id.empty()) {
                 error("no pixel in background (bfrac=", bfrac,")");
                 return false;
             }
 
-            mpsf = (fabs(psf) > 0 && fabs(psf) < bfrac*max(fabs(psf))) || ipsf;
+            mpsf = (abs(psf) > 0 && abs(psf) < bfrac*max(abs(psf))) || ipsf;
             id = where(mpsf);
             if (id.empty()) {
                 error("no pixel to fit (bfrac=", bfrac,", frac=", frac, ")");
@@ -287,7 +287,7 @@ struct logdisp_extractor {
             }
         }
 
-        ifpsf = fabs(psf) >= ffrac*max(fabs(psf));
+        ifpsf = abs(psf) >= ffrac*max(abs(psf));
         vec1u id = where(ifpsf);
         if (id.empty()) {
             error("no pixel to fit (ffrac=", ffrac,")");
@@ -318,7 +318,7 @@ struct logdisp_extractor {
             fits::read(tpsf, psf);
 
             if (norm) {
-                psf /= max(fabs(psf));
+                psf /= max(abs(psf));
             }
 
             psf_orig = psf;
@@ -353,7 +353,7 @@ struct logdisp_extractor {
         run_dim(0, cube, [&](uint_t i, vec1d d) {
             med[i] = inplace_median(d);
             for (uint_t j : range(d)) {
-                d[j] = fabs(d[j] - med[i]);
+                d[j] = abs(d[j] - med[i]);
             }
             dsp[i] = inplace_median(d);
         });

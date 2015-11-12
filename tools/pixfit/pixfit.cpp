@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
             } else {
                 kernel = psf;
             }
-            vec1u idz = where(kernel < 1e-5*max(fabs(kernel)));
+            vec1u idz = where(kernel < 1e-5*max(abs(kernel)));
             kernel[idz] = 0.0;
             psf = convolve2d(psf, kernel);
             psf /= psf(hsize,hsize);
@@ -496,7 +496,7 @@ int main(int argc, char* argv[]) {
         for (uint_t j : range(i+1, nobs)) {
             double tdx = x[i]-x[j], tdy = y[i]-y[j];
 
-            if (fabs(tdx) <= hsize && fabs(tdy) <= hsize) {
+            if (abs(tdx) <= hsize && abs(tdy) <= hsize) {
                 int_t idx = round(tdx), idy = round(tdy);
                 tdx -= idx; tdy -= idy;
 

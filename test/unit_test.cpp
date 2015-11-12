@@ -493,18 +493,18 @@ int main(int argc, char* argv[]) {
 
         double me = mean(r);
         print(me);
-        check(fabs(me) < 1.0/sqrt(ntry), "1");
+        check(abs(me) < 1.0/sqrt(ntry), "1");
 
         double med = median(r);
         print(med);
-        check(fabs(med) < 1.0/sqrt(ntry), "1");
+        check(abs(med) < 1.0/sqrt(ntry), "1");
 
         double p1 = percentile(r, 0.158);
         double p2 = percentile(r, 0.842);
         vec1d pi = {p1, p2};
         print(pi);
-        check(fabs(p1 + 1.0) < 1.0/sqrt(ntry), "1");
-        check(fabs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
+        check(abs(p1 + 1.0) < 1.0/sqrt(ntry), "1");
+        check(abs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
         check(percentiles(r, 0.158, 0.842) == pi, "{1, 1}");
     }
 
@@ -513,7 +513,7 @@ int main(int argc, char* argv[]) {
         auto seed = make_seed(42);
         uint_t ntry = 10000;
         vec1b rnd = random_coin(seed, 0.3, ntry);
-        check(fabs(fraction_of(rnd)-0.3) < 1.0/sqrt(ntry), "1");
+        check(abs(fraction_of(rnd)-0.3) < 1.0/sqrt(ntry), "1");
     }
 
     {
@@ -706,7 +706,7 @@ int main(int argc, char* argv[]) {
 
         x = 0.5*3.14159265359*dindgen(30)/29.0;
         y = cos(x);
-        check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
+        check(abs(1.0 - integrate(x,y)) < 0.001, "1");
 
         check(float(integrate_func([](float t) -> float {
                 return (2.0/sqrt(3.14159))*exp(-t*t);
@@ -836,7 +836,7 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit(y, 1.0, 1.0, x, x*x);
         if (fr.success) {
-            check(fabs(fr.params(0)) < 1e-6, "1");
+            check(abs(fr.params(0)) < 1e-6, "1");
             check(fr.params(1), "-12");
             check(fr.params(2), "3.1415");
         } else {
@@ -860,7 +860,7 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit_pack(y, ye, x);
         if (fr.success) {
-            check(fabs(fr.params(0)) < 1e-6, "1");
+            check(abs(fr.params(0)) < 1e-6, "1");
             check(fr.params(1), "-12");
             check(fr.params(2), "3.1415");
         } else {
@@ -994,7 +994,7 @@ int main(int argc, char* argv[]) {
         vec1d r = lumdist(v, cosmo);
         vec1d r1 = lumdist(v[rgen(0,750)], cosmo);
         append(r1, lumdist(v[rgen(751,1499)], cosmo));
-        check(max(fabs(r - r1)/r1) < 1e-5, "1");
+        check(max(abs(r - r1)/r1) < 1e-5, "1");
     }
 
     {
@@ -1030,24 +1030,24 @@ int main(int argc, char* argv[]) {
     {
         print("'bilinear' function");
         vec2d m = {{0,2},{0,2}};
-        check(fabs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.0, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 1.0, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.5, 0.25) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.0, 0.25) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 1.0, 0.25) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.0, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 1.0, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.25) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.0, 0.25) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 1.0, 0.25) - 0.5) < 1e-5, "1");
 
         m = {{0,0},{2,2}};
-        check(fabs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.5, 0.0) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.5, 1.0) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.25, 0.5) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.25, 0.0) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.25, 1.0) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.0) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 1.0) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.25, 0.5) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.25, 0.0) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.25, 1.0) - 0.5) < 1e-5, "1");
 
         m = {{0,1},{1,1}};
         print(bilinear(m, 0.5, 0.5));
-        check(fabs(bilinear(m, 0.5, 0.5) - 0.75) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.5) - 0.75) < 1e-5, "1");
     }
 
     {
