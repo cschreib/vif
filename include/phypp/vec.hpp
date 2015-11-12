@@ -569,7 +569,7 @@ namespace vec_access {
             type t(vec_ref_tag, get_parent(v));
             resize_(t, v, cte_t<0>(), cte_t<0>(), i...);
 
-            // TODO: cache this on construction
+            // TODO: (optimization) cache this on vector construction
             std::array<uint_t, Dim> pitch;
             for (uint_t j = 0; j < Dim; ++j) {
                 pitch[j] = 1;
@@ -689,7 +689,8 @@ namespace vec_access {
         template<typename V, typename T, typename ... Args2>
         static uint_t get_index_(V& v, uint_t idx, const T& ix, const Args2& ... i) {
             uint_t pitch = 1;
-            // TODO: cache this on construction
+
+            // TODO: (optimization) cache this on vector construction
             for (uint_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
                 pitch *= v.dims[j];
             }
@@ -1620,7 +1621,7 @@ struct vec<Dim,Type*> {
             v.data.size(), " to ", data.size(), ")");
 
         // Make a copy to prevent aliasing
-        // TODO: can this be optimized out if v.parent != this ?
+        // TODO: (optimization) can this be optimized out if v.parent != this ?
         std::vector<dtype> t; t.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
             t[i] = *v.data[i];
@@ -2859,7 +2860,7 @@ vec<2,Type> transpose(const vec<2,Type>& v) {
         r.data.push_back(v.data[(i%v.dims[0])*v.dims[1] + i/v.dims[0]]);
     }
 
-    // TODO: see who's faster
+    // TODO: (optimization) see who's faster
     // r.resize();
     // for (uint_t i : range(r.dims[0]))
     // for (uint_t j : range(r.dims[1])) {
@@ -3073,7 +3074,7 @@ void append(vec<Dim,Type1>& t1, const vec<Dim,Type2>& t2) {
     phypp_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
         ") and (", t2.dims, ")");
 
-    // TODO: optimize this copy
+    // TODO: (optimization) no need for this copy?
     auto tmp = t1;
     t1.dims[N] += n2;
     t1.resize();
@@ -3096,7 +3097,7 @@ void prepend(vec<Dim,Type1>& t1, const vec<Dim,Type2>& t2) {
     phypp_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
         ") and (", t2.dims, ")");
 
-    // TODO: optimize this copy
+    // TODO: (optimization) no need for this copy?
     auto tmp = t1;
     t1.dims[N] += n2;
     t1.resize();

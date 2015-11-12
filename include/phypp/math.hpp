@@ -345,7 +345,7 @@ auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) ->
 
 template<typename T, typename TypeX, typename TypeY, typename ... Args>
 rtype_t<TypeX> random_pdf(T& seed, const vec<1,TypeX>& px, const vec<1,TypeY>& py) {
-    // TODO: make an alternative version for integers using std::discrete_distribution.
+    // TODO: (feature) make an alternative version for integers using std::discrete_distribution.
 
     using rtype = rtype_t<TypeX>;
     std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
@@ -356,7 +356,7 @@ template<typename T, typename TypeX, typename TypeY, typename ... Args>
 vec<dim_total<Args...>::value,rtype_t<TypeX>> random_pdf(T& seed, const vec<1,TypeX>& px,
     const vec<1,TypeY>& py, Args&& ... args) {
 
-    // TODO: make an alternative version for integers using std::discrete_distribution.
+    // TODO: (feature) make an alternative version for integers using std::discrete_distribution.
 
     using rtype = rtype_t<TypeX>;
     vec<dim_total<Args...>::value,rtype> v(std::forward<Args>(args)...);
@@ -471,7 +471,7 @@ vec<1,rtype_t<Type>> run_dim_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v
 
 template<std::size_t Dim, typename Type, typename ... Args>
 std::array<uint_t,Dim> run_dim_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
-    // TODO: add a check here to make sure that all the other dims are the same
+    // TODO: (error check) add a check here to make sure that all the other dims are the same
     return v.dims;
 }
 
@@ -645,7 +645,7 @@ rtype_t<Type> percentile(const vec<Dim,Type>& v, const U& u) {
     vec1u ok = where(is_finite(v));
     if (ok.empty()) return 0;
 
-    // TODO: use same algorithm than median
+    // TODO: (fixme) use same algorithm than median
     typename vec<1,Type>::effective_type t = v.safe[ok];
     std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
     std::nth_element(t.begin(), t.begin() + offset, t.end());

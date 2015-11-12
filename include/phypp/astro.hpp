@@ -674,7 +674,7 @@ randpos_status randpos_power_circle(TSeed& seed, double x0, double y0, double r0
 
         vec1d tx, ty;
         randpos_uniform_circle(seed, nfil, x1, y1, r1, tx, ty);
-        // TODO: simplify this once generic lambdas are in the game
+        // TODO: (c++14) simplify this once generic lambdas are in the game
         vec1b inside(tx.size());
         for (uint_t i : range(tx)) {
             inside.safe[i] = in_region(tx.safe[i], ty.safe[i], threshold);
@@ -977,8 +977,8 @@ void pick_sources(const vec<2,Type>& img, const vec1d& x, const vec1d& y,
             continue;
         }
 
-        // TODO: optimize this using subsrc?
-        // TODO: fix this (will probably not compile)
+        // TODO: (optimization) optimize this using subsrc?
+        // TODO: fix this (will probably not compile because x and y are double)
         auto cut = img(x[i]+r, y[i]+r).concretise();
 
         // Discard any source that contains a bad pixel (either infinite or NaN)
