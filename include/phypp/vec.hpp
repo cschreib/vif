@@ -245,6 +245,8 @@ struct vec_iterator_type<vec<Dim,bool>> {
 
 // Tag type to mark initialization of a reference vector.
 struct vec_ref_tag_t {} vec_ref_tag;
+// Tag type to permit copy initialization without data copy.
+struct vec_nocopy_tag_t {} vec_nocopy_tag;
 
 // Helper to check if a given type is a generic vector.
 template<typename T>
@@ -567,7 +569,7 @@ namespace vec_access {
             type t(vec_ref_tag, get_parent(v));
             resize_(t, v, cte_t<0>(), cte_t<0>(), i...);
 
-            // TODO: cache this on construction
+            // TODO: (optimization) cache this on vector construction
             std::array<uint_t, Dim> pitch;
             for (uint_t j = 0; j < Dim; ++j) {
                 pitch[j] = 1;
@@ -687,7 +689,8 @@ namespace vec_access {
         template<typename V, typename T, typename ... Args2>
         static uint_t get_index_(V& v, uint_t idx, const T& ix, const Args2& ... i) {
             uint_t pitch = 1;
-            // TODO: cache this on construction
+
+            // TODO: (optimization) cache this on vector construction
             for (uint_t j = Dim-sizeof...(Args2); j < Dim; ++j) {
                 pitch *= v.dims[j];
             }
@@ -907,6 +910,7 @@ struct vec {
 
     vec() : safe(*this) {}
     vec(const vec& v) : data(v.data), dims(v.dims), safe(*this) {}
+    vec(vec_nocopy_tag_t, const vec& v) : dims(v.dims), safe(*this) {}
 
     vec(vec&& v) : data(std::move(v.data)), dims(v.dims), safe(*this) {
         for (uint_t i = 0; i < Dim; ++i) {
@@ -917,6 +921,9 @@ struct vec {
     template<typename ... Args, typename enable =
         typename std::enable_if<is_dim_list<Args...>::value>::type>
     explicit vec(Args&& ... d) : safe(*this) {
+        static_assert(dim_total<Args...>::value == Dim, "dimension list does not match "
+            "the dimensions of this vector");
+
         set_array(dims, std::forward<Args>(d)...);
         resize();
     }
@@ -1584,6 +1591,7 @@ struct vec<Dim,Type*> {
 
     vec() = delete;
     vec(const vec& v) : parent(v.parent), data(v.data), dims(v.dims), safe(*this) {}
+    vec(vec_nocopy_tag_t, const vec& v) : parent(v.parent), dims(v.dims), safe(*this) {}
     vec(vec&& v) : parent(v.parent), data(std::move(v.data)), dims(std::move(v.dims)), safe(*this) {}
 
     template<std::size_t D, typename T, typename enable =
@@ -1613,7 +1621,7 @@ struct vec<Dim,Type*> {
             v.data.size(), " to ", data.size(), ")");
 
         // Make a copy to prevent aliasing
-        // TODO: can this be optimized out if v.parent != this ?
+        // TODO: (optimization) can this be optimized out if v.parent != this ?
         std::vector<dtype> t; t.resize(v.data.size());
         for (uint_t i = 0; i < v.data.size(); ++i) {
             t[i] = *v.data[i];
@@ -2618,7 +2626,7 @@ vec1u complement(const vec<Dim,Type>& v, const vec1u& ids) {
     }
 
     vec1u res; res.reserve(v.size() - ids.size());
-    for (uint_t i = 0; i < v.size(); ++i) {
+    for (uint_t i : range(v)) {
         if (!sel.safe[i]) {
             res.push_back(i);
         }
@@ -2638,7 +2646,7 @@ vec1u uniq(const vec<Dim,Type>& v) {
 
     rtype_t<Type> last = v.safe[0];
     r.push_back(0);
-    for (uint_t i = 1; i < v.size(); ++i) {
+    for (uint_t i : range(1, v.size())) {
         if (v.safe[i] != last) {
             r.push_back(i);
             last = v.safe[i];
@@ -2660,7 +2668,7 @@ vec1u uniq(const vec<Dim,Type>& v, const vec1u& sid) {
 
     rtype_t<Type> last = v[sid[0]];
     r.push_back(sid[0]);
-    for (uint_t ti = 1; ti < sid.size(); ++ti) {
+    for (uint_t ti : range(1, sid.size())) {
         uint_t i = sid.safe[ti];
         if (v[i] != last) {
             r.push_back(i);
@@ -2676,7 +2684,7 @@ vec1u uniq(const vec<Dim,Type>& v, const vec1u& sid) {
 // second vector, and 'false' otherwise.
 template<typename Type1, std::size_t Dim2, typename Type2 = Type1>
 bool is_any_of(const Type1& v1, const vec<Dim2,Type2>& v2) {
-    for (uint_t j = 0; j < v2.size(); ++j) {
+    for (uint_t j : range(v2)) {
         if (v1 == v2.safe[j]) {
             return true;
         }
@@ -2690,8 +2698,8 @@ bool is_any_of(const Type1& v1, const vec<Dim2,Type2>& v2) {
 template<std::size_t Dim1, typename Type1, std::size_t Dim2 = Dim1, typename Type2 = Type1>
 vec<Dim1,bool> is_any_of(const vec<Dim1,Type1>& v1, const vec<Dim2,Type2>& v2) {
     vec<Dim1,bool> r(v1.dims);
-    for (uint_t i = 0; i < v1.size(); ++i)
-    for (uint_t j = 0; j < v2.size(); ++j) {
+    for (uint_t i : range(v1))
+    for (uint_t j : range(v2)) {
         if (v1.safe[i] == v2.safe[j]) {
             r.safe[i] = true;
             break;
@@ -2702,63 +2710,34 @@ vec<Dim1,bool> is_any_of(const vec<Dim1,Type1>& v1, const vec<Dim2,Type2>& v2) {
 }
 
 // Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
-// Each value is matched once, and cannot be used again. For example, if the content of the
-// two vectors is: [12,12,-1,-1] and [0,12,-1,5], then the function will return [0,2] and [1,2].
+// If both 'v1' and 'v2' are only composed of unique values, this function is symmetric. Else,
+// only the index of the first value of 'v2' that matches that of 'v1' is stored.
 template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
 void match(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
+    // TODO: (optimization) sort v2 and use a binary search
+    // must find the right criterion on each vector's size to see
+    // when this is profitable
+
     uint_t n1 = v1.size();
     uint_t n2 = v2.size();
-    if (n2 < n1) {
-        match(v2, v1, id2, id1);
-        return;
-    }
+    uint_t n = std::min(n1, n2);
 
-    id1.data.reserve(n1 + id1.size());
-    id2.data.reserve(n1 + id2.size());
+    id1.data.reserve(n/2 + id1.size());
+    id2.data.reserve(n/2 + id2.size());
 
-    for (uint_t i = 0; i < n1; ++i) {
-        vec1u r = where(v2 == v1.safe[i]);
-        if (r.empty()) continue;
-
-        id1.data.push_back(i);
-        id2.data.push_back(r.safe[0]);
+    for (uint_t i : range(n1))
+    for (uint_t j : range(n2)) {
+        if (v2.safe[j] == v1.safe[i]) {
+            id1.data.push_back(i);
+            id2.data.push_back(j);
+            break;
+        }
     }
 
     id1.dims[0] = id1.data.size();
     id1.data.shrink_to_fit();
     id2.dims[0] = id2.data.size();
     id2.data.shrink_to_fit();
-}
-
-// Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
-// Indices are returned for every matching pair (assuming no repetitions in 'v2'). Using
-// the sample example as 'match', with the two vectors containing [12,12,-1,-1] and
-// [0,12,-1,5], the function will return [0,1,2,3] and [1,2,1,2]. Contrary to 'match',
-// this function is not symetric, in the sense that the result will be different if the two
-// input vectors are swapped. The order of the returned indices is unspecified.
-template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
-void match_dictionary(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
-    vec1u ids = sort(v1);
-    auto sv1 = v1[ids].concretise();
-    vec1u idu = uniq(sv1);
-
-    vec1u tid1, tid2;
-    match(sv1.safe[idu], v2, tid1, tid2);
-
-    const uint_t nm = tid1.size();
-    const uint_t nplus = nm*(float(idu.size())/v1.size());
-    id1.reserve(id1.size() + nplus);
-    id2.reserve(id2.size() + nplus);
-
-    for (uint_t tu = 0; tu < nm; ++tu) {
-        uint_t iu = tid1.safe[tu];
-        uint_t u = idu.safe[iu];
-        uint_t n = iu == idu.size()-1 ? sv1.size() - u : idu.safe[iu+1] - u;
-        for (uint_t i = 0; i < n; ++i) {
-            id1.push_back(ids.safe[u+i]);
-            id2.push_back(tid2.safe[tu]);
-        }
-    }
 }
 
 template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
@@ -2799,28 +2778,32 @@ vec<1,Type*> flatten(vec<Dim,Type*>&& v) {
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-vec<sizeof...(Args), Type> reform(const vec<Dim,Type>& v, Args&& ... args) {
-    auto r = arr<rtype_t<Type>>(std::forward<Args>(args)...);
-    phypp_check(r.size() == v.size(),
+vec<dim_total<Args...>::value, Type> reform(const vec<Dim,Type>& v, Args&& ... args) {
+    vec<dim_total<Args...>::value, Type> r;
+    set_array(r.dims, std::forward<Args>(args)...);
+    uint_t nsize = 1;
+    for (uint_t i : range(dim_total<Args...>::value)) {
+        nsize *= r.dims[i];
+    }
+
+    phypp_check(v.size() == nsize,
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
 
-    for (uint_t i : range(v)) {
-        r.safe[i] = v.safe[i];
-    }
+    r.data = v.data;
 
     return r;
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-vec<sizeof...(Args), Type> reform(vec<Dim,Type>&& v, Args&& ... args) {
-    vec<sizeof...(Args), Type> r;
+vec<dim_total<Args...>::value, Type> reform(vec<Dim,Type>&& v, Args&& ... args) {
+    vec<dim_total<Args...>::value, Type> r;
     set_array(r.dims, std::forward<Args>(args)...);
-    std::size_t size = 1;
-    for (uint_t i = 0; i < sizeof...(Args); ++i) {
-        size *= r.dims[i];
+    uint_t nsize = 1;
+    for (uint_t i : range(dim_total<Args...>::value)) {
+        nsize *= r.dims[i];
     }
 
-    phypp_check(size == v.size(),
+    phypp_check(v.size() == nsize,
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
 
     r.data = std::move(v.data);
@@ -2829,29 +2812,32 @@ vec<sizeof...(Args), Type> reform(vec<Dim,Type>&& v, Args&& ... args) {
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-vec<sizeof...(Args), Type*> reform(const vec<Dim,Type*>& v, Args&& ... args) {
-    vec<sizeof...(Args), Type*> r(vec_ref_tag, v.parent);
-    r.resize(std::forward<Args>(args)...);
-    phypp_check(r.size() == v.size(),
+vec<dim_total<Args...>::value, Type*> reform(const vec<Dim,Type*>& v, Args&& ... args) {
+    vec<dim_total<Args...>::value, Type*> r(vec_ref_tag, v.parent);
+    set_array(r.dims, std::forward<Args>(args)...);
+    uint_t nsize = 1;
+    for (uint_t i : range(dim_total<Args...>::value)) {
+        nsize *= r.dims[i];
+    }
+
+    phypp_check(v.size() == nsize,
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
 
-    for (uint_t i : range(v)) {
-        r.safe[i] = v.safe[i];
-    }
+    r.data = v.data;
 
     return r;
 }
 
 template<std::size_t Dim, typename Type, typename ... Args>
-vec<sizeof...(Args), Type*> reform(vec<Dim,Type*>&& v, Args&& ... args) {
-    vec<sizeof...(Args), Type*> r(vec_ref_tag, v.parent);
+vec<dim_total<Args...>::value, Type*> reform(vec<Dim,Type*>&& v, Args&& ... args) {
+    vec<dim_total<Args...>::value, Type*> r(vec_ref_tag, v.parent);
     set_array(r.dims, std::forward<Args>(args)...);
-    std::size_t size = 1;
-    for (uint_t i = 0; i < sizeof...(Args); ++i) {
-        size *= r.dims[i];
+    uint_t nsize = 1;
+    for (uint_t i : range(dim_total<Args...>::value)) {
+        nsize *= r.dims[i];
     }
 
-    phypp_check(size == v.size(),
+    phypp_check(v.size() == nsize,
         "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
 
     r.data = std::move(v.data);
@@ -2865,6 +2851,25 @@ vec<1,Type> reverse(vec<1,Type> v) {
     return v;
 }
 
+template<typename Type>
+vec<2,Type> transpose(const vec<2,Type>& v) {
+    vec<2,Type> r(vec_nocopy_tag, v);
+    std::swap(r.dims[0], r.dims[1]);
+
+    for (uint_t i : range(v)) {
+        r.data.push_back(v.data[(i%v.dims[0])*v.dims[1] + i/v.dims[0]]);
+    }
+
+    // TODO: (optimization) see who's faster
+    // r.resize();
+    // for (uint_t i : range(r.dims[0]))
+    // for (uint_t j : range(r.dims[1])) {
+    //     r.data[j+i*r.dims[1]] = v.data[i+j*v.dims[1]];
+    // }
+
+    return r;
+}
+
 template<std::size_t Dim, typename Type = double, typename ... Args>
 vec<Dim+dim_total<Args...>::value, rtype_t<Type>>
     replicate(const vec<Dim,Type>& t, Args&& ... args) {
@@ -2873,10 +2878,9 @@ vec<Dim+dim_total<Args...>::value, rtype_t<Type>>
 
     std::size_t pitch = t.size();
     std::size_t n = v.size()/pitch;
-    for (uint_t i = 0; i < n; ++i) {
-        for (uint_t j = 0; j < pitch; ++j) {
-            v.safe[i*pitch + j] = t.safe[j];
-        }
+    for (uint_t i : range(n))
+    for (uint_t j : range(pitch)) {
+        v.safe[i*pitch + j] = t.safe[j];
     }
 
     return v;
@@ -2912,8 +2916,10 @@ void inplace_sort(vec<Dim,Type>& v) {
 // Check if a given array is sorted or not
 template<std::size_t Dim, typename Type>
 bool is_sorted(const vec<Dim,Type>& v) {
-    for (uint_t i = 0; i < v.size()-1; ++i) {
-        if (v.safe[i] >= v.safe[i+1]) return false;
+    for (uint_t i : range(1, v.size())) {
+        // Note: watch out for NaN values!
+        // Make sure to use a test that returns 'false' if NaN is involved
+        if (v.safe[i-1] >= v.safe[i]) return false;
     }
 
     return true;
@@ -3068,7 +3074,7 @@ void append(vec<Dim,Type1>& t1, const vec<Dim,Type2>& t2) {
     phypp_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
         ") and (", t2.dims, ")");
 
-    // TODO: optimize this copy
+    // TODO: (optimization) no need for this copy?
     auto tmp = t1;
     t1.dims[N] += n2;
     t1.resize();
@@ -3091,7 +3097,7 @@ void prepend(vec<Dim,Type1>& t1, const vec<Dim,Type2>& t2) {
     phypp_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
         ") and (", t2.dims, ")");
 
-    // TODO: optimize this copy
+    // TODO: (optimization) no need for this copy?
     auto tmp = t1;
     t1.dims[N] += n2;
     t1.resize();

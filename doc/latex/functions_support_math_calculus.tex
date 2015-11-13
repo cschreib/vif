@@ -76,9 +76,9 @@ r; // 1.77245385091... accurate indeed!
 
 These functions perform the integral of a tabulated function $y(x)$, either covering the whole extent of the tabulated data, or only within a specified interval enclosed within \cppinline{x0} and \cppinline{x1}.
 
-For the first two functions, the integration is performed using the trapezoid rule. Here, each value of \cppinline{x} corresponds to a given value of the function $y(x)$ in \cppinline{y}. The sampling can be arbitrary. The algorithm only assumes that \cppinline{x} is sorted and that $y(x)$ is continuous (no check is performed). The result will be exact if $y(x)$ is (piece-wise) linear. Note that if the analytical form of $y(x)$ is known, using \cppinline{integrate_func()} will usually be more efficient unless many integrals need to be computed for the same function.
+For the first two functions, the integration is performed using the trapezoid rule. Here, each value of \cppinline{x} corresponds to a given value of the function $y(x)$ in \cppinline{y}. The sampling can be arbitrary. The algorithm only assumes that \cppinline{x} is sorted and only contains unique values, and it also assumes that $y(x)$ is continuous (no check is performed for any of these hypotheses). The result will be exact if $y(x)$ is (piece-wise) linear. Note that if the analytical form of $y(x)$ is known, using \cppinline{integrate_func()} will usually be more efficient unless many integrals need to be computed for the same function.
 
-The next two functions perform the integration of \emph{histogram} data by simply summing up the area of each ``bar'' of the histogram. In this case, \cppinline{x} is a two-dimensional vector such that \cppinline{x(0,_)} and \cppinline{x(1,_)} contain the lower and upper bound of each histogram point, respectively, while \cppinline{y} contains the average value of the function $y(x)$ between \cppinline{x(0,_)} and \cppinline{x(1,_)}. See the documentation of \cppinline{histogram()} for more detail about binned data. The values of \cppinline{x} need not be sorted, each interval can be of different size and the intervals can be disjoint. However, the algorithm assumes that the intervals do not overlap (no check is performed). This last condition is met by construction if \cppinline{x} was created from the \cppinline{make_bins()} function.
+The next two functions perform the integration of \emph{histogram} data by simply summing up the area of each ``bar'' of the histogram. In this case, \cppinline{x} is a two-dimensional vector such that \cppinline{x(0,_)} and \cppinline{x(1,_)} contain the lower and upper bound of each histogram point, respectively, while \cppinline{y} contains the average value of the function $y(x)$ between \cppinline{x(0,_)} and \cppinline{x(1,_)}. See the documentation of \cppinline{histogram()} for more detail about binned data. The values of \cppinline{x} need not be sorted, each interval can be of different size and the intervals can be disjoint. However, the algorithm assumes that the intervals do not overlap and that no interval is empty (no check is performed).
 
 \begin{example}
 \begin{cppcode}
@@ -117,3 +117,17 @@ r; // 1000 most probably
 
 
 \funcitem \cppinline|vec<1,T> cumul(vec<1,T> x, y)| \itt{cumul}
+
+This function computes the cumulative integral of the tabulated function $y(x)$. The return value is a vector whose value \cppinline{v[i]} corresponds to the integral of $y(x)$ from \cppinline{x[0]} to \cppinline{x[i]}. The first value is therefore always zero, while the last value is equal to \cppinline{integrate(x,y)}. The function assumes that the vector \cppinline{x} is sorted and only contains unique values (no check is performed).
+
+\begin{example}
+\begin{cppcode}
+vec1d x = rgen(-3.0, 3.0, 10); // build a grid of 10 points
+vec1d y = exp(-x*x);           // sample a function
+
+vec1d r = cumul(x, y);
+// 'r' now holds something that is close to the formal integral of
+// the Gaussian function, i.e., the error function, evaluated at each
+// point 'x'.
+\end{cppcode}
+\end{example}

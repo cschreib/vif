@@ -41,7 +41,7 @@ auto is_same_(const T1& v1, const T2& v2, std::false_type) -> decltype(v1 == v2)
 
 template<typename T1, typename T2>
 auto is_same_(const T1& v1, const T2& v2, std::true_type) -> decltype(v1 == v2) {
-    return fabs(v1 - v2) <= std::numeric_limits<float>::epsilon() ||
+    return abs(v1 - v2) <= std::numeric_limits<float>::epsilon() ||
         (is_nan(v1) && is_nan(v2)) || is_nan(v1 - v2);
 }
 

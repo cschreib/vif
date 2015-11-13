@@ -111,30 +111,14 @@ vec1b b = is_any_of(v, d); // {true, false, false, false, true}
 
 \funcitem \cppinline|void match(vec v1, v2, vec1u& id1, id2)| \itt{match}
 
-This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for elements in \cppinline{v2} that have the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Note that, contrary to \cppinline{match_dictionary}, each value in \cppinline{v1} is matched to \emph{at most} one value in \cppinline{v2}, and vice versa. In other words, if \cppinline{v1} or \cppinline{v2} contain duplicates, only the first value will be matched and the others will be ignored. This function is symmetric: the result will be the same if you swap the two input vectors (of course, the output vectors have to be swapped also).
-
-\begin{example}
-\begin{cppcode}
-vec1i v = {7,4,2,1,6};
-vec1i w = {2,6,5,3};
-vec1u id1, id2;
-match(v, w, id1, id2);
-id1; // {2,4}
-id2; // {0,1}
-v[id1] == w[id2]; // always true
-\end{cppcode}
-\end{example}
-
-\funcitem \cppinline|void match_dictionary(vec v1, v2, vec1u& id1, id2)| \itt{match_dictionary}
-
-This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for an element in \cppinline{v2} that has the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. Then the function goes on to the next value in \cppinline{v1}. Contrary to \cppinline{match}, each value in \cppinline{v2} can be matched to multiple values in \cppinline{v1}. Therefore this function is not symmetric: the second vector should be considered as a ``dictionary'', hence the name of this function. It is assumed that \cppinline{v2} does not contain any duplicates.
+This function traverses \cppinline{v1} and, for each value in \cppinline{v1}, looks for elements in \cppinline{v2} that have the same value. If one is found, the flat index of the element of \cppinline{v1} is added to \cppinline{id1}, and the flat index of the element of \cppinline{v2} is added to \cppinline{id2}. If other matches are found in \cppinline{v2} for this same value, they are ignored. Then the function goes on to the next value in \cppinline{v1}. The two vectors need not be the same size.
 
 \begin{example}
 \begin{cppcode}
 vec1i v = {7,6,2,1,6};
 vec1i w = {2,6,5,3};
 vec1u id1, id2;
-match_dictionary(v, w, id1, id2);
+match(v, w, id1, id2);
 id1; // {1,2,4}
 id2; // {1,0,1}
 v[id1] == w[id2]; // always true

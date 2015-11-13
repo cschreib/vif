@@ -311,7 +311,7 @@ int main(int argc, char* argv[]) {
         fits::write("out/image_saved.fits", v, hdr);
         vec2d nv;
         fits::read("out/image_saved.fits", nv);
-        check(total(nv != v) == 0, "1");
+        check(count(nv != v) == 0, "1");
     }
 
     {
@@ -380,8 +380,8 @@ int main(int argc, char* argv[]) {
 
         vec1u id1, id2;
         match(t1, t2, id1, id2);
-        check(id1, "{5, 3, 1}");
-        check(id2, "{0, 2, 4}");
+        check(id1, "{1, 3, 5}");
+        check(id2, "{4, 2, 0}");
     }
 
     {
@@ -493,18 +493,18 @@ int main(int argc, char* argv[]) {
 
         double me = mean(r);
         print(me);
-        check(fabs(me) < 1.0/sqrt(ntry), "1");
+        check(abs(me) < 1.0/sqrt(ntry), "1");
 
         double med = median(r);
         print(med);
-        check(fabs(med) < 1.0/sqrt(ntry), "1");
+        check(abs(med) < 1.0/sqrt(ntry), "1");
 
         double p1 = percentile(r, 0.158);
         double p2 = percentile(r, 0.842);
         vec1d pi = {p1, p2};
         print(pi);
-        check(fabs(p1 + 1.0) < 1.0/sqrt(ntry), "1");
-        check(fabs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
+        check(abs(p1 + 1.0) < 1.0/sqrt(ntry), "1");
+        check(abs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
         check(percentiles(r, 0.158, 0.842) == pi, "{1, 1}");
     }
 
@@ -513,7 +513,7 @@ int main(int argc, char* argv[]) {
         auto seed = make_seed(42);
         uint_t ntry = 10000;
         vec1b rnd = random_coin(seed, 0.3, ntry);
-        check(fabs(fraction_of(rnd)-0.3) < 1.0/sqrt(ntry), "1");
+        check(abs(fraction_of(rnd)-0.3) < 1.0/sqrt(ntry), "1");
     }
 
     {
@@ -556,7 +556,7 @@ int main(int argc, char* argv[]) {
         vec2i v = {{1,2,3},{4,5,6}};
         vec1d mv = partial_mean(0, v);
         vec1d tmv = reduce(0, v, [](vec1d d) { return mean(d); });
-        check(total(mv != tmv), "0");
+        check(count(mv != tmv), "0");
     }
 
     {
@@ -608,17 +608,17 @@ int main(int argc, char* argv[]) {
 
         vec2i s = subregion(v, {0,0,4,4});
         vec2i tv = v;
-        check(total(s != tv) == 0, "1");
+        check(count(s != tv) == 0, "1");
         fits::write("out/sub1.fits", s);
 
         s = subregion(v, {0,1,4,3});
         tv = {{1,2,3},{6,7,8},{11,12,13},{16,17,18},{21,22,23}};
-        check(total(s != tv) == 0, "1");
+        check(count(s != tv) == 0, "1");
         fits::write("out/sub2.fits", s);
 
         s = subregion(v, {1,-1,3,5});
         tv = {{0,5,6,7,8,9,0},{0,10,11,12,13,14,0},{0,15,16,17,18,19,0}};
-        check(total(s != tv) == 0, "1");
+        check(count(s != tv) == 0, "1");
         fits::write("out/sub4.fits", s);
     }
 
@@ -706,7 +706,7 @@ int main(int argc, char* argv[]) {
 
         x = 0.5*3.14159265359*dindgen(30)/29.0;
         y = cos(x);
-        check(fabs(1.0 - integrate(x,y)) < 0.001, "1");
+        check(abs(1.0 - integrate(x,y)) < 0.001, "1");
 
         check(float(integrate_func([](float t) -> float {
                 return (2.0/sqrt(3.14159))*exp(-t*t);
@@ -715,7 +715,7 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("Matrix 'invert', 'mmul', 'identity_matrix'");
+        print("Matrix 'invert', 'product', 'make_identity'");
         vec2d a = {
             {1.000, 2.000, 3.000},
             {4.000, 1.000, 6.000},
@@ -726,64 +726,64 @@ int main(int argc, char* argv[]) {
 
 #ifndef NO_LAPACK
         vec2d i;
-        check(invert(a,i), "1");
-        vec2d tid = mmul(a,i);
+        check(matrix::invert(a,i), "1");
+        vec2d tid = matrix::product(a,i);
         check(rms(tid - id) < 1e-10, "1");
 #endif
 
         vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
-        diagonal(sq) *= 5;
+        matrix::diagonal(sq) *= 5;
         check(sq, "{5, 1, 1, 1, 5, 1, 1, 1, 5}");
 
-        vec2d id2 = identity_matrix(3);
+        vec2d id2 = matrix::make_identity(3);
         check(rms(id2 - id) < 1e-10, "1");
 
-        check(total(mmul(id, a) != a) == 0, "1");
+        check(count(matrix::product(id, a) != a) == 0, "1");
     }
 
     {
-        print("Matrix 'translation_matrix', 'scale_matrix', 'rotation_matrix'");
+        print("Matrix 'make_translation', 'make_scale', 'make_rotation'");
         double x = 5, y = 2;
-        vec1d p = point2d(x, y);
+        vec1d p = matrix::make_point(x, y);
         check(p, "{5, 2, 1}");
 
-        vec2d tm = identity_matrix(3);
+        vec2d tm = matrix::make_identity(3);
 
-        vec2d m = translation_matrix(2,3);
-        vec1d tp = mmul(m, p);
-        tm = mmul(m, tm);
+        vec2d m = matrix::make_translation(2,3);
+        vec1d tp = matrix::product(m, p);
+        tm = matrix::product(m, tm);
         check(tp, "{7, 5, 1}");
 
-        m = scale_matrix(2,3);
-        tp = mmul(m, tp);
-        tm = mmul(m, tm);
+        m = matrix::make_scale(2,3);
+        tp = matrix::product(m, tp);
+        tm = matrix::product(m, tm);
         check(tp, "{14, 15, 1}");
 
-        m = rotation_matrix(dpi/2);
-        tp = mmul(m, tp);
-        tm = mmul(m, tm);
+        m = matrix::make_rotation(dpi/2);
+        tp = matrix::product(m, tp);
+        tm = matrix::product(m, tm);
         check(tp, "{-15, 14, 1}");
 
-        check(mmul(tm, p), "{-15, 14, 1}");
+        check(matrix::product(tm, p), "{-15, 14, 1}");
     }
 
 #ifndef NO_LAPACK
     {
-        print("'invert_symmetric' function");
-        vec2d alpha = identity_matrix(2);
+        print("Matrix 'invert_symmetric' function");
+        vec2d alpha = matrix::make_identity(2);
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
-        check(inplace_invert(talpha), "1");
-        check(inplace_invert_symmetric(alpha), "1");
-        symmetrize(alpha);
-        check(total(fabs(alpha - talpha) > 1e-6), "0");
+        check(matrix::inplace_invert(talpha), "1");
+        check(matrix::inplace_invert_symmetric(alpha), "1");
+        matrix::symmetrize(alpha);
+        check(count(abs(alpha - talpha) > 1e-6), "0");
     }
 
     {
-        print("'solve_symmetric' function");
+        print("Matrix 'solve_symmetric' function");
         vec1d beta = {1,2,3,4};
-        vec2d alpha = identity_matrix(4);
-        check(inplace_solve_symmetric(alpha, beta), "1");
+        vec2d alpha = matrix::make_identity(4);
+        check(matrix::inplace_solve_symmetric(alpha, beta), "1");
         check(beta, "{1, 2, 3, 4}");
 
         // x + 2*y = b1
@@ -792,22 +792,22 @@ int main(int argc, char* argv[]) {
         // -> y = (2*b1 - b2)/3
         beta = {1,2};
         vec1d tbeta = beta;
-        alpha = identity_matrix(2);
+        alpha = matrix::make_identity(2);
         alpha(1,0) = alpha(0,1) = 2;
         vec2d talpha = alpha;
-        check(inplace_solve_symmetric(alpha, beta), "1");
-        check(total(fabs(beta - vec1d{1, 0}) > 1e-6), "0");
+        check(matrix::inplace_solve_symmetric(alpha, beta), "1");
+        check(count(abs(beta - vec1d{1, 0}) > 1e-6), "0");
 
-        vec1d ubeta = mmul(talpha, beta);
-        check(total(fabs(ubeta - tbeta)) > 1e-6, "0");
+        vec1d ubeta = matrix::product(talpha, beta);
+        check(count(abs(ubeta - tbeta) > 1e-6), "0");
 
-        inplace_invert(talpha);
-        tbeta = mmul(talpha, tbeta);
-        check(total(fabs(beta - tbeta)) > 1e-6, "0");
+        matrix::inplace_invert(talpha);
+        tbeta = matrix::product(talpha, tbeta);
+        check(count(abs(beta - tbeta) > 1e-6), "0");
     }
 
     {
-        print("'eigen_symmetric' function");
+        print("Matrix 'eigen_symmetric' function");
         vec2d alpha = {
             {1.0, -0.1, 0.1},
             {-0.1, 1.3, 0.1},
@@ -818,14 +818,14 @@ int main(int argc, char* argv[]) {
 
         vec1d vals;
         vec2d vecs;
-        check(eigen_symmetric(alpha, vals, vecs), "1");
+        check(matrix::eigen_symmetric(alpha, vals, vecs), "1");
         for (uint_t i : range(n)) {
             vec1d u1 = vecs(i,_);
-            vec1d u2 = mmul(alpha, u1)/u1;
+            vec1d u2 = matrix::product(alpha, u1)/u1;
             for (uint_t j : range(n-1)) {
-                check(fabs(u2[j] - u2[j+1]) < 1e-6, "1");
+                check(abs(u2[j] - u2[j+1]) < 1e-6, "1");
             }
-            check(fabs(u2[0] - vals[i]) < 1e-6, "1");
+            check(abs(u2[0] - vals[i]) < 1e-6, "1");
         }
     }
 
@@ -836,7 +836,7 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit(y, 1.0, 1.0, x, x*x);
         if (fr.success) {
-            check(fabs(fr.params(0)) < 1e-6, "1");
+            check(abs(fr.params(0)) < 1e-6, "1");
             check(fr.params(1), "-12");
             check(fr.params(2), "3.1415");
         } else {
@@ -860,7 +860,7 @@ int main(int argc, char* argv[]) {
 
         auto fr = linfit_pack(y, ye, x);
         if (fr.success) {
-            check(fabs(fr.params(0)) < 1e-6, "1");
+            check(abs(fr.params(0)) < 1e-6, "1");
             check(fr.params(1), "-12");
             check(fr.params(2), "3.1415");
         } else {
@@ -994,7 +994,7 @@ int main(int argc, char* argv[]) {
         vec1d r = lumdist(v, cosmo);
         vec1d r1 = lumdist(v[rgen(0,750)], cosmo);
         append(r1, lumdist(v[rgen(751,1499)], cosmo));
-        check(max(fabs(r - r1)/r1) < 1e-5, "1");
+        check(max(abs(r - r1)/r1) < 1e-5, "1");
     }
 
     {
@@ -1003,7 +1003,7 @@ int main(int argc, char* argv[]) {
         vec1f x = {0, 1, 2, 3, 4, 5};
         vec1f nx = {0.2, 0.5, 1.6, -0.5, 12};
         vec1f i = interpolate(y, x, nx);
-        check(total(i != nx), "0");
+        check(count(i != nx), "0");
 
         i = findgen(10);
 
@@ -1030,24 +1030,24 @@ int main(int argc, char* argv[]) {
     {
         print("'bilinear' function");
         vec2d m = {{0,2},{0,2}};
-        check(fabs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.0, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 1.0, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.5, 0.25) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.0, 0.25) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 1.0, 0.25) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.0, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 1.0, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.25) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.0, 0.25) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 1.0, 0.25) - 0.5) < 1e-5, "1");
 
         m = {{0,0},{2,2}};
-        check(fabs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.5, 0.0) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.5, 1.0) - 1.0) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.25, 0.5) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.25, 0.0) - 0.5) < 1e-5, "1");
-        check(fabs(bilinear(m, 0.25, 1.0) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.5) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.0) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 1.0) - 1.0) < 1e-5, "1");
+        check(abs(bilinear(m, 0.25, 0.5) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.25, 0.0) - 0.5) < 1e-5, "1");
+        check(abs(bilinear(m, 0.25, 1.0) - 0.5) < 1e-5, "1");
 
         m = {{0,1},{1,1}};
         print(bilinear(m, 0.5, 0.5));
-        check(fabs(bilinear(m, 0.5, 0.5) - 0.75) < 1e-5, "1");
+        check(abs(bilinear(m, 0.5, 0.5) - 0.75) < 1e-5, "1");
     }
 
     {
