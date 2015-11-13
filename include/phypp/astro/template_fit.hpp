@@ -168,8 +168,8 @@ template_fit_res_t template_fit(const TLib& lib, TypeSeed& seed, const TZ& z,
                     return deviate;
                 }, lres.params);
 
-                res.chi2[i] = fres.chi2;
-                res.amp[i] = fres.params[0];
+                res.chi2[i] = fres.chi2;
+                res.amp[i] = fres.params[0];
             }
 
             // Find the best chi2 among all the SEDs
@@ -195,8 +195,8 @@ template_fit_res_t template_fit(const TLib& lib, TypeSeed& seed, const TZ& z,
                         return deviate;
                     }, lres.params);
 
-                    chi2[i] = fres.chi2;
-                    amp[i] = fres.params[0];
+                    chi2[i] = fres.chi2;
+                    amp[i] = fres.params[0];
                 }
 
                 auto ised = min_id(chi2);
@@ -228,7 +228,7 @@ template_fit_res_t template_fit(const TLib& lib, TypeSeed& seed, const TZ& z,
                     return deviate;
                 }, lres.params);
 
-                res.amp[i] = fres.params[0];
+                res.amp[i] = fres.params[0];
             }
 
             // Compute the error with MC simulation
