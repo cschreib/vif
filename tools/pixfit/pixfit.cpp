@@ -392,7 +392,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Subtract background if requested
-    if (is_finite(fixed_bg)) {
+    bool free_bg = !is_finite(fixed_bg);
+    if (!free_bg) {
         img -= fixed_bg;
     }
 
@@ -445,9 +446,10 @@ int main(int argc, char* argv[]) {
         print("compute matrix...");
     }
 
-    bool free_bg = !is_finite(fixed_bg);
-    vec2d alpha(nobs+free_bg, nobs+free_bg);
-    vec1d beta(nobs+free_bg);
+    uint_t nelem = nobs + (free_bg ? 1 : 0);
+
+    vec2d alpha(nelem, nelem);
+    vec1d beta(nelem);
 
     // Alpha is symmetric, so only compute one side
     // This matrix measures the overlap between the different fit components
@@ -597,7 +599,7 @@ int main(int argc, char* argv[]) {
 
         // Then estimate the error for each source
         vec1u idn; idn.reserve(nobs);
-        best_fit_err.resize(nobs+free_bg);
+        best_fit_err.resize(nelem);
         for (uint i : range(nobs)) {
             idn.clear();
 
@@ -610,7 +612,8 @@ int main(int argc, char* argv[]) {
             }
 
             uint_t neib = idn.size();
-            vec2d talpha(neib+free_bg, neib+free_bg);
+            uint_t ntelem = neib + (free_bg ? 1 : 0);
+            vec2d talpha(ntelem, ntelem);
             for (uint_t ti : range(neib)) {
                 if (free_bg) {
                     talpha(neib,ti) = alpha(nobs,idn[ti]);
@@ -662,7 +665,7 @@ int main(int argc, char* argv[]) {
         background_err = 0.0;
 
         // Extract the fluxes
-        flux[idin] = best_fit[uindgen(nobs)];
+        flux[idin] = best_fit[_-(nobs-1)];
 
         // Save to disk
         save_fit_basics();
@@ -695,15 +698,15 @@ int main(int argc, char* argv[]) {
         }
 
         // Extract the fluxes and associated errors
-        flux[idin] = best_fit[uindgen(nobs)];
-        flux_err[idin] = best_fit_err[uindgen(nobs)];
+        flux[idin] = best_fit[_-(nobs-1)];
+        flux_err[idin] = best_fit_err[_-(nobs-1)];
 
         // Save to disk
         save_fit_basics();
 
         if (save_covariance) {
             vec2d covariance(nsrc, nsrc);
-            covariance(idin,idin) = alpha(uindgen(nobs), uindgen(nobs));
+            covariance(idin,idin) = alpha(_-(nobs-1), _-(nobs-1));
 
             if (make_groups && !id_new.empty()) {
                 // Ungroup grouped sources
@@ -810,7 +813,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Remove the background, if not already done
-        if (!is_finite(fixed_bg)) {
+        if (free_bg) {
             img -= background*fconv;
         }
 
@@ -956,7 +959,7 @@ int main(int argc, char* argv[]) {
             // Save to disk
             fits::write(res_file, img, hdr);
         }
-    } else {
+    } else if (make_groups) {
         // No group was needed, just output empty maps & tables
         if (!grp_file.empty()) {
             vec2u grp_map(img.dims);
@@ -992,7 +995,7 @@ int main(int argc, char* argv[]) {
 
         // Convert back to map units, and add back the background if it was subtracted
         img /= fconv;
-        if (is_finite(fixed_bg)) {
+        if (!free_bg) {
             img += fixed_bg;
         }
 
