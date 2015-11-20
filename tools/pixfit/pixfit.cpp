@@ -494,18 +494,15 @@ int main(int argc, char* argv[]) {
 
         // Source x Source: alpha(j,i) = x[i]*x[j]/err^2
         for (uint_t j : range(i+1, nobs)) {
-            double tdx = x[i]-x[j], tdy = y[i]-y[j];
+            int_t idx = ix[i]-ix[j], idy = iy[i]-iy[j];
 
-            if (abs(tdx) <= hsize && abs(tdy) <= hsize) {
-                int_t idx = round(tdx), idy = round(tdy);
-                tdx -= idx; tdy -= idy;
-
+            if (abs(idx) <= 2*hsize && abs(idy) <= 2*hsize) {
                 vec1u pidi, pidj;
-                subregion(psf, {idy, idx, idy+2*hsize, idx+2*hsize}, pidi, pidj);
+                subregion(psf, {idy, idx, idy+2*hsize, idx+2*hsize}, pidj, pidi);
                 if (!pidi.empty()) {
                     // Get the weighted PSF of source 'j'
                     vec2d tpsf2_j; {
-                        tpsf2_j = translate(psf, tdy, tdx);
+                        tpsf2_j = translate(psf, dy[j], dx[j]);
                         vec1u idi_j, idp_j;
                         subregion(snr, {iy[j]-hsize, ix[j]-hsize, iy[j]+hsize, ix[j]+hsize},
                             idi_j, idp_j);
