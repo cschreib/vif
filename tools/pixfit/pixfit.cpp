@@ -803,7 +803,7 @@ int main(int argc, char* argv[]) {
             if (is_grouped[i]) continue;
 
             // Subtract the rest
-            vec1f tpsf = flatten(translate(psf, dy[i], dx[i]));
+            vec2f tpsf = translate(psf, dy[i], dx[i]);
             vec1u idi, idp;
             subregion(img, {iy[i]-hsize, ix[i]-hsize, iy[i]+hsize, ix[i]+hsize}, idi, idp);
 
@@ -827,7 +827,7 @@ int main(int argc, char* argv[]) {
 
         vec1f cov(old_cat.ra.size());
 
-        vec2b aper = circular_mask(psf.dims, group_aper_size) > 0.5;
+        vec2f aper = circular_mask(psf.dims, group_aper_size) > 0.5;
 
         vec2i grp_map(img.dims);
 
@@ -835,7 +835,7 @@ int main(int argc, char* argv[]) {
         // the grouped priors. The contribution of each prior to the total flux is then
         // studied outside of this program.
 
-        // Firt build the masks of each group.
+        // First build the masks of each group.
         // We want to make sure that the same pixels are not counted twice in different
         // groups, so we have to exclude the regions where two (or more) groups overlap.
         for (uint_t i : range(group_cat.ra)) {
@@ -865,12 +865,12 @@ int main(int argc, char* argv[]) {
             vec2b mask(tgrp.dims);
             for (uint_t j : id) {
                 // Create the aperture for this source
-                vec1b taper = flatten(translate(aper, tdy[j], tdx[j]));
+                vec2b taper = translate(aper, tdy[j], tdx[j]) > 0.5;
                 vec1u idi, idp;
                 subregion(mask, {tiy[j]-hsize, tix[j]-hsize, tiy[j]+hsize, tix[j]+hsize}, idi, idp);
 
                 // Add it to the mask
-                mask[idi] = mask[idi] || aper[idp];
+                mask[idi] = mask[idi] || taper[idp];
             }
 
             // Flag pixels that already belong to another group
