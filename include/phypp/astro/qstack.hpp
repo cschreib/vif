@@ -136,21 +136,45 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
             long p1[2] = {long(round(img.x[i]+hsize)), long(round(img.y[i]+hsize))};
 
             // Discard any source that falls out of the boundaries of the image
-            if (p0[0] < 1 || p1[0] >= img.width || p0[1] < 1 || p1[1] >= img.height) {
+            if (p1[0] < 1 || p0[0] >= img.width || p1[1] < 1 || p0[1] >= img.height) {
                 continue;
             }
 
             if (params.verbose) progress(pg);
 
-            found[i] = true;
-
             vec<2,Type> cut(2*hsize+1, 2*hsize+1);
 
-            Type null = fnan;
-            int anynul = 0;
-            long inc[2] = {1, 1};
-            fits_read_subset(img.fptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
-                cut.data.data(), &anynul, &img.status);
+            if (p0[0] < 1 || p1[0] >= img.width || p0[1] < 1 || p1[1] >= img.height) {
+                // The source is overlapping with the edges of the map
+                // Extract what we can
+                cut[_] = fnan;
+
+                long p0b[2] = {max(1, p0[0]),         max(1, p0[1])};
+                long p1b[2] = {min(img.width, p1[0]), min(img.height, p1[1])};
+
+                vec<2,Type> subcut(p1b[0]-p0b[0]+1, p1b[1]-p0b[1]+1);
+
+                Type null = fnan;
+                int anynul = 0;
+                long inc[2] = {1, 1};
+                fits_read_subset(img.fptr, fits::traits<Type>::ttype, p0b, p1b, inc, &null,
+                    subcut.data.data(), &anynul, &img.status);
+
+                long x0 = p0b[0]-p0[0];
+                long x1 = p1b[0]-p0[0];
+                long y0 = p0b[1]-p0[1];
+                long y1 = p1b[1]-p0[1];
+                cut(y0-_-y1,x0-_-x1) = subcut;
+            } else {
+                // The source is fully covered, easy
+                Type null = fnan;
+                int anynul = 0;
+                long inc[2] = {1, 1};
+                fits_read_subset(img.fptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
+                    cut.data.data(), &anynul, &img.status);
+            }
+
+            found[i] = true;
 
             // Discard any source that contains a bad pixel (either infinite or NaN)
             if (!params.keep_nan && count(!is_finite(cut)) != 0) {
