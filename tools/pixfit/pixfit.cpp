@@ -827,7 +827,7 @@ int main(int argc, char* argv[]) {
 
         vec1f cov(old_cat.ra.size());
 
-        vec2f aper = circular_mask(psf.dims, group_aper_size) > 0.5;
+        vec2f aper = vec2f{circular_mask(psf.dims, group_aper_size) > 0.5};
 
         vec2i grp_map(img.dims);
 

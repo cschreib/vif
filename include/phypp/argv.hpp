@@ -7,10 +7,16 @@
 
 #define arg_list(...) #__VA_ARGS__, __VA_ARGS__
 
-template<typename T, typename U,
-    typename enable = typename std::enable_if<!std::is_same<T, vec<1,std::string>>::value>::type>
+template<typename T, typename U>
 bool read_args_n2T_(T& t, const U& u) {
     t = u;
+    return true;
+}
+
+template<typename T, typename U,
+    typename enable = typename std::enable_if<!std::is_same<T, std::string>::value>::type>
+bool read_args_n2T_(vec<1,T>& t, const U& u) {
+    t = {u};
     return true;
 }
 
@@ -22,13 +28,13 @@ bool read_args_n2T_(T& t, const std::string& s) {
 
 template<typename U>
 bool read_args_n2T_(vec<1,std::string>& t, const U& u) {
-    t = strn(u);
+    t = {strn(u)};
     return true;
 }
 
 template<typename U>
 bool read_args_n2T_(vec<1,std::string>& t, const std::string& u) {
-    t = u;
+    t = {u};
     return true;
 }
 

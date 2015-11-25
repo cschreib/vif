@@ -932,51 +932,41 @@ struct vec {
         ilist_t<Dim, Type>::fill(*this, il);
     }
 
-    template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
+    template<typename T, typename enable = typename std::enable_if<
+        !std::is_same<rtype_t<T>,bool>::value ||
+        std::is_same<Type,bool>::value>::type>
     vec(const vec<Dim,T>& v) : dims(v.dims), safe(*this) {
-        static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
+        static_assert(vec_convertible<rtype_t<T>,Type>::value, "could not assign vectors of "
             "non-convertible types");
 
         data.resize(v.data.size());
-        for (uint_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i : range(v)) {
             data[i] = v.safe[i];
         }
     }
 
+    // Explicit conversion from bool to non-bool types
     template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
     explicit vec(const vec<Dim,bool>& v) : dims(v.dims), safe(*this) {
         static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
             "non-convertible types");
+
         data.resize(v.data.size());
-        for (uint_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i : range(v)) {
             data[i] = v.safe[i];
         }
     }
 
+    // Explicit conversion from bool to non-bool types
     template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
     explicit vec(const vec<Dim,bool*>& v) : dims(v.dims), safe(*this) {
         static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
             "non-convertible types");
+
         data.resize(v.data.size());
-        for (uint_t i = 0; i < v.data.size(); ++i) {
+        for (uint_t i : range(v)) {
             data[i] = v.safe[i];
         }
-    }
-
-    vec(const vec<Dim,Type*>& v) : dims(v.dims), safe(*this) {
-        data.resize(v.data.size());
-        for (uint_t i = 0; i < v.data.size(); ++i) {
-            data[i] = *v.data[i];
-        }
-    }
-
-    vec& operator = (const Type& t) {
-        for (uint_t i = 0; i < Dim; ++i) {
-            dims[i] = 1;
-        }
-        resize();
-        data[0] = t;
-        return *this;
     }
 
     vec& operator = (nested_initializer_list<Dim,Type> il) {
@@ -996,36 +986,28 @@ struct vec {
         return *this;
     }
 
-    template<typename T, typename enable = typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value>::type>
+    template<typename T, typename enable = typename std::enable_if<
+        !std::is_same<rtype_t<T>,bool>::value ||
+        std::is_same<Type,bool>::value>::type>
     vec& operator = (const vec<Dim,T>& v) {
         static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
             "non-convertible types");
 
-        dims = v.dims;
-        data.resize(v.data.size());
-        for (uint_t i = 0; i < v.data.size(); ++i) {
-            data[i] = v.safe[i];
-        }
-
-        return *this;
-    }
-
-    vec& operator = (const vec<Dim,Type*>& v) {
         if (v.is_same(*this)) {
-            std::vector<dtype> t; t.resize(v.data.size());
-            for (uint_t i = 0; i < v.data.size(); ++i) {
-                t[i] = *v.data[i];
+            std::vector<dtype> t(v.data.size());
+            for (uint_t i : range(v)) {
+                t[i] = v.safe[i];
             }
             dims = v.dims;
             data.resize(v.data.size());
-            for (uint_t i = 0; i < v.data.size(); ++i) {
+            for (uint_t i : range(v)) {
                 data[i] = t[i];
             }
         } else {
             dims = v.dims;
             data.resize(v.data.size());
-            for (uint_t i = 0; i < v.data.size(); ++i) {
-                data[i] = *v.data[i];
+            for (uint_t i : range(v)) {
+                data[i] = v.safe[i];
             }
         }
 
@@ -1052,7 +1034,7 @@ struct vec {
 
     void resize() {
         std::size_t size = 1;
-        for (uint_t i = 0; i < Dim; ++i) {
+        for (uint_t i : range(Dim)) {
             size *= dims[i];
         }
 
@@ -1067,7 +1049,7 @@ struct vec {
 
     void clear() {
         data.clear();
-        for (uint_t i = 0; i < Dim; ++i) {
+        for (uint_t i : range(Dim)) {
             dims[i] = 0;
         }
     }
@@ -1616,23 +1598,25 @@ struct vec<Dim,Type*> {
         return *this;
     }
 
-    vec& operator = (const vec<Dim,Type*>& v) {
-        phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
-            v.data.size(), " to ", data.size(), ")");
+    template<typename T>
+    void assign_(const vec<Dim,T>& v) {
+        if (is_same(v)) {
+            // Make a copy to prevent aliasing
+            std::vector<dtype> t(v.data.size());
+            for (uint_t i : range(v)) {
+                t[i] = v.safe[i];
+            }
 
-        // Make a copy to prevent aliasing
-        // TODO: (optimization) can this be optimized out if v.parent != this ?
-        std::vector<dtype> t; t.resize(v.data.size());
-        for (uint_t i = 0; i < v.data.size(); ++i) {
-            t[i] = *v.data[i];
+            // Actual assignment
+            for (uint_t i : range(v)) {
+                *data[i] = t[i];
+            }
+        } else {
+            // No aliasing possible, assign directly
+            for (uint_t i : range(v)) {
+                *data[i] = v.safe[i];
+            }
         }
-
-        // Actual assignment
-        for (uint_t i = 0; i < v.data.size(); ++i) {
-            *data[i] = t[i];
-        }
-
-        return *this;
     }
 
     template<typename T, typename enable =
@@ -1641,16 +1625,35 @@ struct vec<Dim,Type*> {
         static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
             "non-convertible types");
         phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
-            v.data.size(), " to ", data.size(), ")");
-        for (uint_t i = 0; i < v.data.size(); ++i) {
-            *data[i] = v.safe[i];
-        }
+            v.dims, " to ", dims, ")");
+
+        assign_(v);
+
+        return *this;
+    }
+
+    vec& operator = (const vec& v) {
+        phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
+            v.dims, " to ", dims, ")");
+
+        assign_(v);
+
         return *this;
     }
 
     template<std::size_t D, typename T>
     bool is_same(const vec<D,T>& v) const {
-        return static_cast<void*>(const_cast<vec<D,T>*>(&v)) == parent;
+        return false;
+    }
+
+    template<std::size_t D>
+    bool is_same(const vec<D,Type*>& v) const {
+        return v.parent == parent;
+    }
+
+    template<std::size_t D>
+    bool is_same(const vec<D,Type>& v) const {
+        return static_cast<void*>(const_cast<vec<D,Type>*>(&v)) == parent;
     }
 
     bool empty() const {
