@@ -385,20 +385,6 @@ int main(int argc, char* argv[]) {
     }
 
     {
-        print("'match_dictionary' function");
-        vec1i t1 = {4,5,7,6,7,8,9};
-        vec1i t2 = {9,1,7,10,5};
-
-        vec1u id1, id2;
-        match_dictionary(t1, t2, id1, id2);
-        vec1u ids = sort(id1);
-        id1 = id1[ids]; id2 = id2[ids];
-
-        check(id1, "{1, 2, 4, 6}");
-        check(id2, "{4, 2, 2, 0}");
-    }
-
-    {
         print("'histogram' function");
         vec1d t = {1,2,3,4,5,5,8,9,6,fnan,5,7,4};
         vec2i bins = {{0,2,5,8,10}, {2,5,8,10,12}};
