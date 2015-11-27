@@ -1,8 +1,12 @@
 \funcitem \cppinline|vec1u sort(vec)| \itt{sort}
 
+\cppinline|vec1u sort(vec, F comp)|
+
 \cppinline|void inplace_sort(vec&)| \itt{inplace_sort}
 
-These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between the two versions is that \cppinline{sort} does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and \cppinline{inplace_sort} directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
+\cppinline|void inplace_sort(vec&, F comp)|
+
+These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between \cppinline{sort} and \cppinline{inplace_sort} is that \cppinline{sort} does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and \cppinline{inplace_sort} directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
 
 \begin{example}
 \begin{cppcode}
@@ -18,6 +22,34 @@ inplace_sort(v);
 v; // {1,3,5,6,7} is sorted
 \end{cppcode}
 \end{example}
+
+\begin{advanced}
+In addition, both functions can be called with a second parameter that specifies the comparison function. This can be any function object (including a lambda) that must take two arguments whose type is that of the elements in the provided vector, and that return \cppinline{true} if the first element can be considered as ``inferior to'' the second element. This can be used to produce complex sorting criteria, possibly involving multiple vectors.
+
+\begin{example}
+\begin{cppcode}
+vec2i x = replicate(indgen(5), 5);
+vec2i y = transpose(x);
+
+// Sort the values in 'x' and 'y' first by ascending values of 'x',
+// then (for identical 'x') by descending values of 'y'.
+vec1u sid = uindgen(x.size());
+inplace_sort(sid, [&x, &y](uint_t i1, uint_t i2) {
+    if (x[i1] == x[i2]) return y[i1] > y[i2];
+    else                return x[i1] < x[i2];
+});
+
+// This is the equivalent to the simpler examples above
+vec1i v = {1,5,6,3,7};
+vec1u id = sort(v, [](int_t i1, int_t i2) {
+    return i1 < i2; // the default is always to use the "less than"
+                    // comparison operator
+});
+
+v[id]; // {1,3,5,6,7} is sorted
+\end{cppcode}
+\end{example}
+\end{advanced}
 
 \funcitem \cppinline|bool is_sorted(vec)| \itt{is_sorted}
 

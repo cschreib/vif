@@ -2911,9 +2911,24 @@ vec1u sort(const vec<Dim,Type>& v) {
     return r;
 }
 
+template<std::size_t Dim, typename Type, typename F>
+vec1u sort(const vec<Dim,Type>& v, F&& comp) {
+    vec1u r = uindgen(v.size());
+    std::stable_sort(r.data.begin(), r.data.end(), [&v,&comp](uint_t i, uint_t j) {
+        return comp(v.safe[i], v.safe[j]);
+    });
+
+    return r;
+}
+
 template<std::size_t Dim, typename Type>
 void inplace_sort(vec<Dim,Type>& v) {
     std::stable_sort(v.data.begin(), v.data.end(), typename vec<Dim,Type>::comparator());
+}
+
+template<std::size_t Dim, typename Type, typename F>
+void inplace_sort(vec<Dim,Type>& v, F&& comp) {
+    std::stable_sort(v.begin(), v.end(), std::forward<F>(comp));
 }
 
 // Check if a given array is sorted or not
