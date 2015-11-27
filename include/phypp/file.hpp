@@ -160,6 +160,11 @@ namespace file {
         return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
     }
 
+    bool is_absolute_path(const std::string& file) {
+        auto pos = file.find_first_not_of(" \t");
+        return pos != file.npos && file[pos] == '/';
+    }
+
     bool copy(const std::string& file_from, const std::string& file_to) {
         std::ifstream src(file_from, std::ios::binary);
         if (!src.is_open()) return false;
@@ -350,6 +355,7 @@ namespace file {
     }
 
     VECTORIZE(directorize)
+    VECTORIZE(is_absolute_path)
     VECTORIZE(get_basename)
     VECTORIZE(get_directory)
     VECTORIZE(remove_extension)
