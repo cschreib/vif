@@ -18,9 +18,6 @@ int main(int argc, char* argv[]) {
         static_assert(is_vec<vec2s>::value, "failed is_vec");
         static_assert(!is_vec<float>::value, "failed is_vec");
         static_assert(!is_vec<std::vector<int>>::value, "failed is_vec");
-        static_assert(vec_dim<float>::value == 0, "failed vec_dim");
-        static_assert(vec_dim<vec1d>::value == 1, "failed vec_dim");
-        static_assert(vec_dim<vec2s>::value == 2, "failed vec_dim");
     }
 
     {

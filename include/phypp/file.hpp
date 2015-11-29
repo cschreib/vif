@@ -729,13 +729,66 @@ namespace file {
     struct macroed_t {};
     #define ftable(...) file::macroed_t(), #__VA_ARGS__, __VA_ARGS__
 
-    std::string bake_macroed_name(const std::string& s) {
-        std::string t = trim(s);
+    std::string bake_macroed_name(std::string t) {
+        // Just remove the leading object before the '.' operator
         auto p = t.find_first_of('.');
         if (p != t.npos) {
             t = t.substr(p+1);
         }
         return t;
+    }
+
+    std::string pop_macroed_name(std::string& s) {
+        static const std::array<char,3> opening = {'(', '[', '{'};
+        static const std::array<char,3> closing = {')', ']', '}'};
+
+        std::string name;
+
+        // Locate the next comma (',') that is not part of some nested function call
+        // or constructor. Need a small parser...
+        std::vector<uint_t> stack;
+        uint_t p0 = s.find_first_not_of(" \t");
+        uint_t pos = p0;
+        for (; pos < s.size(); ++pos) {
+            if (stack.empty() && s[pos] == ',') break;
+            for (uint_t k : range(opening)) {
+                if (s[pos] == opening[k]) {
+                    stack.push_back(k);
+                    break;
+                } else if (s[pos] == closing[k]) {
+                    phypp_check(stack.back() == k,
+                        "library bug: error parsing macroed name list: '", s, "'");
+                    stack.pop_back();
+                    break;
+                }
+            }
+        }
+
+        uint_t p1 = pos;
+        if (pos != s.size()) {
+            ++p1;
+        }
+
+        --pos;
+
+        // Extract the trimmed name
+        pos = s.find_last_not_of(" \t", pos);
+        name = s.substr(p0, pos+1-p0);
+
+        // Remove that element from the name list
+        s = s.substr(p1);
+
+        return name;
+    }
+
+    vec1s split_macroed_names(std::string s) {
+        vec1s names;
+
+        do {
+            names.push_back(pop_macroed_name(s));
+        } while (!s.empty());
+
+        return names;
     }
 
     void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i) {}
@@ -765,7 +818,7 @@ namespace file {
     template<typename ... Args>
     void write_table_hdr(const std::string& filename, std::size_t cwidth, macroed_t,
         const std::string& names, const Args& ... args) {
-        vec1s vnames = split(names.substr(names.find_first_of(')')+1), ",");
+        vec1s vnames = file::split_macroed_names(names);
         for (auto& s : vnames) {
             s = file::bake_macroed_name(s);
         }

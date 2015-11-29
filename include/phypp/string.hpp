@@ -2,6 +2,7 @@
 #define STRING_HPP
 
 #include "phypp/vec.hpp"
+#include "phypp/generic.hpp"
 #include "phypp/reflex.hpp"
 #include "phypp/range.hpp"
 #include <string>
@@ -52,9 +53,9 @@ std::string strn(const double& t) {
 
 template<std::size_t Dim, typename Type>
 vec<Dim,std::string> strna(const vec<Dim,Type>& v) {
-    vec<Dim,std::string> s = strarr(v.dims);
+    vec<Dim,std::string> s(v.dims);
     for (uint_t i : range(v)) {
-        s.data[i] = strn(v.safe[i]);
+        s.safe[i] = strn(v.safe[i]);
     }
 
     return s;
@@ -70,9 +71,9 @@ std::string strn_sci(const T& t) {
 
 template<std::size_t Dim, typename Type>
 vec<Dim,std::string> strna_sci(const vec<Dim,Type>& v) {
-    vec<Dim,std::string> s = strarr(v.dims);
+    vec<Dim,std::string> s(v.dims);
     for (uint_t i : range(v)) {
-        s.data[i] = strn_sci(v.safe[i]);
+        s.safe[i] = strn_sci(v.safe[i]);
     }
 
     return s;
@@ -442,8 +443,8 @@ namespace sha1 {
             return ((value << steps) | (value >> (32 - steps)));
         }
 
-        // Sets the first 16 integers in the buffert to zero.
-        // Used for clearing the W buffert.
+        // Sets the first 16 integers in the buffer to zero.
+        // Used for clearing the W buffer.
         inline void clearWBuffert(unsigned int* buffert) {
             for (int pos = 16; --pos >= 0;)
             {

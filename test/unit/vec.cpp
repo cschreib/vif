@@ -54,6 +54,12 @@ void test_is_vec() {
     assert_not_is_vec<decltype(vec<3,T>()(0,0,0))>();
 }
 
+template<typename T>
+struct vec_dim : std::integral_constant<std::size_t, 0> {};
+
+template<std::size_t D, typename T>
+struct vec_dim<vec<D,T>> : std::integral_constant<std::size_t, D> {};
+
 template<typename T, std::size_t D>
 void assert_vec_dim() {
     static_assert(vec_dim<T>::value == D, "failed vec_dim");
@@ -956,7 +962,7 @@ void test_vec_convert_iter(type_list<> list) {}
 template<typename T, typename U, typename ... Args>
 void test_vec_convert_iter(type_list<U,Args...> list) {
     test_vec_convert_to<T,U>();
-    test_vec_convert_iter<T>(pop_front(list));
+    test_vec_convert_iter<T>(type_list<Args...>{});
 }
 
 template<typename T>

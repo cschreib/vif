@@ -1,0 +1,1071 @@
+#ifndef FITS_TABLE_HPP
+#define FITS_TABLE_HPP
+
+#include "phypp/fits_base.hpp"
+
+namespace fits {
+    // Reading options
+    struct table_read_options {
+        bool allow_narrow = false;
+        bool allow_missing = false;
+        bool allow_dim_promote = false;
+
+        table_read_options operator | (const table_read_options& o) const {
+            table_read_options n = *this;
+            if (o.allow_narrow)      n.allow_narrow = true;
+            if (o.allow_missing)     n.allow_missing = true;
+            if (o.allow_dim_promote) n.allow_dim_promote = true;
+            return n;
+        }
+    };
+
+    const table_read_options narrow = []() {
+        table_read_options opts;
+        opts.allow_narrow = true;
+        return opts;
+    }();
+
+    const table_read_options missing = []() {
+        table_read_options opts;
+        opts.allow_missing = true;
+        return opts;
+    }();
+
+    const table_read_options dim_promote = []() {
+        table_read_options opts;
+        opts.allow_dim_promote = true;
+        return opts;
+    }();
+
+    const table_read_options permissive = []() {
+        table_read_options opts;
+        opts.allow_narrow = true;
+        opts.allow_missing = true;
+        opts.allow_dim_promote = true;
+        return opts;
+    }();
+
+    namespace impl {
+        template<typename T>
+        struct data_type {
+            using type = T;
+        };
+
+        template<std::size_t D, typename T>
+        struct data_type<vec<D,T>> {
+            using type = T;
+        };
+
+
+        template<typename T>
+        struct data_dim {
+            static constexpr const uint_t value = 1;
+        };
+
+        template<std::size_t D, typename T>
+        struct data_dim<vec<D,T>> {
+            static constexpr const uint_t value = D;
+        };
+
+        template<std::size_t D>
+        struct data_dim<vec<D,std::string>> {
+            static constexpr const uint_t value = D+1;
+        };
+    }
+
+    // Traits to identify types that can be read from a FITS table
+    template<typename T>
+    struct is_readable_column_type : is_any_type_of<T, type_list<
+        bool, char, int_t, uint_t, float, double, std::string
+    >> {};
+
+    template<std::size_t D, typename T>
+    struct is_readable_column_type<vec<D,T>> : is_any_type_of<T, type_list<
+        bool, char, int_t, uint_t, float, double, std::string
+    >> {};
+
+    template<typename T>
+    struct is_readable_column_type<reflex::struct_t<T>> : std::true_type {};
+
+    template<std::size_t D, typename T>
+    struct is_readable_column_type<vec<D,T*>> : std::false_type {};
+
+    template<typename T>
+    struct is_readable_column_type<named_t<T>> : is_readable_column_type<decay_t<T>> {};
+
+    // Data type to describe the content of a column
+    struct column_info {
+        std::string name;
+        enum type_t {
+            string, boolean, byte, integer, float_simple, float_double
+        } type;
+        vec1u dims;
+        uint_t length = 1;
+    };
+
+    // FITS input table (read only)
+    class input_table : public virtual impl::file_base {
+    public :
+        explicit input_table(const std::string& filename) :
+            impl::file_base(impl::table_file, filename, impl::read_only) {}
+        explicit input_table(const std::string& filename, uint_t hdu) :
+            impl::file_base(impl::table_file, filename, impl::read_only) {
+            reach_hdu(hdu);
+        }
+
+        vec<1,column_info> read_column_info() const {
+            status_ = 0;
+            vec<1,column_info> cols;
+
+            fits::header hdr = read_header();
+
+            int ncol;
+            fits_get_num_cols(fptr_, &ncol, &status_);
+
+            for (uint_t c : range(ncol)) {
+                column_info ci;
+
+                char name[80];
+                char type = 0;
+                long repeat = 0;
+                fits_get_bcolparms(fptr_, c+1, name, nullptr, &type, &repeat,
+                    nullptr, nullptr, nullptr, nullptr, &status_);
+
+                const uint_t max_dim = 256;
+                long axes[max_dim];
+                int naxis = 0;
+                fits_read_tdim(fptr_, c+1, max_dim, &naxis, axes, &status_);
+
+                if (!getkey(hdr, "TTYPE"+strn(c+1), ci.name)) {
+                    continue;
+                }
+
+                ci.name = trim(ci.name);
+
+                switch (type) {
+                case 'B' : {
+                    vec<1,char> v(repeat);
+                    char def = traits<char>::def();
+                    int null;
+                    fits_read_col(fptr_, traits<char>::ttype, c+1, 1, 1, repeat,
+                        &def, v.data.data(), &null, &status_);
+
+                    if (min(v) == 0 && max(v) <= 1) {
+                        ci.type = column_info::boolean;
+                    } else {
+                        ci.type = column_info::string;
+                    }
+                    break;
+                }
+                case 'S' : {
+                    ci.type = column_info::byte;
+                    break;
+                }
+                case 'J' :
+                case 'I' : {
+                    ci.type = column_info::integer;
+                    break;
+                }
+                case 'E' : {
+                    ci.type = column_info::float_simple;
+                    break;
+                }
+                case 'D' : {
+                    ci.type = column_info::float_double;
+                    break;
+                }
+                default : {
+                    warning("unhandled column type '", type, "' for ", ci.name);
+                    continue;
+                }
+                }
+
+                for (uint_t i : range(naxis)) {
+                    // First dimension for string is the string length
+                    if (i == 0 && ci.type == column_info::string) {
+                        ci.length = axes[i];
+                        if (naxis == 1) {
+                            ci.dims.push_back(1);
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    ci.dims.push_back(axes[i]);
+                }
+
+                ci.dims = reverse(ci.dims);
+
+                cols.push_back(ci);
+            }
+
+            return cols;
+        }
+
+        class read_sentry {
+            friend input_table;
+
+            mutable bool checked = false;
+            bool good = true;
+            int status = 0;
+            std::string errmsg;
+
+            read_sentry(const read_sentry&) = delete;
+            read_sentry& operator=(const read_sentry&) = delete;
+
+            read_sentry() = default;
+
+            explicit read_sentry(const input_table* parent, std::string err) {
+                status = parent->cfitsio_status();
+                good = false;
+
+                if (status != 0) {
+                    char txt[FLEN_STATUS];
+                    fits_get_errstatus(status, txt);
+                    errmsg = "error: cfitsio: "+std::string(txt)+"\nerror: "+err;
+                } else {
+                    errmsg = std::move(err);
+                }
+
+                errmsg += "\nnote: reading '"+parent->filename()+"'";
+            }
+
+        public :
+            ~read_sentry() {
+                if (!checked) {
+                    phypp_check(good, errmsg);
+                }
+            }
+
+            read_sentry(read_sentry&& s) :
+                checked(s.checked), good(s.good), errmsg(std::move(s.errmsg)) {
+                s.checked = true;
+            }
+
+            read_sentry& operator=(read_sentry&& s) {
+                checked = s.checked;
+                good = s.good;
+                errmsg = std::move(s.errmsg);
+                s.checked = true;
+                return *this;
+            }
+
+            bool is_good() const {
+                checked = true;
+                return good;
+            }
+
+            const std::string& reason() const {
+                checked = true;
+                return errmsg;
+            }
+
+            explicit operator bool() const {
+                return is_good();
+            }
+        };
+
+        static constexpr uint_t max_column_dims = 256;
+
+    private :
+
+        template<std::size_t Dim, typename Type,
+            typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
+        void read_column_impl_(vec<Dim,Type>& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+
+            for (uint_t i : range(Dim)) {
+                if (i < (Dim-naxis)) {
+                    v.dims[i] = 1;
+                } else {
+                    v.dims[i] = naxes[Dim-1-i];
+                }
+            }
+
+            v.resize();
+
+            Type def = traits<Type>::def();
+            int null;
+            status_ = 0;
+            fits_read_col(
+                fptr_, traits<Type>::ttype, cid, 1, 1, repeat, &def,
+                v.data.data(), &null, &status_
+            );
+        }
+
+        template<typename Type>
+        void read_column_impl_(Type& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+
+            Type def = traits<Type>::def();
+            int null;
+            fits_read_col(
+                fptr_, traits<Type>::ttype, cid, 1, 1, repeat, &def,
+                reinterpret_cast<typename traits<Type>::dtype*>(&v), &null, &status_
+            );
+        }
+
+        template<std::size_t Dim>
+        void read_column_impl_(vec<Dim,std::string>& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+
+            for (uint_t i : range(Dim)) {
+                if (i < (Dim+1-naxis)) {
+                    v.dims[i] = 1;
+                } else {
+                    v.dims[i] = naxes[Dim-i];
+                }
+            }
+
+            v.resize();
+
+            std::vector<char> buffer(v.size()*naxes[0]);
+            char def = '\0';
+            int null;
+            fits_read_col(
+                fptr_, traits<std::string>::ttype, cid, 1, 1, v.size()*naxes[0], &def,
+                buffer.data(), &null, &status_
+            );
+
+            for (uint_t i : range(v)) {
+                v.safe[i].reserve(naxes[0]);
+                for (uint_t j : range(naxes[0])) {
+                    char c = buffer[i*naxes[0] + j];
+                    if (c == '\0') break;
+                    v.safe[i].push_back(c);
+                }
+            }
+        }
+
+        void read_column_impl_(std::string& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+
+            std::vector<char> buffer(naxes[0]+1);
+            char def = '\0';
+            int null;
+            fits_read_col(
+                fptr_, traits<std::string>::ttype, cid, 1, 1, naxes[0], &def,
+                buffer.data(), &null, &status_
+            );
+
+            buffer[naxes[0]] = '\0';
+            v = buffer.data();
+        }
+
+        template<typename T>
+        bool read_column_check_type_(const table_read_options& opts, int type) const {
+            if (opts.allow_narrow) {
+                return traits<T>::is_convertible_narrow(type);
+            } else {
+                return traits<T>::is_convertible(type);
+            }
+        }
+
+        template<std::size_t Dim, typename T, typename enable =
+            typename std::enable_if<!std::is_same<T,std::string>::value>::type>
+        bool read_column_check_dim_(const table_read_options& opts, vec<Dim,T>&, uint_t vdim,
+            long naxis, long repeat) const {
+
+            if (opts.allow_dim_promote) {
+                return uint_t(naxis) <= vdim;
+            } else {
+                return uint_t(naxis) == vdim;
+            }
+        }
+
+        template<typename T>
+        bool read_column_check_dim_(const table_read_options& opts, T&, uint_t vdim,
+            long naxis, long repeat) const {
+
+            // Early exit to refuse loading 1D vectors into scalars if the number of
+            // element is greater than one
+            if (naxis == 1 && repeat > 1) return false;
+
+            if (opts.allow_dim_promote) {
+                return uint_t(naxis) <= vdim;
+            } else {
+                return uint_t(naxis) == vdim;
+            }
+        }
+
+        template<std::size_t Dim>
+        bool read_column_check_dim_(const table_read_options& opts, vec<Dim,std::string>&,
+            uint_t vdim, long naxis, long repeat) const {
+
+            // Early exit to allow loading 1D byte into vec1s
+            if (Dim == 1 && naxis == 1) return true;
+
+            if (opts.allow_dim_promote) {
+                return uint_t(naxis) <= vdim;
+            } else {
+                return uint_t(naxis) == vdim;
+            }
+        }
+
+        bool read_column_check_dim_(const table_read_options& opts, std::string&, uint_t vdim,
+            long naxis, long repeat) const {
+
+            if (opts.allow_dim_promote) {
+                return uint_t(naxis) <= vdim;
+            } else {
+                return uint_t(naxis) == vdim;
+            }
+        }
+
+        struct do_read_struct_ {
+            const input_table* tbl;
+            const table_read_options& opts;
+            std::string base;
+
+            template<typename P>
+            void operator () (reflex::member_t& m, P&& v) {
+                tbl->read_column(opts, base+toupper(m.name), std::forward<P>(v));
+            }
+        };
+
+        template<typename T>
+        read_sentry read_column_(const table_read_options& opts,
+            const std::string& tcolname, T& value, std::false_type) const {
+
+            static_assert(is_readable_column_type<typename std::decay<T>::type>::value,
+                "this value cannot be read from a FITS file");
+
+            status_ = 0;
+
+            // Check if column exists
+            std::string colname = toupper(tcolname);
+            int cid;
+            fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
+            if (status_ != 0) {
+                if (opts.allow_missing) {
+                    return read_sentry{};
+                } else {
+                    return read_sentry{this, "cannot find collumn '"+colname+"'"};
+                }
+            }
+
+            // Collect data on the output type
+            using vtype = typename impl::data_type<T>::type;
+            const uint_t vdim = impl::data_dim<T>::value;
+
+            // Check if type match
+            int type;
+            long repeat, width;
+            fits_get_coltype(fptr_, cid, &type, &repeat, &width, &status_);
+            if (!read_column_check_type_<vtype>(opts, type)) {
+                return read_sentry{this, "wrong type for column '"+colname+"' "
+                    "(expected "+pretty_type_t(vtype)+", got "+type_to_string_(type)+")"};
+            }
+
+            // Check if dimension match
+            std::array<long,max_column_dims> axes;
+            int naxis = 0;
+            fits_read_tdim(fptr_, cid, max_column_dims, &naxis, axes.data(), &status_);
+            if (!read_column_check_dim_(opts, value, vdim, naxis, repeat)) {
+                return read_sentry{this, "wrong dimension for column '"+colname+"' "
+                    "(expected "+strn(vdim)+", got "+strn(naxis)+")"};
+            }
+
+            status_ = 0;
+
+            // Read
+            read_column_impl_(value, cid, naxis, axes, repeat);
+
+            return read_sentry{};
+        }
+
+        template<typename T>
+        read_sentry read_column_(const table_read_options& opts,
+            const std::string& colname, reflex::struct_t<T> value, std::true_type) const {
+
+            #ifdef NO_REFLECTION
+            static_assert(!std::is_same<T,T>::value,
+                "this function requires reflection capabilities (NO_REFLECTION=0)");
+            #endif
+
+            do_read_struct_ run{this, opts, toupper(colname)+"."};
+            reflex::foreach_member(value, run);
+
+            return read_sentry{};
+        }
+
+        template<typename T>
+        read_sentry read_column_(const table_read_options& opts,
+            const std::string& colname, T& value, std::true_type) const {
+
+            #ifdef NO_REFLECTION
+            static_assert(!std::is_same<T,T>::value,
+                "this function requires reflection capabilities (NO_REFLECTION=0)");
+            #endif
+
+            do_read_struct_ run{this, opts, toupper(colname)+"."};
+            reflex::foreach_member(reflex::wrap(value), run);
+
+            return read_sentry{};
+        }
+
+    public :
+
+        template<typename T>
+        read_sentry read_column(const table_read_options& opts,
+            const std::string& tcolname, T&& value) const {
+            return read_column_(opts, tcolname, std::forward<T>(value), reflex::enabled<decay_t<T>>{});
+        }
+
+        template<typename T>
+        read_sentry read_column(const std::string& tcolname, T&& value) const {
+            return read_column(table_read_options{}, tcolname, std::forward<T>(value));
+        }
+
+    private :
+
+        void read_columns_impl_(const table_read_options&) const {
+            // Nothing more to do
+        }
+
+        template<typename T, typename ... Args>
+        void read_columns_impl_(const table_read_options& opts,
+            const std::string& tcolname, T& value, Args&& ... args) const {
+
+            read_column(opts, tcolname, value);
+            read_columns_impl_(opts, std::forward<Args>(args)...);
+        }
+
+    public :
+
+        template<typename ... Args, typename enable = typename std::enable_if<
+            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            (sizeof...(Args) > 1)>::type>
+        void read_columns(const table_read_options& opts, Args&& ... args) const {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
+            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+
+            static_assert(
+                are_all_true<binary_first_apply_type_to_bool_list<
+                filtered_first, std::is_convertible, std::string>>::value &&
+                are_all_true<unary_apply_type_to_bool_list<
+                filtered_second, is_readable_column_type>>::value,
+                "arguments must be a sequence of 'column name', 'readable value'");
+
+            // Read
+            read_columns_impl_(opts, std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args, typename enable = typename std::enable_if<
+            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, table_read_options>::value &&
+            (sizeof...(Args) > 1)>::type>
+        void read_columns(Args&& ... args) const {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
+            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+
+            static_assert(
+                are_all_true<binary_first_apply_type_to_bool_list<
+                filtered_first, std::is_convertible, std::string>>::value &&
+                are_all_true<unary_apply_type_to_bool_list<
+                filtered_second, is_readable_column_type>>::value,
+                "arguments must be a sequence of 'column name', 'readable value'");
+
+            // Read
+            read_columns_impl_(table_read_options{}, std::forward<Args>(args)...);
+        }
+
+    private :
+
+        void read_columns_impl_(const table_read_options&, file::macroed_t, const std::string&) const {
+            // Nothing more to do
+        }
+
+        template<typename T, typename ... Args>
+        void read_columns_impl_(const table_read_options& opts, file::macroed_t,
+            std::string names, T& value, Args&& ... args) const {
+
+            std::string tcolname = file::pop_macroed_name(names);
+            read_column(opts, file::bake_macroed_name(tcolname), value);
+            read_columns_impl_(opts, file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+        template<typename T, typename ... Args>
+        void read_columns_impl_(const table_read_options& opts, file::macroed_t,
+            std::string names, const named_t<T>& value, Args&& ... args) const {
+
+            file::pop_macroed_name(names);
+            read_column(opts, value.name, value.obj);
+            read_columns_impl_(opts, file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        void read_columns_impl_(file::macroed_t, const std::string& names, Args&& ... args) const {
+            read_columns_impl_(table_read_options{}, file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+    public :
+
+        template<typename ... Args>
+        void read_columns(const table_read_options& opts, file::macroed_t, const std::string& names,
+            Args&& ... args) const {
+
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+
+            static_assert(
+                are_all_true<unary_apply_type_to_bool_list<
+                arg_list, is_readable_column_type>>::value,
+                "arguments must be a sequence of readable values");
+
+            // Read
+            read_columns_impl_(opts, file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        void read_columns(file::macroed_t, const std::string& names, Args&& ... args) const {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+
+            static_assert(
+                are_all_true<unary_apply_type_to_bool_list<
+                arg_list, is_readable_column_type>>::value,
+                "arguments must be a sequence of readable values");
+
+            // Read
+            read_columns_impl_(table_read_options{}, file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+    public :
+
+        template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
+        void read_columns(const table_read_options& opts, T& t) {
+            reflex::foreach_member(reflex::wrap(t), do_read_struct_{this, opts, ""});
+        }
+
+        template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
+        void read_columns(T& t) {
+            read_columns(table_read_options{}, t);
+        }
+    };
+
+    // Traits to identify types that can be written into a FITS table
+    template<typename T>
+    struct is_writable_column_type : is_any_type_of<T, type_list<
+        bool, char, int_t, uint_t, float, double, std::string
+    >> {};
+
+    template<std::size_t D, typename T>
+    struct is_writable_column_type<vec<D,T>> : is_any_type_of<T, type_list<
+        bool, char, int_t, uint_t, float, double, std::string
+    >> {};
+
+    template<typename T>
+    struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
+
+    template<typename T>
+    struct is_writable_column_type<named_t<T>> : is_writable_column_type<decay_t<T>> {};
+
+
+    // Output FITS table (write only, overwrites existing files)
+    class output_table : public virtual impl::file_base {
+    protected :
+
+        explicit output_table(const std::string& filename, impl::readwrite_tag_t) :
+            impl::file_base(impl::table_file, filename, impl::write_only) {}
+
+        void create_table_() {
+            fits_create_tbl(fptr_, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status_);
+        }
+
+    public :
+
+        explicit output_table(const std::string& filename) :
+            impl::file_base(impl::table_file, filename, impl::write_only) {
+            create_table_();
+        }
+
+    private :
+
+        template<std::size_t Dim, typename Type,
+            typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
+        void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&, int cid) {
+            fits_write_col(fptr_, traits<Type>::ttype, cid, 1, 1, value.size(),
+                const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()), &status_);
+        }
+
+        template<typename Type>
+        void write_column_impl_(const Type& value, const std::array<long,0>&, int cid) {
+            using dtype = typename traits<Type>::dtype;
+            fits_write_col(fptr_, traits<Type>::ttype, cid, 1, 1, 1,
+                const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
+        }
+
+        template<std::size_t Dim>
+        void write_column_impl_(const vec<Dim,std::string>& value,
+            const std::array<long,Dim+1>& dims, int cid) {
+
+            const uint_t nmax = dims[0];
+            std::vector<char> buffer(nmax*value.size());
+            uint_t p = 0;
+            for (auto& s : value) {
+                for (auto c : s) {
+                    buffer[p] = c;
+                    ++p;
+                }
+                for (uint_t i = s.size(); i < nmax; ++i) {
+                    buffer[p] = '\0';
+                    ++p;
+                }
+            }
+
+            fits_write_col(
+                fptr_, traits<std::string>::ttype, cid, 1, 1,
+                nmax*value.size(), buffer.data(), &status_
+            );
+        }
+
+        void write_column_impl_(const std::string& value, const std::array<long,1>&, int cid) {
+            fits_write_col(fptr_, traits<std::string>::ttype, cid, 1, 1, value.size(),
+                const_cast<char*>(value.c_str()), &status_);
+        }
+
+        template<std::size_t Dim, typename Type>
+        void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,Dim>& dims, int cid) {
+            write_column_impl_(value.concretize(), dims, cid);
+        }
+
+        template<std::size_t Dim, typename Type>
+        std::array<long,Dim> write_column_get_dims_(const vec<Dim,Type>& value) {
+            std::array<long,Dim> dims;
+            for (uint_t i : range(Dim)) {
+                dims[i] = value.dims[Dim-1-i];
+            }
+
+            return dims;
+        }
+
+        template<typename T>
+        std::array<long,0> write_column_get_dims_(const T&) {
+            return {};
+        }
+
+        template<std::size_t Dim>
+        std::array<long,Dim+1> write_column_get_dims_(const vec<Dim,std::string>& value) {
+            std::array<long,Dim+1> dims;
+
+            std::size_t nmax = 0;
+            for (auto& s : value) {
+                if (s.size() > nmax) {
+                    nmax = s.size();
+                }
+            }
+
+            dims[0] = nmax;
+            for (uint_t i : range(Dim)) {
+                dims[i+1] = value.dims[Dim-1-i];
+            }
+
+            return dims;
+        }
+
+        std::array<long,1> write_column_get_dims_(const std::string& value) {
+            return {{long(value.size())}};
+        }
+
+        template<typename Type, std::size_t Dim>
+        std::string write_column_make_tform_(const std::array<long,Dim>& dims) {
+            uint_t size = 1;
+            for (uint_t d : dims) {
+                size *= d;
+            }
+
+            return strn(size)+traits<Type>::tform;
+        }
+
+        template<std::size_t Dim>
+        void write_column_write_tdim_(const std::array<long,Dim>& dims, int cid) {
+            fits_write_tdim(fptr_, cid, Dim, const_cast<long*>(dims.data()), &status_);
+        }
+
+        void write_column_write_tdim_(const std::array<long,0>&, int) {
+            // Nothing to do
+        }
+
+        struct do_write_struct_ {
+            output_table* tbl;
+            std::string base;
+
+            template<typename P>
+            void operator () (const reflex::member_t& m, P&& v) {
+                tbl->write_column(base+toupper(m.name), std::forward<P>(v));
+            }
+        };
+
+        template<typename T>
+        void write_column_(const std::string& tcolname, const T& value, std::false_type) {
+            static_assert(is_writable_column_type<typename std::decay<T>::type>::value,
+                "this value cannot be written into a FITS file");
+
+            status_ = 0;
+
+            int cid;
+            fits_get_num_cols(fptr_, &cid, &status_);
+            ++cid;
+
+            // Collect data on the input type
+            using vtype = typename impl::data_type<T>::type;
+            const auto dims = write_column_get_dims_(value);
+
+            // Create empty column
+            std::string colname = toupper(tcolname);
+            std::string tform = write_column_make_tform_<vtype>(dims);
+            fits_insert_col(
+                fptr_, cid, const_cast<char*>(colname.c_str()),
+                const_cast<char*>(tform.c_str()), &status_
+            );
+
+            // Set TDIM keyword (if needed)
+            write_column_write_tdim_(dims, cid);
+
+            // Write
+            write_column_impl_(value, dims, cid);
+        }
+
+        template<typename T>
+        void write_column_(const std::string& colname, reflex::struct_t<T> value, std::true_type) {
+            #ifdef NO_REFLECTION
+            static_assert(!std::is_same<T,T>::value,
+                "this function requires reflection capabilities (NO_REFLECTION=0)");
+            #endif
+
+            do_write_struct_ run{this, toupper(colname)+"."};
+            reflex::foreach_member(value, run);
+        }
+
+        template<typename T>
+        void write_column_(const std::string& colname, const T& value, std::true_type) {
+            #ifdef NO_REFLECTION
+            static_assert(!std::is_same<T,T>::value,
+                "this function requires reflection capabilities (NO_REFLECTION=0)");
+            #endif
+
+            do_write_struct_ run{this, toupper(colname)+"."};
+            reflex::foreach_member(reflex::wrap(value), run);
+        }
+
+    public :
+
+        template<typename T>
+        void write_column(const std::string& colname, T&& value) {
+            write_column_(colname, std::forward<T>(value), reflex::enabled<decay_t<T>>{});
+        }
+
+    private :
+
+        void write_columns_impl_() {
+            // Nothing to do
+        }
+
+        template<typename T, typename ... Args>
+        void write_columns_impl_(const std::string& tcolname, const T& value, Args&& ... args) {
+            write_column(tcolname, value);
+            write_columns_impl_(std::forward<Args>(args)...);
+        }
+
+        void write_columns_impl_(file::macroed_t, std::string) {
+            // Nothing to do
+        }
+
+        template<typename T, typename ... Args>
+        void write_columns_impl_(file::macroed_t, std::string names, T& value, Args&& ... args) {
+            std::string tcolname = file::pop_macroed_name(names);
+            write_column(file::bake_macroed_name(tcolname), value);
+            write_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+        template<typename T, typename ... Args>
+        void write_columns_impl_(file::macroed_t, std::string names, const named_t<T>& value,
+            Args&& ... args) {
+
+            file::pop_macroed_name(names);
+            write_column(value.name, value.obj);
+            write_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+    public :
+
+        template<typename ... Args, typename enable = typename std::enable_if<
+            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            (sizeof...(Args) > 1)>::type>
+        void write_columns(Args&& ... args) {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
+            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+
+            static_assert(
+                are_all_true<binary_first_apply_type_to_bool_list<
+                filtered_first, std::is_convertible, std::string>>::value &&
+                are_all_true<unary_apply_type_to_bool_list<
+                filtered_second, is_writable_column_type>>::value,
+                "arguments must be a sequence of 'column name', 'readable value'");
+
+            // Read
+            write_columns_impl_(std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        void write_columns(file::macroed_t, const std::string& names, Args&& ... args) {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+
+            static_assert(
+                are_all_true<unary_apply_type_to_bool_list<
+                arg_list, is_writable_column_type>>::value,
+                "arguments must be a sequence of writable values");
+
+            // Read
+            write_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+    public :
+
+        template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
+        void write_columns(T& t) {
+            reflex::foreach_member(reflex::wrap(t), do_write_struct_{this, ""});
+        }
+    };
+
+    // Input/output FITS table (read & write, modifies existing files)
+    class table : public output_table, public input_table {
+    public :
+        explicit table(const std::string& filename) :
+            impl::file_base(impl::table_file, filename, impl::read_write),
+            output_table(filename, impl::readwrite_tag), input_table(filename) {}
+
+        explicit table(const std::string& filename, uint_t hdu) :
+            impl::file_base(impl::table_file, filename, impl::read_write),
+            output_table(filename, impl::readwrite_tag), input_table(filename) {
+
+            if (hdu < hdu_count()) {
+                reach_hdu(hdu);
+            } else {
+
+            }
+        }
+
+        void remove_column(const std::string& tcolname) {
+            status_ = 0;
+
+            int cid;
+            std::string colname = toupper(tcolname);
+            fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
+            if (status_ == 0) {
+                fits_delete_col(fptr_, cid, &status_);
+            }
+        }
+
+        template<typename ... Args>
+        void remove_columns(Args&& ... args) {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+
+            static_assert(
+                are_all_true<binary_first_apply_type_to_bool_list<
+                arg_list, std::is_convertible, std::string>>::value,
+                "arguments must be a sequence of column names");
+
+            (void)std::initializer_list<int>{(remove_column(args), 0)...};
+        }
+
+        template<typename T>
+        void update_column(const std::string& tcolname, const T& value) {
+            remove_column(tcolname);
+            write_column(tcolname, value);
+        }
+
+    private :
+
+        void update_columns_impl_() {}
+
+        template<typename T, typename ... Args>
+        void update_columns_impl_(const std::string& tcolname, const T& value, Args&& ... args) {
+            update_column(tcolname, value);
+            update_columns_impl_(std::forward<Args>(args)...);
+        }
+
+        void update_columns_impl_(file::macroed_t, std::string) {
+            // Nothing to do
+        }
+
+        template<typename T, typename ... Args>
+        void update_columns_impl_(file::macroed_t, std::string names, T& value, Args&& ... args) {
+            std::string tcolname = file::pop_macroed_name(names);
+            update_column(file::bake_macroed_name(tcolname), value);
+            update_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+        template<typename T, typename ... Args>
+        void update_columns_impl_(file::macroed_t, std::string names, const named_t<T>& value,
+            Args&& ... args) {
+
+            file::pop_macroed_name(names);
+            update_column(value.name, value.obj);
+            update_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+    public :
+
+        template<typename ... Args, typename enable = typename std::enable_if<
+            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            (sizeof...(Args) > 1)>::type>
+        void update_columns(Args&& ... args) {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
+            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+
+            static_assert(
+                are_all_true<binary_first_apply_type_to_bool_list<
+                filtered_first, std::is_convertible, std::string>>::value &&
+                are_all_true<unary_apply_type_to_bool_list<
+                filtered_second, is_writable_column_type>>::value,
+                "arguments must be a sequence of 'column name', 'readable value'");
+
+            update_columns_impl_(std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        void update_columns(file::macroed_t, std::string names, Args&& ... args) {
+            // Check types of arguments
+            using arg_list = type_list<typename std::decay<Args>::type...>;
+
+            static_assert(
+                are_all_true<unary_apply_type_to_bool_list<
+                arg_list, is_writable_column_type>>::value,
+                "arguments must be a sequence of 'column name', 'readable value'");
+
+            update_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        }
+
+    private :
+
+        struct do_update_struct_ {
+            table* tbl;
+
+            template<typename P>
+            void operator () (const reflex::member_t& m, P&& v) {
+                tbl->update_column(toupper(m.name), std::forward<P>(v));
+            }
+        };
+
+    public :
+
+        template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
+        void update_columns(T& t) {
+            reflex::foreach_member(reflex::wrap(t), do_update_struct_{this});
+        }
+    };
+}
+
+#endif

@@ -2,6 +2,7 @@
 #define MATH_HPP
 
 #include "phypp/vec.hpp"
+#include "phypp/generic.hpp"
 #include "phypp/string.hpp"
 #include "phypp/simple_complex.hpp"
 #include <random>
@@ -340,7 +341,7 @@ auto randomi(T& seed, TMi mi, TMa ma, Args&& ... args) ->
     vec<dim_total<Args...>::value,decltype(mi+ma)> {
     auto v = randomu(seed, std::forward<Args>(args)...);
     using rtype = decltype(mi + ma);
-    return vec<vec_dim<decltype(v)>::value,rtype>(v*(ma + 1 - mi) + mi);
+    return vec<dim_total<Args...>::value,rtype>(v*(ma + 1 - mi) + mi);
 }
 
 template<typename T, typename TypeX, typename TypeY, typename ... Args>
@@ -483,7 +484,7 @@ void run_dim_final_(uint_t dim, F&& func, const Args& ... vs) {
     uint_t nint = ds[dim];
     uint_t mpitch = 1;
     uint_t np = 1;
-    for (uint_t i = 0; i < N; ++i) {
+    for (uint_t i : range(N)) {
         if (i != dim) np *= ds[i];
         if (i > dim) mpitch *= ds[i];
     }

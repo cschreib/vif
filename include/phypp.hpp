@@ -1,4 +1,5 @@
 #include "phypp/vec.hpp"
+#include "phypp/generic.hpp"
 #include "phypp/reflex.hpp"
 #include "phypp/reflex_helpers.hpp"
 #include "phypp/range.hpp"
@@ -7,6 +8,7 @@
 #include "phypp/argv.hpp"
 #include "phypp/file.hpp"
 #include "phypp/fits.hpp"
+#include "phypp/wcs.hpp"
 #include "phypp/math.hpp"
 #include "phypp/image.hpp"
 #include "phypp/time.hpp"
