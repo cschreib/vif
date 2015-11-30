@@ -301,8 +301,11 @@ namespace fits {
             file_base(file_type type, const std::string& filename, access_right rights) :
                 type_(type), rights_(rights), filename_(filename) {
 
-                if (rights == write_only) {
+                if (rights == write_only || (rights == read_write && !file::exists(filename))) {
                     fits_create_file(&fptr_, ("!"+filename).c_str(), &status_);
+                    if (type == table_file) {
+                        fits_create_tbl(fptr_, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status_);
+                    }
                 } else {
                     int trights = (rights == read_only ? READONLY : READWRITE);
 

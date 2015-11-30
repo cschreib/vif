@@ -668,21 +668,10 @@ namespace fits {
 
     // Output FITS table (write only, overwrites existing files)
     class output_table : public virtual impl::file_base {
-    protected :
-
-        explicit output_table(const std::string& filename, impl::readwrite_tag_t) :
-            impl::file_base(impl::table_file, filename, impl::write_only) {}
-
-        void create_table_() {
-            fits_create_tbl(fptr_, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status_);
-        }
-
     public :
 
         explicit output_table(const std::string& filename) :
-            impl::file_base(impl::table_file, filename, impl::write_only) {
-            create_table_();
-        }
+            impl::file_base(impl::table_file, filename, impl::write_only) {}
 
     private :
 
@@ -941,17 +930,12 @@ namespace fits {
     public :
         explicit table(const std::string& filename) :
             impl::file_base(impl::table_file, filename, impl::read_write),
-            output_table(filename, impl::readwrite_tag), input_table(filename) {}
+            output_table(filename), input_table(filename) {}
 
         explicit table(const std::string& filename, uint_t hdu) :
             impl::file_base(impl::table_file, filename, impl::read_write),
-            output_table(filename, impl::readwrite_tag), input_table(filename) {
-
-            if (hdu < hdu_count()) {
-                reach_hdu(hdu);
-            } else {
-
-            }
+            output_table(filename), input_table(filename) {
+            reach_hdu(hdu);
         }
 
         void remove_column(const std::string& tcolname) {
