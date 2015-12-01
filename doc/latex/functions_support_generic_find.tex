@@ -24,6 +24,24 @@ w[id]; // {8,6,1,-2,0,5}
 \end{cppcode}
 \end{example}
 
+\funcitem \cppinline|uint_t where_first(vec<D,bool>)| \itt{where_first}
+
+\cppinline|uint_t where_last(vec<D,bool>)| \itt{where_last}
+
+These functions will scan the \cppinline{bool} vector provided in argument, and return the flat index (\ref{SEC:core:vec:indexing}) of the first (or last) element which is \cpptrue, and \cppinline{npos} if all are \cppfalse.
+
+\begin{example}
+\begin{cppcode}
+vec1i v = {4,8,6,7,5,2,3,9,0};
+// We want to select the first element which is greater than 3
+uint_t id;
+id = where_first(v > 3); // 0
+v[id];                   // 4
+id = where_last(v > 3);  // 7
+v[id];                   // 9
+\end{cppcode}
+\end{example}
+
 \funcitem \cppinline|vec1u complement(vec v, vec1u id)| \itt{complement}
 
 This function works in tandem with \cppinline{where}. Given a vector \cppinline{v} and a set of flat indices \cppinline{id} (\ref{SEC:core:vec:indexing}), it will return the complementary set of indices inside this vector, i.e., all the indices of \cppinline{v} that are \emph{not} present in \cppinline{id}.

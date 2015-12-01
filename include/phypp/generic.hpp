@@ -222,17 +222,46 @@ template<std::size_t Dim, typename Type, typename enable =
 vec1u where(const vec<Dim,Type>& v) {
     vec1u ids;
     ids.data.reserve(n_elements(v));
-    uint_t i = 0;
-    for (bool b : v) {
-        if (b) {
+    for (uint_t i : range(v)) {
+        if (v.safe[i]) {
             ids.data.push_back(i);
         }
-
-        ++i;
     }
 
     ids.dims[0] = ids.data.size();
     return ids;
+}
+
+// Returns the position of the first value in the vector that is 'true'
+// Returns 'npos' if no value is found
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<Type>,bool>::value>::type>
+uint_t where_first(const vec<Dim,Type>& v) {
+    if (v.empty()) return npos;
+
+    for (uint_t i : range(v)) {
+        if (v.safe[i]) {
+            return i;
+        }
+    }
+
+    return npos;
+}
+
+// Returns the position of the last value in the vector that is 'true'
+// Returns 'npos' if no value is found
+template<std::size_t Dim, typename Type, typename enable =
+    typename std::enable_if<std::is_same<rtype_t<Type>,bool>::value>::type>
+uint_t where_last(const vec<Dim,Type>& v) {
+    if (v.empty()) return npos;
+
+    for (uint_t i : range(v)) {
+        if (v.safe[v.size()-1-i]) {
+            return v.size()-1-i;
+        }
+    }
+
+    return npos;
 }
 
 // Build the complement of a set of indices, i.e. return the indices that are not part of the
