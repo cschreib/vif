@@ -902,6 +902,41 @@ void print_radec(const std::string& file, const vec<Dim,TR>& ra, const vec<Dim,T
     }
 }
 
+bool get_band(const vec1s& bands, const std::string& band, uint_t& bid) {
+    vec1u id = where(regex_match(bands, band));
+    if (id.empty()) {
+        error("no band matching '"+band+"'");
+        return false;
+    } else if (id.size() > 1) {
+        error("multiple bands matching '"+band+"'");
+        for (uint_t b : id) {
+            note("  candidate: band='"+bands[b]);
+        }
+        return false;
+    }
+
+    bid = id[0];
+    return true;
+}
+
+template<typename Cat>
+bool get_band(const vec1s& bands, const vec1s& notes, const std::string& band, const std::string& note_, uint_t& bid) {
+    vec1u id = where(regex_match(bands, band) && regex_match(notes, note_));
+    if (id.empty()) {
+        error("no band matching '"+band+"' & '"+note_+"'");
+        return false;
+    } else if (id.size() > 1) {
+        error("multiple bands matching '"+band+"' & '"+note_+"'");
+        for (uint_t b : id) {
+            note("  candidate: band='"+bands[b]+"', note='"+notes[b]+"'");
+        }
+        return false;
+    }
+
+    bid = id[0];
+    return true;
+}
+
 template<typename Cat>
 vec1s get_band_get_notes_(const Cat& cat, std::false_type) {
     return replicate("?", cat.bands.size());
@@ -922,6 +957,7 @@ struct get_band_has_notes_impl_ {
 
 template<typename Cat>
 using get_band_has_notes_ = typename get_band_has_notes_impl_<typename std::decay<Cat>::type>::type;
+
 
 template<typename Cat>
 bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
@@ -959,6 +995,7 @@ bool get_band(const Cat& cat, const std::string& band, const std::string& note_,
     bid = id[0];
     return true;
 }
+
 
 template<typename Type>
 void pick_sources(const vec<2,Type>& img, const vec1d& x, const vec1d& y,
