@@ -1215,6 +1215,14 @@ filter_db_t read_filter_db(const std::string& filename) {
 bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
     vec1s spl = split(str, ":");
 
+    auto read_filter_file = [](std::string filename, filter_t& tf) {
+        if (end_with(filename, ".fits")) {
+            fits::input_table(filename).read_columns(fits::narrow, ftable(tf.lam, tf.res));
+        } else {
+            file::read_table(filename, file::find_skip(filename), tf.lam, tf.res);
+        }
+    };
+
     if (spl.size() == 1) {
         auto iter = db.find(str);
         if (iter == db.end()) {
@@ -1240,12 +1248,7 @@ bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
 
             return false;
         } else {
-            if (end_with(iter->second, ".fits")) {
-                fits::read_table(iter->second, ftable(f.lam, f.res));
-            } else {
-                file::read_table(iter->second, file::find_skip(iter->second), f.lam, f.res);
-            }
-
+            read_filter_file(iter->second, f);
             f.rlam = integrate(f.lam, f.res*f.lam);
             return true;
         }
@@ -1273,6 +1276,18 @@ bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
             f.res = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
             f.res /= integrate(f.lam, f.res);
             f.rlam = 0.5*(lmin + lmax);
+
+            return true;
+        } else if (spl[1] == "file") {
+            if (spl.size() != 3) {
+                error("get_filter: 'file' filter needs 3 arguments (name, 'file', "
+                    "path to file)");
+                note("got: ", str);
+                return false;
+            }
+
+            read_filter_file(spl[2], f);
+            f.rlam = integrate(f.lam, f.res*f.lam);
 
             return true;
         } else {
