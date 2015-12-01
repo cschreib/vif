@@ -111,6 +111,8 @@ progress_t progress_start(std::size_t n) {
     return r;
 }
 
+const uint_t progress_ndash = system_var<uint_t>("PHYPP_PROGRESS_BAR_LENGTH", 32);
+
 void progress_(progress_t& p) {
     double total = now() - p.start;
     double remaining = total*double(p.n)/(p.i+1) - total;
@@ -118,8 +120,8 @@ void progress_(progress_t& p) {
     const std::size_t ndash = 50;
     std::string msg;
     // Progress bar
-    msg += "["+std::string(floor(ndash*(p.i+1)/double(p.n)),'-')
-        + std::string(ndash - floor(ndash*(p.i+1)/double(p.n)),' ')+"] ";
+    msg += "["+std::string(floor(progress_ndash*(p.i+1)/double(p.n)),'-')
+        + std::string(progress_ndash - floor(progress_ndash*(p.i+1)/double(p.n)),' ')+"] ";
     // Iteration count
     msg += align_right(strn(p.i+1), floor(log10(double(p.n))) + 1)+" ";
     // Percentage
