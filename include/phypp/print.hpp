@@ -69,8 +69,9 @@ bool prompt(const std::string& msg, T& value, const std::string& err_msg = "") {
 
 #define phypp_check(value, ...) \
     if (!(value)) { \
-        error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__); \
-        assert(false); \
+        print("\n"); \
+        error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__, "\n"); \
+        exit(EXIT_FAILURE); \
     }
 
 #endif
