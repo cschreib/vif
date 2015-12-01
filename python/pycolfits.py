@@ -20,7 +20,7 @@ def readfrom(filename):
     # Create columns one by one
     for i in range(0, ncol):
         # Store that into the dictionary
-        tbl[colnames[i]] = data[i]
+        tbl[colnames[i].lower()] = data[i]
 
     return tbl
 
