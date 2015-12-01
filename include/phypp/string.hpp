@@ -819,10 +819,29 @@ std::string replace_blocks(std::string s, const std::string& begin,
     return s;
 }
 
-std::string system_var(const std::string& name, const std::string& def = "") {
+template <typename T = std::string, typename U>
+T system_var(const std::string& name, U def) {
+    char* v = getenv(name.c_str());
+    if (!v) return def;
+
+    T ret;
+    if (!from_string(v, ret)) return def;
+    return ret;
+
+}
+
+template <>
+std::string system_var<std::string,std::string>(const std::string& name, std::string def) {
     char* v = getenv(name.c_str());
     if (!v) return def;
     return v;
 }
 
+template <>
+std::string system_var<std::string,const char*>(const std::string& name, const char* def) {
+    return system_var<std::string,std::string>(name, def);
+}
+
+
 #endif
+
