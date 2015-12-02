@@ -3,6 +3,7 @@
 
 #include <string>
 #include <typeinfo>
+#include <vector>
 #include "phypp/variadic.hpp"
 
 template<std::size_t Dim, typename Type>
