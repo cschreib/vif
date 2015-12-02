@@ -26,8 +26,8 @@ namespace fits {
     struct traits<std::string> {
         using dtype = char;
 
-        static const char tform = 'B';
-        static const int ttype = TBYTE;
+        static const char tform = 'A';
+        static const int ttype = TSTRING;
 
         static std::string def() {
             return "";

@@ -301,7 +301,7 @@ namespace fits {
             Type def = traits<Type>::def();
             int null;
             fits_read_col(
-                fptr_, traits<Type>::ttype, cid, 1, 1, repeat, &def,
+                fptr_, traits<Type>::ttype, cid, 1, 1, 1, &def,
                 reinterpret_cast<typename traits<Type>::dtype*>(&v), &null, &status_
             );
         }
@@ -320,37 +320,46 @@ namespace fits {
 
             v.resize();
 
-            std::vector<char> buffer(v.size()*naxes[0]);
+            char** buffer = new char*[v.size()];
+            for (uint_t i : range(v)) {
+                buffer[i] = new char[naxes[0]+1];
+            }
             char def = '\0';
             int null;
             fits_read_col(
-                fptr_, traits<std::string>::ttype, cid, 1, 1, v.size()*naxes[0], &def,
-                buffer.data(), &null, &status_
+                fptr_, traits<std::string>::ttype, cid, 1, 1, v.size(), &def,
+                buffer, &null, &status_
             );
 
             for (uint_t i : range(v)) {
-                v.safe[i].reserve(naxes[0]);
-                for (uint_t j : range(naxes[0])) {
-                    char c = buffer[i*naxes[0] + j];
-                    if (c == '\0') break;
-                    v.safe[i].push_back(c);
-                }
+                v.safe[i] = buffer[i];
+                delete[] buffer[i];
             }
+
+            delete[] buffer;
         }
 
         void read_column_impl_(std::string& v, int cid,
             long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
 
-            std::vector<char> buffer(naxes[0]+1);
+
+            char** buffer = new char*[1];
+            buffer[0] = new char[repeat+1];
+
             char def = '\0';
             int null;
+
+            // Hack to make it work...
+            fptr_->Fptr->tableptr[cid-1].twidth = repeat;
+
             fits_read_col(
-                fptr_, traits<std::string>::ttype, cid, 1, 1, naxes[0], &def,
-                buffer.data(), &null, &status_
+                fptr_, TSTRING, cid, 1, 1, 1, &def,
+                buffer, &null, &status_
             );
 
-            buffer[naxes[0]] = '\0';
-            v = buffer.data();
+            v = buffer[0];
+            delete[] buffer[0];
+            delete[] buffer;
         }
 
         template<typename T>
@@ -694,28 +703,31 @@ namespace fits {
             const std::array<long,Dim+1>& dims, int cid) {
 
             const uint_t nmax = dims[0];
-            std::vector<char> buffer(nmax*value.size());
-            uint_t p = 0;
-            for (auto& s : value) {
-                for (auto c : s) {
-                    buffer[p] = c;
-                    ++p;
-                }
-                for (uint_t i = s.size(); i < nmax; ++i) {
-                    buffer[p] = '\0';
-                    ++p;
-                }
+            char** buffer = new char*[value.size()];
+            for (uint_t i : range(value)) {
+                buffer[i] = new char[nmax+1];
+                strcpy(buffer[i], value[i].c_str());
             }
 
             fits_write_col(
                 fptr_, traits<std::string>::ttype, cid, 1, 1,
-                nmax*value.size(), buffer.data(), &status_
+                value.size(), buffer, &status_
             );
+
+            for (uint_t i : range(value)) {
+                delete[] buffer[i];
+            }
+
+            delete[] buffer;
         }
 
         void write_column_impl_(const std::string& value, const std::array<long,1>&, int cid) {
-            fits_write_col(fptr_, traits<std::string>::ttype, cid, 1, 1, value.size(),
-                const_cast<char*>(value.c_str()), &status_);
+            char** buffer = new char*[1];
+            buffer[0] = const_cast<char*>(value.c_str());
+            fits_write_col(fptr_, traits<std::string>::ttype, cid, 1, 1, 1,
+                buffer, &status_);
+
+            delete[] buffer;
         }
 
         template<std::size_t Dim, typename Type>
@@ -762,7 +774,7 @@ namespace fits {
         }
 
         template<typename Type, std::size_t Dim>
-        std::string write_column_make_tform_(const std::array<long,Dim>& dims) {
+        std::string write_column_make_tform_(type_list<Type>, const std::array<long,Dim>& dims) {
             uint_t size = 1;
             for (uint_t d : dims) {
                 size *= d;
@@ -770,6 +782,17 @@ namespace fits {
 
             return strn(size)+traits<Type>::tform;
         }
+
+        template<std::size_t Dim>
+        std::string write_column_make_tform_(type_list<std::string>, const std::array<long,Dim>& dims) {
+            uint_t size = 1;
+            for (uint_t d : dims) {
+                size *= d;
+            }
+
+            return strn(size)+traits<std::string>::tform+strn(dims[0]);
+        }
+
 
         template<std::size_t Dim>
         void write_column_write_tdim_(const std::array<long,Dim>& dims, int cid) {
@@ -807,7 +830,7 @@ namespace fits {
 
             // Create empty column
             std::string colname = toupper(tcolname);
-            std::string tform = write_column_make_tform_<vtype>(dims);
+            std::string tform = write_column_make_tform_(type_list<vtype>{}, dims);
             fits_insert_col(
                 fptr_, cid, const_cast<char*>(colname.c_str()),
                 const_cast<char*>(tform.c_str()), &status_
