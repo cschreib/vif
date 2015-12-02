@@ -1,77 +1,101 @@
 from astropy.io import fits
 import re
-import numpy
+import numpy as np
 
-def readfrom(filename):
+def readfrom(filename, lower_case=False, upper_case=False, **kwargs):
     # Open the file and get HDU list
-    hdulist = fits.open(filename)
+    hdulist = fits.open(filename, **kwargs)
 
     # Column-oriented FITS tables have empty primary HDU
     # The actual data is located inside the first HDU
     if len(hdulist) == 1:
         raise RuntimeError('this is not a column-oriented FITS table')
+
     hdr = hdulist[1].header
     data = hdulist[1].data[0]
     colnames = hdulist[1].data.dtype.names
 
-    ncol = len(data)
-    tbl = dict()
-
     # Create columns one by one
-    for i in range(0, ncol):
+    tbl = dict()
+    for n in colnames:
         # Store that into the dictionary
-        tbl[colnames[i].lower()] = data[i]
+        if lower_case:
+            cname = n.lower()
+        elif upper_case:
+            cname = n.upper()
+        else:
+            cname = n
+
+        tbl[cname] = data[n]
 
     return tbl
 
 def _get_format_code(v):
-    vtype = type(v[0])
-    if vtype is numpy.ndarray:
-        tmp = v
-        vlen = 1
-        vdim = []
-        while vtype is numpy.ndarray:
-            vdim.append(len(tmp))
-            vlen = vlen*len(tmp)
-            tmp = tmp[0]
-            vtype = type(tmp)
+    # Convert numpy type code into FITS
+    if isinstance(v, str):
+        dims = ()
+        tdtype = 'S'+str(len(v))
+    else :
+        if isinstance(v, np.ndarray):
+            dims = v.shape
+        else:
+            dims = ()
+
+        tdtype = v.dtype.str.replace('>','').replace('<','').replace('|','')
+
+    if tdtype[0] == 'S':
+        # Strings are handled in a peculiar way in FITS
+        # They are stored as multi-dimensional array of bytes
+        # and the last dimension is the maximum length of all
+        # strings in the array
+        strlen = int(tdtype[1:])
+        tdtype = 'a'
+        dims = dims + (strlen,)
+
+    if len(dims) == 0:
+        repeat = ''
+        dims = (1,)
     else:
-        vlen = len(v)
-        vdim = [vlen]
+        repeat = str(np.prod(dims))
 
-    if vtype is numpy.float32:
-        ftype='E'
-    elif vtype is numpy.float64:
-        ftype='D'
-    elif vtype is numpy.uint8:
-        ftype='B'
-    elif vtype is numpy.int32:
-        ftype='J'
-    elif vtype is numpy.int64:
-        ftype='K'
-    else:
-        raise RuntimeError('unsupported type '+str(vtype))
+    tform = repeat+fits.column.NUMPY2FITS[tdtype]
+    tdim = '('+','.join(str(d) for d in reversed(dims))+')'
 
-    return str(vlen)+ftype, '('+','.join(str(d) for d in reversed(vdim))+')'
+    return tform, tdim
 
-def writeto(filename, data, output_verify='exception', clobber=False, checksum=False):
+def writeto(filename, data, lower_case=False, upper_case=False, **kwargs):
     # Build the ColDef array
     cols = fits.ColDefs([])
     for colname, value in data.iteritems():
         # Figure out which FITS format to use to store this column
-        vformat, vdim = _get_format_code(value)
+        tform, tdim = _get_format_code(value)
+
+        if lower_case:
+            cname = colname.lower()
+        elif upper_case:
+            cname = colname.upper()
+        else:
+            cname = colname
 
         # Add new column to the list
         cols.add_col(fits.Column(
-            name=colname.upper(),
-            format=vformat,
-            dim=vdim))
+            name=cname,
+            format=tform,
+            dim=tdim))
 
     # Create the FITS table in memory
     hdu = fits.BinTableHDU.from_columns(cols, nrows=1, fill=True)
     for colname, value in data.iteritems():
-        hdu.data[colname.upper()] = value
+        if lower_case:
+            cname = colname.lower()
+        elif upper_case:
+            cname = colname.upper()
+        else:
+            cname = colname
+
+        hdu.data[cname] = value
+
     # Write it on the disk
-    hdu.writeto(filename, output_verify=output_verify, clobber=clobber, checksum=checksum)
+    hdu.writeto(filename, **kwargs)
 
 
