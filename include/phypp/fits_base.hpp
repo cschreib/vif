@@ -357,6 +357,26 @@ namespace fits {
                 return hdr;
             }
 
+            template <typename T>
+            bool read_keyword(const std::string& name, T& value) const {
+                status_ = 0;
+                char content[80];
+                char comment[80];
+                fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
+                if (status_ != 0) return false;
+                return from_string(content, value);
+            }
+
+            bool read_keyword(const std::string& name, std::string& value) const {
+                status_ = 0;
+                char content[80];
+                char comment[80];
+                fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
+                if (status_ != 0) return false;
+                value = content;
+                return true;
+            }
+
             void write_header(const fits::header& hdr) {
                 status_ = 0;
                 std::size_t nentry = hdr.size()/80 + 1;
@@ -379,6 +399,28 @@ namespace fits {
 
                     fits_write_record(fptr_, entry.c_str(), &status_);
                 }
+            }
+
+            template<typename T>
+            void write_keyword(const std::string& name, const T& value) {
+                fits_update_key(fptr_, fits::traits<decay_t<T>>::ttype,
+                    name.c_str(), const_cast<T*>(&value), nullptr, &status_);
+            }
+
+            template<typename T>
+            void add_keyword(const std::string& name, const T& value) {
+                fits_write_key(fptr_, fits::traits<decay_t<T>>::ttype,
+                    name.c_str(), const_cast<T*>(&value), nullptr, &status_);
+            }
+
+            void write_keyword(const std::string& name, const std::string& value) {
+                fits_update_key(fptr_, TSTRING, name.c_str(),
+                    const_cast<char*>(value.c_str()), nullptr, &status_);
+            }
+
+            void add_keyword(const std::string& name, const std::string& value) {
+                fits_write_key(fptr_, TSTRING, name.c_str(),
+                    const_cast<char*>(value.c_str()), nullptr, &status_);
             }
 
             uint_t hdu_count() const {
