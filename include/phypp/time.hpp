@@ -117,7 +117,6 @@ void progress_(progress_t& p) {
     double total = now() - p.start;
     double remaining = total*double(p.n)/(p.i+1) - total;
 
-    const std::size_t ndash = 50;
     std::string msg;
     // Progress bar
     msg += "["+std::string(floor(progress_ndash*(p.i+1)/double(p.n)),'-')
