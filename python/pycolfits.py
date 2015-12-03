@@ -1,5 +1,4 @@
 from astropy.io import fits
-import re
 import numpy as np
 
 def readfrom(filename, lower_case=False, upper_case=False, **kwargs):
