@@ -303,6 +303,20 @@ namespace fits {
             read_write
         };
 
+        template<typename T>
+        struct is_string : std::false_type {};
+
+        template<>
+        struct is_string<std::string> : std::true_type {};
+        template<>
+        struct is_string<char*> : std::true_type {};
+        template<>
+        struct is_string<const char*> : std::true_type {};
+        template<std::size_t N>
+        struct is_string<char[N]> : std::true_type {};
+        template<std::size_t N>
+        struct is_string<const char[N]> : std::true_type {};
+
         class file_base {
         public :
             file_base(file_type type, const std::string& filename, access_right rights) :
@@ -401,26 +415,36 @@ namespace fits {
                 }
             }
 
-            template<typename T>
-            void write_keyword(const std::string& name, const T& value) {
+            template<typename T, typename enable = typename
+                std::enable_if<!is_string<decay_t<T>>::value>::type>
+            void write_keyword(const std::string& name, const T& value,
+                const std::string& com = "") {
                 fits_update_key(fptr_, fits::traits<decay_t<T>>::ttype,
-                    name.c_str(), const_cast<T*>(&value), nullptr, &status_);
+                    name.c_str(), const_cast<T*>(&value),
+                    const_cast<char*>(com.c_str()), &status_);
             }
 
-            template<typename T>
-            void add_keyword(const std::string& name, const T& value) {
+            template<typename T, typename enable = typename
+                std::enable_if<!is_string<decay_t<T>>::value>::type>
+            void add_keyword(const std::string& name, const T& value,
+                const std::string& com = "") {
                 fits_write_key(fptr_, fits::traits<decay_t<T>>::ttype,
-                    name.c_str(), const_cast<T*>(&value), nullptr, &status_);
+                    name.c_str(), const_cast<T*>(&value),
+                    const_cast<char*>(com.c_str()), &status_);
             }
 
-            void write_keyword(const std::string& name, const std::string& value) {
+            void write_keyword(const std::string& name, const std::string& value,
+                const std::string& com = "") {
                 fits_update_key(fptr_, TSTRING, name.c_str(),
-                    const_cast<char*>(value.c_str()), nullptr, &status_);
+                    const_cast<char*>(value.c_str()),
+                    const_cast<char*>(com.c_str()), &status_);
             }
 
-            void add_keyword(const std::string& name, const std::string& value) {
+            void add_keyword(const std::string& name, const std::string& value,
+                const std::string& com = "") {
                 fits_write_key(fptr_, TSTRING, name.c_str(),
-                    const_cast<char*>(value.c_str()), nullptr, &status_);
+                    const_cast<char*>(value.c_str()),
+                    const_cast<char*>(com.c_str()), &status_);
             }
 
             uint_t hdu_count() const {
