@@ -35,13 +35,11 @@ namespace fits {
 
         static bool is_convertible(int type) {
             if (type == TSTRING) return true;
-            if (type == TBYTE) return true;
             return false;
         }
 
         static bool is_convertible_narrow(int type) {
             if (type == TSTRING) return true;
-            if (type == TBYTE) return true;
             return false;
         }
     };
