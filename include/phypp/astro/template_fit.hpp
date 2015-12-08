@@ -472,18 +472,18 @@ multi_template_fit_res_t multi_template_fit(const TLibs& libs, TypeSeed& seed, c
                     alpha(k2,k1) = total(convflux[k1](ilib[k1],_)*convflux[k2](ilib[k2],_));
                 }
 
-                if (!inplace_invert_symmetric(alpha)) {
+                if (!matrix::inplace_invert_symmetric(alpha)) {
                     continue;
                 }
 
-                symmetrize(alpha);
+                matrix::symmetrize(alpha);
 
                 vec1d beta(nlib);
                 for (uint_t k1 : range(nlib)) {
                     beta[k1] = total(flux*convflux[k1](ilib[k1],_));
                 }
 
-                vec1d amp = mmul(alpha, beta);
+                vec1d amp = matrix::product(alpha, beta);
 
                 vec1d model(nfilter);
                 for (uint_t k1 : range(nlib)) {
@@ -502,7 +502,7 @@ multi_template_fit_res_t multi_template_fit(const TLibs& libs, TypeSeed& seed, c
                         beta[k1] = total(rflux(s,_)*convflux[k1](ilib[k1],_));
                     }
 
-                    amp = mmul(alpha, beta);
+                    amp = matrix::product(alpha, beta);
 
                     model[_] = 0;
                     for (uint_t k1 : range(nlib)) {

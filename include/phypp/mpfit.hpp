@@ -864,7 +864,7 @@ mpfit_result mpfit(F&& deviate, vec1d xall, mpfit_options options = mpfit_option
         res.covar(ifree,ifree) = cv;
 
         // Compute errors in parameters
-        res.errors = diagonal(res.covar);
+        res.errors = matrix::diagonal(res.covar);
         vec1u wh = where(res.errors >= 0.0);
         res.errors[wh] = sqrt(res.errors[wh]);
     }
