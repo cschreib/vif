@@ -722,6 +722,8 @@ namespace fits {
         }
 
         void write_column_impl_(const std::string& value, const std::array<long,1>&, int cid) {
+            if (value.empty()) return;
+
             char** buffer = new char*[1];
             buffer[0] = const_cast<char*>(value.c_str());
             fits_write_col(fptr_, traits<std::string>::ttype, cid, 1, 1, 1,
