@@ -273,7 +273,7 @@ namespace fits {
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
         void read_column_impl_(vec<Dim,Type>& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
 
             for (uint_t i : range(Dim)) {
                 if (i < (Dim-naxis)) {
@@ -289,14 +289,14 @@ namespace fits {
             int null;
             status_ = 0;
             fits_read_col(
-                fptr_, traits<Type>::ttype, cid, 1, 1, repeat, &def,
+                fptr_, traits<Type>::ttype, cid, 1, 1, nrow*repeat, &def,
                 v.data.data(), &null, &status_
             );
         }
 
         template<typename Type>
         void read_column_impl_(Type& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+            long naxis, const std::array<long,max_column_dims>& naxes, long, long) const {
 
             Type def = traits<Type>::def();
             int null;
@@ -308,7 +308,7 @@ namespace fits {
 
         template<std::size_t Dim>
         void read_column_impl_(vec<Dim,std::string>& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
 
             for (uint_t i : range(Dim)) {
                 if (i < (Dim+1-naxis)) {
@@ -340,7 +340,7 @@ namespace fits {
         }
 
         void read_column_impl_(std::string& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat) const {
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
 
 
             char** buffer = new char*[1];
@@ -467,10 +467,22 @@ namespace fits {
                     "(expected "+pretty_type_t(vtype)+", got "+type_to_string_(type)+")"};
             }
 
-            // Check if dimension match
+            // Check if dimensions match
             std::array<long,max_column_dims> axes;
             int naxis = 0;
             fits_read_tdim(fptr_, cid, max_column_dims, &naxis, axes.data(), &status_);
+
+            // Support loading row-oriented FITS tables
+            uint_t nrow = 1;
+            if (read_keyword("NAXIS2", nrow) && nrow > 1) {
+                if (naxis == 1 && axes[naxis-1] == 1) {
+                    axes[naxis-1] = nrow;
+                } else {
+                    axes[naxis] = nrow;
+                    ++naxis;
+                }
+            }
+
             if (!read_column_check_dim_(opts, value, vdim, naxis, repeat)) {
                 return read_sentry{this, "wrong dimension for column '"+colname+"' "
                     "(expected "+strn(vdim)+", got "+strn(naxis)+")"};
@@ -479,7 +491,7 @@ namespace fits {
             status_ = 0;
 
             // Read
-            read_column_impl_(value, cid, naxis, axes, repeat);
+            read_column_impl_(value, cid, naxis, axes, repeat, nrow);
 
             return read_sentry{};
         }
