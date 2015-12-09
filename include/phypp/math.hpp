@@ -737,6 +737,12 @@ std::pair<typename vec<Dim,Type>::const_iterator, typename vec<Dim,Type>::const_
         ++i;
     }
 
+    if (i == v.end()) {
+        // Only NaN
+        res.first = v.begin(); res.second = v.begin();
+        return res;
+    }
+
     res.first = i; res.second = i;
 
     for (++i; i != v.end(); ++i) {
