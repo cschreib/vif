@@ -320,6 +320,11 @@ namespace fits {
 
             v.resize();
 
+            // NB: cfitsio doesn't seem to like reading empty strings
+            if (naxes[0] == 0) {
+                return;
+            }
+
             char** buffer = new char*[v.size()];
             for (uint_t i : range(v)) {
                 buffer[i] = new char[naxes[0]+1];
@@ -342,6 +347,11 @@ namespace fits {
         void read_column_impl_(std::string& v, int cid,
             long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
 
+            // NB: cfitsio doesn't seem to like reading empty strings
+            if (repeat == 0) {
+                v.clear();
+                return;
+            }
 
             char** buffer = new char*[1];
             buffer[0] = new char[repeat+1];
