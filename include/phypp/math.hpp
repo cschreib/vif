@@ -985,6 +985,27 @@ vec<1,rtype_t<TypeW>> histogram(const vec<Dim,Type>& data, const vec<Dim,TypeW>&
     return counts;
 }
 
+
+template<std::size_t Dim, typename Type, typename TypeB, typename F>
+void histogram_impl(const vec<Dim,Type>& data, const vec<2,TypeB>& bins, F&& func) {
+    phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+        "dims=[2, ...], got dims=[", bins.dims, "])");
+
+    vec1u ids = uindgen(data.size());
+
+    uint_t nbin = bins.dims[1];
+    auto first = ids.data.begin();
+    for (uint_t i : range(nbin)) {
+        auto last = std::partition(first, ids.data.end(), [&bins,&data,i](uint_t id) {
+            return data.safe[id] >= bins.safe(0,i) && data.safe[id] < bins.safe(1,i);
+        });
+
+        func(ids, i, first, last);
+
+        if (last == ids.data.end()) break;
+    }
+}
+
 template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX,
     typename TypeBY, typename TypeF>
 void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
