@@ -358,6 +358,14 @@ namespace fits {
                 return status_;
             }
 
+            fitsfile* cfitsio_ptr() {
+                return fptr_;
+            }
+
+            const fitsfile* cfitsio_ptr() const {
+                return fptr_;
+            }
+
             fits::header read_header() const {
                 status_ = 0;
                 fits::header hdr;
