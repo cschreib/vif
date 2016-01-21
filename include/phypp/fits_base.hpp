@@ -377,24 +377,21 @@ namespace fits {
                 return hdr;
             }
 
-            template <typename T>
-            bool read_keyword(const std::string& name, T& value) const {
-                status_ = 0;
-                char content[80];
-                char comment[80];
-                fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
-                if (status_ != 0) return false;
-                return from_string(content, value);
-            }
-
             bool read_keyword(const std::string& name, std::string& value) const {
                 status_ = 0;
-                char content[80];
                 char comment[80];
+                char content[80];
                 fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
-                if (status_ != 0) return false;
                 value = content;
-                return true;
+                value = trim(value, " '");
+                return status_ == 0;
+            }
+
+            template <typename T>
+            bool read_keyword(const std::string& name, T& value) const {
+                std::string content;
+                if (!read_keyword(name, content)) return false;
+                return from_string(content, value);
             }
 
             void write_header(const fits::header& hdr) {
