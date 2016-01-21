@@ -705,18 +705,20 @@ void inplace_remove(vec<Dim,Type>& v, vec1u ids) {
     inplace_sort(ids);
     uint_t i = 0;
     uint_t pitch = v.pitch(0);
+    uint_t osize = v.size();
     while (i < ids.size()) {
         uint_t i1 = ids.safe[ids.size()-1-i];
         uint_t i0 = i1;
 
-        phypp_check(i1 < v.size(), "trying to erase value ", i1, " in vector of "
+        phypp_check(i1 < osize, "trying to erase value ", i1, " in vector of "
             "dimensions ", v.dims);
 
         ++i;
-        while (i < ids.size() && i0 - ids.safe[ids.size()-1-i] == 1) {
+        while (i < ids.size() && i0 - ids.safe[ids.size()-1-i] <= 1) {
             i0 = ids.safe[ids.size()-1-i];
 
-            phypp_check(i0 < v.size(), "trying to erase value ", i1, " in vector of "
+            phypp_check(i0 != i1, "remove indices contain duplicates");
+            phypp_check(i0 < osize, "trying to erase value ", i0, " in vector of "
                 "dimensions ", v.dims);
 
             ++i;
