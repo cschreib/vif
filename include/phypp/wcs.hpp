@@ -216,7 +216,10 @@ namespace fits {
         wcs() = default;
 
         explicit wcs(const fits::header& hdr) {
-            // Feed it to WCSLib to extract the astrometric parameters
+            // Enable error reporting
+            wcserr_enable(1);
+
+            // Feed the header to WCSLib to extract the astrometric parameters
             int nreject = 0;
             int success = wcspih(
                 const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
@@ -236,14 +239,12 @@ namespace fits {
                 double world[2];
                 int status = 0;
 
-                wcserr_enable(1);
                 int ret = wcsp2s(w, 1, 2, map, itmp, &phi, &theta, world, &status);
                 if (ret != 0) {
                     wcserr_prt(w->err, "error: ");
                     wcsvfree(&nwcs, &w);
                     w = nullptr;
                 }
-                wcserr_enable(0);
             }
         }
 
@@ -307,20 +308,27 @@ namespace fits {
 
         std::size_t ngal = ra.size();
 
-        vec1d world(2*ngal);
-        vec1u ids1 = 2*uindgen(ngal);
+        uint_t naxis = w.w->naxis;
+        vec1d world(naxis*ngal);
+        vec1u ids1 = naxis*uindgen(ngal);
         vec1u ids2 = ids1+1;
         world.safe[ids1] = ra;
         world.safe[ids2] = dec;
 
-        vec1d pos(2*ngal);
+        vec1d pos(naxis*ngal);
 
         std::vector<double> phi(ngal), theta(ngal);
-        std::vector<double> itmp(2*ngal);
+        std::vector<double> itmp(naxis*ngal);
         std::vector<int>    stat(ngal);
 
-        wcss2p(w.w, ngal, 2, world.data.data(), phi.data(), theta.data(),
+        int status = wcss2p(w.w, ngal, naxis, world.data.data(), phi.data(), theta.data(),
             itmp.data(), pos.data.data(), stat.data());
+
+        if (status != 0) {
+            wcserr_prt(w.w->err, "error: ");
+        }
+
+        phypp_check(status == 0, "error in WCS conversion");
 
         x = pos.safe[ids1];
         y = pos.safe[ids2];
@@ -341,20 +349,27 @@ namespace fits {
 
         std::size_t ngal = x.size();
 
-        vec1d map(2*ngal);
-        vec1u ids1 = 2*uindgen(ngal);
+        uint_t naxis = w.w->naxis;
+        vec1d map(naxis*ngal);
+        vec1u ids1 = naxis*uindgen(ngal);
         vec1u ids2 = ids1+1;
         map.safe[ids1] = x;
         map.safe[ids2] = y;
 
-        vec1d world(2*ngal);
+        vec1d world(naxis*ngal);
 
         std::vector<double> phi(ngal), theta(ngal);
-        std::vector<double> itmp(2*ngal);
+        std::vector<double> itmp(naxis*ngal);
         std::vector<int>    stat(ngal);
 
-        wcsp2s(w.w, ngal, 2, map.data.data(), itmp.data(), phi.data(), theta.data(),
-            world.data.data(), stat.data());
+        int status = wcsp2s(w.w, ngal, naxis, map.data.data(), itmp.data(),
+            phi.data(), theta.data(), world.data.data(), stat.data());
+
+        if (status != 0) {
+            wcserr_prt(w.w->err, "error: ");
+        }
+
+        phypp_check(status == 0, "error in WCS conversion");
 
         ra = world.safe[ids1];
         dec = world.safe[ids2];
@@ -371,18 +386,25 @@ namespace fits {
 #else
         phypp_check(w.is_valid(), "invalid WCS data");
 
-        vec1d world(2);
+        uint_t naxis = w.w->naxis;
+        vec1d world(naxis);
         world.safe[0] = ra;
         world.safe[1] = dec;
 
-        vec1d pos(2);
+        vec1d pos(naxis);
 
         double phi, theta;
-        std::vector<double> itmp(2);
+        std::vector<double> itmp(naxis);
         int stat;
 
-        wcss2p(w.w, 1, 2, world.data.data(), &phi, &theta, itmp.data(),
+        int status = wcss2p(w.w, 1, naxis, world.data.data(), &phi, &theta, itmp.data(),
             pos.data.data(), &stat);
+
+        if (status != 0) {
+            wcserr_prt(w.w->err, "error: ");
+        }
+
+        phypp_check(status == 0, "error in WCS conversion");
 
         x = pos.safe[0];
         y = pos.safe[1];
@@ -399,18 +421,25 @@ namespace fits {
 #else
         phypp_check(w.is_valid(), "invalid WCS data");
 
-        vec1d map(2);
+        uint_t naxis = w.w->naxis;
+        vec1d map(naxis);
         map.safe[0] = x;
         map.safe[1] = y;
 
-        vec1d world(2);
+        vec1d world(naxis);
 
         double phi, theta;
-        std::vector<double> itmp(2);
+        std::vector<double> itmp(naxis);
         int stat;
 
-        wcsp2s(w.w, 1, 2, map.data.data(), itmp.data(), &phi, &theta,
+        int status = wcsp2s(w.w, 1, naxis, map.data.data(), itmp.data(), &phi, &theta,
             world.data.data(), &stat);
+
+        if (status != 0) {
+            wcserr_prt(w.w->err, "error: ");
+        }
+
+        phypp_check(status == 0, "error in WCS conversion");
 
         ra = world.safe[0];
         dec = world.safe[1];
