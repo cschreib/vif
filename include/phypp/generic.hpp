@@ -709,9 +709,16 @@ void inplace_remove(vec<Dim,Type>& v, vec1u ids) {
         uint_t i1 = ids.safe[ids.size()-1-i];
         uint_t i0 = i1;
 
+        phypp_check(i1 < v.size(), "trying to erase value ", i1, " in vector of "
+            "dimensions ", v.dims);
+
         ++i;
         while (i < ids.size() && i0 - ids.safe[ids.size()-1-i] == 1) {
             i0 = ids.safe[ids.size()-1-i];
+
+            phypp_check(i0 < v.size(), "trying to erase value ", i1, " in vector of "
+                "dimensions ", v.dims);
+
             ++i;
         }
 
