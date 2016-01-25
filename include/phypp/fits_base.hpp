@@ -341,7 +341,7 @@ namespace fits {
                     }
                 }
 
-                phypp_check_cfitsio(status_, "cannot open file");
+                phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
             }
 
             void close() {
