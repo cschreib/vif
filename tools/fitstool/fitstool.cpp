@@ -377,7 +377,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 }
 
                 if (itform.back() == 'A') {
-                    tform = strn(nrow*nelem)+'B';
+                    tform = strn(nrow*nelem)+'A'+strn(nelem);
                     string = true;
                 } else {
                     tform = strn(nrow*nelem)+itform.back();
@@ -386,37 +386,32 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 tdim = "("+strn(nelem)+","+strn(nrow)+")";
             }
 
+            // Create the new column
+            fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
+            fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+            char tdim_com[] = "size of the multidimensional array";
+            fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+strn(c)).c_str()),
+                const_cast<char*>(tdim.c_str()), tdim_com, &status);
+
             if (string) {
                 // Read the input data
                 char nul[] = "?";
                 int nnul = 0;
 
                 std::vector<char> tdata(nrow*(nelem+1));
-                char** idata = new char*[nrow];
-                for (long i = 0; i < nrow; ++i) {
-                    idata[i] = tdata.data() + i*(nelem+1);
+                char** data = new char*[nrow];
+                for (long i : range(nrow)) {
+                    data[i] = tdata.data() + i*(nelem+1);
                 }
 
-                fits_read_col_str(ifptr, c, 1, 1, nrow, nul, idata, &nnul, &status);
+                fits_read_col_str(ifptr, c, 1, 1, nrow, nul, data, &nnul, &status);
                 fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
 
-                delete[] idata;
-
-                std::vector<char> data(nrow*nelem);
-                for (long i = 0; i < nrow; ++i) {
-                    for (long j = 0; j < nelem; ++j) {
-                        data[i*nelem+j] = tdata[i*(nelem+1)+j];
-                    }
-                }
-
                 // Write the output data
-                fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
+                fits_write_col(ofptr, fits::traits<std::string>::ttype, oc, 1, 1, nrow, data, &status);
                 fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
-                char tdim_com[] = "size of the multidimensional array";
-                fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+strn(c)).c_str()),
-                    const_cast<char*>(tdim.c_str()), tdim_com, &status);
-                fits_write_col(ofptr, TBYTE, oc, 1, 1, nelem*nrow, data.data(), &status);
-                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+
+                delete[] data;
             } else {
                 // Read the input data
                 long nul = 0;
@@ -426,11 +421,6 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
 
                 // Write the output data
-                fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
-                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
-                char tdim_com[] = "size of the multidimensional array";
-                fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+strn(c)).c_str()),
-                    const_cast<char*>(tdim.c_str()), tdim_com, &status);
                 fits_write_col(ofptr, type, oc, 1, 1, nelem*nrow, data.data(), &status);
                 fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
             }
