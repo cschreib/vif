@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
 project(phy++)
 
+if (NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, default to Release (-DCMAKE_BUILD_TYPE=...)")
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     if(NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.3))
         message(STATUS "clang version >= 3.3 (${CMAKE_CXX_COMPILER_VERSION})")
