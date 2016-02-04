@@ -472,7 +472,6 @@ vec<1,rtype_t<Type>> run_dim_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v
 
 template<std::size_t Dim, typename Type, typename ... Args>
 std::array<uint_t,Dim> run_dim_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
-    // TODO: (error check) add a check here to make sure that all the other dims are the same
     return v.dims;
 }
 
@@ -514,15 +513,34 @@ struct run_dim_unroll_ {
     }
 };
 
+
+template<std::size_t D1, std::size_t D2, typename Type>
+bool run_dim_check_dims__(const std::array<uint_t,D1>& dims, const vec<D2,Type>& v) {
+    return dims != v.dims;
+}
+
+template<std::size_t Dim, typename Type, typename ... Args>
+bool run_dim_check_dims_(uint_t& dim, const vec<Dim,Type>& v, const Args& ... vs) {
+    dim == Dim;
+    return count({!run_dim_check_dims__(v.dims, vs)...}) == 0;
+}
+
 // Iterate over one dimension of the provided vector and call a function for each slice.
 template<typename ... Args>
 void run_dim(uint_t dim, Args&& ... args) {
+    uint_t Dim;
+    bool check = run_dim_check_dims_(Dim, args...);
+    phypp_check(check, "incompatible dimensions of input vectors");
+    phypp_check(dim < Dim, "reduction dimension is incompatible with input vectors");
+
     run_dim_unroll_<>::run(dim, _, std::forward<Args>(args)...);
 }
 
 template<typename F, std::size_t Dim, typename Type>
 auto reduce(uint_t dim, const vec<Dim,Type>& v, F&& func) ->
     vec<Dim-1,typename return_type<F>::type> {
+    phypp_check(dim < Dim, "reduction dimension is incompatible with input vector "
+        "(", dim, " vs. ", v.dims);
 
     vec<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
@@ -910,6 +928,8 @@ rtype_t<Type> mad(const vec<Dim,Type>& v) {
     template<std::size_t Dim, typename Type, typename ... Args> \
     auto partial_ ## func (uint_t dim, const vec<Dim,Type>& v, Args&& ... args) -> \
     vec<Dim-1, decltype(func(std::declval<vec<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
+        phypp_check(dim < Dim, "reduction dimension is incompatible with input vector " \
+            "(", dim, " vs. ", v.dims); \
         using fptr = decltype(func(std::declval<vec<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
             (*)(const vec<1,rtype_t<Type>>&, Args&& ...); \
         using wrapper = func ## _run_index_wrapper_; \
