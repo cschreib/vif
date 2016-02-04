@@ -307,6 +307,10 @@ namespace fits {
             strn(ra.size())+" vs "+strn(dec.size())+")");
 
         std::size_t ngal = ra.size();
+        if (ngal == 0) {
+            x.clear(); y.clear();
+            return;
+        }
 
         uint_t naxis = w.w->naxis;
         vec1d world(naxis*ngal);
@@ -348,6 +352,10 @@ namespace fits {
             strn(x.size())+" vs "+strn(y.size())+")");
 
         std::size_t ngal = x.size();
+        if (ngal == 0) {
+            ra.clear(); dec.clear();
+            return;
+        }
 
         uint_t naxis = w.w->naxis;
         vec1d map(naxis*ngal);
