@@ -54,7 +54,8 @@ fi
 # Run the program
 a=$1
 shift
-env CPUPROFILE=${PHYPP_TEMP_DIR}/._prof_$a.prof ./$a "$@"
+OUTPROF=${PHYPP_TEMP_DIR}/._prof_$(basename $a).prof
+env CPUPROFILE=$OUTPROF ./$a "$@"
 
 # Feed profiling data to the renderer
-pprof --gv ./$a ${PHYPP_TEMP_DIR}/._prof_$a.prof
+pprof --gv ./$a $OUTPROF
