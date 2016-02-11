@@ -1841,6 +1841,7 @@ linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
     fr.success = true;
     fr.params = matrix::product(alpha, beta);
     fr.errors = sqrt(matrix::diagonal(alpha));
+    fr.cov = alpha;
 
     vec1d model(nm);
     for (uint_t m = 0; m < nm; ++m) {
