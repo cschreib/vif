@@ -124,13 +124,13 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
     }
 
     // Loop over all images
-    auto pg = progress_start(ra.size());
+    auto pg = progress_start(ra.size()*imgs.size());
     for (uint_t iimg : range(imgs.size())) {
         auto& img = imgs[iimg];
 
         // Loop over all sources
-        for (uint_t i = 0; i < ra.size(); ++i) {
-            if (found[i]) continue;
+        for (uint_t i : range(ra)) {
+            if (params.verbose) progress(pg);
 
             long p0[2] = {long(round(img.x[i]-hsize)), long(round(img.y[i]-hsize))};
             long p1[2] = {long(round(img.x[i]+hsize)), long(round(img.y[i]+hsize))};
@@ -139,8 +139,6 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
             if (p1[0] < 1 || p0[0] >= img.width || p1[1] < 1 || p0[1] >= img.height) {
                 continue;
             }
-
-            if (params.verbose) progress(pg);
 
             vec<2,Type> cut(2*hsize+1, 2*hsize+1);
 
@@ -174,23 +172,31 @@ qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filen
                     cut.data.data(), &anynul, &img.status);
             }
 
-            found[i] = true;
-
             // Discard any source that contains a bad pixel (either infinite or NaN)
             if (!params.keep_nan && count(!is_finite(cut)) != 0) {
                 continue;
             }
 
-            ids.push_back(i);
-            cube.push_back(cut);
+            if (!found[i]) {
+                // First time we find this source, add it to the output values
+                found[i] = true;
 
-            if (params.save_offsets) {
-                out.dx.push_back(img.x[i] - round(img.x[i]));
-                out.dy.push_back(img.y[i] - round(img.y[i]));
-            }
+                ids.push_back(i);
+                cube.push_back(cut);
 
-            if (params.save_section) {
-                out.sect.push_back(iimg);
+                if (params.save_offsets) {
+                    out.dx.push_back(img.x[i] - round(img.x[i]));
+                    out.dy.push_back(img.y[i] - round(img.y[i]));
+                }
+
+                if (params.save_section) {
+                    out.sect.push_back(iimg);
+                }
+            } else {
+                // We already found this source in another image, combine the two
+                uint_t id = where_last(ids == i);
+                vec1u idb = where(!is_finite(cube(id,_,_)));
+                cube(id,_,_)[idb] = cut[idb];
             }
         }
     }
