@@ -143,6 +143,10 @@ namespace fits {
                 ci.name = trim(ci.name);
 
                 switch (type) {
+                case 'A' : {
+                    ci.type = column_info::string;
+                    break;
+                }
                 case 'B' : {
                     vec<1,char> v(repeat);
                     char def = traits<char>::def();
@@ -153,7 +157,7 @@ namespace fits {
                     if (min(v) == 0 && max(v) <= 1) {
                         ci.type = column_info::boolean;
                     } else {
-                        ci.type = column_info::string;
+                        ci.type = column_info::byte;
                     }
                     break;
                 }
@@ -337,7 +341,7 @@ namespace fits {
             );
 
             for (uint_t i : range(v)) {
-                v.safe[i] = buffer[i];
+                v.safe[i] = trim(std::string(buffer[i]));
                 delete[] buffer[i];
             }
 
@@ -367,7 +371,7 @@ namespace fits {
                 buffer, &null, &status_
             );
 
-            v = buffer[0];
+            v = trim(std::string(buffer[0]));
             delete[] buffer[0];
             delete[] buffer;
         }
