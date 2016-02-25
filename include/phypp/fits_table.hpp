@@ -9,12 +9,16 @@ namespace fits {
         bool allow_narrow = false;
         bool allow_missing = false;
         bool allow_dim_promote = false;
+        uint_t first_row = 0;
+        uint_t last_row = npos;
 
         table_read_options operator | (const table_read_options& o) const {
             table_read_options n = *this;
             if (o.allow_narrow)      n.allow_narrow = true;
             if (o.allow_missing)     n.allow_missing = true;
             if (o.allow_dim_promote) n.allow_dim_promote = true;
+            n.first_row = std::min(first_row, o.first_row);
+            n.last_row = std::max(last_row, o.last_row);
             return n;
         }
     };
@@ -44,6 +48,20 @@ namespace fits {
         opts.allow_dim_promote = true;
         return opts;
     }();
+
+    const auto row = [](uint_t r) {
+        table_read_options opts;
+        opts.first_row = r;
+        opts.last_row = r+1;
+        return opts;
+    };
+
+    const auto rows = [](uint_t r1, uint_t r2) {
+        table_read_options opts;
+        opts.first_row = r1;
+        opts.last_row = r2;
+        return opts;
+    };
 
     namespace impl {
         template<typename T>
@@ -276,31 +294,32 @@ namespace fits {
 
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
-        void read_column_impl_(vec<Dim,Type>& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
+        void read_column_impl_(const table_read_options& opts, vec<Dim,Type>& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
+            bool colfits) const {
 
-            for (uint_t i : range(Dim)) {
-                if (i < (Dim-naxis)) {
-                    v.dims[i] = 1;
-                } else {
-                    v.dims[i] = naxes[Dim-1-i];
-                }
+            if (v.empty()) return;
+
+            long firstrow = 1, firstelem = 1;
+            if (colfits) {
+                firstelem = opts.first_row*(repeat/naxes[naxis-1]) + 1;
+            } else {
+                firstrow = opts.first_row + 1;
             }
 
-            v.resize();
-
+            long nelem = v.size();
             Type def = traits<Type>::def();
             int null;
             status_ = 0;
             fits_read_col(
-                fptr_, traits<Type>::ttype, cid, 1, 1, nrow*repeat, &def,
+                fptr_, traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
                 v.data.data(), &null, &status_
             );
         }
 
         template<typename Type>
-        void read_column_impl_(Type& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long, long) const {
+        void read_column_impl_(const table_read_options&, Type& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long, long, bool) const {
 
             Type def = traits<Type>::def();
             int null;
@@ -311,32 +330,37 @@ namespace fits {
         }
 
         template<std::size_t Dim>
-        void read_column_impl_(vec<Dim,std::string>& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
+        void read_column_impl_(const table_read_options& opts, vec<Dim,std::string>& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
+            bool colfits) const {
 
-            for (uint_t i : range(Dim)) {
-                if (i < (Dim+1-naxis)) {
-                    v.dims[i] = 1;
-                } else {
-                    v.dims[i] = naxes[Dim-i];
-                }
-            }
-
-            v.resize();
+            if (v.empty()) return;
 
             // NB: cfitsio doesn't seem to like reading empty strings
             if (naxes[0] == 0) {
                 return;
             }
 
+            long firstrow = 1, firstelem = 1;
+            if (colfits) {
+                firstelem = opts.first_row*(repeat/naxes[naxis-1]/naxes[0]) + 1;
+            } else {
+                firstrow = opts.first_row + 1;
+            }
+
             char** buffer = new char*[v.size()];
             for (uint_t i : range(v)) {
                 buffer[i] = new char[naxes[0]+1];
             }
+
+            long nelem = v.size();
+
+            print(firstrow, ", ", firstelem, ", ", nelem, ", ", v.dims, ", ", repeat, ", ", nrow);
+
             char def = '\0';
             int null;
             fits_read_col(
-                fptr_, traits<std::string>::ttype, cid, 1, 1, v.size(), &def,
+                fptr_, traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
                 buffer, &null, &status_
             );
 
@@ -348,8 +372,9 @@ namespace fits {
             delete[] buffer;
         }
 
-        void read_column_impl_(std::string& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow) const {
+        void read_column_impl_(const table_read_options&, std::string& v, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
+            bool colfits) const {
 
             // NB: cfitsio doesn't seem to like reading empty strings
             if (repeat == 0) {
@@ -375,6 +400,44 @@ namespace fits {
             delete[] buffer[0];
             delete[] buffer;
         }
+
+        template<std::size_t Dim, typename Type,
+            typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
+        void read_column_resize_(vec<Dim,Type>& v, long naxis,
+            const std::array<long,max_column_dims>& naxes) const {
+
+            for (uint_t i : range(Dim)) {
+                if (i < (Dim-naxis)) {
+                    v.dims[i] = 1;
+                } else {
+                    v.dims[i] = naxes[Dim-1-i];
+                }
+            }
+
+            v.resize();
+        }
+
+        template<typename Type>
+        void read_column_resize_(Type& v, long naxis,
+            const std::array<long,max_column_dims>& naxes) const {}
+
+        template<std::size_t Dim>
+        void read_column_resize_(vec<Dim,std::string>& v, long naxis,
+            const std::array<long,max_column_dims>& naxes) const {
+
+            for (uint_t i : range(Dim)) {
+                if (i < (Dim+1-naxis)) {
+                    v.dims[i] = 1;
+                } else {
+                    v.dims[i] = naxes[Dim-i];
+                }
+            }
+
+            v.resize();
+        }
+
+        void read_column_resize_(std::string& v, long naxis,
+            const std::array<long,max_column_dims>& naxes) const {}
 
         template<typename T>
         bool read_column_check_type_(const table_read_options& opts, int type) const {
@@ -436,6 +499,28 @@ namespace fits {
             }
         }
 
+        bool read_column_check_rows_(table_read_options& opts,
+            std::array<long,max_column_dims>& axes, long naxis) const {
+            if (opts.last_row == npos) {
+                opts.last_row = axes[naxis-1];
+            }
+
+            if (opts.first_row == npos) {
+                opts.first_row = 0;
+            }
+
+            if (opts.last_row < opts.first_row) {
+                std::swap(opts.last_row, opts.first_row);
+            }
+
+            if (opts.first_row < axes[naxis-1] && opts.last_row <= axes[naxis-1]) {
+                axes[naxis-1] = opts.last_row - opts.first_row;
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         struct do_read_struct_ {
             const input_table* tbl;
             const table_read_options& opts;
@@ -448,7 +533,7 @@ namespace fits {
         };
 
         template<typename T>
-        read_sentry read_column_(const table_read_options& opts,
+        read_sentry read_column_(table_read_options opts,
             const std::string& tcolname, T& value, std::false_type) const {
 
             static_assert(is_readable_column_type<typename std::decay<T>::type>::value,
@@ -488,7 +573,9 @@ namespace fits {
 
             // Support loading row-oriented FITS tables
             uint_t nrow = 1;
+            bool colfits = true;
             if (read_keyword("NAXIS2", nrow) && nrow > 1) {
+                colfits = false;
                 if (naxis == 1 && axes[naxis-1] == 1) {
                     axes[naxis-1] = nrow;
                 } else {
@@ -502,10 +589,25 @@ namespace fits {
                     "(expected "+strn(vdim)+", got "+strn(naxis)+")"};
             }
 
+            auto raxes = axes;
+            if (!read_column_check_rows_(opts, raxes, naxis)) {
+                return read_sentry{this, "wrong dimension for column '"+colname+"' "
+                    "(asking for "+(opts.first_row == opts.last_row ?
+                        "row "+strn(opts.first_row) :
+                        "rows "+
+                        (opts.first_row == npos ? "0" : strn(opts.first_row))
+                        +" to "+
+                        (opts.last_row == npos ? strn(axes[naxis-1]) : strn(opts.last_row))
+                    )+", in dimensions "+strn(axes)+")"};
+            }
+
             status_ = 0;
 
+            // Resize vector
+            read_column_resize_(value, naxis, raxes);
+
             // Read
-            read_column_impl_(value, cid, naxis, axes, repeat, nrow);
+            read_column_impl_(opts, value, cid, naxis, axes, repeat, nrow, colfits);
 
             return read_sentry{};
         }
