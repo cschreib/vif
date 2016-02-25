@@ -355,8 +355,6 @@ namespace fits {
 
             long nelem = v.size();
 
-            print(firstrow, ", ", firstelem, ", ", nelem, ", ", v.dims, ", ", repeat, ", ", nrow);
-
             char def = '\0';
             int null;
             fits_read_col(
