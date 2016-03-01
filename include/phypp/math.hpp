@@ -2146,6 +2146,44 @@ rtype_t<Type> bilinear(const vec<2,Type>& map, double x, double y) {
         + map.safe(ix+1,iy)*dx*(1.0 - dy) + map.safe(ix+1,iy+1)*dx*dy;
 }
 
+template<typename Type>
+rtype_t<Type> bilinear(const vec<2,Type>& map, const vec1d& mx,
+    const vec1d& my, double x, double y) {
+
+    phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
+        " vs. ", mx.size(), ")");
+    phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
+        " vs. ", my.size(), ")");
+
+    double ux = interpolate(dindgen(mx.size()), mx, x);
+    double uy = interpolate(dindgen(my.size()), my, y);
+    return bilinear(map, ux, uy);
+}
+
+template<typename Type, std::size_t D, typename TX, typename TY>
+vec<D,rtype_t<Type>> bilinear(const vec<2,Type>& map, const vec1d& mx,
+    const vec1d& my, const vec<D,TX>& x, const vec<D,TY>& y) {
+
+    phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
+        " vs. ", mx.size(), ")");
+    phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
+        " vs. ", my.size(), ")");
+    phypp_check(x.dims == y.dims, "incompatible dimensions for X and Y (", x.dims,
+        " vs. ", y.size(), ")");
+
+    vec<D,rtype_t<Type>> v(x.dims);
+
+    auto ux = interpolate(dindgen(mx.size()), mx, x);
+    auto uy = interpolate(dindgen(my.size()), my, y);
+
+    for (uint_t i : range(x)) {
+        v.safe[i] = bilinear(map, ux.safe[i], uy.safe[i]);
+    }
+
+    return v;
+}
+
+
 template<typename Type, typename TypeD = double>
 rtype_t<Type> bilinear_strict(const vec<2,Type>& map, double x, double y,
     TypeD def = 0.0) {
