@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
     vec1u thsize;
     vec1s show;
     vec1s bands;
+    bool no_zero_point = false;
     bool show_rgb = false;
     bool verbose = false;
 
@@ -24,7 +25,7 @@ int main(int argc, char* argv[]) {
 
     read_args(argc-1, argv+1, arg_list(
         name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, show_rgb, radius,
-        name(thsize, "hsize"), bands
+        name(thsize, "hsize"), bands, no_zero_point
     ));
 
     if (!dir.empty()) {
@@ -102,6 +103,7 @@ int main(int argc, char* argv[]) {
     }
 
     vec1s mname;
+    vec1f zero_point;
     vec1s mfile;
 
     if (end_with(clist, ".fits")) {
@@ -123,8 +125,26 @@ int main(int argc, char* argv[]) {
             vec1s spl = trim(split(line, "="));
             if (spl.size() != 2) {
                 error("wrong format for l."+strn(l)+": '"+line+"'");
-                note("expected: map_code_name = map_file");
+                note("expected: map_code_name = map_file[, ...]");
                 return 1;
+            }
+
+            vec1s spl2 = trim(split(spl[1], ","));
+            if (spl2.size() > 2) {
+                error("wrong format for l."+strn(l)+": '"+line+"'");
+                note("expected: map_code_name = map_file[, zero_point]");
+                return 1;
+            }
+
+            spl[1] = spl2[0];
+
+            float zp = 23.9;
+            if (spl2.size() >= 2) {
+                if (!from_string(spl2[1], zp)) {
+                    error("wrong format for l."+strn(l)+": '"+line+"'");
+                    note("coult not read zero point from '", spl2[1], "'");
+                    return 1;
+                }
             }
 
             spl[1] = dir+spl[1];
@@ -133,6 +153,7 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
+            zero_point.push_back(zp);
             mname.push_back(spl[0]);
             mfile.push_back(spl[1]);
         }
@@ -192,6 +213,11 @@ int main(int argc, char* argv[]) {
         vec1u ids;
 
         qstack_output qout = qstack(ra, dec, mfile[b], hsize, cube, ids, p);
+
+        if (!no_zero_point) {
+            // Apply zero point to convert map to uJy
+            cube *= e10(0.4*(23.9 - zero_point[b]));
+        }
 
         for (uint_t i : range(ids)) {
             fits::header nhdr = fits::filter_wcs(fits::read_header_sectfits(mfile[b], qout.sect[i]));
