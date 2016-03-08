@@ -511,7 +511,7 @@ namespace fits {
                 std::swap(opts.last_row, opts.first_row);
             }
 
-            if (opts.first_row < axes[naxis-1] && opts.last_row <= axes[naxis-1]) {
+            if (opts.last_row <= axes[naxis-1]) {
                 axes[naxis-1] = opts.last_row - opts.first_row;
                 return true;
             } else {
