@@ -589,6 +589,12 @@ namespace fits {
 
             auto raxes = axes;
             if (!read_column_check_rows_(opts, raxes, naxis)) {
+                std::string saxes = "{";
+                for (uint_t i : range(naxis)) {
+                    saxes += (i != 0 ? ", " : "") + strn(axes[i]);
+                }
+                saxes += "}";
+
                 return read_sentry{this, "wrong dimension for column '"+colname+"' "
                     "(asking for "+(opts.first_row == opts.last_row ?
                         "row "+strn(opts.first_row) :
@@ -596,7 +602,7 @@ namespace fits {
                         (opts.first_row == npos ? "0" : strn(opts.first_row))
                         +" to "+
                         (opts.last_row == npos ? strn(axes[naxis-1]) : strn(opts.last_row))
-                    )+", in dimensions "+strn(axes)+")"};
+                    )+", in dimensions "+saxes+")"};
             }
 
             status_ = 0;
