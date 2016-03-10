@@ -450,6 +450,10 @@ namespace fits {
                     const_cast<char*>(com.c_str()), &status_);
             }
 
+            void remove_keyword(const std::string& name) {
+                fits_delete_key(fptr_, name.c_str(), &status_);
+            }
+
             uint_t hdu_count() const {
                 status_ = 0;
                 int nhdu = 0;
