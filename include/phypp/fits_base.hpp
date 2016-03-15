@@ -344,6 +344,11 @@ namespace fits {
                 phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
             }
 
+            file_base(file_base&& in) : type_(in.type_), rights_(in.rights_),
+                filename_(in.filename_), fptr_(in.fptr_), status_(in.status_) {
+                in.fptr_ = nullptr;
+            }
+
             void close() {
                 status_ = 0;
                 fits_close_file(fptr_, &status_);

@@ -131,6 +131,11 @@ namespace fits {
             reach_hdu(hdu);
         }
 
+        input_table(input_table&&) = default;
+        input_table(const input_table&) = delete;
+        input_table& operator = (input_table&&) = delete;
+        input_table& operator = (const input_table&&) = delete;
+
         vec<1,column_info> read_column_info() const {
             status_ = 0;
             vec<1,column_info> cols;
@@ -814,6 +819,11 @@ namespace fits {
         explicit output_table(const std::string& filename) :
             impl::file_base(impl::table_file, filename, impl::write_only) {}
 
+        output_table(output_table&&) = default;
+        output_table(const output_table&) = delete;
+        output_table& operator = (output_table&&) = delete;
+        output_table& operator = (const output_table&&) = delete;
+
     private :
 
         template<std::size_t Dim, typename Type,
@@ -1097,6 +1107,11 @@ namespace fits {
             output_table(filename), input_table(filename) {
             reach_hdu(hdu);
         }
+
+        table(table&&) = default;
+        table(const table&) = delete;
+        table& operator = (table&&) = delete;
+        table& operator = (const table&&) = delete;
 
         void remove_column(const std::string& tcolname) {
             status_ = 0;
