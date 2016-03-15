@@ -244,7 +244,7 @@ namespace fits {
     #define phypp_check_fits(assertion, msg) \
         do { if (!(assertion)) throw fits::exception(msg); } while(0)
 
-    void phypp_check_cfitsio(int status, const std::string& msg) {
+    inline void phypp_check_cfitsio(int status, const std::string& msg) {
         if (status != 0) {
             char txt[FLEN_STATUS];
             fits_get_errstatus(status, txt);
@@ -261,7 +261,7 @@ namespace fits {
 
     using header = std::string;
 
-    int bitpix_to_type(int bitpix) {
+    inline int bitpix_to_type(int bitpix) {
         switch(bitpix) {
             case BYTE_IMG   : return TBYTE;
             case SHORT_IMG  : return TSHORT;
@@ -272,7 +272,7 @@ namespace fits {
         }
     }
 
-    std::string type_to_string_(int type) {
+    inline std::string type_to_string_(int type) {
         if (type == TSTRING) return "string";
         if (type == TSHORT) return "short";
         if (type == TLONG) return "long";
@@ -533,7 +533,7 @@ namespace fits {
             mutable int status_ = 0;
         };
 
-        struct readwrite_tag_t {} readwrite_tag;
+        static struct readwrite_tag_t {} readwrite_tag;
     }
 
     // Generic FITS file (read only)
@@ -568,7 +568,7 @@ namespace fits {
         return false;
     }
 
-    bool getkey(const fits::header& hdr, const std::string& key, std::string& v) {
+    inline bool getkey(const fits::header& hdr, const std::string& key, std::string& v) {
         std::size_t nentry = hdr.size()/80 + 1;
         for (uint_t i = 0; i < nentry; ++i) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));

@@ -44,7 +44,7 @@ std::string strn(const T& t) {
     return ss.str();
 }
 
-std::string strn(const double& t) {
+inline std::string strn(double t) {
     std::ostringstream ss;
     ss.precision(12);
     ss << t;
@@ -116,7 +116,7 @@ vec<Dim,bool> from_string(const vec<Dim,std::string*>& s, vec<Dim,T>& t) {
     return res;
 }
 
-std::string trim(std::string s, const std::string& chars = " \t") {
+inline std::string trim(std::string s, const std::string& chars = " \t") {
     std::size_t spos = s.find_first_of(chars);
     if (spos == 0) {
         std::size_t epos = s.find_first_not_of(chars);
@@ -133,21 +133,21 @@ std::string trim(std::string s, const std::string& chars = " \t") {
     return s;
 }
 
-std::string toupper(std::string s) {
+inline std::string toupper(std::string s) {
     for (auto& c : s) {
         c = ::toupper(c);
     }
     return s;
 }
 
-std::string tolower(std::string s) {
+inline std::string tolower(std::string s) {
     for (auto& c : s) {
         c = ::tolower(c);
     }
     return s;
 }
 
-std::string replace(std::string s, const std::string& pattern, const std::string& rep) {
+inline std::string replace(std::string s, const std::string& pattern, const std::string& rep) {
     auto p = s.find(pattern);
     while (p != s.npos) {
         s.replace(p, pattern.size(), rep);
@@ -157,11 +157,11 @@ std::string replace(std::string s, const std::string& pattern, const std::string
     return s;
 }
 
-bool empty(const std::string& s) {
+inline bool empty(const std::string& s) {
     return s.empty();
 }
 
-uint_t distance(const std::string& t, const std::string& u) {
+inline uint_t distance(const std::string& t, const std::string& u) {
     uint_t n, d;
     if (t.size() < u.size()) {
         n = t.size();
@@ -178,7 +178,7 @@ uint_t distance(const std::string& t, const std::string& u) {
     return d;
 }
 
-uint_t find(const std::string& ts, const std::string& pattern) {
+inline uint_t find(const std::string& ts, const std::string& pattern) {
     auto p = ts.find(pattern);
     if (p != ts.npos) {
         return p;
@@ -187,7 +187,7 @@ uint_t find(const std::string& ts, const std::string& pattern) {
     }
 }
 
-std::string regex_get_error_(int status) {
+inline std::string regex_get_error_(int status) {
     switch (status) {
     case REG_NOMATCH :  return "no match";
     case REG_BADPAT :   return "invalid regular expression";
@@ -208,16 +208,16 @@ std::string regex_get_error_(int status) {
     }
 }
 
-void build_regex_(const std::string& regex, regex_t& re, int flags) {
+inline void build_regex_(const std::string& regex, regex_t& re, int flags) {
     int status = regcomp(&re, regex.c_str(), flags);
     phypp_check(status == 0, "parsing regex '", regex, "': ", regex_get_error_(status));
 }
 
-bool regex_match_(const std::string& ts, regex_t& re) {
+inline bool regex_match_(const std::string& ts, regex_t& re) {
     return regexec(&re, ts.c_str(), std::size_t(0), nullptr, 0) == 0;
 }
 
-bool regex_match(const std::string& ts, const std::string& regex) {
+inline bool regex_match(const std::string& ts, const std::string& regex) {
     regex_t re;
     build_regex_(regex, re, REG_EXTENDED | REG_NOSUB);
     bool ret = regex_match_(ts, re);
@@ -238,7 +238,7 @@ vec<Dim,bool> regex_match(const vec<Dim,Type>& v, const std::string& regex) {
     return r;
 }
 
-bool regex_match_any_of(const std::string& ts, const vec1s& regex) {
+inline bool regex_match_any_of(const std::string& ts, const vec1s& regex) {
     for (uint_t i : range(regex)) {
         regex_t re;
         build_regex_(regex.safe[i], re, REG_EXTENDED | REG_NOSUB);
@@ -250,7 +250,7 @@ bool regex_match_any_of(const std::string& ts, const vec1s& regex) {
     return false;
 }
 
-uint_t regex_find_nmatch_(const std::string& regex) {
+inline uint_t regex_find_nmatch_(const std::string& regex) {
     uint_t nmatch = 0;
     uint_t p = regex.find_first_of('(');
     while (p != npos) {
@@ -264,7 +264,7 @@ uint_t regex_find_nmatch_(const std::string& regex) {
     return nmatch;
 }
 
-vec2s regex_extract(const std::string& ts, const std::string& regex) {
+inline vec2s regex_extract(const std::string& ts, const std::string& regex) {
     vec2s ret;
 
     regex_t re;
@@ -326,7 +326,7 @@ std::string regex_replace(const std::string& ts, const std::string& regex, F&& f
     return s;
 }
 
-uint_t length(const std::string& s) {
+inline uint_t length(const std::string& s) {
     return s.size();
 }
 
@@ -336,7 +336,7 @@ uint_t length(T c) {
     return 1u;
 }
 
-std::string align_left(std::string s, uint_t width, char fill = ' ') {
+inline std::string align_left(std::string s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
         s += std::string(width-s.size(), fill);
     }
@@ -344,7 +344,7 @@ std::string align_left(std::string s, uint_t width, char fill = ' ') {
     return s;
 }
 
-std::string align_right(std::string s, uint_t width, char fill = ' ') {
+inline std::string align_right(std::string s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
         s.insert(0, std::string(width-s.size(), fill));
     }
@@ -352,7 +352,7 @@ std::string align_right(std::string s, uint_t width, char fill = ' ') {
     return s;
 }
 
-std::string align_center(std::string s, uint_t width, char fill = ' ') {
+inline std::string align_center(std::string s, uint_t width, char fill = ' ') {
     if (s.size() < width) {
         uint_t n1 = (width-s.size())/2, n2 = width-s.size() - n1;
         s.insert(0, std::string(n1, fill));
@@ -362,7 +362,7 @@ std::string align_center(std::string s, uint_t width, char fill = ' ') {
     return s;
 }
 
-bool start_with(const std::string& s, const std::string& pattern) {
+inline bool start_with(const std::string& s, const std::string& pattern) {
     if (s.size() < pattern.size()) return false;
     for (uint_t i = 0; i < pattern.size(); ++i) {
         if (s[i] != pattern[i]) return false;
@@ -371,7 +371,7 @@ bool start_with(const std::string& s, const std::string& pattern) {
     return true;
 }
 
-bool end_with(const std::string& s, const std::string& pattern) {
+inline bool end_with(const std::string& s, const std::string& pattern) {
     if (s.size() < pattern.size()) return false;
     for (uint_t i = 1; i <= pattern.size(); ++i) {
         if (s[s.size()-i] != pattern[pattern.size()-i]) return false;
@@ -380,7 +380,7 @@ bool end_with(const std::string& s, const std::string& pattern) {
     return true;
 }
 
-std::string erase_begin(std::string s, uint_t n) {
+inline std::string erase_begin(std::string s, uint_t n) {
     if (n >= s.size()) {
         s.clear();
     } else {
@@ -390,7 +390,7 @@ std::string erase_begin(std::string s, uint_t n) {
     return s;
 }
 
-std::string erase_end(std::string s, uint_t n) {
+inline std::string erase_end(std::string s, uint_t n) {
     if (n >= s.size()) {
         s.clear();
     } else {
@@ -400,21 +400,21 @@ std::string erase_end(std::string s, uint_t n) {
     return s;
 }
 
-std::string erase_begin(std::string s, const std::string& pattern) {
+inline std::string erase_begin(std::string s, const std::string& pattern) {
     phypp_check(start_with(s, pattern), "unexpected string content: '"+s+"', "
         "should start with '"+pattern+"'");
     s.erase(0, pattern.size());
     return s;
 }
 
-std::string erase_end(std::string s, const std::string& pattern) {
+inline std::string erase_end(std::string s, const std::string& pattern) {
     phypp_check(end_with(s, pattern), "unexpected string content: '"+s+"', "
         "should end with '"+pattern+"'");
     s.erase(s.size()-pattern.size(), pattern.size());
     return s;
 }
 
-std::string keep_start(std::string s, uint_t n = 1) {
+inline std::string keep_start(std::string s, uint_t n = 1) {
     if (s.size() > n) {
         s.erase(n);
     }
@@ -422,7 +422,7 @@ std::string keep_start(std::string s, uint_t n = 1) {
     return s;
 }
 
-std::string keep_end(std::string s, uint_t n = 1) {
+inline std::string keep_end(std::string s, uint_t n = 1) {
     if (s.size() > n) {
         s.erase(0, s.size()-n);
     }
@@ -452,7 +452,7 @@ namespace sha1 {
             }
         }
 
-        void innerHash(unsigned int* result, unsigned int* w) {
+        inline void innerHash(unsigned int* result, unsigned int* w) {
             unsigned int a = result[0];
             unsigned int b = result[1];
             unsigned int c = result[2];
@@ -510,7 +510,7 @@ namespace sha1 {
         }
     }
 
-    void calc(const unsigned char* sarray, const int bytelength, std::string& hexhash) {
+    inline void calc(const unsigned char* sarray, const int bytelength, std::string& hexhash) {
         // Init the result array.
         unsigned int result[5] = {
             0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0
@@ -579,7 +579,7 @@ namespace sha1 {
     }
 }
 
-std::string hash_(std::string s) {
+inline std::string hash_(std::string s) {
     std::string out;
     sha1::calc(reinterpret_cast<const unsigned char*>(s.c_str()), s.size(), out);
     return out;
@@ -644,7 +644,7 @@ vec1s split(const std::string& ts, const T& pattern) {
     return ret;
 }
 
-vec1s cut(const std::string& ts, uint_t size) {
+inline vec1s cut(const std::string& ts, uint_t size) {
     uint_t ncut = floor(ts.size()/float(size));
     vec1s res(ncut);
     for (uint_t i = 0; i < ncut; ++i) {
@@ -654,7 +654,7 @@ vec1s cut(const std::string& ts, uint_t size) {
     return res;
 }
 
-vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", bool ellipse = false) {
+inline vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", bool ellipse = false) {
     vec1s ret;
     std::string s = ts;
     uint_t twidth = width;
@@ -694,14 +694,14 @@ vec1s wrap(const std::string& ts, uint_t width, const std::string& indent = "", 
 }
 
 namespace format {
-    void header(const std::string& msg) {
+    inline void header(const std::string& msg) {
         vec1s w = wrap("  "+msg, 80, "  ");
         for (auto& s : w) {
             print(s);
         }
     }
 
-    void paragraph(const std::string& msg) {
+    inline void paragraph(const std::string& msg) {
         vec1s w = wrap("  "+msg, 80, "  ");
         for (auto& s : w) {
             print(s);
@@ -709,7 +709,7 @@ namespace format {
         print("");
     }
 
-    void bullet(const std::string& name, const std::string& desc) {
+    inline void bullet(const std::string& name, const std::string& desc) {
         std::string header = "    "+name+": ";
         vec1s w = wrap(header+desc, 80, std::string(header.size(), ' '));
         for (auto& s : w) {
@@ -717,7 +717,7 @@ namespace format {
         }
     }
 
-    void item(const std::string& msg) {
+    inline void item(const std::string& msg) {
         std::string header = " - ";
         vec1s w = wrap(header+msg, 80, std::string(header.size(), ' '));
         for (auto& s : w) {
@@ -831,14 +831,14 @@ T system_var(const std::string& name, U def) {
 }
 
 template <>
-std::string system_var<std::string,std::string>(const std::string& name, std::string def) {
+inline std::string system_var<std::string,std::string>(const std::string& name, std::string def) {
     char* v = getenv(name.c_str());
     if (!v) return def;
     return v;
 }
 
 template <>
-std::string system_var<std::string,const char*>(const std::string& name, const char* def) {
+inline std::string system_var<std::string,const char*>(const std::string& name, const char* def) {
     return system_var<std::string,std::string>(name, def);
 }
 

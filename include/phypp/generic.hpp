@@ -154,7 +154,7 @@ bool same_size(const T& v1, const U& v2, const Args& ... args) {
     return n_elements(v1) && n_elements(v2) && same_size(v1, args...);
 }
 
-bool same_dims_or_scalar_(uint_t size) {
+inline bool same_dims_or_scalar_(uint_t size) {
     return true;
 }
 
@@ -172,7 +172,7 @@ bool same_dims_or_scalar_(uint_t size, const vec<Dim,T>& v1, const Args& ... arg
     return v1.size() == size && same_dims_or_scalar_(size, args...);
 }
 
-uint_t same_dims_or_scalar_get_size_() {
+inline uint_t same_dims_or_scalar_get_size_() {
     return 0u;
 }
 
@@ -817,7 +817,7 @@ vec<1,rtype_t<Type>> shift(const vec<1,Type>& v, int_t n, rtype_t<Type> def = 0)
 }
 
 // Find the closest point in a 2D array that satisfies a given criterium
-bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
+inline bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
     phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
 
     if (x >= map.dims[0]) x = map.dims[0]-1;
@@ -916,7 +916,7 @@ vectorized_lambda_t<typename std::decay<T>::type> vectorize_lambda(T&& t) {
 
 // Increment a list of indices, step by step
 // This is an alternative to a recursive loop.
-void increment_index_list(vec1u& ids, const vec1u& n) {
+inline void increment_index_list(vec1u& ids, const vec1u& n) {
     uint_t i = ids.size();
     do {
         --i;
@@ -929,7 +929,7 @@ void increment_index_list(vec1u& ids, const vec1u& n) {
     } while (i != 0);
 }
 
-void increment_index_list(vec1u& ids, const uint_t& n) {
+inline void increment_index_list(vec1u& ids, const uint_t& n) {
     uint_t i = ids.size();
     do {
         --i;

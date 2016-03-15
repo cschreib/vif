@@ -44,7 +44,7 @@ namespace file {
         int _findclose(long id);
         int _findnext(long id, _finddata_t *data);
 
-        long _findfirst(const char *pattern, _finddata_t *data) {
+        inline long _findfirst(const char *pattern, _finddata_t *data) {
             _find_search_t *fs = new _find_search_t;
             fs->curfn = NULL;
             fs->pattern = NULL;
@@ -82,7 +82,7 @@ namespace file {
             return reinterpret_cast<long>(fs);
         }
 
-        int _findnext(long id, _finddata_t *data) {
+        inline int _findnext(long id, _finddata_t *data) {
             _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
 
             dirent *entry;
@@ -129,7 +129,7 @@ namespace file {
             return 0;
         }
 
-        int _findclose(long id) {
+        inline int _findclose(long id) {
             int ret;
             _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
 
@@ -144,7 +144,7 @@ namespace file {
         }
     }
 
-    bool exists(const std::string& file) {
+    inline bool exists(const std::string& file) {
         if (file.empty()) {
             return false;
         }
@@ -153,19 +153,19 @@ namespace file {
         return f.is_open();
     }
 
-    bool is_older(const std::string& file1, const std::string& file2) {
+    inline bool is_older(const std::string& file1, const std::string& file2) {
         struct stat st1, st2;
         if (::stat(file1.c_str(), &st1) != 0) return false;
         if (::stat(file2.c_str(), &st2) != 0) return false;
         return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
     }
 
-    bool is_absolute_path(const std::string& file) {
+    inline bool is_absolute_path(const std::string& file) {
         auto pos = file.find_first_not_of(" \t");
         return pos != file.npos && file[pos] == '/';
     }
 
-    bool copy(const std::string& file_from, const std::string& file_to) {
+    inline bool copy(const std::string& file_from, const std::string& file_to) {
         std::ifstream src(file_from, std::ios::binary);
         if (!src.is_open()) return false;
         std::ofstream dst(file_to,   std::ios::binary);
@@ -174,11 +174,11 @@ namespace file {
         return true;
     }
 
-    bool remove(const std::string& file) {
+    inline bool remove(const std::string& file) {
         return !file::exists(file) || ::remove(file.c_str()) == 0;
     }
 
-    std::string to_string(const std::string& file_name) {
+    inline std::string to_string(const std::string& file_name) {
         std::string   dst;
         std::ifstream src(file_name, std::ios::binary);
         if (src) {
@@ -192,7 +192,7 @@ namespace file {
         return dst;
     }
 
-    vec1s list_directories(const std::string& pattern = "*") {
+    inline vec1s list_directories(const std::string& pattern = "*") {
         vec1s dlist;
 
         long handle, res;
@@ -224,7 +224,7 @@ namespace file {
         return dlist;
     }
 
-    vec1s list_files(const std::string& pattern = "*") {
+    inline vec1s list_files(const std::string& pattern = "*") {
         vec1s flist;
 
         long handle, res;
@@ -253,7 +253,7 @@ namespace file {
         return flist;
     }
 
-    std::string directorize(const std::string& path) {
+    inline std::string directorize(const std::string& path) {
         std::string dir = trim(path);
         if (!dir.empty() && dir.back() != '/') {
             dir.push_back('/');
@@ -263,7 +263,7 @@ namespace file {
     }
 
     // Same behavior as 'basename'
-    std::string get_basename(std::string path) {
+    inline std::string get_basename(std::string path) {
         auto pos = path.find_last_of('/');
         if (pos == path.npos) {
             return path;
@@ -286,26 +286,26 @@ namespace file {
         }
     }
 
-    std::string remove_extension(std::string s) {
+    inline std::string remove_extension(std::string s) {
         auto p = s.find_last_of('.');
         if (p == s.npos) return s;
         return s.substr(0u, p);
     }
 
-    std::string get_extension(std::string s) {
+    inline std::string get_extension(std::string s) {
         auto p = s.find_last_of('.');
         if (p == s.npos) return "";
         return s.substr(p);
     }
 
-    std::pair<std::string,std::string> split_extension(std::string s) {
+    inline std::pair<std::string,std::string> split_extension(std::string s) {
         auto p = s.find_last_of('.');
         if (p == s.npos) return std::make_pair(s, std::string{});
         return std::make_pair(s.substr(0u, p), s.substr(p));
     }
 
     // Same behavior as 'dirname'
-    std::string get_directory(const std::string& path) {
+    inline std::string get_directory(const std::string& path) {
         auto pos = path.find_last_of('/');
         if (pos == path.npos) {
             return "./";
@@ -325,7 +325,7 @@ namespace file {
         }
     }
 
-    bool mkdir(const std::string& path) {
+    inline bool mkdir(const std::string& path) {
         if (path.empty()) return true;
         vec1s dirs = split(path, "/");
         std::string tmp;
@@ -367,7 +367,7 @@ namespace file {
 
 #undef VECTORIZE
 
-    uint_t find_skip(const std::string& name) {
+    inline uint_t find_skip(const std::string& name) {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
 
         std::string line;
@@ -392,7 +392,7 @@ namespace file {
         return std::tuple_cat(std::make_tuple(n), std::tie(t, args...));
     }
 
-    void read_table_resize_(std::size_t n) {}
+    inline void read_table_resize_(std::size_t n) {}
 
     template<typename T, typename ... Args>
     void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args);
@@ -407,7 +407,7 @@ namespace file {
         read_table_resize_(n, args...);
     }
 
-    void read_table_resize_cols_(std::size_t n, std::size_t m) {}
+    inline void read_table_resize_cols_(std::size_t n, std::size_t m) {}
 
     template<typename Type, typename ... VArgs>
     void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args);
@@ -502,7 +502,7 @@ namespace file {
         return read_value_float_(in, v, fallback);
     }
 
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
+    inline void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
 
     template<typename T, typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args);
@@ -525,7 +525,7 @@ namespace file {
         read_table_(fs, i, ++j, args...);
     }
 
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
+    inline void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
 
     template<typename T, typename ... VArgs>
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
@@ -625,7 +625,7 @@ namespace file {
         }
     }
 
-    void write_table_check_size_(std::size_t n, std::size_t i) {}
+    inline void write_table_check_size_(std::size_t n, std::size_t i) {}
 
     template<std::size_t Dim, typename Type, typename ... Args>
     void write_table_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
@@ -641,7 +641,7 @@ namespace file {
         write_table_check_size_(n, i+1, args...);
     }
 
-    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+    inline void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
         std::size_t i, std::size_t j) {
         file << '\n';
     }
@@ -729,7 +729,7 @@ namespace file {
     struct macroed_t {};
     #define ftable(...) file::macroed_t(), #__VA_ARGS__, __VA_ARGS__
 
-    std::string bake_macroed_name(std::string t) {
+    inline std::string bake_macroed_name(std::string t) {
         // Just remove the leading object before the '.' operator
         auto p = t.find_first_of('.');
         if (p != t.npos) {
@@ -738,7 +738,7 @@ namespace file {
         return t;
     }
 
-    std::string pop_macroed_name(std::string& s) {
+    inline std::string pop_macroed_name(std::string& s) {
         static const std::array<char,3> opening = {'(', '[', '{'};
         static const std::array<char,3> closing = {')', ']', '}'};
 
@@ -781,7 +781,7 @@ namespace file {
         return name;
     }
 
-    vec1s split_macroed_names(std::string s) {
+    inline vec1s split_macroed_names(std::string s) {
         vec1s names;
 
         do {
@@ -791,7 +791,7 @@ namespace file {
         return names;
     }
 
-    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i) {}
+    inline void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i) {}
 
     template<typename T, typename ... Args>
     void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args);
@@ -842,11 +842,11 @@ namespace file {
     }
 }
 
-bool fork(const std::string& cmd) {
+inline bool fork(const std::string& cmd) {
     return system((cmd+" &").c_str()) == 0;
 }
 
-bool spawn(const std::string& cmd) {
+inline bool spawn(const std::string& cmd) {
     return system(cmd.c_str()) == 0;
 }
 
