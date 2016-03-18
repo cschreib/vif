@@ -575,7 +575,7 @@ total_return_type<rtype_t<Type>> total(const vec<Dim,Type>& v) {
 }
 
 
-template<std::size_t Dim, typename Type, typename enable =
+template<std::size_t Dim = 1, typename Type = bool, typename enable =
     typename std::enable_if<std::is_same<rtype_t<Type>, bool>::value>::type>
 uint_t count(const vec<Dim,Type>& v) {
     uint_t n = 0u;
