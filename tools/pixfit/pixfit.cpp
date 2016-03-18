@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
     bool cell_approx = false;
     // Use a flux prior
     bool flux_prior = false;
+    // Reduce image fit area to regions covered by the input prior list
+    bool trim_image = false;
     // Group uncertain sources into single measurements
     bool make_groups = false;
     double group_fit_threshold = 0.97;
@@ -49,7 +51,7 @@ int main(int argc, char* argv[]) {
         fconv, verbose, fixed_bg, save_covariance, cell_approx, flux_prior,
         make_groups, group_fit_threshold, group_aper_threshold, group_aper_size,
         group_cov_threshold, group_post_process, name(nthread, "threads"),
-        beam_smeared, beam_size
+        beam_smeared, beam_size, trim_image
     ));
 
     if (argc == 1 || help) {
@@ -401,10 +403,15 @@ int main(int argc, char* argv[]) {
     img *= fconv;
     err *= fconv;
 
+    double err_nocov; {
+        vec1u idg = where(is_finite(err));
+        err_nocov = 1e5*max(err[idg]);
+    }
+
     vec2d snr = img/err; {
         vec1u idb = where(!is_finite(snr) || err == 0.0);
         snr[idb] = 0.0;
-        err[idb] = 1e5*max(err);
+        err[idb] = err_nocov;
     }
 
     // Compute X and Y position of all the sources from embedded astrometry
@@ -440,6 +447,34 @@ int main(int argc, char* argv[]) {
 
     vec1i ix = round(x), iy = round(y);
     vec1d dx = x - ix, dy = y - iy;
+
+    // Adjust image to flag out the areas non covered by the input prior catalog
+    // Use this option if your catalog only covers a small part of the image, else
+    // it is more stable to use the the full image and a complete prior list
+    if (trim_image) {
+        vec2b incov;
+        if (x.size() > 2) {
+            // Pick the pixels of the map that are within the coverage of our prior list
+            auto hull = build_convex_hull(x, y);
+            vec2d tix = replicate(dindgen(snr.dims[1]), snr.dims[0]);
+            vec2d tiy = transpose(replicate(dindgen(snr.dims[0]), snr.dims[1]));
+            incov = in_convex_hull(tix, tiy, hull);
+        }
+
+        if (count(incov) < 5) {
+            // Use all pixels
+            incov[_] = true;
+        }
+
+        vec1u idb = where(!incov);
+        snr[idb] = 0;
+        err[idb] = err_nocov;
+
+        if (verbose) {
+            print(count(incov), " pixels used in the image (",
+                round(100*fraction_of(incov)), "% of the available area)");
+        }
+    }
 
     // Compute the matrix
     if (verbose) {
@@ -524,30 +559,11 @@ int main(int argc, char* argv[]) {
 
     // Pure Background terms
     if (free_bg) {
-        vec1u idbg;
-        if (x.size() > 2) {
-            // Pick the pixels of the map that are within the coverage of our prior list
-            auto hull = build_convex_hull(x, y);
-            vec2d tix = replicate(dindgen(snr.dims[1]), snr.dims[0]);
-            vec2d tiy = transpose(replicate(dindgen(snr.dims[0]), snr.dims[1]));
-            idbg = where(in_convex_hull(tix, tiy, hull));
-        }
-
-        if (idbg.size() < 5) {
-            // Use all pixels
-            idbg = uindgen(snr.size());
-        }
-
-        if (verbose) {
-            print(idbg.size(), " pixels used to compute the background (",
-                round(100.0*idbg.size()/float(snr.size())), "%)");
-        }
-
         // Beta term: beta[bg] = image/err^2
-        beta[nobs] = total(snr[idbg]/err[idbg]);
+        beta[nobs] = total(snr/err);
 
         // Background x Background: alpha(bg,bg) = 1/err^2
-        alpha(nobs, nobs) = total(1.0/sqr(err[idbg]));
+        alpha(nobs, nobs) = total(1.0/sqr(err));
     }
 
     // Solve the system
