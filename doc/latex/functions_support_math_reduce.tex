@@ -171,6 +171,23 @@ partial_median(0, w); // {0,1,2,3,5}
 \end{cppcode}
 \end{example}
 
+\funcitem \cppinline|double weighted_mean(vec v, w)| \itt{weighted_mean}
+
+\cppinline|double weighted_median(vec v, w)| \itt{weighted_median}
+
+The functions \cppinline{weighted_mean()} (and \cppinline{weighted_median()}) computes the weighted average (median) of the values in \cppinline{v}, each weighted by a corresponding value in \cppinline{w}.
+
+Calling \cppinline{weighted_mean()} on an empty vector returns not-a-number, and calling \cppinline{weighted_median()} on an empty vector will trigger an error.
+
+\begin{example}
+\begin{cppcode}
+vec1d v = {-1,1,0.5,2,1.5};
+vec1d w = {0.0,1.0,0.5,2.0,1.0}
+weighted_mean(v); // 1.7222
+weighted_median(v); // 0.5
+\end{cppcode}
+\end{example}
+
 \funcitem \cppinline|T percentile(vec<D,T> v, double p)| \itt{percentile}
 
 \cppinline|vec<D-1,T> partial_percentile(uint_t d, vec<D,T> v, double p)| \itt{partial_percentile}
