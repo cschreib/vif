@@ -985,8 +985,10 @@ int main(int argc, char* argv[]) {
         }
 
         fits::update_table(out_file,
-            "group_cov", vec1f(old_cat.ra.size()), "group_id", vec1u(),
-            "group_ra", vec1d(), "group_dec", vec1d(),
+            "group_cov", vec1f(old_cat.ra.size()),
+            "group_aper_id", replicate(npos, old_cat.ra.size()),
+            "group_fit_id", replicate(npos, old_cat.ra.size()),
+            "group_id", vec1d(), "group_ra", vec1d(), "group_dec", vec1d(),
             "group_flux", vec1f(), "group_flux_err", vec1f(),
             "group_fit", vec1b(), "group_nsrc", vec1u()
         );
