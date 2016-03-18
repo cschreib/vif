@@ -39,6 +39,9 @@ int main(int argc, char* argv[]) {
     double group_aper_size = dnan;
     double group_cov_threshold = 0.4;
     bool group_post_process = false;
+    // For images in flux/beam, provide here the integrated flux of the beam
+    // (i.e., the sum of the pixels of a source of flux unity)
+    float beam_flux = 1.0;
     // Number of threads the program can use
     uint_t nthread = 1;
     // Display help
@@ -51,7 +54,7 @@ int main(int argc, char* argv[]) {
         fconv, verbose, fixed_bg, save_covariance, cell_approx, flux_prior,
         make_groups, group_fit_threshold, group_aper_threshold, group_aper_size,
         group_cov_threshold, group_post_process, name(nthread, "threads"),
-        beam_smeared, beam_size, trim_image
+        beam_smeared, beam_size, trim_image, beam_flux
     ));
 
     if (argc == 1 || help) {
@@ -134,7 +137,7 @@ int main(int argc, char* argv[]) {
         psf = subregion(psf, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
 
         if (beam_smeared) {
-             vec2d kernel;
+            vec2d kernel;
             if (is_finite(beam_size)) {
                 kernel = gaussian_profile(psf.dims, beam_size);
             } else {
@@ -147,6 +150,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    fconv /= beam_flux;
+    psf /= beam_flux;
 
     if (verbose) {
         print("will extract ", ra.size(), " sources from this map");
@@ -933,12 +938,10 @@ int main(int argc, char* argv[]) {
                 warning("group ", group_cat.id[i], " has empty mask");
             }
 
-            vec2d npsf = psf/total(psf);
-
             // Compute the fraction of flux contained in the mask for each source
             for (uint_t j : id) {
                 // Create the model PSF for this source
-                vec1f tpsf = flatten(translate(npsf, tdy[j], tdx[j]));
+                vec1f tpsf = flatten(translate(psf, tdy[j], tdx[j]));
                 vec1u idi, idp;
                 subregion(mask, {tiy[j]-hsize, tix[j]-hsize, tiy[j]+hsize, tix[j]+hsize}, idi, idp);
 
@@ -949,10 +952,10 @@ int main(int argc, char* argv[]) {
 
             // Compute flux
             vec1u idm = where(mask);
-            group_cat.flux.push_back(total(timg[idm])/total(psf));
+            group_cat.flux.push_back(total(timg[idm]));
 
             // Error is just assuming Gaussian fluctations on each pixel
-            group_cat.flux_err.push_back(sqrt(total(sqr(terr[idm])))/total(psf));
+            group_cat.flux_err.push_back(sqrt(total(sqr(terr[idm]))));
         }
 
         // Save the group map if requested
