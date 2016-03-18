@@ -118,11 +118,13 @@ int main(int argc, char* argv[]) {
             std::min(idm[1], int_t(psf.dims[1])-1-idm[1])
         );
 
-        for (int_t i = 1; i <= imax; ++i) {
-            if (psf(idm[0]-i,idm[1]) == 0.0 &&
-                psf(idm[0]+i,idm[1]) == 0.0 &&
-                psf(idm[0],idm[1]-i) == 0.0 &&
-                psf(idm[0],idm[1]+i) == 0.0) {
+        double psf_max = psf(idm[0], idm[1]);
+
+        for (int_t i = imax; i > 0; --i) {
+            if (abs(psf(idm[0]-i,idm[1])/psf_max) > 1e-4 ||
+                abs(psf(idm[0]+i,idm[1])/psf_max) > 1e-4 ||
+                abs(psf(idm[0],idm[1]-i)/psf_max) > 1e-4 ||
+                abs(psf(idm[0],idm[1]+i)/psf_max) > 1e-4) {
                 hsize = i;
                 break;
             }
