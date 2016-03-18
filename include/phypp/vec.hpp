@@ -12,9 +12,9 @@
 #include "phypp/print.hpp"
 
 // Tag type to mark initialization of a reference vector.
-struct vec_ref_tag_t {} vec_ref_tag;
+static struct vec_ref_tag_t {} vec_ref_tag;
 // Tag type to permit copy initialization without data copy.
-struct vec_nocopy_tag_t {} vec_nocopy_tag;
+static struct vec_nocopy_tag_t {} vec_nocopy_tag;
 
 // Tag a value to indicate that is has to repeated N times
 template<std::size_t N, typename T>

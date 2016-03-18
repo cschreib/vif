@@ -2078,7 +2078,7 @@ affinefit_result affinefit(const TypeY& y, const TypeE& ye, const TypeX& x) {
     return affinefit(y, replicate(ye, y.dims), x);
 }
 
-double interpolate(double y1, double y2, double x1, double x2, double x) {
+inline double interpolate(double y1, double y2, double x1, double x2, double x) {
     return y1 + (y2 - y1)*(x - x1)/(x2 - x1);
 }
 
@@ -2494,7 +2494,7 @@ auto integrate_func(F f, T x0, U x1,
 
 #ifndef NO_FFTW
 // Compute the Fast Fourrier Transform (FFT) of the provided 2d array
-vec2cd fft(const vec2d& v) {
+inline vec2cd fft(const vec2d& v) {
     vec2cd r(v.dims);
 
     fftw_plan p;
@@ -2508,7 +2508,7 @@ vec2cd fft(const vec2d& v) {
 }
 
 // Compute the Fast Fourrier Transform (FFT) of the provided 2d array
-vec2d ifft(const vec2cd& v) {
+inline vec2d ifft(const vec2cd& v) {
     vec2d r(v.dims);
 
     fftw_plan p;
@@ -2832,7 +2832,7 @@ auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y,
 
 // Compute the angular distance between two RA/Dec positions [radian].
 // Assumes that RA & Dec coordinates are in radian.
-double angdistr(double ra1, double dec1, double ra2, double dec2) {
+inline double angdistr(double ra1, double dec1, double ra2, double dec2) {
     double sra = sin(0.5*(ra2 - ra1));
     double sde = sin(0.5*(dec2 - dec1));
     return 2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)));
@@ -2840,7 +2840,7 @@ double angdistr(double ra1, double dec1, double ra2, double dec2) {
 
 // Compute the angular distance between two RA/Dec positions [arcsec].
 // Assumes that RA & Dec coordinates are in degrees.
-double angdist(double tra1, double tdec1, double tra2, double tdec2) {
+inline double angdist(double tra1, double tdec1, double tra2, double tdec2) {
     const double d2r = dpi/180.0;
     double ra1 = d2r*tra1, ra2 = d2r*tra2, dec1 = d2r*tdec1, dec2 = d2r*tdec2;
     double sra = sin(0.5*(ra2 - ra1));
@@ -2912,7 +2912,7 @@ vec<N,bool> angdist_less(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
 
 // Move a point in RA/Dec [degree] by an increment in [arcsec]
 // This is an approximation for small movements of the order of a degree or less.
-void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
+inline void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
     ra += dra/cos(dec*dpi/180.0)/3600.0;
     dec += ddec/3600.0;
 

@@ -14,6 +14,11 @@ namespace fits {
             reach_hdu(hdu);
         }
 
+        input_image(input_image&&) = default;
+        input_image(const input_image&) = delete;
+        input_image& operator = (input_image&&) = delete;
+        input_image& operator = (const input_image&&) = delete;
+
         template<std::size_t Dim, typename Type>
         void read(vec<Dim,Type>& v) {
             status_ = 0;
@@ -57,6 +62,11 @@ namespace fits {
         explicit output_image(const std::string& filename) :
             impl::file_base(impl::image_file, filename, impl::write_only) {}
 
+        output_image(output_image&&) = default;
+        output_image(const output_image&) = delete;
+        output_image& operator = (output_image&&) = delete;
+        output_image& operator = (const output_image&&) = delete;
+
     protected :
 
         template<std::size_t Dim, typename Type>
@@ -95,6 +105,11 @@ namespace fits {
             output_image(filename, impl::readwrite_tag), input_image(filename) {
             reach_hdu(hdu);
         }
+
+        image(image&&) = default;
+        image(const image&) = delete;
+        image& operator = (image&&) = delete;
+        image& operator = (const image&&) = delete;
 
         template<std::size_t Dim, typename Type>
         void update(const vec<Dim,Type>& v) {

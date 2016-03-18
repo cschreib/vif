@@ -147,50 +147,50 @@ namespace range_impl {
     }
 
 
-    void check_bounds(full_range_t, uint_t size) {}
+    inline void check_bounds(full_range_t, uint_t size) {}
 
-    void check_bounds(const left_range_t& left, uint_t size) {
+    inline void check_bounds(const left_range_t& left, uint_t size) {
         check_upper_bounds(left, size);
     }
 
-    void check_bounds(const right_range_t& right, uint_t size) {
+    inline void check_bounds(const right_range_t& right, uint_t size) {
         check_lower_bounds(right, size);
     }
 
-    void check_bounds(const left_right_range_t& rng, uint_t size) {
+    inline void check_bounds(const left_right_range_t& rng, uint_t size) {
         check_upper_bounds(rng, size);
         check_lower_bounds(rng, size);
     }
 
-    std::size_t range_size(full_range_t, std::size_t size) {
+    inline std::size_t range_size(full_range_t, std::size_t size) {
         return size;
     }
-    std::size_t range_size(left_range_t rng, std::size_t size) {
+    inline std::size_t range_size(left_range_t rng, std::size_t size) {
         return rng.last+1;
     }
-    std::size_t range_size(right_range_t rng, std::size_t size) {
+    inline std::size_t range_size(right_range_t rng, std::size_t size) {
         return size - rng.first;
     }
-    std::size_t range_size(left_right_range_t rng, std::size_t size) {
+    inline std::size_t range_size(left_right_range_t rng, std::size_t size) {
         return (rng.last+1) - rng.first;
     }
 }
 
-range_t<std::size_t> range(full_range_t, std::size_t size) {
+inline range_t<std::size_t> range(full_range_t, std::size_t size) {
     return range(size);
 }
 
-range_t<std::size_t> range(const left_range_t& rng, std::size_t size) {
+inline range_t<std::size_t> range(const left_range_t& rng, std::size_t size) {
     range_impl::check_bounds(rng, size);
     return range(rng.last+1);
 }
 
-range_t<std::size_t> range(const right_range_t& rng, std::size_t size) {
+inline range_t<std::size_t> range(const right_range_t& rng, std::size_t size) {
     range_impl::check_bounds(rng, size);
     return range(rng.first, size);
 }
 
-range_t<std::size_t> range(const left_right_range_t& rng, std::size_t size) {
+inline range_t<std::size_t> range(const left_right_range_t& rng, std::size_t size) {
     range_impl::check_bounds(rng, size);
     return range(rng.first, rng.last+1);
 }

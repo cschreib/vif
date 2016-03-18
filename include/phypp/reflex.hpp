@@ -61,7 +61,7 @@ namespace reflex {
         void* value;
         data_t* reflex = nullptr;
 
-        std::string full_name() const;
+        inline std::string full_name() const;
     };
 
     #define REFLEX_MEM_HEADER {'_', 'r', 'e', 'f', 'l', 'e', 'x', '_'}
@@ -120,21 +120,19 @@ namespace reflex {
         std::string name;
         std::vector<member_t> members;
 
-        std::string full_name() const;
+        inline std::string full_name() const {
+            data_t* p = parent;
+            std::string str = name;
+            while (p) {
+                str = p->name + "." + str;
+                p = p->parent;
+            }
+
+            return str;
+        }
     };
 
-    std::string member_t::full_name() const {
-        data_t* p = parent;
-        std::string str = name;
-        while (p) {
-            str = p->name + "." + str;
-            p = p->parent;
-        }
-
-        return str;
-    }
-
-    std::string data_t::full_name() const {
+    inline std::string member_t::full_name() const {
         data_t* p = parent;
         std::string str = name;
         while (p) {
@@ -146,7 +144,7 @@ namespace reflex {
     }
 
     template<typename T>
-    std::string seek_name(const T& t, uint_t max_dist = 100000) {
+    inline std::string seek_name(const T& t, uint_t max_dist = 100000) {
         #ifndef NO_REFLECTION
         const char* c = reinterpret_cast<const char*>(&t);
         const char* oc = c;
