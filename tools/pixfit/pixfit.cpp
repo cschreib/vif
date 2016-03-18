@@ -526,7 +526,7 @@ int main(int argc, char* argv[]) {
 
         if (free_bg) {
             // Source x Background: alpha(i,bg) = x[i]/err^2
-            alpha(i,nobs) = total(tpsf/terr);
+            alpha(i,nobs) = alpha(nobs,i) = total(tpsf/terr);
         }
 
         // Source x Source: alpha(j,i) = x[i]*x[j]/err^2
@@ -549,7 +549,7 @@ int main(int argc, char* argv[]) {
                         tpsf2_j[idpc_j] = 0;
                     }
 
-                    alpha(j,i) = total(tpsf2_j[pidj]*tpsf2[pidi]);
+                    alpha(j,i) = alpha(i,j) = total(tpsf2_j[pidj]*tpsf2[pidi]);
                 }
             }
 
@@ -610,10 +610,7 @@ int main(int argc, char* argv[]) {
             print("compute approximated covariance errors...");
         }
 
-        // First fill in the symmetric complement of alpha to make our life simpler
-        matrix::symmetrize(alpha);
-
-        // Then estimate the error for each source
+        // Estimate the error for each source
         vec1u idn; idn.reserve(nobs);
         best_fit_err.resize(nelem);
         for (uint i : range(nobs)) {
@@ -632,11 +629,14 @@ int main(int argc, char* argv[]) {
             vec2d talpha(ntelem, ntelem);
             for (uint_t ti : range(neib)) {
                 if (free_bg) {
-                    talpha(neib,ti) = alpha(nobs,idn[ti]);
+                    talpha(ti,neib) = talpha(neib,ti) = alpha(nobs,idn[ti]);
                 }
 
                 for (uint_t tj : range(ti, neib)) {
                     talpha(tj,ti) = alpha(idn[tj],idn[ti]);
+                    if (tj != ti) {
+                        talpha(ti,tj) = talpha(tj,ti);
+                    }
                 }
             }
 
