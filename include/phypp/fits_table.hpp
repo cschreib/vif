@@ -1,6 +1,7 @@
 #ifndef FITS_TABLE_HPP
 #define FITS_TABLE_HPP
 
+#include "phypp/reflex_helpers.hpp"
 #include "phypp/fits_base.hpp"
 
 namespace fits {
