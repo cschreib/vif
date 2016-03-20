@@ -303,13 +303,16 @@ namespace reflex {
     template<bool reflexed>
     struct wrap_t;
 
+    #ifdef DISABLE_REFLECTION
+    static empty_t empty_placeholder;
+    #endif
+
     template<>
     struct wrap_t<true> {
         #ifdef DISABLE_REFLECTION
-        static empty_t empty;
         template<typename T>
-        static auto wrap(T& t) -> decltype(struct_t<T>{empty._reflex}) {
-            return struct_t<T>{empty._reflex};
+        static auto wrap(T& t) -> decltype(struct_t<T>{empty_placeholder._reflex}) {
+            return struct_t<T>{empty_placeholder._reflex};
         }
 
         #else
@@ -319,10 +322,6 @@ namespace reflex {
         }
         #endif
     };
-
-    #ifdef DISABLE_REFLECTION
-    empty_t wrap_t<true>::empty;
-    #endif
 
     template<>
     struct wrap_t<false> {
