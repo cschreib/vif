@@ -135,7 +135,10 @@ int main(int argc, char* argv[]) {
         vec1s bands;
     } fcat;
 
-    fits::read_table_loose(cat, fcat);
+    fits::read_table_loose(cat, ftable(
+        fcat.z, fcat.bands, fcat.flux, fcat.flux_err, fcat.flux_group_cov, fcat.flux_group,
+        fcat.group_flux, fcat.group_flux_err
+    ));
 
     if (fcat.z.empty()) {
         if (zvar.empty()) {
@@ -189,9 +192,15 @@ int main(int argc, char* argv[]) {
         vec1d tdust;
     };
 
+    auto read_lib = [](std::string libfile, lib_t& lib) {
+        fits::read_table(libfile, ftable(
+            lib.lam, lib.sed, lib.lir, lib.umin, lib.umean, lib.l8, lib.tdust
+        ));
+    };
+
     std::vector<lib_t> libs(2);
-    fits::read_table(irlib+"s16_dust.fits", libs[0]);
-    fits::read_table(irlib+"s16_pah.fits", libs[1]);
+    read_lib(irlib+"s16_dust.fits", libs[0]);
+    read_lib(irlib+"s16_pah.fits", libs[1]);
     const uint_t nlib = libs.size();
 
     // Apply constraints on Tdust
@@ -814,7 +823,13 @@ int main(int argc, char* argv[]) {
         }
 
         // Save the result
-        fits::write_table(out, res);
+        fits::write_table(out, ftable(
+            res.group, res.lir_qflag, res.l8_qflag, res.mdust_qflag, res.tdust_qflag,
+            res.fixed_tdust, res.fixed_fpah, res.bfit, res.chi2, res.chi2_tdust_y,
+            res.chi2_tdust_x, res.lir, res.lir_err, res.l8, res.l8_err, res.mdust, res.mdust_err,
+            res.fpah, res.fpah_err, res.tdust, res.tdust_low, res.tdust_up, res.flux,
+            res.bands, res.lambda
+        ));
     }
 
     return 0;
