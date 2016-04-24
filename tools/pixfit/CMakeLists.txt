@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 2.6)
 project(pixfit)
 
-add_phypp_target(pixfit.cpp)
-add_phypp_target(pixfit-add_flux.cpp)
+add_phypp_target(pixfit-extract.cpp)
+add_phypp_target(pixfit-cutout.cpp)
+add_phypp_target(pixfit-findprior.cpp)
+add_phypp_target(pixfit-addflx.cpp)
 add_phypp_target(pixfit-combine.cpp)
 add_phypp_target(pixfit-gfit.cpp)
 add_phypp_target(pixfit-prep.cpp)
