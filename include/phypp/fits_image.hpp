@@ -20,7 +20,7 @@ namespace fits {
         input_image& operator = (const input_image&&) = delete;
 
         template<std::size_t Dim, typename Type>
-        void read(vec<Dim,Type>& v) {
+        void read(vec<Dim,Type>& v) const {
             status_ = 0;
 
             int naxis;
