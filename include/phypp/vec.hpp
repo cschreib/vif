@@ -1341,7 +1341,7 @@ auto get_element_(const vec<Dim,T>& t, uint_t i) -> decltype(t.safe[i]) {
             v.data[i] sop u.data[i]; \
         } \
         return std::move(v); \
-    } \
+    }
 
 VECTORIZE(*, *=)
 VECTORIZE(+, +=)
