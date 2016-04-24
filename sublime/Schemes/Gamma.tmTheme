@@ -102,6 +102,17 @@
 		</dict>
 		<dict>
 			<key>name</key>
+			<string>Macro body</string>
+			<key>scope</key>
+			<string>meta.preprocessor.macro.definition</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#DCFC9D</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
 			<string>Pre-processor command</string>
 			<key>scope</key>
 			<string>keyword.control.import</string>
