@@ -1,6 +1,6 @@
 #include "pixfit-common.hpp"
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     std::string map_file;
     std::string incat;
     std::string outcat;

@@ -16,7 +16,7 @@ bool read_param(T& p, D def, std::string name, I& iter, const I& end) {
     return true;
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
         return 0;

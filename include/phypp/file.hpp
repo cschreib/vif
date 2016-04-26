@@ -17,6 +17,7 @@
 #include <tuple>
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"
+#include "phypp/error.hpp"
 
 namespace file {
     namespace impl {

@@ -1,6 +1,6 @@
 #include "pixfit-common.hpp"
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     std::vector<map_info> maps;
     if (!read_maps(argv[2], maps)) return 1;
 

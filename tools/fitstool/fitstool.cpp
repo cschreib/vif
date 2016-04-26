@@ -24,7 +24,7 @@ void print_rmkwd_help();
 void print_make2d_help();
 void print_meta_help();
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

@@ -3,7 +3,7 @@
 
 void print_help();
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 4) {
         print_help();
         return 0;

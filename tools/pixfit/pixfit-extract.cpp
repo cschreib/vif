@@ -3,7 +3,7 @@
 
 void print_help();
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     std::string cat_file; // Name of the catalog from which to take the sources
     std::string map_file; // Name of the file listing the observed maps
     std::string img_file; // Name of the image from which to extract the fluxes

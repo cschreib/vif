@@ -9,7 +9,7 @@
 #include <initializer_list>
 #include "phypp/range.hpp"
 #include "phypp/variadic.hpp"
-#include "phypp/print.hpp"
+#include "phypp/error.hpp"
 
 // Tag type to mark initialization of a reference vector.
 static struct vec_ref_tag_t {} vec_ref_tag;

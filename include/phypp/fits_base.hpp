@@ -7,6 +7,7 @@
 #include "phypp/generic.hpp"
 #include "phypp/file.hpp"
 #include "phypp/print.hpp"
+#include "phypp/error.hpp"
 #include "phypp/math.hpp"
 
 namespace fits {

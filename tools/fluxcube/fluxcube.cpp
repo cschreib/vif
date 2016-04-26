@@ -7,7 +7,7 @@ bool get_flux(int argc, char* argv[], const std::string& file);
 bool get_logdisp(int argc, char* argv[], const vec3d& cube);
 bool run_batch(int argc, char* argv[], const std::string& file);
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

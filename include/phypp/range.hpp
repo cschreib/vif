@@ -1,7 +1,7 @@
 #ifndef PHYPP_RANGE_HPP
 #define PHYPP_RANGE_HPP
 
-#include "phypp/print.hpp"
+#include "phypp/error.hpp"
 
 using int_t = std::ptrdiff_t;
 using uint_t = std::size_t;

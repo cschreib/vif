@@ -7,7 +7,7 @@
     assert(st == s); \
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     double start = now();
 
     file::mkdir("out");

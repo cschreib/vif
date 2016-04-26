@@ -7,6 +7,7 @@
 #endif
 
 #include "phypp/fits.hpp"
+#include "phypp/error.hpp"
 
 namespace fits {
     struct make_wcs_header_params {

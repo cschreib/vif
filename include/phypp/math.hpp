@@ -3,6 +3,7 @@
 
 #include "phypp/vec.hpp"
 #include "phypp/generic.hpp"
+#include "phypp/error.hpp"
 #include "phypp/string.hpp"
 #include "phypp/simple_complex.hpp"
 #include <random>

@@ -149,7 +149,7 @@ do_next read_column(const std::string& in_file, const fits::column_info& cinfo,
 
 void print_help();
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

@@ -2,6 +2,7 @@
 #define PHYPP_STRING_HPP
 
 #include "phypp/vec.hpp"
+#include "phypp/error.hpp"
 #include "phypp/generic.hpp"
 #include "phypp/reflex.hpp"
 #include "phypp/range.hpp"

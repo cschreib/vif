@@ -5,6 +5,7 @@
 #include "phypp/range.hpp"
 #include "phypp/string.hpp"
 #include "phypp/print.hpp"
+#include "phypp/error.hpp"
 #include "phypp/argv.hpp"
 #include "phypp/file.hpp"
 #include "phypp/fits.hpp"
@@ -14,3 +15,4 @@
 #include "phypp/time.hpp"
 #include "phypp/thread.hpp"
 #include "phypp/astro.hpp"
+#include "phypp/main.hpp"

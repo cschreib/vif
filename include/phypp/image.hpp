@@ -2,6 +2,7 @@
 #define PHYPP_IMAGE_HPP
 
 #include "phypp/vec.hpp"
+#include "phypp/error.hpp"
 #include "phypp/math.hpp"
 
 template<typename Type>

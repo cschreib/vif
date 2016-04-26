@@ -49,7 +49,7 @@ void print_help() {
     bullet("verbose", "[flag] show a progress bar to estimate computing time");
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
         return 0;
