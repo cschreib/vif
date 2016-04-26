@@ -289,7 +289,7 @@ struct vec {
     }
 
     template<typename T>
-    T to_idx_(T ui, cte_t<false>) const {
+    uint_t to_idx_(T ui, cte_t<false>) const {
         phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
             data.size(), ")");
         return ui;
@@ -307,7 +307,7 @@ struct vec {
     }
 
     template<std::size_t D, typename T>
-    T to_idx_(T ui, cte_t<false>) const {
+    uint_t to_idx_(T ui, cte_t<false>) const {
         phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
             dims[D], ")");
         return ui;
@@ -325,14 +325,14 @@ struct vec {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        typename std::enable_if<std::is_integral<T>::value>::type>
+    uint_t to_idx(T ix) const {
         return to_idx_(ix, cte_t<std::is_signed<T>::value>());
     }
 
     template<std::size_t D, typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        typename std::enable_if<std::is_integral<T>::value>::type>
+    uint_t to_idx(T ix) const {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
 
