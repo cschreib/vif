@@ -1,5 +1,5 @@
-#ifndef FITS_BASE_HPP
-#define FITS_BASE_HPP
+#ifndef PHYPP_FITS_BASE_HPP
+#define PHYPP_FITS_BASE_HPP
 
 #include <fitsio.h>
 #include <string>
