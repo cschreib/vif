@@ -1,5 +1,5 @@
-#ifndef PRINT_HPP
-#define PRINT_HPP
+#ifndef PHYPP_PRINT_HPP
+#define PHYPP_PRINT_HPP
 
 #include <string>
 #include <iostream>

@@ -1,5 +1,5 @@
-#ifndef ITERATOR_HPP
-#define ITERATOR_HPP
+#ifndef PHYPP_ITERATOR_HPP
+#define PHYPP_ITERATOR_HPP
 
 template<typename T, typename C, typename P>
 class iterator_base;

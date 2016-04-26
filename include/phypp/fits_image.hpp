@@ -1,5 +1,5 @@
-#ifndef FITS_IMAGE_HPP
-#define FITS_IMAGE_HPP
+#ifndef PHYPP_FITS_IMAGE_HPP
+#define PHYPP_FITS_IMAGE_HPP
 
 #include "phypp/fits_base.hpp"
 

@@ -1,5 +1,5 @@
-#ifndef VEC_HPP
-#define VEC_HPP
+#ifndef PHYPP_VEC_HPP
+#define PHYPP_VEC_HPP
 
 #include <vector>
 #include <string>

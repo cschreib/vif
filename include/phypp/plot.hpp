@@ -1,5 +1,5 @@
-#ifndef PLOT_HPP
-#define PLOT_HPP
+#ifndef PHYPP_PLOT_HPP
+#define PHYPP_PLOT_HPP
 
 #include "phypp/color.hpp"
 #include "phypp/math.hpp"

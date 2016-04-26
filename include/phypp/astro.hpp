@@ -1,5 +1,5 @@
-#ifndef ASTRO_HPP
-#define ASTRO_HPP
+#ifndef PHYPP_ASTRO_HPP
+#define PHYPP_ASTRO_HPP
 
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"

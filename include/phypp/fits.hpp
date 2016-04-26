@@ -1,5 +1,5 @@
-#ifndef FITS_HPP
-#define FITS_HPP
+#ifndef PHYPP_FITS_HPP
+#define PHYPP_FITS_HPP
 
 #include "phypp/fits_base.hpp"
 #include "phypp/fits_table.hpp"

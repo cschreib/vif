@@ -1,5 +1,5 @@
-#ifndef VARIADIC_HPP
-#define VARIADIC_HPP
+#ifndef PHYPP_VARIADIC_HPP
+#define PHYPP_VARIADIC_HPP
 
 #include <type_traits>
 #include <array>

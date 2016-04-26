@@ -1,5 +1,5 @@
-#ifndef RANGE_HPP
-#define RANGE_HPP
+#ifndef PHYPP_RANGE_HPP
+#define PHYPP_RANGE_HPP
 
 #include "phypp/print.hpp"
 

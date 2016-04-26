@@ -1,5 +1,5 @@
-#ifndef REFLEX_HPP
-#define REFLEX_HPP
+#ifndef PHYPP_REFLEX_HPP
+#define PHYPP_REFLEX_HPP
 
 #include <string>
 #include <typeinfo>

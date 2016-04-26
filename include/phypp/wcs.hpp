@@ -1,5 +1,5 @@
-#ifndef WCS_HPP
-#define WCS_HPP
+#ifndef PHYPP_WCS_HPP
+#define PHYPP_WCS_HPP
 
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>

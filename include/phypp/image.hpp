@@ -1,5 +1,5 @@
-#ifndef IMAGE_HPP
-#define IMAGE_HPP
+#ifndef PHYPP_IMAGE_HPP
+#define PHYPP_IMAGE_HPP
 
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"

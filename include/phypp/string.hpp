@@ -1,5 +1,5 @@
-#ifndef STRING_HPP
-#define STRING_HPP
+#ifndef PHYPP_STRING_HPP
+#define PHYPP_STRING_HPP
 
 #include "phypp/vec.hpp"
 #include "phypp/generic.hpp"
@@ -827,7 +827,6 @@ T system_var(const std::string& name, U def) {
     T ret;
     if (!from_string(v, ret)) return def;
     return ret;
-
 }
 
 template <>

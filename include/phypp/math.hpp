@@ -1,5 +1,5 @@
-#ifndef MATH_HPP
-#define MATH_HPP
+#ifndef PHYPP_MATH_HPP
+#define PHYPP_MATH_HPP
 
 #include "phypp/vec.hpp"
 #include "phypp/generic.hpp"
