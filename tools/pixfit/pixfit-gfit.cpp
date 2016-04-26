@@ -79,10 +79,11 @@ int main(int argc, char* argv[]) {
     bool verbose = false;
 
     // Read parameters from command line
-    read_args(argc, argv, arg_list(cat, name(zvar, "z"), data_dir, verbose, thread,
-        nsim, name(tseed, "seed"), out, name(scosmo, "cosmo"), suffix,
-        snr_max, snr_max_group, ntgrid, ntrep, no_negative, filter_db, irlib,
-        fix_tdust, fix_fpah, tdust_range, min_lam, max_fpah
+    read_args(argc, argv, arg_list(name(cat, "incat"), name(zvar, "z"), data_dir,
+        verbose, thread, nsim, name(tseed, "seed"), name(out, "outcat"),
+        name(scosmo, "cosmo"), suffix, snr_max, snr_max_group, ntgrid, ntrep,
+        no_negative, filter_db, irlib, fix_tdust, fix_fpah, tdust_range,
+        min_lam, max_fpah
     ));
 
     irlib = file::directorize(irlib);
@@ -128,6 +129,8 @@ int main(int argc, char* argv[]) {
 
     // Read the source catalog
     struct {
+        vec1u id;
+        vec1d ra, dec;
         vec1d z;
         vec2d flux, flux_err, flux_group_cov;
         vec2u flux_group;
@@ -136,8 +139,8 @@ int main(int argc, char* argv[]) {
     } fcat;
 
     fits::read_table_loose(cat, ftable(
-        fcat.z, fcat.bands, fcat.flux, fcat.flux_err, fcat.flux_group_cov, fcat.flux_group,
-        fcat.group_flux, fcat.group_flux_err
+        fcat.id, fcat.ra, fcat.dec, fcat.z, fcat.bands, fcat.flux, fcat.flux_err,
+        fcat.flux_group_cov, fcat.flux_group, fcat.group_flux, fcat.group_flux_err
     ));
 
     if (fcat.z.empty()) {
@@ -288,8 +291,7 @@ int main(int argc, char* argv[]) {
         ggf = (mindiv || mgroup) && rlam;
         ggg = mgroup && rlam;
 
-        vec1u nmeas = partial_count(1, gff);
-        gifit = where(nmeas > 0);
+        gifit = where(partial_count(1, gff) > 0);
     }
 
     const uint_t nfit = gifit.size();
@@ -824,6 +826,7 @@ int main(int argc, char* argv[]) {
 
         // Save the result
         fits::write_table(out, ftable(
+            fcat.id, fcat.ra, fcat.dec,
             res.group, res.lir_qflag, res.l8_qflag, res.mdust_qflag, res.tdust_qflag,
             res.fixed_tdust, res.fixed_fpah, res.bfit, res.chi2, res.chi2_tdust_y,
             res.chi2_tdust_x, res.lir, res.lir_err, res.l8, res.l8_err, res.mdust, res.mdust_err,

@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (physical) {
-        error("must be WCS coordinates");
+        error("the region file must be in WCS coordinates, not physical");
         return 1;
     }
 

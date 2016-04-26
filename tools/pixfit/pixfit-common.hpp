@@ -6,14 +6,21 @@ struct map_info {
     std::string err;
     std::string psf;
     float fconv = 1.0;
-    float group_fit_threshold = 1.0;
-    float group_aper_threshold = 1.0;
+    float group_fit_threshold = 0.97;
+    float group_aper_threshold = 0.8;
+    float group_aper_size = fnan;
     float beam_flux = 1.0;
     float beam_smear = fnan;
 };
 
 bool read_maps(std::string filename, std::vector<map_info>& maps) {
     std::ifstream imaps(filename);
+
+    if (!imaps.is_open()) {
+        error("could not find map file '", filename, "'");
+        return false;
+    }
+
     std::string line;
     map_info current;
     while (std::getline(imaps, line)) {
@@ -79,6 +86,11 @@ bool read_maps(std::string filename, std::vector<map_info>& maps) {
                     error("could not read group aperture threshold radius from '", spl[1], "'");
                     return false;
                 }
+            } else if (spl[0] == "gaper_size") {
+                if (!from_string(spl[1], current.group_aper_size)) {
+                    error("could not read group flux aperture size from '", spl[1], "'");
+                    return false;
+                }
             }
         } else {
             error("ill formed line: ", line);
@@ -106,6 +118,11 @@ bool read_maps(std::string filename, std::vector<map_info>& maps) {
 
 bool read_ds9_region_circles(std::string file_name, vec2d& regs, vec1s& text, bool& physical, std::string color = "") {
     std::ifstream file(file_name);
+
+    if (!file.is_open()) {
+        error("could not find region file '", file_name, "'");
+        return false;
+    }
 
     std::string global_color = "green";
     physical = false;
@@ -209,4 +226,52 @@ bool read_ds9_region_circles(std::string file_name, vec2d& regs, vec1s& text, bo
     }
 
     return true;
+}
+
+vec2d read_psf(const std::string& psf_file, double beam_smear, int_t& hsize) {
+    vec2d psf;
+    fits::read(psf_file, psf);
+
+    hsize = 0;
+
+    vec1i idm = mult_ids(psf, max_id(psf));
+    int_t imax = std::min(
+        std::min(idm[0], int_t(psf.dims[0])-1-idm[0]),
+        std::min(idm[1], int_t(psf.dims[1])-1-idm[1])
+    );
+
+    double psf_max = psf(idm[0], idm[1]);
+
+    for (int_t i = imax; i > 0; --i) {
+        if (abs(psf(idm[0]-i,idm[1])/psf_max) > 1e-4 ||
+            abs(psf(idm[0]+i,idm[1])/psf_max) > 1e-4 ||
+            abs(psf(idm[0],idm[1]-i)/psf_max) > 1e-4 ||
+            abs(psf(idm[0],idm[1]+i)/psf_max) > 1e-4) {
+            hsize = i;
+            break;
+        }
+    }
+
+    if (hsize == 0) hsize = imax;
+    psf = subregion(psf, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
+
+    if (is_finite(beam_smear)) {
+        vec2d kernel;
+        if (beam_smear > 0) {
+            kernel = gaussian_profile(psf.dims, beam_smear);
+        } else {
+            kernel = psf;
+        }
+
+        vec1u idz = where(kernel < 1e-5*max(abs(kernel)));
+        kernel[idz] = 0.0;
+        psf = convolve2d(psf, kernel);
+        psf /= psf(hsize,hsize);
+    }
+
+    return psf;
+}
+
+vec2d read_psf(const map_info& map, int_t& hsize) {
+    return read_psf(map.psf, map.beam_smear, hsize);
 }
