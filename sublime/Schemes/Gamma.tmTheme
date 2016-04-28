@@ -81,7 +81,7 @@
 			<key>name</key>
 			<string>Operator</string>
 			<key>scope</key>
-			<string>operator, punctuation.definition.scope.c++, punctuation.definition.invalid.c++, punctuation.definition.parameters.c, punctuation.definition.macro.c</string>
+			<string>operator, punctuation.definition.scope.c++, punctuation.accessor, punctuation.separator, punctuation.section.class, punctuation.definition.variadic, punctuation.definition.generic, punctuation.definition.block.c++, punctuation.separator.c++, punctuation.definition.invalid.c++, punctuation.definition.parameters.c, punctuation.definition.parameters.c++, punctuation.definition.macro.c</string>
 			<key>settings</key>
 			<dict>
 				<key>foreground</key>
@@ -98,6 +98,17 @@
 			<dict>
 				<key>foreground</key>
 				<string>#A6E22E</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Macro body</string>
+			<key>scope</key>
+			<string>meta.preprocessor.macro.definition</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#DCFC9D</string>
 			</dict>
 		</dict>
 		<dict>

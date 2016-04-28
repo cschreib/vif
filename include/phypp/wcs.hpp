@@ -1,5 +1,5 @@
-#ifndef WCS_HPP
-#define WCS_HPP
+#ifndef PHYPP_WCS_HPP
+#define PHYPP_WCS_HPP
 
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
@@ -7,6 +7,7 @@
 #endif
 
 #include "phypp/fits.hpp"
+#include "phypp/error.hpp"
 
 namespace fits {
     struct make_wcs_header_params {
@@ -21,7 +22,7 @@ namespace fits {
     };
 
     // Add WCS data to a FITS header, computed from a set of simple parameters.
-    bool make_wcs_header(const make_wcs_header_params& params, fits::header& hdr) {
+    inline bool make_wcs_header(const make_wcs_header_params& params, fits::header& hdr) {
         if (hdr.empty()) {
             hdr = "END" + std::string(77, ' ');
         }
@@ -105,7 +106,7 @@ namespace fits {
     //  - sky_ref [float,float]: the reference position
     //  - pixel_ref [float,float]: the pixel corresponding to the reference position
     //  - dims [uint,uint]: number of pixels in X and Y axis
-    bool make_wcs_header(const vec1s& string_params, fits::header& hdr) {
+    inline bool make_wcs_header(const vec1s& string_params, fits::header& hdr) {
         make_wcs_header_params params;
 
         for (auto& p : string_params) {
@@ -186,7 +187,7 @@ namespace fits {
         return make_wcs_header(params, hdr);
     }
 
-    fits::header filter_wcs(const fits::header& hdr) {
+    inline fits::header filter_wcs(const fits::header& hdr) {
         // List of keywords taken from 'cphead' (WCSTools)
         vec1s keywords = {"RA", "DEC", "EPOCH", "EQUINOX", "RADECSYS", "SECPIX", "IMWCS",
             "CD1_1", "CD1_2", "CD2_1", "CD2_2", "PC1_1", "PC1_2", "PC2_1", "PC2_2",

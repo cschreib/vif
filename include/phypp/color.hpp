@@ -1,5 +1,5 @@
-#ifndef COLOR_HPP
-#define COLOR_HPP
+#ifndef PHYPP_COLOR_HPP
+#define PHYPP_COLOR_HPP
 
 // Structure holding color data
 struct rgb {
@@ -14,7 +14,7 @@ struct rgb {
         } \
         void operator name (float f) { \
             r name f; g name f; b name f; \
-        } 
+        }
 
     OPERATOR(+=)
     OPERATOR(-=)

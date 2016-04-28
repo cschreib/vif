@@ -1,9 +1,9 @@
-#ifndef ASTRO_HPP
-#define ASTRO_HPP
+#ifndef PHYPP_ASTRO_HPP
+#define PHYPP_ASTRO_HPP
 
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"
-#include "phypp/print.hpp"
+#include "phypp/error.hpp"
 #include "phypp/image.hpp"
 #include "phypp/thread.hpp"
 #include <map>

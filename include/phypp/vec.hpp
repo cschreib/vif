@@ -1,5 +1,5 @@
-#ifndef VEC_HPP
-#define VEC_HPP
+#ifndef PHYPP_VEC_HPP
+#define PHYPP_VEC_HPP
 
 #include <vector>
 #include <string>
@@ -9,7 +9,7 @@
 #include <initializer_list>
 #include "phypp/range.hpp"
 #include "phypp/variadic.hpp"
-#include "phypp/print.hpp"
+#include "phypp/error.hpp"
 
 // Tag type to mark initialization of a reference vector.
 static struct vec_ref_tag_t {} vec_ref_tag;
@@ -289,7 +289,7 @@ struct vec {
     }
 
     template<typename T>
-    T to_idx_(T ui, cte_t<false>) const {
+    uint_t to_idx_(T ui, cte_t<false>) const {
         phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
             data.size(), ")");
         return ui;
@@ -307,7 +307,7 @@ struct vec {
     }
 
     template<std::size_t D, typename T>
-    T to_idx_(T ui, cte_t<false>) const {
+    uint_t to_idx_(T ui, cte_t<false>) const {
         phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
             dims[D], ")");
         return ui;
@@ -325,14 +325,14 @@ struct vec {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        typename std::enable_if<std::is_integral<T>::value>::type>
+    uint_t to_idx(T ix) const {
         return to_idx_(ix, cte_t<std::is_signed<T>::value>());
     }
 
     template<std::size_t D, typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
+        typename std::enable_if<std::is_integral<T>::value>::type>
+    uint_t to_idx(T ix) const {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
 
@@ -470,8 +470,7 @@ struct vec {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T>& i) {
             vec<1,Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
@@ -483,8 +482,7 @@ struct vec {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T*>& i) {
             vec<1,Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
@@ -496,8 +494,7 @@ struct vec {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T>& i) const {
             vec<1,const Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
@@ -509,8 +506,7 @@ struct vec {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
             vec<1,const Type*> v(vec_ref_tag, parent);
             v.data.resize(i.data.size());
@@ -844,13 +840,13 @@ struct vec<Dim,Type*> {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
         return to_idx_(ix, cte_t<std::is_signed<T>::value>());
     }
 
     template<std::size_t D, typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
         return to_idx_<D>(ix, cte_t<std::is_signed<T>::value>());
     }
@@ -864,19 +860,19 @@ struct vec<Dim,Type*> {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     Type& operator [] (T i) {
         return const_cast<Type&>(const_cast<const vec&>(*this)[i]);
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     const Type& operator [] (T i) const {
         return *data[to_idx(i)];
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec<1,Type*> operator [] (const vec<1,T>& i) {
         vec<1,Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
@@ -888,7 +884,7 @@ struct vec<Dim,Type*> {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec<1,Type*> operator [] (const vec<1,T*>& i) {
         vec<1,Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
@@ -900,7 +896,7 @@ struct vec<Dim,Type*> {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec<1,const Type*> operator [] (const vec<1,T>& i) const {
         vec<1,const Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
@@ -912,7 +908,7 @@ struct vec<Dim,Type*> {
     }
 
     template<typename T, typename enable =
-        typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        typename std::enable_if<std::is_integral<T>::value>::type>
     vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
         vec<1,const Type*> v(vec_ref_tag, parent);
         v.data.resize(i.data.size());
@@ -989,8 +985,7 @@ struct vec<Dim,Type*> {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T>& i) {
             vec<1,Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
@@ -1002,8 +997,7 @@ struct vec<Dim,Type*> {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T*>& i) {
             vec<1,Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
@@ -1015,8 +1009,7 @@ struct vec<Dim,Type*> {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T>& i) const {
             vec<1,const Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
@@ -1028,8 +1021,7 @@ struct vec<Dim,Type*> {
         }
 
         template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value &&
-                                    std::is_unsigned<T>::value>::type>
+            typename std::enable_if<std::is_unsigned<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
             vec<1,const Type*> v(vec_ref_tag, parent.parent);
             v.data.resize(i.data.size());
@@ -1341,7 +1333,7 @@ auto get_element_(const vec<Dim,T>& t, uint_t i) -> decltype(t.safe[i]) {
             v.data[i] sop u.data[i]; \
         } \
         return std::move(v); \
-    } \
+    }
 
 VECTORIZE(*, *=)
 VECTORIZE(+, +=)

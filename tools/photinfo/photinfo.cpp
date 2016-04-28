@@ -1,7 +1,7 @@
 #include <phypp.hpp>
 #include <phypp/astro/qxmatch.hpp>
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc == 1) {
         return 0;
     }

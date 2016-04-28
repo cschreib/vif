@@ -49,7 +49,7 @@ void print_help() {
     bullet("verbose", "[flag] show a progress bar to estimate computing time");
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
         return 0;
@@ -61,6 +61,8 @@ int main(int argc, char* argv[]) {
     std::string out = "";
     std::string scosmo = "std";
     std::string suffix = "gfit";
+    std::string filter_db = data_dir+"fits/filter-db/db.dat";
+    std::string irlib = data_dir+"fits/templates/s16-irlib/";
     uint_t thread = 1;
     uint_t tseed = 42;
     uint_t nsim = 100;
@@ -77,11 +79,14 @@ int main(int argc, char* argv[]) {
     bool verbose = false;
 
     // Read parameters from command line
-    read_args(argc, argv, arg_list(cat, name(zvar, "z"), data_dir, verbose, thread,
-        nsim, name(tseed, "seed"), out, name(scosmo, "cosmo"), suffix,
-        snr_max, snr_max_group, ntgrid, ntrep, no_negative,
-        fix_tdust, fix_fpah, tdust_range, min_lam, max_fpah
+    read_args(argc, argv, arg_list(name(cat, "incat"), name(zvar, "z"), data_dir,
+        verbose, thread, nsim, name(tseed, "seed"), name(out, "outcat"),
+        name(scosmo, "cosmo"), suffix, snr_max, snr_max_group, ntgrid, ntrep,
+        no_negative, filter_db, irlib, fix_tdust, fix_fpah, tdust_range,
+        min_lam, max_fpah
     ));
+
+    irlib = file::directorize(irlib);
 
     auto seed = make_seed(tseed);
 
@@ -124,6 +129,8 @@ int main(int argc, char* argv[]) {
 
     // Read the source catalog
     struct {
+        vec1u id;
+        vec1d ra, dec;
         vec1d z;
         vec2d flux, flux_err, flux_group_cov;
         vec2u flux_group;
@@ -131,7 +138,10 @@ int main(int argc, char* argv[]) {
         vec1s bands;
     } fcat;
 
-    fits::read_table_loose(cat, fcat);
+    fits::read_table_loose(cat, ftable(
+        fcat.id, fcat.ra, fcat.dec, fcat.z, fcat.bands, fcat.flux, fcat.flux_err,
+        fcat.flux_group_cov, fcat.flux_group, fcat.group_flux, fcat.group_flux_err
+    ));
 
     if (fcat.z.empty()) {
         if (zvar.empty()) {
@@ -162,7 +172,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Load filter response curves
-    auto fdb = read_filter_db(data_dir+"fits/filter-db/db.dat");
+    auto fdb = read_filter_db(filter_db);
     filter_bank_t fbank;
     if (!get_filters(fdb, fcat.bands, fbank)) {
         return 1;
@@ -185,9 +195,15 @@ int main(int argc, char* argv[]) {
         vec1d tdust;
     };
 
+    auto read_lib = [](std::string libfile, lib_t& lib) {
+        fits::read_table(libfile, ftable(
+            lib.lam, lib.sed, lib.lir, lib.umin, lib.umean, lib.l8, lib.tdust
+        ));
+    };
+
     std::vector<lib_t> libs(2);
-    fits::read_table(data_dir+"fits/templates/s16-irlib/s16_dust.fits", libs[0]);
-    fits::read_table(data_dir+"fits/templates/s16-irlib/s16_pah.fits", libs[1]);
+    read_lib(irlib+"s16_dust.fits", libs[0]);
+    read_lib(irlib+"s16_pah.fits", libs[1]);
     const uint_t nlib = libs.size();
 
     // Apply constraints on Tdust
@@ -275,8 +291,7 @@ int main(int argc, char* argv[]) {
         ggf = (mindiv || mgroup) && rlam;
         ggg = mgroup && rlam;
 
-        vec1u nmeas = partial_count(1, gff);
-        gifit = where(nmeas > 0);
+        gifit = where(partial_count(1, gff) > 0);
     }
 
     const uint_t nfit = gifit.size();
@@ -810,7 +825,14 @@ int main(int argc, char* argv[]) {
         }
 
         // Save the result
-        fits::write_table(out, res);
+        fits::write_table(out, ftable(
+            fcat.id, fcat.ra, fcat.dec,
+            res.group, res.lir_qflag, res.l8_qflag, res.mdust_qflag, res.tdust_qflag,
+            res.fixed_tdust, res.fixed_fpah, res.bfit, res.chi2, res.chi2_tdust_y,
+            res.chi2_tdust_x, res.lir, res.lir_err, res.l8, res.l8_err, res.mdust, res.mdust_err,
+            res.fpah, res.fpah_err, res.tdust, res.tdust_low, res.tdust_up, res.flux,
+            res.bands, res.lambda
+        ));
     }
 
     return 0;

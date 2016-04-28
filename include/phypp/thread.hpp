@@ -1,5 +1,5 @@
-#ifndef THREAD_HPP
-#define THREAD_HPP
+#ifndef PHYPP_THREAD_HPP
+#define PHYPP_THREAD_HPP
 
 #include "phypp/vec.hpp"
 #include <thread>

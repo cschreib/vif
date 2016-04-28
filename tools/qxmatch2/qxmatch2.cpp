@@ -64,7 +64,7 @@ void print_help() {
     print("");
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     vec1s cats;
     std::string output;
     vec1s pos;

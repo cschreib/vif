@@ -1,9 +1,34 @@
-#include <phypp.hpp>
+#include "pixfit-common.hpp"
 
-int main(int argc, char* argv[]) {
-    file::copy(argv[2], argv[1]);
+int phypp_main(int argc, char* argv[]) {
+    std::string map_file;
+    std::string incat;
+    std::string outcat;
 
-    fits::table tbl(argv[1]);
+    read_args(argc, argv, arg_list(name(map_file, "maps"), incat, outcat));
+
+    bool bad = false;
+    if (map_file.empty()) {
+        error("please provide the map list file in maps=...");
+        bad = true;
+    }
+    if (incat.empty()) {
+        error("please provide the input flux catalog in incat=...");
+        bad = true;
+    }
+    if (outcat.empty()) {
+        error("please provide the output flux catalog in outcat=...");
+        bad = true;
+    }
+
+    if (bad) return 1;
+
+    std::vector<map_info> maps;
+    if (!read_maps(map_file, maps)) return 1;
+
+    file::copy(incat, outcat);
+
+    fits::table tbl(outcat);
 
     uint_t ngal; {
         vec1u id;
@@ -21,15 +46,9 @@ int main(int argc, char* argv[]) {
     flux_group = replicate(npos, flux.dims);
     flux_group_cov.resize(flux.dims);
 
-    for (int i : range(3, argc)) {
-        vec1s spl = trim(split(argv[i], ":"));
-        if (spl.size() != 2) {
-            error("ill formed parameter '", argv[i], "', expected band:file");
-            return 1;
-        }
-
-        std::string band = spl[0];
-        std::string cat = spl[1];
+    for (auto& map : maps) {
+        std::string band = map.band;
+        std::string cat = map.band+"-fit.fits";
 
         bands.push_back(band);
 

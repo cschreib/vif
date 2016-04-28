@@ -1,6 +1,6 @@
 #include <phypp.hpp>
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     fits::table tbl(argv[1]);
 
     vec1u ids;

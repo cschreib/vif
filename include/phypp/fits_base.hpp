@@ -1,5 +1,5 @@
-#ifndef FITS_BASE_HPP
-#define FITS_BASE_HPP
+#ifndef PHYPP_FITS_BASE_HPP
+#define PHYPP_FITS_BASE_HPP
 
 #include <fitsio.h>
 #include <string>
@@ -7,6 +7,7 @@
 #include "phypp/generic.hpp"
 #include "phypp/file.hpp"
 #include "phypp/print.hpp"
+#include "phypp/error.hpp"
 #include "phypp/math.hpp"
 
 namespace fits {
@@ -507,14 +508,13 @@ namespace fits {
             // Note: will return an empty array for FITS tables
             vec1u image_dims() const {
                 status_ = 0;
-                vec1u dims;
                 uint_t naxis = axis_count();
+                vec1u dims(naxis);
                 if (naxis != 0) {
                     std::vector<long> naxes(naxis);
                     fits_get_img_size(fptr_, naxis, naxes.data(), &status_);
-                    dims.reserve(naxis);
-                    for (auto& l : naxes) {
-                        dims.push_back(l);
+                    for (uint_t i : range(naxis)) {
+                        dims.safe[i] = naxes[naxis-1-i];
                     }
                 }
 

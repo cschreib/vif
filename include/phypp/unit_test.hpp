@@ -1,5 +1,5 @@
-#ifndef UNIT_TEST_HPP
-#define UNIT_TEST_HPP
+#ifndef PHYPP_UNIT_TEST_HPP
+#define PHYPP_UNIT_TEST_HPP
 
 uint_t tested = 0u;
 uint_t failed = 0u;

@@ -1,5 +1,5 @@
-#ifndef ARGV_HPP
-#define ARGV_HPP
+#ifndef PHYPP_ARGV_HPP
+#define PHYPP_ARGV_HPP
 
 #include "phypp/vec.hpp"
 #include "phypp/string.hpp"

@@ -1,5 +1,5 @@
-#ifndef REFLEX_HELPERS_HPP
-#define REFLEX_HELPERS_HPP
+#ifndef PHYPP_REFLEX_HELPERS_HPP
+#define PHYPP_REFLEX_HELPERS_HPP
 
 #include "phypp/reflex.hpp"
 #include "phypp/print.hpp"

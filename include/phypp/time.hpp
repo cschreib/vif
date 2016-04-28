@@ -1,5 +1,5 @@
-#ifndef TIME_HPP
-#define TIME_HPP
+#ifndef PHYPP_TIME_HPP
+#define PHYPP_TIME_HPP
 
 #include <chrono>
 #include "phypp/string.hpp"

@@ -8,7 +8,7 @@ bool multiply(int argc, char* argv[]);
 void print_convolve_help();
 void print_multiply_help();
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

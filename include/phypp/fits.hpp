@@ -1,5 +1,5 @@
-#ifndef FITS_HPP
-#define FITS_HPP
+#ifndef PHYPP_FITS_HPP
+#define PHYPP_FITS_HPP
 
 #include "phypp/fits_base.hpp"
 #include "phypp/fits_table.hpp"
@@ -8,21 +8,21 @@
 namespace fits {
     // Return the number of dimensions of a FITS file
     // Note: will return 0 for FITS tables
-    uint_t file_axes(const std::string& filename) {
+    inline uint_t file_axes(const std::string& filename) {
         return fits::input_image(filename).axis_count();
     }
 
     // Return the dimensions of a FITS image
     // Note: will return an empty array for FITS tables
-    vec1u file_dimensions(const std::string& filename) {
+    inline vec1u file_dimensions(const std::string& filename) {
         return fits::input_image(filename).image_dims();
     }
 
-    bool is_cube(const std::string& filename) {
+    inline bool is_cube(const std::string& filename) {
         return fits::input_image(filename).is_cube();
     }
 
-    bool is_image(const std::string& filename) {
+    inline bool is_image(const std::string& filename) {
         return fits::input_image(filename).is_image();
     }
 
@@ -58,7 +58,7 @@ namespace fits {
         return v;
     }
 
-    vec1s read_sectfits(const std::string& filename) {
+    inline vec1s read_sectfits(const std::string& filename) {
         std::ifstream file(filename);
         if (!file.is_open()) {
             throw fits::exception("could not find file '"+filename+"'");
@@ -81,15 +81,15 @@ namespace fits {
         return files;
     }
 
-    fits::header read_header(const std::string& filename) {
+    inline fits::header read_header(const std::string& filename) {
         return fits::generic_file(filename).read_header();
     }
 
-    fits::header read_header_hdu(const std::string& filename, uint_t hdu) {
+    inline fits::header read_header_hdu(const std::string& filename, uint_t hdu) {
         return fits::generic_file(filename, hdu).read_header();
     }
 
-    fits::header read_header_sectfits(const std::string& filename, uint_t sect) {
+    inline fits::header read_header_sectfits(const std::string& filename, uint_t sect) {
         if (end_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
             phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
@@ -121,7 +121,7 @@ namespace fits {
     }
 
     // Read information about the columns of a FITS table
-    vec<1,column_info> read_table_columns(const std::string& filename) {
+    inline vec<1,column_info> read_table_columns(const std::string& filename) {
         return fits::input_table(filename).read_column_info();
     }
 
@@ -195,15 +195,15 @@ namespace fits {
         fits::table(filename).update_columns(t);
     }
 
-    void display(const std::string& name) {
+    inline void display(const std::string& name) {
         fork("ds9 "+name);
     }
 
-    void display(const std::string& name1, const std::string& name2) {
+    inline void display(const std::string& name1, const std::string& name2) {
         fork("ds9 -rgb -red "+name1+" -green "+name2);
     }
 
-    void display(const std::string& name1, const std::string& name2, const std::string& name3) {
+    inline void display(const std::string& name1, const std::string& name2, const std::string& name3) {
         fork("ds9 -rgb -red "+name1+" -green "+name2+" -blue "+name3);
     }
 }

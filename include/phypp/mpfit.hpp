@@ -1,5 +1,5 @@
-#ifndef MPFIT_HPP
-#define MPFIT_HPP
+#ifndef PHYPP_MPFIT_HPP
+#define PHYPP_MPFIT_HPP
 
 #include "phypp/math.hpp"
 

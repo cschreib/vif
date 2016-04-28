@@ -1,5 +1,5 @@
-#ifndef FILE_HPP
-#define FILE_HPP
+#ifndef PHYPP_FILE_HPP
+#define PHYPP_FILE_HPP
 
 // Emulate directory and file listing windows functions
 // Note : Taken directly from Ogre3D
@@ -17,6 +17,7 @@
 #include <tuple>
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"
+#include "phypp/error.hpp"
 
 namespace file {
     namespace impl {

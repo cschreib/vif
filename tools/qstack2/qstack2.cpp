@@ -83,7 +83,7 @@ bool read_ids(std::string sid, uint_t& id, uint_t pos, uint_t star, uint_t idmax
     return true;
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
         return 0;
