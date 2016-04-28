@@ -844,10 +844,11 @@ namespace fits {
         template<std::size_t Dim>
         void write_column_impl_(const vec<Dim,std::string>& value,
             const std::array<long,Dim+1>& dims, int cid) {
-            // NB: for some reason cfitsio crashes on empty string
-            if (value.empty()) return;
-
             const uint_t nmax = dims[0];
+
+            // NB: for some reason cfitsio crashes on empty string
+            if (nmax == 0 || value.empty()) return;
+
             char** buffer = new char*[value.size()];
             for (uint_t i : range(value)) {
                 buffer[i] = new char[nmax+1];
