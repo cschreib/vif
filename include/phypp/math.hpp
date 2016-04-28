@@ -812,7 +812,7 @@ rtype_t<Type> mad(const vec<Dim,Type>& v) {
 }
 
 template<typename F, F f, std::size_t Dim, typename Type, typename ... Args>
-auto run_index_(const vec<Dim,Type>& v, const Args& ... args, uint_t dim) ->
+auto run_index_(uint_t dim, const vec<Dim,Type>& v, Args&& ... args) ->
 vec<Dim-1,typename return_type<F>::type> {
 
     vec<Dim-1,typename return_type<F>::type> r;
@@ -859,7 +859,7 @@ vec<Dim-1,typename return_type<F>::type> {
             tmp.safe[j] = v.safe[base + j*mpitch];
         }
 
-        r.safe[i] = (*f)(tmp, args...);
+        r.safe[i] = (*f)(tmp, std::forward<Args>(args)...);
     }
 
     return r;
@@ -944,7 +944,7 @@ template<typename F, std::size_t Dim, typename Type>
 auto reduce(uint_t dim, const vec<Dim,Type>& v, F&& func) ->
     vec<Dim-1,typename return_type<F>::type> {
     phypp_check(dim < Dim, "reduction dimension is incompatible with input vector "
-        "(", dim, " vs. ", v.dims);
+        "(", dim, " vs. ", v.dims, ")");
 
     vec<Dim-1,typename return_type<F>::type> r;
     for (uint_t i = 0; i < dim; ++i) {
@@ -964,8 +964,8 @@ auto reduce(uint_t dim, const vec<Dim,Type>& v, F&& func) ->
 }
 
 #define RUN_INDEX(func) \
+    template<typename T, typename ... Args> \
     struct func ## _run_index_wrapper_ { \
-        template<typename T, typename ... Args> \
         static auto run(const vec<1,T>& v, Args&& ... args) -> \
         decltype(func(v, std::forward<Args>(args)...)) { \
             return func(v, std::forward<Args>(args)...); \
@@ -976,11 +976,10 @@ auto reduce(uint_t dim, const vec<Dim,Type>& v, F&& func) ->
     auto partial_ ## func (uint_t dim, const vec<Dim,Type>& v, Args&& ... args) -> \
     vec<Dim-1, decltype(func(std::declval<vec<1,rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
         phypp_check(dim < Dim, "reduction dimension is incompatible with input vector " \
-            "(", dim, " vs. ", v.dims); \
-        using fptr = decltype(func(std::declval<vec<1,rtype_t<Type>>>(), std::forward<Args>(args)...)) \
-            (*)(const vec<1,rtype_t<Type>>&, Args&& ...); \
-        using wrapper = func ## _run_index_wrapper_; \
-        return run_index_<fptr, &wrapper::run<rtype_t<Type>, Args...>>(v, dim); \
+            "(", dim, " vs. ", v.dims, ")"); \
+        using wrapper = func ## _run_index_wrapper_<rtype_t<Type>, Args...>; \
+        using fptr = decltype(&wrapper::run); \
+        return run_index_<fptr, &wrapper::run>(dim, v, std::forward<Args>(args)...); \
     }
 
 RUN_INDEX(total);
