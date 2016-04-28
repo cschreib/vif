@@ -207,10 +207,10 @@ endif()
 if (NOT NO_UNWIND)
     # handle conditional LibDwarf support
     if (NOT LIBDWARF_FOUND AND NOT NO_LIBDWARF)
-        message("note: the libdwarf library cound not be found: stack trace in error messages will not have function names, but apart from that the library will function properly")
+        message("note: the libdwarf library cound not be found: stack trace in error messages will not have file+line information, but apart from that the library will function properly")
     endif()
     if (NO_LIBDWARF)
-        message("note: the libdwarf library has been disabled: stack trace in error messages will not have function names, but apart from that the library will function properly")
+        message("note: the libdwarf library has been disabled: stack trace in error messages will not have file+line information, but apart from that the library will function properly")
     endif()
 endif()
 
