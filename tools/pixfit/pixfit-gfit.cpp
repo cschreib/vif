@@ -77,13 +77,14 @@ int phypp_main(int argc, char* argv[]) {
     uint_t ntrep = 2;
     vec1f tdust_range;
     bool verbose = false;
+    vec1u only_ids;
 
     // Read parameters from command line
     read_args(argc, argv, arg_list(name(cat, "incat"), name(zvar, "z"), data_dir,
         verbose, thread, nsim, name(tseed, "seed"), name(out, "outcat"),
         name(scosmo, "cosmo"), suffix, snr_max, snr_max_group, ntgrid, ntrep,
         no_negative, filter_db, irlib, fix_tdust, fix_fpah, tdust_range,
-        min_lam, max_fpah
+        min_lam, max_fpah, only_ids
     ));
 
     irlib = file::directorize(irlib);
@@ -618,6 +619,13 @@ int phypp_main(int argc, char* argv[]) {
     });
 
     for (auto& f : fgroups) {
+        vec1u gids = gifit[f.sids];
+
+        if (!only_ids.empty()) {
+            // Only fit the groups that contain the sources we are interested in
+            if (count(is_any_of(fcat.id[gids], only_ids)) == 0) continue;
+        }
+
         const uint_t tnfit = f.sids.size();
         if (verbose) {
             print("fitting simultaneously ", tnfit, " sources");
@@ -639,8 +647,6 @@ int phypp_main(int argc, char* argv[]) {
         vec1d tfpah(tnfit);
         vec1d tfpah_err(tnfit);
         vec1d tresiduals(tnfit);
-
-        vec1u gids = gifit[f.sids];
 
         if (fix_fpah) {
             tfpah = fpah_z(f.z);
