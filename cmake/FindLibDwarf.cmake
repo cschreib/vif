@@ -44,6 +44,7 @@ find_library (LIBDWARF_LIBRARIES
     ENV LD_LIBRARY_PATH)
 include (FindPackageHandleStandardArgs)
 
+set(LIBDWARF_LIBRARIES ${LIBELF_LIBRARIES} ${LIBDWARF_LIBRARIES})
 
 # handle the QUIETLY and REQUIRED arguments and set LIBDWARF_FOUND to TRUE
 # if all listed variables are TRUE
@@ -54,7 +55,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(LibDwarf DEFAULT_MSG
 
 if (LIBDWARF_LIBRARIES AND LIBDWARF_INCLUDE_DIRS)
   set(CMAKE_REQUIRED_INCLUDES ${LIBDWARF_INCLUDE_DIRS})
-  set(CMAKE_REQUIRED_LIBRARIES ${LIBDWARF_LIBRARIES} ${LIBELF_LIBRARIES})
+  set(CMAKE_REQUIRED_LIBRARIES ${LIBDWARF_LIBRARIES})
 
   # libdwarf makes breaking changes occasionally and doesn't provide an easy
   # way to test for them. The following checks should detect the changes and
