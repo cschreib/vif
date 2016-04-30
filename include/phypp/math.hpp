@@ -17,12 +17,12 @@
 #include <fftw3.h>
 #endif
 
-static const double dnan = std::numeric_limits<double>::quiet_NaN();
-static const float  fnan = std::numeric_limits<float>::quiet_NaN();
-static const double dinf = std::numeric_limits<double>::infinity();
-static const float  finf = std::numeric_limits<float>::infinity();
-static const double dpi = 3.14159265359;
-static const float  fpi = 3.14159265359;
+static constexpr const double dnan = std::numeric_limits<double>::quiet_NaN();
+static constexpr const float  fnan = std::numeric_limits<float>::quiet_NaN();
+static constexpr const double dinf = std::numeric_limits<double>::infinity();
+static constexpr const float  finf = std::numeric_limits<float>::infinity();
+static constexpr const double dpi = 3.14159265359;
+static constexpr const float  fpi = 3.14159265359;
 
 // Import some standard functions into the global namespace for convenience
 using std::abs;
