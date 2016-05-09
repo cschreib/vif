@@ -1,6 +1,0 @@
-<snippet>
-	<name>Template std::enable_if</name>
-    <content><![CDATA[typename enable = typename std::enable_if<${0}>::type]]></content>
-    <tabTrigger>enable_if</tabTrigger>
-    <scope>source.c++, source.objc++</scope>
-</snippet>
