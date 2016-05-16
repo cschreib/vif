@@ -348,8 +348,8 @@ namespace file {
     auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
         vec<Dim,decltype(name(v[0], args...))> { \
         using ntype = decltype(name(v[0], args...)); \
-        vec<Dim,ntype> r = arr<ntype>(v.dims); \
-        for (uint_t i = 0; i < v.size(); ++i) { \
+        vec<Dim,ntype> r(v.dims); \
+        for (uint_t i : range(v)) { \
             r.safe[i] = name(v.safe[i], args...); \
         } \
         return r; \
@@ -404,7 +404,7 @@ namespace file {
 
     template<typename T, typename ... Args>
     void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args) {
-        v = arr<T>(n);
+        v.resize(n);
         read_table_resize_(n, args...);
     }
 
@@ -417,7 +417,7 @@ namespace file {
 
     template<typename Type, typename ... VArgs>
     void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args) {
-        v = arr<Type>(n, m);
+        v.resize(n, m);
         read_table_resize_cols_(n, m, args...);
     }
 
