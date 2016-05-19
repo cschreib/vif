@@ -802,7 +802,7 @@ namespace fits {
     >> {};
 
     template<std::size_t D, typename T>
-    struct is_writable_column_type<vec<D,T>> : is_any_type_of<T, type_list<
+    struct is_writable_column_type<vec<D,T>> : is_any_type_of<typename vec<D,T>::rtype, type_list<
         bool, char, int_t, uint_t, float, double, std::string
     >> {};
 
