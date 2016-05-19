@@ -72,7 +72,7 @@ namespace fits {
 
         template<std::size_t D, typename T>
         struct data_type<vec<D,T>> {
-            using type = T;
+            using type = typename vec<D,T>::rtype;
         };
 
 
