@@ -881,7 +881,7 @@ namespace fits {
 
         template<std::size_t Dim, typename Type>
         void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,Dim>& dims, int cid) {
-            write_column_impl_(value.concretize(), dims, cid);
+            write_column_impl_(value.concretise(), dims, cid);
         }
 
         template<std::size_t Dim, typename Type>
