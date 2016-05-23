@@ -1962,7 +1962,7 @@ linfit_result linfit_pack(const vec<Dim,TypeY>& y, const vec<Dim,TypeE>& ye,
 
 template<typename TypeE>
 struct linfit_batch_t {
-    const TypeE& ye;
+    TypeE ye;
     vec2d cache;
     vec1d beta;
     vec2d alpha;
