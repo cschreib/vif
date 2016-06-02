@@ -2242,7 +2242,7 @@ rtype_t<Type> bilinear_strict(const vec<2,Type>& map, double x, double y,
     int_t tix = floor(x);
     int_t tiy = floor(y);
 
-    if (tix < 0 || uint_t(tix) >= map.dims[0]-1 || tiy < 0 || uint_t(tiy) >= map.dims[1]-1 || ) {
+    if (tix < 0 || uint_t(tix) >= map.dims[0]-1 || tiy < 0 || uint_t(tiy) >= map.dims[1]-1) {
         return def;
     }
 
