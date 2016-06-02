@@ -70,4 +70,6 @@ int phypp_main(int argc, char* argv[]) {
         // Save the residual
         fits::write(map.band+"-fullres.fits", img, hdr);
     }
+
+    return 0;
 }
