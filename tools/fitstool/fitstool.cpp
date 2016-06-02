@@ -551,10 +551,11 @@ void print_hdr_help() {
 }
 
 bool show_header(int argc, char* argv[], const std::string& file) {
-    bool raw = false;
+    bool pretty = false;
     bool help = false;
     bool verbose = false;
-    read_args(argc, argv, arg_list(raw, help, verbose));
+    uint_t hdu = npos;
+    read_args(argc, argv, arg_list(pretty, hdu, help, verbose));
 
     if (help) {
         print_remove_help();
@@ -581,7 +582,16 @@ bool show_header(int argc, char* argv[], const std::string& file) {
             if (verbose) print("loaded image file");
         }
 
-        if (raw) {
+        if (hdu != npos) {
+            int nhdu = 0;
+            fits_get_num_hdus(fptr, &nhdu, &status);
+            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+                "FITS file (", hdu, " vs. ", nhdu, ")");
+
+            fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
+        }
+
+        if (!pretty) {
             // Read the header as a string
             char* hstr = nullptr;
             int nkeys  = 0;
@@ -628,7 +638,8 @@ void print_editkwd_help() {
 bool edit_keyword(int argc, char* argv[], const std::string& file) {
     bool help = false;
     bool verbose = false;
-    read_args(argc, argv, arg_list(help, verbose));
+    uint_t hdu = npos;
+    read_args(argc, argv, arg_list(help, verbose, hdu));
 
     if (help) {
         print_remove_help();
@@ -651,6 +662,15 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
             if (verbose) print("loaded table file");
         } else {
             if (verbose) print("loaded image file");
+        }
+
+        if (hdu != npos) {
+            int nhdu = 0;
+            fits_get_num_hdus(fptr, &nhdu, &status);
+            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+                "FITS file (", hdu, " vs. ", nhdu, ")");
+
+            fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
         }
 
         while (true) {
