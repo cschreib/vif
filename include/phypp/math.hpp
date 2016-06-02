@@ -1656,6 +1656,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
@@ -1691,6 +1692,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
@@ -1732,6 +1734,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
             alpha.dims, ")");
@@ -1774,6 +1777,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
             a.dims, ")");
