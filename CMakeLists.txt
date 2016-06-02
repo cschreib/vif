@@ -346,5 +346,9 @@ if (PROFILER_LIBRARIES)
 endif()
 
 # install config
-install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION $ENV{HOME} COMPONENT config)
+if (NOT PHYPPRC_DIR)
+    set(PHYPPRC_DIR $ENV{HOME})
+endif()
+message(STATUS "phy++ configuration environment will be installed in ${PHYPPRC_DIR}")
+install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION ${PHYPPRC_DIR} COMPONENT config)
 install(CODE "message(\"note: to finalize the installation, please source $ENV{HOME}/${PHYPP_OUTPUT_CONFIG_FILE} in your startup script (~/.bashrc).\")")
