@@ -184,8 +184,12 @@ int phypp_main(int argc, char* argv[]) {
     } fcat;
 
     if (!cat.empty()) {
-        std::string posh = pos.empty() ? "" : pos+".";
-        fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
+        if (end_with(cat, ".fits")) {
+            std::string posh = pos.empty() ? "" : pos+".";
+            fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
+        } else {
+            file::read_table(cat, file::find_skip(cat), fcat.ra, fcat.dec);
+        }
 
         if (!cids.empty()) {
             vec1u tcids(2);
