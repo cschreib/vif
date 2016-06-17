@@ -1046,10 +1046,10 @@ namespace impl {
         // 2) the return value is void, to avoid creating a return value
         template<typename ... Args>
         auto operator()(Args&& ... args) ->
-            decltype(run(bool_constant<common_dim<Args...>::value == 0>{},
+            decltype(this->run(bool_constant<common_dim<Args...>::value == 0>{},
                          std::is_same<scalar_return_type<Args...>, void>{},
                          std::forward<Args>(args)...)) {
-            return run(bool_constant<common_dim<Args...>::value == 0>{},
+            return this->run(bool_constant<common_dim<Args...>::value == 0>{},
                        std::is_same<scalar_return_type<Args...>, void>{},
                        std::forward<Args>(args)...);
         }
