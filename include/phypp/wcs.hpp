@@ -214,7 +214,10 @@ namespace fits {
         wcsprm* w = nullptr;
         int nwcs  = 0;
 
-        wcs() = default;
+        explicit wcs(uint_t naxis = 2) : w(new wcsprm), nwcs(1) {
+            w->flag = -1;
+            wcsini(true, naxis, w);
+        }
 
         explicit wcs(const fits::header& hdr) {
             // Enable error reporting
