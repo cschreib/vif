@@ -135,6 +135,12 @@ namespace fits {
 
             write_impl_(v.concretise());
         }
+
+        void write_empty() {
+            status_ = 0;
+            long naxes = 0;
+            fits_create_img(fptr_, traits<float>::image_type, 0, &naxes, &status_);
+        }
     };
 
     // Input/output FITS table (read & write, modifies existing files)

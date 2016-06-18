@@ -487,8 +487,8 @@ bool rejection_sampling(vec<1,TX>& x, vec<1,TY>& y, uint_t nsrc, uint_t max_iter
     using rtx_t = rtype_t<TX>;
     using rty_t = rtype_t<TY>;
 
-    x.reserve(nsrc);
-    y.reserve(nsrc);
+    x.resize(nsrc);
+    y.resize(nsrc);
 
     for (uint_t i : range(nsrc)) {
         rtx_t tx; rty_t ty;
@@ -503,8 +503,8 @@ bool rejection_sampling(vec<1,TX>& x, vec<1,TY>& y, uint_t nsrc, uint_t max_iter
             }
         }
 
-        x.push_back(tx);
-        y.push_back(ty);
+        x.safe[i] = tx;
+        y.safe[i] = ty;
     }
 
     return true;

@@ -515,5 +515,22 @@ using binary_first_apply_type_to_bool_list = binary_first_apply_type_to_value_li
 template<typename T, typename List>
 using is_any_type_of = are_any_true<binary_second_apply_type_to_bool_list<List, std::is_same, T>>;
 
+
+namespace meta {
+    template <typename T, T ... Args>
+    struct max;
+
+    template <typename T>
+    struct max<T> {
+        static_assert(!std::is_same<T,T>::value, "cannot find the maximum of an empty list");
+    };
+
+    template <typename T, T V>
+    struct max<T,V> : std::integral_constant<T,V> {};
+
+    template <typename T, T V, T... Args>
+    struct max<T,V,Args...> : std::integral_constant<T, (V > meta::max<T,Args...>::value ? V : meta::max<T,Args...>::value)> {};
+}
+
 #endif
 

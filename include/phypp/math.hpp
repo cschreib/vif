@@ -1656,6 +1656,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
@@ -1691,6 +1692,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
@@ -1732,6 +1734,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
             alpha.dims, ")");
@@ -1774,6 +1777,7 @@ namespace matrix {
     #ifdef NO_LAPACK
         static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
             "please enable LAPACK to use this function");
+        return false;
     #else
         phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
             a.dims, ")");
@@ -1962,7 +1966,7 @@ linfit_result linfit_pack(const vec<Dim,TypeY>& y, const vec<Dim,TypeE>& ye,
 
 template<typename TypeE>
 struct linfit_batch_t {
-    const TypeE& ye;
+    TypeE ye;
     vec2d cache;
     vec1d beta;
     vec2d alpha;
@@ -2242,7 +2246,7 @@ rtype_t<Type> bilinear_strict(const vec<2,Type>& map, double x, double y,
     int_t tix = floor(x);
     int_t tiy = floor(y);
 
-    if (tix >= map.dims[0]-1 || tix < 0 || tiy >= map.dims[1]-1 || tiy < 0) {
+    if (tix < 0 || uint_t(tix) >= map.dims[0]-1 || tiy < 0 || uint_t(tiy) >= map.dims[1]-1) {
         return def;
     }
 

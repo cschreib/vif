@@ -100,19 +100,23 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
         read = true;
         std::string value = trim(arg.substr(p+1));
         if (!value.empty() && value.front() == '[' && value.back() == ']') {
-            value.erase(0,1); value.pop_back();
-            vec1s vals = split(value, ",");
             t.clear();
-            t.reserve(n_elements(vals));
-            rtype_t<T> tmp;
-            for (auto& s : vals) {
-                bool v = read_args_n2T_(tmp, trim(trim(s), "'\""));
-                if (!v) {
-                    t.clear();
-                    valid = false;
-                    return;
-                } else {
-                    t.push_back(tmp);
+
+            value.erase(0,1); value.pop_back();
+
+            if (!value.empty()) {
+                vec1s vals = split(value, ",");
+                t.reserve(n_elements(vals));
+                rtype_t<T> tmp;
+                for (auto& s : vals) {
+                    bool v = read_args_n2T_(tmp, trim(trim(s), "'\""));
+                    if (!v) {
+                        t.clear();
+                        valid = false;
+                        return;
+                    } else {
+                        t.push_back(tmp);
+                    }
                 }
             }
 
