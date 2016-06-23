@@ -55,7 +55,7 @@ namespace fits {
 
             int naxis;
             fits_get_img_dim(fptr_, &naxis, &status_);
-            phypp_check_fits(naxis == p.size(), "FITS file has wrong number of dimensions "
+            phypp_check_fits(uint_t(naxis) == p.size(), "FITS file has wrong number of dimensions "
                 "(expected "+strn(p.size())+", got "+strn(naxis)+")");
 
             int bitpix;
@@ -66,7 +66,7 @@ namespace fits {
             uint_t pitch = 1;
             bool no_error = true;
             for (uint_t i : range(p)) {
-                no_error = no_error && p.safe[naxis-1-i] < naxes[i];
+                no_error = no_error && p.safe[naxis-1-i] < uint_t(naxes[i]);
                 ppos += p.safe[naxis-1-i]*pitch;
                 pitch *= naxes[i];
             }

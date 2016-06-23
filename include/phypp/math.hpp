@@ -1831,9 +1831,9 @@ struct linfit_result {
     vec2d  cov;
 
     // Reflection data
-    MEMBERS1(success, chi2, params, errors, cov);
+    MEMBERS1(success, chi2, params, errors, cov)
     MEMBERS2("linfit_result", MAKE_MEMBER(success), MAKE_MEMBER(chi2),
-        MAKE_MEMBER(params), MAKE_MEMBER(errors), MAKE_MEMBER(cov));
+        MAKE_MEMBER(params), MAKE_MEMBER(errors), MAKE_MEMBER(cov))
 };
 
 template<typename T, typename TypeE>

@@ -740,8 +740,8 @@ namespace file {
     }
 
     inline std::string pop_macroed_name(std::string& s) {
-        static const std::array<char,3> opening = {'(', '[', '{'};
-        static const std::array<char,3> closing = {')', ']', '}'};
+        static const std::array<char,3> opening = {{'(', '[', '{'}};
+        static const std::array<char,3> closing = {{')', ']', '}'}};
 
         std::string name;
 

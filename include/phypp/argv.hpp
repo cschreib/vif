@@ -9,14 +9,14 @@
 
 template<typename T, typename U>
 bool read_args_n2T_(T& t, const U& u) {
-    t = u;
+    t = static_cast<T>(u);
     return true;
 }
 
 template<typename T, typename U,
     typename enable = typename std::enable_if<!std::is_same<T, std::string>::value>::type>
 bool read_args_n2T_(vec<1,T>& t, const U& u) {
-    t = {u};
+    t = {static_cast<T>(u)};
     return true;
 }
 
@@ -239,7 +239,7 @@ void read_args(uint_t argc, char* argv[], const std::string& names, Args&& ... a
 void save_args(const std::string& file, const std::string& pname, int argc, char* argv[]) {
     std::ofstream cmd(file);
     cmd << pname;
-    for (int_t i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i) {
         cmd << " " << argv[i];
     }
 }

@@ -736,7 +736,7 @@ randpos_status randpos_power_circle(TSeed& seed, double x0, double y0, double r0
         fill /= mfill;
 
         // Assign a number of object to each positions
-        uint_t eta_level = (l+2 == options.levels ? options.eta_end : options.eta);
+        eta_level = (l+2 == options.levels ? options.eta_end : options.eta);
         vec1u ngal = floor(eta_level*fill);
         vec1d dngal = eta_level*fill - ngal;
         uint_t miss0 = eta_level*x.size() - total(ngal);
