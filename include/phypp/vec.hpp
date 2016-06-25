@@ -72,16 +72,22 @@ struct vec {
     vtype    data;
     dim_type dims = {{0}};
 
+    // Default constructor
     vec() : safe(*this) {}
+
+    // Copy constructor
     vec(const vec& v) : data(v.data), dims(v.dims), safe(*this) {}
+    // Copy constructor (only dims)
     vec(vec_nocopy_tag_t, const vec& v) : dims(v.dims), safe(*this) {}
 
+    // Move constructor
     vec(vec&& v) : data(std::move(v.data)), dims(v.dims), safe(*this) {
         for (uint_t i : range(Dim)) {
             v.dims[i] = 0;
         }
     }
 
+    // Dimension constructor
     template<typename ... Args, typename enable =
         typename std::enable_if<is_dim_list<Args...>::value>::type>
     explicit vec(Args&& ... d) : safe(*this) {
@@ -92,41 +98,27 @@ struct vec {
         resize();
     }
 
+    // Initializer list constructor
     vec(nested_initializer_list<Dim,dtype_t<Type>> il) : safe(*this) {
         vec_ilist::helper<Dim, Type>::fill(*this, il);
     }
 
-    template<typename T, typename enable = typename std::enable_if<
-        !std::is_same<rtype_t<T>,bool>::value ||
-        std::is_same<Type,bool>::value>::type>
+    // Implicit conversion
+    template<typename T, typename std::enable_if<!vec_only_explicit_convertible<rtype_t<T>,Type>::value, bool>::type = false>
     vec(const vec<Dim,T>& v) : dims(v.dims), safe(*this) {
-        static_assert(vec_convertible<rtype_t<T>,Type>::value, "could not assign vectors of "
-            "non-convertible types");
-
+        static_assert(vec_implicit_convertible<rtype_t<T>,Type>::value,
+            "could not construct vector from non-convertible type");
         data.resize(v.data.size());
         for (uint_t i : range(v)) {
             data[i] = v.safe[i];
         }
     }
 
-    // Explicit conversion from bool to non-bool types
-    template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
-    explicit vec(const vec<Dim,bool>& v) : dims(v.dims), safe(*this) {
-        static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
-            "non-convertible types");
-
-        data.resize(v.data.size());
-        for (uint_t i : range(v)) {
-            data[i] = v.safe[i];
-        }
-    }
-
-    // Explicit conversion from bool to non-bool types
-    template<typename T = Type, typename enable = typename std::enable_if<!std::is_same<T,bool>::value>::type>
-    explicit vec(const vec<Dim,bool*>& v) : dims(v.dims), safe(*this) {
-        static_assert(vec_convertible<bool,Type>::value, "could not assign vectors of "
-            "non-convertible types");
-
+    // Explicit conversion
+    template<typename T, typename std::enable_if<vec_only_explicit_convertible<rtype_t<T>,Type>::value, bool>::type = false>
+    explicit vec(const vec<Dim,T>& v) : dims(v.dims), safe(*this) {
+        static_assert(vec_explicit_convertible<rtype_t<T>,Type>::value,
+            "could not construct vector from non-convertible type");
         data.resize(v.data.size());
         for (uint_t i : range(v)) {
             data[i] = v.safe[i];
@@ -150,12 +142,10 @@ struct vec {
         return *this;
     }
 
-    template<typename T, typename enable = typename std::enable_if<
-        !std::is_same<rtype_t<T>,bool>::value ||
-        std::is_same<Type,bool>::value>::type>
+    template<typename T>
     vec& operator = (const vec<Dim,T>& v) {
-        static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
-            "non-convertible types");
+        static_assert(vec_implicit_convertible<T,Type>::value, "could not assign vectors of "
+            "non-implicitly-convertible types");
 
         if (v.is_same(*this)) {
             std::vector<dtype> t(v.data.size());
@@ -725,11 +715,10 @@ struct vec<Dim,Type*> {
         }
     }
 
-    template<typename T, typename enable =
-        typename std::enable_if<!std::is_same<rtype_t<T>,bool>::value || std::is_same<Type,bool>::value>::type>
+    template<typename T>
     vec& operator = (const vec<Dim,T>& v) {
-        static_assert(vec_convertible<T,Type>::value, "could not assign vectors of "
-            "non-convertible types");
+        static_assert(vec_implicit_convertible<T,Type>::value, "could not assign vectors of "
+            "non-implicitly-convertible types");
         phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
             v.dims, " to ", dims, ")");
 

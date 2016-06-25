@@ -257,16 +257,36 @@ struct is_dim_list : std::integral_constant<bool,
 template<>
 struct is_dim_list<> : std::true_type {};
 
-// Trait to define if a vector type can be converted into another
+// Trait to define if a vector type can be implicitly converted into another
 template<typename TFrom, typename TTo>
-struct vec_convertible_ : std::is_convertible<TFrom,TTo> {};
+struct vec_implicit_convertible_ : std::is_convertible<TFrom,TTo> {};
 
 // Implicit conversion to/from bool is disabled
 template<typename TFrom>
-struct vec_convertible_<TFrom,bool> : std::is_same<TFrom,bool> {};
+struct vec_implicit_convertible_<TFrom,bool> : std::false_type {};
+template<typename TTo>
+struct vec_implicit_convertible_<bool,TTo> : std::false_type {};
+template<>
+struct vec_implicit_convertible_<bool,bool> : std::true_type{};
 
 template<typename TFrom, typename TTo>
-using vec_convertible = vec_convertible_<
+using vec_implicit_convertible = vec_implicit_convertible_<
     typename std::decay<typename std::remove_pointer<TFrom>::type>::type,
     typename std::decay<typename std::remove_pointer<TTo>::type>::type
 >;
+
+// Trait to define if a vector type can be explicitly converted into another
+template<typename TFrom, typename TTo>
+struct vec_explicit_convertible_ : std::is_convertible<TFrom,TTo> {};
+
+template<typename TFrom, typename TTo>
+using vec_explicit_convertible = vec_explicit_convertible_<
+    typename std::decay<typename std::remove_pointer<TFrom>::type>::type,
+    typename std::decay<typename std::remove_pointer<TTo>::type>::type
+>;
+
+// Trait to define if a vector type can be converted *only* explicitly into another
+template<typename TFrom, typename TTo>
+using vec_only_explicit_convertible = std::integral_constant<bool,
+        vec_explicit_convertible<TFrom,TTo>::value &&
+        !vec_implicit_convertible<TFrom, TTo>::value>;
