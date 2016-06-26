@@ -245,14 +245,17 @@ void set_array(std::array<T,N>& v, Args&& ... args) {
 
 // Trait to figure out if type list matches an dimension list
 template<typename T>
-struct is_dim_elem : std::is_arithmetic<T> {};
+struct is_dim_elem_ : std::is_integral<T> {};
 
 template<typename T, std::size_t N>
-struct is_dim_elem<std::array<T,N>> : std::true_type {};
+struct is_dim_elem_<std::array<T,N>> : std::true_type {};
+
+template<typename T>
+using is_dim_elem = is_dim_elem_<typename std::decay<T>::type>;
 
 template<typename ... Args>
 struct is_dim_list : std::integral_constant<bool,
-    are_all_true<bool_list<is_dim_elem<typename std::decay<Args>::type>::value...>>::value> {};
+    are_all_true<bool_list<is_dim_elem<Args>::value...>>::value> {};
 
 template<>
 struct is_dim_list<> : std::true_type {};
