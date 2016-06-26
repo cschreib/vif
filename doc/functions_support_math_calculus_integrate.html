@@ -28,13 +28,51 @@
 </pre></div></td></tr>
 <tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">integrate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="kt">double</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">integrate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">integrate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">y</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">integrate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="kt">double</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span class="kt">double</span> <span class="n">integrate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">y</span><span class="p">,</span> <span class="kt">double</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
+These functions perform the integral of a tabulated function <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg">, either covering the whole extent of the tabulated data, or only within a specified interval enclosed within <div class="highlight-inline"><pre><span class="n">x0</span></pre></div> and <div class="highlight-inline"><pre><span class="n">x1</span></pre></div>.
+<br><br>
+For the first two functions, the integration is performed using the trapezoid rule. Here, each value of <div class="highlight-inline"><pre><span class="n">x</span></pre></div> corresponds to a given value of the function <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg"> in <div class="highlight-inline"><pre><span class="n">y</span></pre></div>. The sampling can be arbitrary. The algorithm only assumes that <div class="highlight-inline"><pre><span class="n">x</span></pre></div> is sorted and only contains unique values, and it also assumes that <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg"> is continuous (no check is performed for any of these hypotheses). The result will be exact if <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg"> is (piece-wise) linear. Note that if the analytical form of <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg"> is known, using <div class="highlight-inline"><pre><span class="n">integrate_func</span><span class="p">()</span></pre></div> will usually be more efficient unless many integrals need to be computed for the same function.
+<br><br>
+The next two functions perform the integration of <span class="emphasis">histogram</span> data by simply summing up the area of each &ldquo;bar&rdquo; of the histogram. In this case, <div class="highlight-inline"><pre><span class="n">x</span></pre></div> is a two-dimensional vector such that <div class="highlight-inline"><pre><span class="n">x</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">_</span><span class="p">)</span></pre></div> and <div class="highlight-inline"><pre><span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">_</span><span class="p">)</span></pre></div> contain the lower and upper bound of each histogram point, respectively, while <div class="highlight-inline"><pre><span class="n">y</span></pre></div> contains the average value of the function <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg"> between <div class="highlight-inline"><pre><span class="n">x</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">_</span><span class="p">)</span></pre></div> and <div class="highlight-inline"><pre><span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">_</span><span class="p">)</span></pre></div>. See the documentation of <div class="highlight-inline"><pre><span class="n">histogram</span><span class="p">()</span></pre></div> for more detail about binned data. The values of <div class="highlight-inline"><pre><span class="n">x</span></pre></div> need not be sorted, each interval can be of different size and the intervals can be disjoint. However, the algorithm assumes that the intervals do not overlap and that no interval is empty (no check is performed).
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1d</span> <span class="n">x</span> <span class="o">=</span> <span class="n">rgen</span><span class="p">(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mi">20</span><span class="p">);</span> <span class="c1">// build a grid of 20 points</span>
+<span class="n">vec1d</span> <span class="n">y</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">);</span>             <span class="c1">// sample a function</span>
+
+<span class="kt">double</span> <span class="n">r</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="c1">// The analytic value is &quot;sqrt(pi) x erf(10)&quot; = 1,772453850905516...</span>
+<span class="n">r</span><span class="p">;</span> <span class="c1">// 1.77197... not too bad</span>
+
+<span class="c1">// Binned data example (see histogram())</span>
+
+<span class="c1">// Generate a random data set</span>
+<span class="n">vec1d</span> <span class="n">rnd</span> <span class="o">=</span> <span class="n">randomn</span><span class="p">(</span><span class="n">make_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">),</span> <span class="mi">1000</span><span class="p">);</span>
+
+<span class="c1">// Build some bins</span>
+<span class="n">vec2d</span> <span class="n">xb</span> <span class="o">=</span> <span class="n">make_bins</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">);</span>
+
+<span class="c1">// Compute the histogram of the random data</span>
+<span class="n">vec1d</span> <span class="n">yb</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">rnd</span><span class="p">,</span> <span class="n">xb</span><span class="p">);</span>
+
+<span class="c1">// Now we can compute the integral of this binned data</span>
+
+<span class="c1">// Note that the algorithm assumes that the &#39;y&#39; parameter is the</span>
+<span class="c1">// *average* of the function between &#39;x(0,_)&#39; and &#39;x(1,_)&#39;, so we</span>
+<span class="c1">// have to divide each value of &#39;yb&#39; by the width of the</span>
+<span class="c1">// corresponding bin</span>
+<span class="n">yb</span> <span class="o">/=</span> <span class="n">bin_width</span><span class="p">(</span><span class="n">xb</span><span class="p">);</span>
+
+<span class="c1">// There is the integral</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">xb</span><span class="p">,</span> <span class="n">yb</span><span class="p">);</span>
+<span class="n">r</span><span class="p">;</span> <span class="c1">// 1000 most probably</span>
+<span class="c1">// The exact value here is simply &quot;count(rnd &gt;= -10 &amp;&amp; rnd &lt; 10)&quot;</span>
+</pre></div>
+<hr><br>
 </div>
 </div>
   </div>

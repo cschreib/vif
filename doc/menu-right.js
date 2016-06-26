@@ -12,6 +12,7 @@ document.write('\
 <li><a href="functions_support_math_geometry_angdistr.html">angdist</a></li> \
 <li><a href="functions_support_math_geometry_angdist_less.html">angdist_less</a></li> \
 <li><a href="functions_support_math_geometry_angdistr.html">angdistr</a></li> \
+<li><a href="functions_support_math_geometry_angrot_vernal.html">angrot_vernal</a></li> \
 <li><a href="functions_support_generic_dim_append.html">append</a></li> \
 <li><a href="functions_support_generic_find_astar_find.html">astar_find</a></li> \
 </ul><br></li> \
@@ -38,21 +39,20 @@ document.write('\
 <li><a href="functions_support_astro_cosmo_get_cosmo.html">cosmo_std</a></li> \
 <li><a href="functions_support_astro_cosmo_get_cosmo.html">cosmo_wmap</a></li> \
 <li><a href="functions_support_math_reduce_count.html">count</a></li> \
+<li><a href="functions_support_math_calculus_cumul.html">cumul</a></li> \
 <li><a href="functions_support_string_modify_cut.html">cut</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">D</span><br> \
 <ul> \
 <li><a href="functions_support_astro_sky_sex2deg.html">deg2sex</a></li> \
-<li><a href="functions_support_math_calculus_derivate1.html">derivate1</a></li> \
-<li><a href="functions_support_math_calculus_derivate2.html">derivate2</a></li> \
-<li><a href="functions_support_math_algebra_diagonal.html">diagonal</a></li> \
+<li><a href="functions_support_math_calculus_derivate1_func.html">derivate1_func</a></li> \
+<li><a href="functions_support_math_calculus_derivate1_func.html">derivate2_func</a></li> \
 <li><a href="functions_support_generic_sequence_indgen.html">dindgen</a></li> \
 <li><a href="functions_support_string_modify_distance.html">distance</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">E</span><br> \
 <ul> \
 <li><a href="functions_support_math_lowlevel_e10.html">e10</a></li> \
-<li><a href="functions_support_math_algebra_eigen_symmetric.html">eigen_symmetric</a></li> \
 <li><a href="functions_support_string_modify_empty.html">empty</a></li> \
 <li><a href="functions_support_string_modify_start_with.html">end_with</a></li> \
 <li><a href="functions_support_image_enlarge.html">enlarge</a></li> \
@@ -70,8 +70,10 @@ document.write('\
 <li><a href="functions_support_file_system_file_copy.html">file::copy</a></li> \
 <li><a href="functions_support_file_system_file_directorize.html">file::directorize</a></li> \
 <li><a href="functions_support_file_system_file_exists.html">file::exists</a></li> \
+<li><a href="functions_support_file_ascii_file_find_skip.html">file::find_skip</a></li> \
 <li><a href="functions_support_file_system_file_get_basename.html">file::get_basename</a></li> \
 <li><a href="functions_support_file_system_file_get_directory.html">file::get_directory</a></li> \
+<li><a href="functions_support_file_system_file_is_absolute_path.html">file::is_absolute_path</a></li> \
 <li><a href="functions_support_file_system_file_is_older.html">file::is_older</a></li> \
 <li><a href="functions_support_file_system_file_list_directories.html">file::list_directories</a></li> \
 <li><a href="functions_support_file_system_file_list_files.html">file::list_files</a></li> \
@@ -103,6 +105,7 @@ document.write('\
 <li><a href="functions_support_fits_table_fits_read_table_columns.html">fits::read_table_columns</a></li> \
 <li><a href="functions_support_fits_table_fits_read_table.html">fits::read_table_loose</a></li> \
 <li><a href="functions_support_fits_header_fits_setkey.html">fits::setkey</a></li> \
+<li><a href="functions_support_fits_image_fits_update_hdu.html">fits::update_hdu</a></li> \
 <li><a href="functions_support_fits_table_fits_write_table.html">fits::update_table</a></li> \
 <li><a href="functions_support_fits_image_fits_write.html">fits::write</a></li> \
 <li><a href="functions_support_fits_table_fits_write_table.html">fits::write_table</a></li> \
@@ -121,6 +124,7 @@ document.write('\
 <li><a href="functions_support_image_generate_img.html">generate_img</a></li> \
 <li><a href="functions_support_astro_catalog_get_band.html">get_band</a></li> \
 <li><a href="functions_support_astro_cosmo_get_cosmo.html">get_cosmo</a></li> \
+<li><a href="functions_support_file_system_remove_extension.html">get_extension</a></li> \
 <li><a href="functions_support_astro_flux_get_filter.html">get_filter</a></li> \
 <li><a href="functions_support_astro_flux_get_filter_id.html">get_filter_id</a></li> \
 <li><a href="functions_support_astro_flux_get_filter.html">get_filters</a></li> \
@@ -133,25 +137,18 @@ document.write('\
 </ul><br></li> \
 <li><span class="menu-alpha-heading">I</span><br> \
 <ul> \
-<li><a href="functions_support_math_algebra_identity_matrix.html">identity_matrix</a></li> \
 <li><a href="functions_support_math_algebra_fft.html">ifft</a></li> \
 <li><a href="functions_support_math_sequence_in_bin.html">in_bin</a></li> \
 <li><a href="functions_support_math_sequence_in_bin.html">in_bin_open</a></li> \
 <li><a href="functions_support_math_geometry_in_convex_hull.html">in_convex_hull</a></li> \
 <li><a href="functions_support_generic_sequence_indgen.html">indgen</a></li> \
-<li><a href="functions_support_math_algebra_eigen_symmetric.html">inplace_eigen_symmetric</a></li> \
-<li><a href="functions_support_math_algebra_invert.html">inplace_invert</a></li> \
-<li><a href="functions_support_math_algebra_invert_symmetric.html">inplace_invert_symmetric</a></li> \
 <li><a href="functions_support_math_reduce_median.html">inplace_median</a></li> \
 <li><a href="functions_support_generic_dim_remove.html">inplace_remove</a></li> \
 <li><a href="functions_support_math_random_shuffle.html">inplace_shuffle</a></li> \
-<li><a href="functions_support_math_algebra_solve_symmetric.html">inplace_solve_symmetric</a></li> \
 <li><a href="functions_support_generic_rearrange_sort.html">inplace_sort</a></li> \
-<li><a href="functions_support_math_calculus_integrate_trap.html">integrate</a></li> \
-<li><a href="functions_support_math_calculus_integrate_trap.html">integrate_trap</a></li> \
+<li><a href="functions_support_math_calculus_integrate.html">integrate</a></li> \
+<li><a href="functions_support_math_calculus_integrate_func.html">integrate_func</a></li> \
 <li><a href="functions_support_math_interpol_interpolate.html">interpolate</a></li> \
-<li><a href="functions_support_math_algebra_invert.html">invert</a></li> \
-<li><a href="functions_support_math_algebra_invert_symmetric.html">invert_symmetric</a></li> \
 <li><a href="functions_support_math_lowlevel_e10.html">invsqr</a></li> \
 <li><a href="functions_support_generic_find_is_any_of.html">is_any_of</a></li> \
 <li><a href="functions_support_math_lowlevel_is_finite.html">is_finite</a></li> \
@@ -187,14 +184,29 @@ document.write('\
 <li><a href="functions_support_math_random_make_seed.html">make_seed</a></li> \
 <li><a href="functions_support_image_mask_inflate.html">mask_inflate</a></li> \
 <li><a href="functions_support_generic_find_match.html">match</a></li> \
-<li><a href="functions_support_generic_find_match_dictionary.html">match_dictionary</a></li> \
+<li><a href="functions_support_math_algebra_matrix_diagonal.html">matrix::diagonal</a></li> \
+<li><a href="functions_support_math_algebra_matrix_eigen_symmetric.html">matrix::eigen_symmetric</a></li> \
+<li><a href="functions_support_math_algebra_matrix_eigen_symmetric.html">matrix::inplace_eigen_symmetric</a></li> \
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::inplace_invert</a></li> \
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::inplace_invert_symmetric</a></li> \
+<li><a href="functions_support_math_algebra_matrix_solve_symmetric.html">matrix::inplace_solve_symmetric</a></li> \
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::invert</a></li> \
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::invert_symmetric</a></li> \
+<li><a href="functions_support_math_algebra_matrix_make_identity.html">matrix::make_identity</a></li> \
+<li><a href="functions_support_math_algebra_matrix_make_point.html">matrix::make_point</a></li> \
+<li><a href="functions_support_math_algebra_matrix_make_rotation.html">matrix::make_rotation</a></li> \
+<li><a href="functions_support_math_algebra_matrix_make_scale.html">matrix::make_scale</a></li> \
+<li><a href="functions_support_math_algebra_matrix_make_translation.html">matrix::make_translation</a></li> \
+<li><a href="functions_support_math_algebra_matrix_product.html">matrix::product</a></li> \
+<li><a href="functions_support_math_algebra_matrix_solve_symmetric.html">matrix::solve_symmetric</a></li> \
+<li><a href="functions_support_math_algebra_matrix_transpose.html">matrix::transpose</a></li> \
 <li><a href="functions_support_math_reduce_min.html">max</a></li> \
 <li><a href="functions_support_math_reduce_min_id.html">max_id</a></li> \
 <li><a href="functions_support_math_reduce_mean.html">mean</a></li> \
 <li><a href="functions_support_math_reduce_median.html">median</a></li> \
 <li><a href="functions_support_math_reduce_min.html">min</a></li> \
 <li><a href="functions_support_math_reduce_min_id.html">min_id</a></li> \
-<li><a href="functions_support_math_algebra_mmul.html">mmul</a></li> \
+<li><a href="functions_support_math_reduce_min.html">minmax</a></li> \
 <li><a href="functions_support_math_geometry_move_ra_dec.html">move_ra_dec</a></li> \
 <li><a href="functions_support_math_fit_mpfit.html">mpfit</a></li> \
 <li><a href="functions_support_math_fit_mpfitfun.html">mpfitfun</a></li> \
@@ -202,6 +214,7 @@ document.write('\
 </ul><br></li> \
 <li><span class="menu-alpha-heading">N</span><br> \
 <ul> \
+<li><a href="functions_support_math_geometry_normalize_coordinates.html">normalize_coordinates</a></li> \
 <li><a href="functions_support_print_print.html">note</a></li> \
 <li><a href="functions_support_time_now.html">now</a></li> \
 </ul><br></li> \
@@ -222,7 +235,6 @@ document.write('\
 <li><a href="functions_support_math_reduce_percentile.html">percentiles</a></li> \
 <li><a href="functions_support_generic_error_phypp_check.html">phypp_check</a></li> \
 <li><a href="functions_support_astro_stack_pick_sources.html">pick_sources</a></li> \
-<li><a href="functions_support_math_algebra_point2d.html">point2d</a></li> \
 <li><a href="functions_support_generic_dim_append.html">prepend</a></li> \
 <li><a href="functions_support_print_print.html">print</a></li> \
 <li><a href="functions_support_time_progress_start.html">print_progress</a></li> \
@@ -277,13 +289,11 @@ document.write('\
 <li><a href="functions_support_math_sequence_rgen.html">rgen_log</a></li> \
 <li><a href="functions_support_math_reduce_rms.html">rms</a></li> \
 <li><a href="functions_support_image_rotate.html">rotate</a></li> \
-<li><a href="functions_support_math_algebra_rotation_matrix.html">rotation_matrix</a></li> \
 <li><a href="functions_support_math_reduce_run_dim.html">run_dim</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">S</span><br> \
 <ul> \
 <li><a href="functions_support_image_scale.html">scale</a></li> \
-<li><a href="functions_support_math_algebra_scale_matrix.html">scale_matrix</a></li> \
 <li><a href="functions_support_time_time_str.html">seconds_str</a></li> \
 <li><a href="functions_support_astro_flux_sed2flux.html">sed2flux</a></li> \
 <li><a href="functions_support_astro_flux_sed_convert.html">sed_convert</a></li> \
@@ -293,9 +303,9 @@ document.write('\
 <li><a href="functions_support_math_random_shuffle.html">shuffle</a></li> \
 <li><a href="functions_support_math_reduce_sigma_clip.html">sigma_clip</a></li> \
 <li><a href="functions_support_math_lowlevel_sign.html">sign</a></li> \
-<li><a href="functions_support_math_algebra_solve_symmetric.html">solve_symmetric</a></li> \
 <li><a href="functions_support_generic_rearrange_sort.html">sort</a></li> \
 <li><a href="functions_support_thread_fork.html">spawn</a></li> \
+<li><a href="functions_support_file_system_remove_extension.html">spit_extension</a></li> \
 <li><a href="functions_support_string_modify_split.html">split</a></li> \
 <li><a href="functions_support_math_lowlevel_e10.html">sqr</a></li> \
 <li><a href="functions_support_string_modify_start_with.html">start_with</a></li> \
@@ -319,8 +329,7 @@ document.write('\
 <li><a href="functions_support_math_reduce_total.html">total</a></li> \
 <li><a href="functions_support_string_modify_toupper.html">toupper</a></li> \
 <li><a href="functions_support_image_translate.html">translate</a></li> \
-<li><a href="functions_support_math_algebra_translation_matrix.html">translation_matrix</a></li> \
-<li><a href="functions_support_math_algebra_transpose.html">transpose</a></li> \
+<li><a href="functions_support_generic_rearrange_transpose.html">transpose</a></li> \
 <li><a href="functions_support_string_modify_trim.html">trim</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">U</span><br> \
@@ -334,12 +343,17 @@ document.write('\
 <li><span class="menu-alpha-heading">V</span><br> \
 <ul> \
 <li><a href="functions_support_generic_vectorize_vectorize_lambda.html">vectorize_lambda</a></li> \
+<li><a href="functions_support_math_geometry_vernal_angle.html">vernal_angle</a></li> \
 <li><a href="functions_support_astro_cosmo_vuniverse.html">vuniverse</a></li> \
 </ul><br></li> \
 <li><span class="menu-alpha-heading">W</span><br> \
 <ul> \
 <li><a href="functions_support_print_print.html">warning</a></li> \
+<li><a href="functions_support_math_reduce_weighted_mean.html">weighted_mean</a></li> \
+<li><a href="functions_support_math_reduce_weighted_mean.html">weighted_median</a></li> \
 <li><a href="functions_support_generic_find_where.html">where</a></li> \
+<li><a href="functions_support_generic_find_where_first.html">where_first</a></li> \
+<li><a href="functions_support_generic_find_where_first.html">where_last</a></li> \
 <li><a href="functions_support_string_modify_wrap.html">wrap</a></li> \
 </ul></li> \
 </ul></li> \

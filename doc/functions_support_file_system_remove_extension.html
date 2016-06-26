@@ -22,18 +22,25 @@
 <div class="catlist">
 <a href="category_support_06_file.html">File input/output</a><span class="catsep">&gt;</span><a href="category_support_06_file.html#SEC_support_file_system">File system</a>
 </div><br>
-<span class="section">Signature</span>
+<span class="section">Signatures</span>
 <table style="signatures">
 <tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">remove_extension</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">get_extension</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">pair</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">split_extension</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function scans the provided string to look for a file extension (e.g., ".fits"). The extension is whatever ends the string after the <span class="emphasis">last</span> dot (and including this dot). If one is found, the function will return a new string with the extension removed. Else, the input string is returned untouched.
+These function scan the provided string to look for a file extension (e.g., ".fits"). The extension is whatever ends the string after the <span class="emphasis">last</span> dot (and including this dot). If one is found, the function <div class="highlight-inline"><pre><span class="n">get_extension</span><span class="p">()</span></pre></div> will return this extension (including the dot) while the function <div class="highlight-inline"><pre><span class="n">remove_extension</span><span class="p">()</span></pre></div> will return the input string with the extension removed. Else, <div class="highlight-inline"><pre><span class="n">get_extension</span><span class="p">()</span></pre></div> returns an empty string, while <div class="highlight-inline"><pre><span class="n">remove_extension</span><span class="p">()</span></pre></div> returns the input string untouched. The function <div class="highlight-inline"><pre><span class="n">split_extension</span><span class="p">()</span></pre></div> does both at the same time and returns a pair containing the trimmed file name as <div class="highlight-inline"><pre><span class="n">first</span></pre></div> and the extension as <div class="highlight-inline"><pre><span class="n">second</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="n">vec1s</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;p1_m2.txt&quot;</span><span class="p">,</span> <span class="s">&quot;p3_c4.fits&quot;</span><span class="p">,</span> <span class="s">&quot;p1_t8.dat.fits&quot;</span><span class="p">,</span> <span class="s">&quot;readme&quot;</span><span class="p">};</span>
 <span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="n">remove_extension</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
 <span class="n">s</span><span class="p">;</span> <span class="c1">// {&quot;p1_m2&quot;, &quot;p3_c4&quot;, &quot;p1_t8.dat&quot;, &quot;readme&quot;}</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">get_extension</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+<span class="n">s</span><span class="p">;</span> <span class="c1">// {&quot;.txt&quot;, &quot;.fits&quot;, &quot;.fits&quot;, &quot;&quot;}</span>
 </pre></div>
 <hr><br>
 </div>

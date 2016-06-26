@@ -32,11 +32,11 @@ This library provides the following global constants:
 We now present the functions provided by this support library. One of the responsibilities of this library is to bring vectorized versions of standard mathematical functions that only work for scalar values. Since these functions are fairly common and well known, we will not describe their signature and behavior, and instead just list them here:
 <ul>
 <li> exponentiation: <div class="highlight-inline"><pre><span class="n">sqrt</span></pre></div>, <div class="highlight-inline"><pre><span class="n">pow</span></pre></div>,</li>
-<li> trigonometry: <div class="highlight-inline"><pre><span class="n">cos</span></pre></div>, <div class="highlight-inline"><pre><span class="n">sin</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tan</span></pre></div>, <div class="highlight-inline"><pre><span class="n">acos</span></pre></div>, <div class="highlight-inline"><pre><span class="n">asin</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atan</span></pre></div>, <div class="highlight-inline"><pre><span class="n">cosh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">sinh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tanh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">acosh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">asinh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atanh</span></pre></div>,</li>
+<li> trigonometry: <div class="highlight-inline"><pre><span class="n">cos</span></pre></div>, <div class="highlight-inline"><pre><span class="n">sin</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tan</span></pre></div>, <div class="highlight-inline"><pre><span class="n">acos</span></pre></div>, <div class="highlight-inline"><pre><span class="n">asin</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atan</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atan2</span></pre></div>, <div class="highlight-inline"><pre><span class="n">cosh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">sinh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tanh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">acosh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">asinh</span></pre></div>, <div class="highlight-inline"><pre><span class="n">atanh</span></pre></div>,</li>
 <li> exponentials and logarithms: <div class="highlight-inline"><pre><span class="n">exp</span></pre></div>, <div class="highlight-inline"><pre><span class="n">log</span></pre></div>, <div class="highlight-inline"><pre><span class="n">log2</span></pre></div>, <div class="highlight-inline"><pre><span class="n">log10</span></pre></div>,</li>
 <li> special functions: <div class="highlight-inline"><pre><span class="n">erf</span></pre></div>, <div class="highlight-inline"><pre><span class="n">erfc</span></pre></div>, <div class="highlight-inline"><pre><span class="n">tgamma</span></pre></div>,</li>
 <li> rounding: <div class="highlight-inline"><pre><span class="n">ceil</span></pre></div>, <div class="highlight-inline"><pre><span class="n">floor</span></pre></div>, <div class="highlight-inline"><pre><span class="n">round</span></pre></div>,</li>
-<li> absolute value: <div class="highlight-inline"><pre><span class="n">fabs</span></pre></div>.</li>
+<li> absolute value: <div class="highlight-inline"><pre><span class="n">abs</span></pre></div>.</li>
 </ul>
 We also introduce the functions <div class="highlight-inline"><pre><span class="n">bessel_j0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_j1</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_y0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_y1</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_i0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_i1</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_k0</span></pre></div>, <div class="highlight-inline"><pre><span class="n">bessel_k1</span></pre></div>. The scalar version of the first four are provided by the C++ standard, while the last four are provided by the <span class="fixed-width">gsl</span>.
 <br><br>
@@ -96,6 +96,8 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_reduce_median.html">median</a></li>
 <li><a href="functions_support_math_reduce_median.html">inplace_median</a></li>
 <li><a href="functions_support_math_reduce_median.html">partial_median</a></li>
+<li><a href="functions_support_math_reduce_weighted_mean.html">weighted_mean</a></li>
+<li><a href="functions_support_math_reduce_weighted_mean.html">weighted_median</a></li>
 <li><a href="functions_support_math_reduce_percentile.html">percentile</a></li>
 <li><a href="functions_support_math_reduce_percentile.html">partial_percentile</a></li>
 <li><a href="functions_support_math_reduce_percentile.html">percentiles</a></li>
@@ -109,6 +111,7 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_reduce_min.html">partial_min</a></li>
 <li><a href="functions_support_math_reduce_min.html">max</a></li>
 <li><a href="functions_support_math_reduce_min.html">partial_max</a></li>
+<li><a href="functions_support_math_reduce_min.html">minmax</a></li>
 <li><a href="functions_support_math_reduce_min_id.html">min_id</a></li>
 <li><a href="functions_support_math_reduce_min_id.html">max_id</a></li>
 <li><a href="functions_support_math_reduce_histogram.html">histogram</a></li>
@@ -127,31 +130,32 @@ We now list the other, less common functions provided in this library. These are
 <span class="subsection"><a name="SEC_support_math_calculus"></a>Calculus</span>
 <div class="section-content">
 <ul class="category-funclist">
-<li><a href="functions_support_math_calculus_derivate1.html">derivate1</a></li>
-<li><a href="functions_support_math_calculus_derivate2.html">derivate2</a></li>
-<li><a href="functions_support_math_calculus_integrate_trap.html">integrate_trap</a></li>
-<li><a href="functions_support_math_calculus_integrate_trap.html">integrate</a></li>
+<li><a href="functions_support_math_calculus_derivate1_func.html">derivate1_func</a></li>
+<li><a href="functions_support_math_calculus_derivate1_func.html">derivate2_func</a></li>
+<li><a href="functions_support_math_calculus_integrate_func.html">integrate_func</a></li>
+<li><a href="functions_support_math_calculus_integrate.html">integrate</a></li>
+<li><a href="functions_support_math_calculus_cumul.html">cumul</a></li>
 </ul>
 </div>
 <span class="subsection"><a name="SEC_support_math_algebra"></a>Algebra</span>
 <div class="section-content">
 <ul class="category-funclist">
-<li><a href="functions_support_math_algebra_mmul.html">mmul</a></li>
-<li><a href="functions_support_math_algebra_transpose.html">transpose</a></li>
-<li><a href="functions_support_math_algebra_diagonal.html">diagonal</a></li>
-<li><a href="functions_support_math_algebra_identity_matrix.html">identity_matrix</a></li>
-<li><a href="functions_support_math_algebra_scale_matrix.html">scale_matrix</a></li>
-<li><a href="functions_support_math_algebra_translation_matrix.html">translation_matrix</a></li>
-<li><a href="functions_support_math_algebra_rotation_matrix.html">rotation_matrix</a></li>
-<li><a href="functions_support_math_algebra_point2d.html">point2d</a></li>
-<li><a href="functions_support_math_algebra_invert.html">invert</a></li>
-<li><a href="functions_support_math_algebra_invert.html">inplace_invert</a></li>
-<li><a href="functions_support_math_algebra_invert_symmetric.html">invert_symmetric</a></li>
-<li><a href="functions_support_math_algebra_invert_symmetric.html">inplace_invert_symmetric</a></li>
-<li><a href="functions_support_math_algebra_solve_symmetric.html">solve_symmetric</a></li>
-<li><a href="functions_support_math_algebra_solve_symmetric.html">inplace_solve_symmetric</a></li>
-<li><a href="functions_support_math_algebra_eigen_symmetric.html">eigen_symmetric</a></li>
-<li><a href="functions_support_math_algebra_eigen_symmetric.html">inplace_eigen_symmetric</a></li>
+<li><a href="functions_support_math_algebra_matrix_product.html">matrix::product</a></li>
+<li><a href="functions_support_math_algebra_matrix_transpose.html">matrix::transpose</a></li>
+<li><a href="functions_support_math_algebra_matrix_diagonal.html">matrix::diagonal</a></li>
+<li><a href="functions_support_math_algebra_matrix_make_identity.html">matrix::make_identity</a></li>
+<li><a href="functions_support_math_algebra_matrix_make_scale.html">matrix::make_scale</a></li>
+<li><a href="functions_support_math_algebra_matrix_make_translation.html">matrix::make_translation</a></li>
+<li><a href="functions_support_math_algebra_matrix_make_rotation.html">matrix::make_rotation</a></li>
+<li><a href="functions_support_math_algebra_matrix_make_point.html">matrix::make_point</a></li>
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::invert</a></li>
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::inplace_invert</a></li>
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::invert_symmetric</a></li>
+<li><a href="functions_support_math_algebra_matrix_invert.html">matrix::inplace_invert_symmetric</a></li>
+<li><a href="functions_support_math_algebra_matrix_solve_symmetric.html">matrix::solve_symmetric</a></li>
+<li><a href="functions_support_math_algebra_matrix_solve_symmetric.html">matrix::inplace_solve_symmetric</a></li>
+<li><a href="functions_support_math_algebra_matrix_eigen_symmetric.html">matrix::eigen_symmetric</a></li>
+<li><a href="functions_support_math_algebra_matrix_eigen_symmetric.html">matrix::inplace_eigen_symmetric</a></li>
 <li><a href="functions_support_math_algebra_fft.html">fft</a></li>
 <li><a href="functions_support_math_algebra_fft.html">ifft</a></li>
 <li><a href="functions_support_math_algebra_convolve.html">convolve</a></li>
@@ -178,6 +182,9 @@ We now list the other, less common functions provided in this library. These are
 <li><a href="functions_support_math_geometry_angdistr.html">angdist</a></li>
 <li><a href="functions_support_math_geometry_angdist_less.html">angdist_less</a></li>
 <li><a href="functions_support_math_geometry_move_ra_dec.html">move_ra_dec</a></li>
+<li><a href="functions_support_math_geometry_normalize_coordinates.html">normalize_coordinates</a></li>
+<li><a href="functions_support_math_geometry_vernal_angle.html">vernal_angle</a></li>
+<li><a href="functions_support_math_geometry_angrot_vernal.html">angrot_vernal</a></li>
 </ul>
 </div>
 <span class="subsection"><a name="SEC_support_math_debug"></a>Debug functions</span>

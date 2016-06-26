@@ -35,15 +35,15 @@ This is a meta function. It applies the function <div class="highlight-inline"><
 This is a more generic version of <div class="highlight-inline"><pre><span class="n">reduce</span><span class="p">()</span></pre></div>. Contrary to <div class="highlight-inline"><pre><span class="n">reduce</span><span class="p">()</span></pre></div>, <div class="highlight-inline"><pre><span class="n">run_dim</span><span class="p">()</span></pre></div> does not return anything. If you want to use the data to create and fill one or several vectors, you have to do this yourself by capturing the output vectors into the lambda function (see the example below). This gives more freedom, for example to output multiple vectors. On top of this, <div class="highlight-inline"><pre><span class="n">run_dim</span><span class="p">()</span></pre></div> allows you to operate on multiple input vectors at the same time.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="c1">// We create two 8 x 100 x 5 vectors</span>
-<span class="n">vec2d</span> <span class="n">v</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
-<span class="n">vec2d</span> <span class="n">w</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+<span class="n">vec3d</span> <span class="n">v</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+<span class="n">vec3d</span> <span class="n">w</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
 
 <span class="c1">// For each set of 100 values in both vectors, we want to</span>
-<span class="c1">// compute the average of values in v weighted by the values in w,</span>
-<span class="c1">// as well as store the sum of the weights.</span>
+<span class="c1">// compute the average of these values in &#39;v&#39; weighted by the</span>
+<span class="c1">// values in &#39;w&#39;, as well as store the sum of the weights.</span>
 <span class="c1">// In other words:</span>
-<span class="n">vec1d</span> <span class="nf">m</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">5</span><span class="p">);</span>
-<span class="n">vec1d</span> <span class="nf">s</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">5</span><span class="p">);</span>
+<span class="n">vec2d</span> <span class="nf">m</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">5</span><span class="p">);</span>
+<span class="n">vec2d</span> <span class="nf">s</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">5</span><span class="p">);</span>
 <span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
 <span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">j</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="p">{</span>
     <span class="c1">// First sum the weights</span>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_02_generic.html">Generic vector functions</a><span class="catsep">&gt;</span><a href="category_support_02_generic.html#SEC_support_generic_find">Finding elements</a>
+</div><br>
+<span class="section">Signatures</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">uint_t</span> <span class="n">where_first</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">bool</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span class="kt">uint_t</span> <span class="n">where_last</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">bool</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+These functions will scan the <div class="highlight-inline"><pre><span class="kt">bool</span></pre></div> vector provided in argument, and return the flat index (\ref{SEC:core:vec:indexing}) of the first (or last) element which is <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>, and <div class="highlight-inline"><pre><span class="n">npos</span></pre></div> if all are <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">0</span><span class="p">};</span>
+<span class="c1">// We want to select the first element which is greater than 3</span>
+<span class="kt">uint_t</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">id</span> <span class="o">=</span> <span class="n">where_first</span><span class="p">(</span><span class="n">v</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">);</span> <span class="c1">// 0</span>
+<span class="n">v</span><span class="p">[</span><span class="n">id</span><span class="p">];</span>                   <span class="c1">// 4</span>
+<span class="n">id</span> <span class="o">=</span> <span class="n">where_last</span><span class="p">(</span><span class="n">v</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">);</span>  <span class="c1">// 7</span>
+<span class="n">v</span><span class="p">[</span><span class="n">id</span><span class="p">];</span>                   <span class="c1">// 9</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

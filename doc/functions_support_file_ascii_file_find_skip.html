@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_06_file.html">File input/output</a><span class="catsep">&gt;</span><a href="category_support_06_file.html#SEC_support_file_ascii">ASCII table input/output</a>
+</div><br>
+<span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function scans the file whose path is given in the string <div class="highlight-inline"><pre><span class="n">f</span></pre></div> and returns the number of lines at the beginning of the file that either: a) are empty, b) only contain spaces or tabs, or c) start with a <div class="highlight-inline"><pre><span class="sc">&#39;#&#39;</span></pre></div> (which is the <span class="emphasis">de facto</span> standard for comments in ASCII tables). The return value is typically fed to <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">()</span></pre></div>.
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="c1">// Improving the first example of file::read_table().</span>
+
+<span class="c1">// We first compute the number of lines to skip</span>
+<span class="kt">uint_t</span> <span class="n">nskip</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">);</span>
+
+<span class="c1">// Declare the vectors and their types</span>
+<span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">vec1d</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">;</span>
+
+<span class="c1">// Then read the data</span>
+<span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">,</span> <span class="n">nskip</span><span class="p">,</span>
+    <span class="n">id</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="c1">// read three columns</span>
+<span class="p">);</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

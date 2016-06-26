@@ -29,7 +29,7 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function reads the content of the ASCII table <div class="highlight-inline"><pre><span class="n">f</span></pre></div> and stores the data inside vectors. The second argument <div class="highlight-inline"><pre><span class="n">s</span></pre></div> gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table. Note that, due to the lack of standard formatting for the header, there is no automatic way to ignore these lines.
+This function reads the content of the ASCII table <div class="highlight-inline"><pre><span class="n">f</span></pre></div> and stores the data inside vectors. The second argument <div class="highlight-inline"><pre><span class="n">s</span></pre></div> gives the number of lines to skip before starting reading data: this is useful to ignore the lines that correspond to the header of the table (if unknown at the time of compilation, this number can also be computed automatically by the <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">()</span></pre></div> function).
 <br><br>
 The vectors in which the data should be stored are given in argument, one after the other. Each column of the file will be stored in a different vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
 <br><br>

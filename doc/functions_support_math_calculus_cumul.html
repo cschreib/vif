@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>phy++ API</title>
+    <link rel="stylesheet" href="pygments.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+  <body>
+
+  <div class="header">
+  <i>phy</i><sub>++</sub> <span class="header-text">documentation</span>
+  </div>
+
+  <div class="page">
+  <script src="menu-left.js"></script>
+  <script src="menu-right.js"></script>
+
+<div class="content">
+<span class="section">Categories</span><br>
+<div class="catlist">
+<a href="category_support_09_math.html">Mathematics</a><span class="catsep">&gt;</span><a href="category_support_09_math.html#SEC_support_math_calculus">Calculus</a>
+</div><br>
+<span class="section">Signature</span>
+<table style="signatures">
+<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">cumul</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div></td></tr>
+</table>
+<br><span class="section">Description</span><br>
+<div class="description">
+This function computes the cumulative integral of the tabulated function <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg">. The return value is a vector whose value <div class="highlight-inline"><pre><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></pre></div> corresponds to the integral of <img class="latex" style="vertical-align: -3pt" src="latex/functions_support_math_calculus_11.svg"> from <div class="highlight-inline"><pre><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></pre></div> to <div class="highlight-inline"><pre><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></pre></div>. The first value is therefore always zero, while the last value is equal to <div class="highlight-inline"><pre><span class="n">integrate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span></pre></div>. The function assumes that the vector <div class="highlight-inline"><pre><span class="n">x</span></pre></div> is sorted and only contains unique values (no check is performed).
+<br><br><span class="example">Example</span><br><hr>
+<div class="highlight"><pre><span class="n">vec1d</span> <span class="n">x</span> <span class="o">=</span> <span class="n">rgen</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">// build a grid of 10 points</span>
+<span class="n">vec1d</span> <span class="n">y</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">);</span>           <span class="c1">// sample a function</span>
+
+<span class="n">vec1d</span> <span class="n">r</span> <span class="o">=</span> <span class="n">cumul</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="c1">// &#39;r&#39; now holds something that is close to the formal integral of</span>
+<span class="c1">// the Gaussian function, i.e., the error function, evaluated at each</span>
+<span class="c1">// point &#39;x&#39;.</span>
+</pre></div>
+<hr><br>
+</div>
+</div>
+  </div>
+  </body>
+</html>
+

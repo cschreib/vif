@@ -29,7 +29,7 @@
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function creates a new directory whose path is given in argument and returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>. If the directory could not be created (e.g., because of permission issues), the function returns <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>. If the directory already exists, the function does nothing and returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>.
+This function creates a new directory whose path is given in argument and returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>. If the directory could not be created (e.g., because of permission issues), the function returns <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>. If the directory already exists, the function does nothing and returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>. This function is equivalent to the <span class="fixed-width">bash</span> function <span class="fixed-width">mkdir -p</span>.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">mkdir</span><span class="p">(</span><span class="s">&quot;/path/to/phypp/a/new/directory&quot;</span><span class="p">);</span>
 <span class="c1">// Will most likely create the directories:</span>

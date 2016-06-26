@@ -34,6 +34,8 @@
 The <div class="highlight-inline"><pre><span class="n">replace_block</span></pre></div> function will look in the string <div class="highlight-inline"><pre><span class="n">v</span></pre></div> and identify all blocks that start with <div class="highlight-inline"><pre><span class="n">b</span></pre></div> and end with <div class="highlight-inline"><pre><span class="n">e</span></pre></div>. The content of each block is fed to the user-supplied function <div class="highlight-inline"><pre><span class="n">f</span></pre></div> which does any kind of conversion or operation, and returns a new string. This new string is inserted in <div class="highlight-inline"><pre><span class="n">v</span></pre></div> in place of the block.
 <br><br>
 The <div class="highlight-inline"><pre><span class="n">replace_blocks</span></pre></div> function will do the same thing, except that each block can have multiple &ldquo;arguments&rdquo; that are separed with <div class="highlight-inline"><pre><span class="n">s</span></pre></div>. In this case, the function extracts all the &ldquo;arguments&rdquo; and stores them inside a string vector, and feeds this vector to the conversion function <div class="highlight-inline"><pre><span class="n">f</span></pre></div>.
+<br><br>
+See also <div class="highlight-inline"><pre><span class="n">regex_replace</span></pre></div> for a more powerful (but also more complex) alternative.
 <br><br><span class="example">Example</span><br><hr>
 <div class="highlight"><pre><span class="c1">// We want to modify the content inside &lt;b&gt;...&lt;/b&gt; to be upper case</span>
 <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;This is a &lt;b&gt;whole&lt;/b&gt; lot of &lt;b&gt;money&lt;/b&gt;&quot;</span><span class="p">;</span>
@@ -41,7 +43,7 @@ The <div class="highlight-inline"><pre><span class="n">replace_blocks</span></pr
     <span class="k">return</span> <span class="n">toupper</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
 <span class="p">});</span>
 
-<span class="n">ns</span><span class="p">;</span> <span class="c1">// &quot;This is a &lt;b&gt;WHOLE&lt;/b&gt; lot of &lt;b&gt;MONEY&lt;/b&gt;&quot;</span>
+<span class="n">ns</span><span class="p">;</span> <span class="c1">// &quot;This is a WHOLE lot of MONEY&quot;</span>
 
 <span class="c1">// We want to convert this LaTeX link into HTML</span>
 <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Look at \url{http://www.google.com}{this} link.&quot;</span><span class="p">;</span>
