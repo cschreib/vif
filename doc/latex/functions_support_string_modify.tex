@@ -410,7 +410,7 @@ n; // "5.0000"
 
 \funcitem \vectorfunc \cppinline|uint_t distance(string s1, s2)| \itt{distance}
 
-This function computes the \emph{lexicographic distance} between two strings. The definition of this distance is the following. If the two strings that are exactly identical, the distance is zero. Else, each character of the shortest string are compared to their equivalent at the same position in the other string: if they are different, the distance is increase by one. Finally, the distance is increased by the difference of size between the two strings.
+This function computes the \emph{lexicographic distance} between two strings. The definition of this distance is the following. If the two strings are exactly identical, the distance is zero. Else, each character of the shortest string are compared to their equivalent at the same position in the other string: if they are different, the distance is increase by one. Finally, the distance is increased by the difference of size between the two strings.
 
 The goal of this function is to identify \emph{near} matches in case a string could not be found in a pre-defined list. This is useful to suggest corrections to the user, who may have misspelled it.
 
