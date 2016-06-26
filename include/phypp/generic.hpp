@@ -539,9 +539,9 @@ vec<Dim+dim_total<Args...>::value, rtype_t<Type>>
 }
 
 template<typename Type, typename ... Args>
-vec<dim_total<Args...>::value, vec_type<Type>> replicate(const Type& t, Args&& ... args) {
+vec<dim_total<Args...>::value, vtype_t<Type>> replicate(const Type& t, Args&& ... args) {
     static const std::size_t FDim = dim_total<Args...>::value;
-    vec<FDim, vec_type<Type>> v(std::forward<Args>(args)...);
+    vec<FDim, vtype_t<Type>> v(std::forward<Args>(args)...);
 
     for (auto& e : v) {
         e = t;
