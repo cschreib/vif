@@ -35,15 +35,15 @@ This is a more generic version of \cppinline{reduce()}. Contrary to \cppinline{r
 \begin{example}
 \begin{cppcode}
 // We create two 8 x 100 x 5 vectors
-vec2d v = dindgen(100, 5);
-vec2d w = dindgen(100, 5);
+vec3d v = dindgen(8, 100, 5);
+vec3d w = dindgen(8, 100, 5);
 
 // For each set of 100 values in both vectors, we want to
-// compute the average of values in v weighted by the values in w,
-// as well as store the sum of the weights.
+// compute the average of these values in 'v' weighted by the
+// values in 'w', as well as store the sum of the weights.
 // In other words:
-vec1d m(8,5);
-vec1d s(8,5);
+vec2d m(8,5);
+vec2d s(8,5);
 for (uint_t i : range(8))
 for (uint_t j : range(5)) {
     // First sum the weights
