@@ -147,7 +147,7 @@ struct vec {
         static_assert(vec_implicit_convertible<T,Type>::value, "could not assign vectors of "
             "non-implicitly-convertible types");
 
-        if (v.is_same(*this)) {
+        if (v.view_same(*this)) {
             std::vector<dtype> t(v.data.size());
             for (uint_t i : range(v)) {
                 t[i] = v.safe[i];
@@ -169,13 +169,13 @@ struct vec {
     }
 
     template<std::size_t D, typename T>
-    bool is_same(const vec<D,T>&) const {
+    bool view_same(const vec<D,T>&) const {
         return false;
     }
 
     template<std::size_t D>
-    bool is_same(const vec<D,Type*>& v) const {
-        return v.is_same(*this);
+    bool view_same(const vec<D,Type*>& v) const {
+        return v.view_same(*this);
     }
 
     bool empty() const {
@@ -574,7 +574,7 @@ struct vec {
         vec& operator op (const vec<Dim,U>& u) { \
             phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' ("+strn(dims)+" vs "+strn(u.dims)+")"); \
-            if (u.is_same(*this)) { \
+            if (u.view_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
                     t[i] = u.safe[i]; \
@@ -696,7 +696,7 @@ struct vec<Dim,Type*> {
 
     template<typename T>
     void assign_(const vec<Dim,T>& v) {
-        if (is_same(v)) {
+        if (view_same(v)) {
             // Make a copy to prevent aliasing
             std::vector<dtype> t(v.data.size());
             for (uint_t i : range(v)) {
@@ -737,17 +737,17 @@ struct vec<Dim,Type*> {
     }
 
     template<std::size_t D, typename T>
-    bool is_same(const vec<D,T>& v) const {
+    bool view_same(const vec<D,T>& v) const {
         return false;
     }
 
     template<std::size_t D>
-    bool is_same(const vec<D,Type*>& v) const {
+    bool view_same(const vec<D,Type*>& v) const {
         return v.parent == parent;
     }
 
     template<std::size_t D>
-    bool is_same(const vec<D,Type>& v) const {
+    bool view_same(const vec<D,Type>& v) const {
         return static_cast<void*>(const_cast<vec<D,Type>*>(&v)) == parent;
     }
 
@@ -1088,7 +1088,7 @@ struct vec<Dim,Type*> {
         vec& operator op (const vec<Dim,U>& u) { \
             phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' ("+strn(dims)+" vs "+strn(u.dims)+")"); \
-            if (u.is_same(*this)) { \
+            if (u.view_same(*this)) { \
                 std::vector<dtype> t; t.resize(data.size()); \
                 for (uint_t i = 0; i < data.size(); ++i) { \
                     t[i] = u.safe[i]; \
