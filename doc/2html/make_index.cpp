@@ -1,7 +1,7 @@
 #include <phypp.hpp>
 #include "common.hpp"
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     std::string out_dir = file::directorize(argv[1]);
 
     sorted_cache_t funindex;
