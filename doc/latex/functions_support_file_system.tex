@@ -115,7 +115,7 @@ s; // {".txt", ".fits", ".fits", ""}
 
 \funcitem \vectorfunc \cppinline|string file::get_directory(string)| \itt{file::get_directory}
 
-This function extracts the path of the directory that contains the file given in argument. If the path in argument is that of a directory, the function returns the path of its parent directory. This behavior is similar to the \texttt{bash} function \texttt{dirname}, except that the returned path ends with a forward slash \cppinline{/}.
+This function scans the path given in argument and returns the path of the parent directory. This behavior is similar to the \texttt{bash} function \texttt{dirname}, except that the returned path ends with a forward slash \cppinline{/}.
 
 \begin{example}
 \begin{cppcode}
@@ -129,7 +129,7 @@ n; // "/another/path/to/a/"
 
 \funcitem \vectorfunc \cppinline|bool file::mkdir(string)| \itt{file::mkdir}
 
-This function creates a new directory whose path is given in argument and returns \cpptrue. If the directory could not be created (e.g., because of permission issues), the function returns \cppfalse. If the directory already exists, the function does nothing and returns \cpptrue.
+This function creates a new directory whose path is given in argument and returns \cpptrue. If the directory could not be created (e.g., because of permission issues), the function returns \cppfalse. If the directory already exists, the function does nothing and returns \cpptrue. This function is equivalent to the \texttt{bash} function \texttt{mkdir -p}.
 
 \begin{example}
 \begin{cppcode}
@@ -155,7 +155,7 @@ b; // maybe true or false, depending on your permissions
 
 \funcitem \cppinline|bool file::remove(string)| \itt{file::remove}
 
-This function will delete the file given in argument and return \cpptrue on success, or if the file does not exists. It will return \cppfalse only if the file exists but could not be removed (i.e., because you are lacking the right permissions).
+This function will delete the file (or directory) given in argument and return \cpptrue on success, or if the file (or directory) did not exist. It will return \cppfalse only if the file exists but could not be removed (i.e., because you are lacking the right permissions). This function is equivalent to the \texttt{bash} function \texttt{rm -rf}.
 
 \begin{example}
 \begin{cppcode}

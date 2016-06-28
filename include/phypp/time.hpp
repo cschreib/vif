@@ -5,14 +5,14 @@
 #include "phypp/string.hpp"
 
 // Return the current time [seconds]
-double now() {
+inline double now() {
     return std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()
     ).count()*1e-6;
 }
 
 // Return the current date [yyyymmdd]
-std::string today() {
+inline std::string today() {
     std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm tm = *std::localtime(&t);
     std::ostringstream ss;
@@ -104,16 +104,16 @@ struct progress_t {
 };
 
 // Begin timing an iterative process of 'n' iterations
-progress_t progress_start(std::size_t n) {
+inline progress_t progress_start(std::size_t n) {
     progress_t r;
     r.start = now();
     r.n = n;
     return r;
 }
 
-const uint_t progress_ndash = system_var<uint_t>("PHYPP_PROGRESS_BAR_LENGTH", 32);
+static const uint_t progress_ndash = system_var<uint_t>("PHYPP_PROGRESS_BAR_LENGTH", 32);
 
-void progress_(progress_t& p) {
+inline void progress_(progress_t& p) {
     double total = now() - p.start;
     double remaining = total*double(p.n)/(p.i+1) - total;
 

@@ -1,4 +1,9 @@
-\documentclass[12pt]{report}
+% Rules for editing:
+%  - code examples should not use (much) more than 70 characters per line
+%  - inline C++ code should be displayed with \cppinline|...|
+
+
+\documentclass[12pt,a4paper]{report}
 
 \usepackage[T1]{fontenc}
 % \usepackage{lmodern}
@@ -8,7 +13,7 @@
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage{minted}
-\usepackage{geometry}
+\usepackage[a4paper,headsep=5pt,footskip=23pt]{geometry}
 \usepackage{imakeidx}
 \makeindex
 \usepackage[totoc]{idxlayout}
@@ -22,7 +27,6 @@
 \makesavenoteenv{table}
 
 \newcommand{\via}{{\it via}\xspace}
-% \newcommand{\phypp}{\texttt{phy++}\xspace}
 \newcommand{\phypp}{\textit{phy}$_{\text{++}}$\xspace}
 \newcommand{\stdvec}{\cppinline|std::vector|\xspace}
 \newcommand{\funcitem}{\item}
@@ -99,8 +103,13 @@
 \newminted{bash}{fontsize=\small}
 \newmintinline{bash}{fontsize=\small}
 
+\newcommand{\cppbool}{\cppinline{bool}\xspace}
+\newcommand{\cppbools}{\cppinline{bool}s\xspace}
+\newcommand{\cppconst}{\cppinline{const}\xspace}
 \newcommand{\cpptrue}{\cppinline{true}\xspace}
 \newcommand{\cppfalse}{\cppinline{false}\xspace}
+\newcommand{\cpptruetype}{\cppinline{std::true_type}\xspace}
+\newcommand{\cppfalsetype}{\cppinline{std::false_type}\xspace}
 
 \newcommand{\footlabel}[2]{\footnote{\label{#1}#2}}
 \newcommand{\footref}[1]{\textsuperscript{\ref{#1}}}
@@ -130,6 +139,9 @@
     \rule{1pt}{40pt}
 \end{minipage}
 \end{titlepage}
+
+\newgeometry{left=1.8cm,bottom=2.0cm,right=1.8cm,top=1.8cm}
+\sloppy
 
 \tableofcontents
 
@@ -171,12 +183,12 @@ But that's only half of the story. Indeed, IDL and GDL also suffer from technica
 \item Designed in the 1970s, IDL was born in an era where the available RAM was scarce, and that great care had to be taken to consume as few bytes of memory as possible. For this reason, the default integer type in IDL is a \cppinline{short}, i.e., it occupies only two bytes in memory, while most languages (including some that are older than IDL itself) encode their integers on four bytes by default. The biggest issue with this choice is that the largest number one can store in a \cppinline{short} is \cppinline{32768}. Being the default integer type, this creates quite a few surprises to the unexperienced user, and will fool even the expert from time to time.
 \item IDL is an interpreted language, meaning that the code you write is continuously read and interpreted by the IDL executable. While this is not an issue if you make good use of vectorization (the art of writing IDL code), performances are severely degraded onces you write loops explicitly, because the content of the loop has to be \emph{interpreted} and then \emph{executed} on each iteration. And this is sometimes unavoidable.
 \item Like many interpreted languages, IDL is dynamically typed. This means that the type of a variable can change from one line to another, and that a variable containing a string can be assigned a number. While sometimes convenient, this comes at a cost: performance. And the fact is that in most IDL programs this feature is not used.
-\item But worse than dynamic typing, and this is my main concern, variables in IDL are not \emph{declared} before they are used. This means that if you do a typo in the name of one of your variables, chances are that the code will still run. Indeed, IDL cannot know that this was not intended, and will think that you want to create a new variable. It will then do its best to carry on, and the result will be unpredictable. This, together with the fact that variables are almost not \emph{scoped} (i.e., a variable created inside a \cppinline{for} loop is still valid outside of the loop) makes it very easy to write confusing and buggy code. The most frightening part is that, in a good fraction of the cases, the output will be meaningful, and you can go on with your calculation never realizing that something went wrong. And publish that.
+\item But worse than dynamic typing, and this is my main concern, variables in IDL are not \emph{declared} before they are used. This means that if you do a typo in the name of one of your variables, chances are that the code will still run. Indeed, IDL cannot know that this was not intended, and will think that you want to use a new variable. It will then do its best to carry on, and the result will be unpredictable. This, together with the fact that variables are almost not \emph{scoped} (i.e., a variable created inside a \cppinline{for} loop is still valid outside of the loop) makes it very easy to write confusing and buggy code. The most frightening part is that, in a good fraction of the cases, the output will be meaningful, and you can go on with your calculation never realizing that something went wrong. And publish that.
 \end{itemize}
 
 Switching to more modern interpreted languages like \texttt{python} or Julia\footnote{\url{http://julialang.org/}} would solve a few of these issues, in particular the first one. But the other items on this list are unfortunately inherent to most interpreted languages\footnote{The best counter example is probably Java.}. To avoid these traps, the only solution today is to use \emph{statically typed}, compiled languages, like C++.
 
-Now, there are already some libraries in C++ that are addressing the topic of vector data manipulation. One can cite \href{http://eigen.tuxfamily.org}{Eigen} or the more recent \href{https://code.google.com/p/blaze-lib/}{blaze-lib}. These are wonderful libraries that have inspired \phypp in some way, but their issue is that they are more oriented toward algebra, meaning that they have vectors and matrices, but no data type for arrays of higher dimensions (i.e., tensors\footnote{Eigen actually has a tensor module, but it is unsupported.}).
+Now, there are already some libraries in C++ that are addressing the topic of vector data manipulation. One can cite \href{http://eigen.tuxfamily.org}{Eigen} or the more recent \href{https://code.google.com/p/blaze-lib/}{blaze-lib}. These are great libraries that have inspired \phypp in some way, but they are more oriented toward algebra, meaning that they have vectors and matrices, but no data type for arrays of higher dimensions (i.e., tensors\footnote{Eigen actually has a tensor module, but it is unsupported.}).
 
 Therefore, seeing that a gap had to be filled, \phypp was created.
 
@@ -184,7 +196,7 @@ Therefore, seeing that a gap had to be filled, \phypp was created.
 
 There are many different compiled languages that offer similar or better performances than C++. In particular, the most famous ones are Fortran and C. C is impractical to use because it has not been developed with user-friendliness in mind, and no mechanism exist to improve that. This is a system language, and it does that perfectly, but not much more. Fortran is known as the fastest of all, and it is particularly well suited for numerical analysis. While few languages as harder to read than Fortran 77, things have become much better since since Fortran 90 (which is not used as often as it should be). However, Fortran is relatively bad at doing anything else than numerical analysis, which is annoying the moment you want to do something that is a bit off the tracks. C++ on the other hand, with all its disadvantages, is probably the best fit thanks to its almost unlimited capacity for adaptation. And it also happens to be the language I am most familiar with.
 
-Since the beginning, C++ has always been good at performances, first because it is a language that compiles directly into assembly, but also thanks to its philosophy: ``you only pay for what you ask for". But its main disadvantage is its \emph{complexity}: it contains almost the whole C language, plus all the layers that were added on top of it, one year after another, starting from classes, exceptions, then templates. The end result is that it is a challenging task to master all the aspects of this language.
+Since the beginning, C++ has always been good at performances, first because it is a language that compiles directly into assembly, but also thanks to its philosophy: ``you only pay for what you ask for''. But its main disadvantage is its \emph{complexity}: it contains almost the whole C language, plus all the layers that were added on top of it, one year after another, starting from classes, exceptions, then templates. The end result is that it is a challenging task to master all the aspects of this language.
 
 But the good news is: you do not have to master all of C++, and for your sanity you probably should not. Indeed, there is a number of \emph{sub-languages} made out of a subset C++ that are completely self-sufficient, i.e.~you can use them to write any program. In other words, there are multiple, very different ways of writing the same program in C++. Typically, modern programs only use a small fraction of the whole language, e.g., leaving aside most of what was inherited from C (arrays, raw pointers, explicit memory management, etc.). A special class of such sub-languages are those that are tailored specifically to address a given task, as opposed to being open to any purpose. These are called \emph{domain-specific languages} (DSL), and only require learning a few of C++'s rules and concepts, plus the rules introduced by the sub-language itself. The \phypp library is an example of such domain-specific languages, its domain being vector data manipulation.
 
@@ -199,17 +211,25 @@ The combination of operating systems and compilers on which this library has bee
 \begin{center}
 \begin{tabular}{cccc}
 \hline \hline
-Operating system & Compiler & Status & Notes \\ \hline
-Linux Mint 15 & gcc-4.8   & \stwork & \footlabel{foot:lm15}{\texttt{libclang} in the repository is too old. Use a more recent version from \href{https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm}{ppa:h-rayflood/llvm}.} \\
- --           & gcc-4.7   & \stwork & \footref{foot:lm15} \\
- --           & clang-3.3 & \stwork & \footref{foot:lm15} \\
-Linux Mint 17 & gcc-4.8   & \stwork & \footlabel{foot:lm17}{\texttt{libclang} in the repository crashes on valid C++ code. Fixed in \texttt{libclang-3.5}.} \\
- --           & clang-3.3 & \stwork & \footref{foot:lm17} \\
- --           & clang-3.4 & \stwork & \footref{foot:lm17} \\
- --           & clang-3.5 & \stwork & \footref{foot:lm17} \\
-Ubuntu 14.04  & gcc-4.8   & \stwork & \footlabel{foot:ntested}{Not all dependencies were tested.} \\
-Debian 4.6.3  & gcc-4.7   & \stwork & \footref{foot:ntested} \\
-OSX 10.9.5    & xcode-6.0 & \stwork & \footref{foot:ntested} \\
+Operating system & Compiler & Status & Date of testing \\ \hline
+Linux Mint 15 \footlabel{foot:lm15}{\texttt{libclang} in the repository is too old. Use a more recent version from \href{https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm}{ppa:h-rayflood/llvm}.}
+              & gcc-4.8   & \stwork & March 2015 \\
+ --           & gcc-4.7   & \stwork & March 2015 \\
+ --           & clang-3.3 & \stwork & March 2015 \\
+Linux Mint 17 \footlabel{foot:lm17}{\texttt{libclang} in the repository crashes on valid C++ code. Fixed in \texttt{libclang-3.5}.}
+              & gcc-4.8   & \stwork & June 2016  \\
+ --           & clang-3.5 & \stwork & June 2016  \\
+ --           & clang-3.4 & \stwork & March 2015 \\
+ --           & clang-3.3 & \stwork & March 2015 \\
+Fedora 23 \footlabel{foot:f23}{\texttt{clang} and \texttt{libclang} were compiled from source, the versions from the repository were not tested.}
+              & gcc-5.3   & \stwork & June 2016  \\
+ --           & clang-3.7 & \stwork & June 2016  \\
+Ubuntu 14.04 \footlabel{foot:ntested}{Not all dependencies were tested.}
+              & gcc-4.8   & \stwork & March 2015 \\
+Debian 4.6.3 \footref{foot:ntested}
+              & gcc-4.7   & \stwork & April 2015 \\
+OSX 10.9.5 \footref{foot:ntested}
+              & xcode-6.0 & \stwork & April 2015 \\
 \hline
 \end{tabular}
 \end{center}
@@ -286,26 +306,28 @@ The only issue with operator overloading concerns the hat operator \cppinline|^|
 
 \subsection{Multi-dimensional indexing \label{SEC:core:overview:multidim}}
 
-The standard \stdvec is a purely linear container: one can access its elements using \cppinline|v[i]|, with \cppinline|i| ranging from \cppinline|0| up to \cppinline|std::vector::size()-1| (included). However, the \phypp vector allows N-dimensional indexing, i.e., using a group of indices to identify one element. For example, this is particularly useful to work on images, which are essentially 2-dimensional objects where one identifies a given pixel by its coordinates \cppinline|x| and \cppinline|y|. The natural syntax for this indexing would be to write \cppinline|img[x,y]|. This syntax is valid C++ code, but unfortunately will not do what you expect\footnote{This will call the \emph{comma} operator, which evaluates both elements \cppinline|x| and \cppinline|y| and returns the last one, i.e., \cppinline|y|. So this code actually means \cppinline|img[y]|. With proper configuration, most compiler will warn about this though, since in this context \cppinline|x| is a useless statement, so you should be safe should you make this mistake.} and there is no sane way around it. The alternative we chose here is to write instead \cppinline|img(x,y)|. While it is not as semantically clear as using brackets, it has the nice advantage of being compatible with the IDL syntax.
+The standard \stdvec is a purely linear container: one can access its elements using ``\cppinline|v[i]|'', with \cppinline|i| ranging from \cppinline|0| up to \cppinline|std::vector::size()-1| (included). The \phypp vectors go beyond this, and also allow \mbox{N-dimensional} indexing, i.e., using the combination of multiple indices to identify one element. This is particularly useful to work on images, which are essentially \mbox{2-dimensional} objects where each pixel is identified by its coordinates \cppinline|x| and \cppinline|y|. Since regular vectors use the syntax ``\cppinline|v[i]|'', the natural syntax for this indexing would be to write ``\cppinline|img[x,y]|''. This syntax is valid C++ code, but unfortunately will not do what you expect\footnote{This will call the \emph{comma} operator, which evaluates both elements \cppinline|x| and \cppinline|y| and returns the last one, i.e., \cppinline|y|. So this code actually means ``\cppinline|img[y]|''... Most compilers will warn you about this, since in this context \cppinline|x| is a useless statement, so you should be safe should you make this mistake.} and there is no sane way around it. The alternative we chose here is to write instead ``\cppinline|img(x,y)|''. This has the nice advantage of being compatible with the IDL syntax.
 
-The multi-dimensional nature of a vector is determined at \emph{compile time}, i.e., it cannot be changed after the vector is declared. By default, a vector is mono-dimensional. To use the above feature, one needs to specify the number of needed dimensions in the type of the vector. For example, a 2D image of \cppinline|float| will be declared as \cppinline|vec2f|. These type aliases are provided for dimensions up to $6$. Here is an example of manipulation of a 2D matrix:
+The multi-dimensional nature of a vector is determined at \emph{compile time}, i.e., it cannot be changed after the vector is declared\footnote{Turning a 1D vector into a 2D vector and {\it vice versa} is still possible by creating a new variable. See, e.g., the functions \cppinline|reform| and \cppinline|flatten| (\ref{SEC:support:generic:dims}).} The number of dimensions is specified in the type of the vector. For example, a 2D image of \cppinline|float| will be declared as \cppinline|vec2f|. These type aliases are provided for dimensions up to $6$ (i.e., \cppinline{vec6f}). Here is an example of manipulation of a 2D matrix (see \ref{SEC:core:vec:indexing} for more detail on indexing):
 
 \begin{cppcode}
 // Create a simple matrix.
 vec2f m = {{1,2,3}, {4,5,6}, {7,8,9}};
 
-// Index ordering is similar to C arrays: the last index
-// is contiguous in memory. Note that this is *opposite*
-// to the IDL convention.
+// Index ordering is similar to C arrays: the last index is contiguous
+// in memory. Note that this is *opposite* to the IDL convention.
 m(0,0); // 1
 m(0,1); // 2
 m(1,0); // 4
 
-// It is still possible to access elements as if in a
-// "flat" vector
+// It is also possible to access elements with "flat" indices using
+// square brackets.
 m[0]; // 1
 m[1]; // 2
 m[3]; // 4
+
+// ... but doing so with parenthesis will generate a compiler error:
+m(0); // error: wrong number of indices for this vector
 \end{cppcode}
 
 \begin{advanced}
@@ -317,9 +339,9 @@ using vec12f = vec<12,float>;
 using vec3f512 = vec<3,mpfr::real<512>>;
 \end{cppcode}
 
-The hard limit on the number of dimensions will then depend on your compiler (each dimension involves an additional level of template recursion). The C++ standard does not guarantee anything, but you should be able to go as high as 256 on all major compilers. Beyond this, you should probably see a doctor first.
+The hard limit on the number of dimensions will then depend on your compiler (each dimension involves an additional level of template recursion). The C++ standard does not guarantee anything, but you should be able to go as high as 256 on all major compilers. Beyond this, you should probably see a psychologist first.
 
-As for the types allowed inside the vector, there is no explicit restriction. However, some features may obviously not be available depending on the capabilities of your type (e.g., if your type has no \cppinline{operator*}, you will not be able to multiply together vectors of this type). Lastly, the \phypp vector shares the same restrictions as the \stdvec regarding the \emph{copyable} and \emph{movable} capabilities of the stored type.
+There is no explicit restriction regarding the data type of the vector (i.e., \cppinline|float| or \cppinline|std::string|). However, some features may obviously not be available depending on the capabilities of your type (e.g., if your type has no \cppinline{operator+}, you will not be able to co-add vectors of this type). Lastly, the \phypp vector shares the same restrictions as the \stdvec regarding the \emph{copyable} and \emph{movable} capabilities of the stored type.
 \end{advanced}
 
 \subsection{Vector views \label{SEC:core:overview:views}}
@@ -330,14 +352,15 @@ We have seen that, instead of accessing each element individually, we can use op
 // Create a simple vector.
 vec1f w = {1,2,3,4,5,6};
 
-// We want to "view" only the second, the third and the
-// fifth elements. So we first create a vector containing
-// the corresponding indices.
+// We want to "view" only the second, the third and the fifth
+// elements. So we first create a vector containing the
+// corresponding indices.
 vec1u id = {1,2,4};
 
 // Then we create the view.
-// Note the usage of "auto" there. The type of the view is
-// complex, and it is better not to worry about it.
+// Note the usage of "auto" there to avoid having to spell out the
+// precise type of the view. It is an implementation detail, and you
+// should not worry about it for now.
 auto v = w[id];
 
 // Now we can modify these elements very simply, as if they
@@ -375,10 +398,10 @@ A vector only contains two member variables:
 \item \cppinline{std::vector<T> data} \\ This is the underlying \stdvec containing the elements of the vector. It is exposed to the public interface for simplicity, but on most occasions it should \emph{not} be used directly. In fact, it may become part of the private interface in the future, so you should not rely on its existence.
 
 \begin{advanced}
-Concerning \cppinline{bool} vectors. We do not use \cppinline{std::vector<bool>}, since it is a very special case of \stdvec: the C++ standard specifies that the \cppinline{bool} specialization does not store \cppinline{bool} elements, but is actually implemented like a \emph{bit field}. This is essentially to save memory: a \cppinline{bool} in C++ occupies $8$ bits of memory, like a \cppinline{char}, even though it can only carry a single bit of information. This is due to \emph{memory alignment} issues, which are inherent to the CPU architecture (the address of individual values in memory are supposed to be multiples of $8$ bits, or one byte). In a bit field however, $8$ \cppinline{bool}s are stored in a single \cppinline{char}, and bitwise operators are used to read and write individual \cppinline{bool}s. While more memory efficient, it is also slower, and involves a whole machinery to trick the user into thinking that none of this is happening. For this reason, \cppinline{bool} vectors are implemented with \cppinline{std::vector<char>} in \phypp, with one \cppinline{char} containing one \cppinline{bool}. This is completely transparent to the library user though, since \cppinline{char&} is casted into \cppinline{bool&}, and vice versa, at the boundary of the vector interface.
+Regarding \cppbool vectors. We do not use \cppinline{std::vector<bool>}, since it is a very special case of \stdvec: the C++ standard specifies that the \cppbool specialization does not store \cppbool elements, but is actually implemented like a \emph{bit field}. This is essentially to save memory: a \cppbool in C++ occupies $8$ bits of memory, like a \cppinline{char}, even though it can only carry a single bit of information. This is due to \emph{memory alignment} issues, which are inherent to the CPU architecture (the address of individual values in memory are supposed to be multiples of $8$ bits, or one byte). In a bit field however, $8$ \cppbools are stored in a single \cppinline{char}, and bitwise operators are used to read and write individual \cppbools. While more memory efficient, it is also slower, and involves a whole machinery to trick the user into thinking that none of this is happening. For this reason, \cppbool vectors are implemented with \cppinline{std::vector<char>} in \phypp, with one \cppinline{char} containing one \cppbool. This is completely transparent to the library user though, since \cppinline{char&} is casted into \cppinline{bool&}, and vice versa, at the boundary of the vector interface.
 \end{advanced}
 
-\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of this vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content\footnote{This statement is actually a bit bold, but is mostly true. The only reason why this variable is made public is for optimization purposes. On occasions, it can be noticeably faster to manage manually the growth of a vector, and update the dimensions afterwards. This is often done within the core library, but should rarely be done otherwise.}. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign it another vector (\ref{SEC:core:vec:constructor}).
+\item \cppinline{std::array<std::size_t,D> dims} \\ This variable contains the dimensions of the vector (useful only for multidimensional vectors). On no occasion should you modify this variable yourself: you should only read its content\footnote{This statement is actually a bit bold, but is mostly true. The only reason why this variable is made public is for optimization purposes. On occasions, it can be noticeably faster to manage manually the growth of a vector, and update the dimensions afterwards. This is often done within the core library, but should rarely be done otherwise.}. To change the dimensions of a vector, either use \cppinline{resize(...)} (\ref{SEC:core:vec:member_fun}) or assign it another vector (\ref{SEC:core:vec:constructor}).
 
 \begin{example}
 \begin{cppcode}
@@ -386,8 +409,9 @@ Concerning \cppinline{bool} vectors. We do not use \cppinline{std::vector<bool>}
 vec2f img(256,128);
 img.dims[0]; // 256
 img.dims[1]; // 128
-for (std::size_t x = 0; x < img.dims[0]; ++x)
-for (std::size_t y = 0; y < img.dims[1]; ++y) {
+// The dimensions can be used in loops
+for (uint_t x : range(img.dims[0]))
+for (uint_t y : range(img.dims[1])) {
     img(x,y) = 3.1415;
 }
 \end{cppcode}
@@ -420,7 +444,7 @@ vec2d z(5,4);    // z contains 5*4=20 objects all equal to 0
 vec2s x(z.dims); // x has the same dimensions as z
                  // but contains strings, all empty
 vec3b y(z.dims, 8); // y has the same dimensions as z,
-                 // plus an extra dimension of length 8
+                    // plus an extra dimension of length 8
 \end{cppcode}
 \end{example}
 
@@ -454,7 +478,7 @@ Like \stdvec, the \phypp vector is \emph{copiable}, meaning that one can duplica
 vec1f w = {1,2,3};
 vec1f z(w); // copy constructor: {1,2,3}
 
-// Assignment
+// Assignment by copy
 z = w;
 \end{cppcode}
 \end{example}
@@ -469,31 +493,34 @@ vec1f z(vec1f{1,2,3}); // move constructor: {1,2,3}
 // Here, a temporary vector is created with vec1f{1,2,3}.
 // This temporary vector is then *moved* inside z.
 
-// Assignment
+// Assignment by moving a temporary
 z = vec1f{4,5,6};
 \end{cppcode}
 \end{example}
 
 \item \cppinline|vec::vec(const vec<D,OtherT>&); // The conversion constructor|
 
-C++ supports implicit conversion between all the build in types. In particular, it is possible to write:
+The C++ language supports implicit conversion between some of the built-in types. In particular, it is possible to write:
 \begin{cppcode}
 int i = 0;
 float f = i; // int to float
 bool b1 = i; // int to bool, mostly for interoperability with C
 bool b2 = f; // float to bool, not sure if that makes sense...
 \end{cppcode}
-While this is very convenient in most cases, it can also lead to dangerous silent conversions, such as the \cppinline{float} to \cppinline{bool} conversion. This is, somehow, a legacy of C. In \phypp we decided to also support such implicit conversions. They make the code much easier to read, but the price to pay is that sometimes we do some conversions which are not necessary, and we do not realize it because they are implicit. However, we decided to disable implicit conversion to and from \cppinline{bool} vectors, since it could lead to subtle bugs that are difficult to trace. It is sill possible to do the conversion to \cppinline{bool} using explicit
+While this is very convenient in most cases, it can also lead to dangerous ``narrowing'' conversions (resulting in a loss of information), such as the \cppinline{float} to \cppbool conversion. This is, somehow, a legacy of C. In \phypp we decided to also support most of these implicit conversions as they make the code much easier to write and read. The price to pay is that we sometimes do unnecessary conversions, and we do not realize it because they are implicit. However, we decided to disable implicit conversion to and from \cppbool vectors, since the semantic of \cppinline|bool| is very different from that of a number, and it could lead to subtle bugs that are difficult to trace (such as using a \cppinline|float| vector as argument of the \cppinline|where| function, see \ref{SEC:support:generic:find}). It is sill possible to do the conversion to \cppbool using an explicit conversion.
 
 \begin{example}
 \begin{cppcode}
+// Conversion from int
 vec1i w = {1,2,0};
-vec1f z(w); // int to float {1,2,0}
-vec1b y(w); // error: cannot convert int to bool
-vec1s x(w); // error: cannot convert int to std::string
+vec1f z = w; // int to float {1,2,0}
+vec1b y = w; // error: cannot convert int to bool
+vec1s x = w; // error: cannot convert int to std::string
 
+// Conversion from bool
 vec1b b = {true,true,false};
-vec1i s(b); // bool to int {1,1,0}
+vec1i s = b;        // error: implicit conversion is not allowed for bool
+vec1i s = vec1i{b}; // ok: explicit bool to int {1,1,0}
 
 // Assignment
 z = w;
@@ -501,7 +528,7 @@ y = w;        // error: cannot convert int to bool
 x = w;        // error: cannot convert int to std::string
 
 s = b;        // error: implicit conversion is not allowed for bool
-s = vec1i(b); // ok: bool to int {1,1,0}
+s = vec1i{b}; // ok: explicit bool to int {1,1,0}
 \end{cppcode}
 \end{example}
 
@@ -514,6 +541,8 @@ The last constructor on the list is the view constructor. It allows implicit con
 vec1i w = {1,2,3};
 vec1u id = {0,1};
 vec1i z(w[id]); // {1,2}
+z[0] = 0; // {0,2}
+w; {1,2,3} (unchanged)
 
 // Assignment
 z = w[id];
@@ -535,6 +564,8 @@ vec1i v;
 v.empty(); // true
 vec1i w = {1,2,3};
 w.empty(); // false
+w.clear();
+w.empty(); // true
 \end{cppcode}
 \end{example}
 
@@ -557,7 +588,9 @@ z.size(); // 6
 
 This function can be used to explicitly change the size of a vector. The parameters it accepts are the same as the dimension constructor (\ref{SEC:core:vec:constructor}), i.e., either integral values for individual dimensions, or an \cppinline{std::array} containing multiple dimensions, or any combination of these. However, the total number of dimensions of the vector must remain unchanged.
 
-After the vector has been resized, its content will have changed. For a monodimensional vector, if the resize operation \emph{decreased} the total number of elements, then the last elements will be erased, but the other ones will remain untouched. On the other hand, if the resize operation \emph{increased} the total number of elements, all the previous elements are unchanged, and new elements are inserted at the end of the vector, default constructed (i.e., zeroes for integral types, etc.). For a multidimensional vector, its content is left in an \emph{undefined state}, and can be assumed to be destroyed\footnote{This is just out of laziness. In the future, this will probably be specified to behave like the monodimensional vector. The issue is that it involves non-trivial reshuffling of the elements to preserve the original structure after the dimensions have changed. I have not needed this feature so far.}.
+After the vector has been resized, its previous content is left in an \emph{undefined state}, i.e., you can generally assume the previous values has been lost and replaced by meaningless garbage.
+
+The only exception is for monodimensional vectors. If the resize operation \emph{decreased} the total number of elements, then values will be erased from the end of the vector and the other ones will remain untouched. On the other hand, if the resize operation \emph{increased} the total number of elements, all the previous elements are unchanged, and new elements are inserted at the end of the vector, default constructed (i.e., zeroes for integral types, etc.).
 
 \begin{example}
 \begin{cppcode}
@@ -566,9 +599,9 @@ v.resize(5); // {1,2,3,0,0}
 v.resize(2); // {1,2}
 v.resize(3); // {1,2,0}
 
-vec2f w = {{1,2},{2,3}};
-w.resize(2,3); // w has been resized, but its content is unspecified
-w(0,0); // ?
+vec2f w = {{1,2},{2,3}}; // dims: {2,2}
+w.resize(2,3); // w has been resized, its content is now unspecified
+w(0,0); // who knows?
 \end{cppcode}
 \end{example}
 
@@ -583,12 +616,13 @@ v.clear(); // v is now empty
 v.empty(); // true
 v.size();  // 0
 v.dims;    // {0}
+v[0];      // error: trying to access element 0 in a vector of size 0
 \end{cppcode}
 \end{example}
 
 \item \cppinline{T& vec::back()}
 
-This function is only available for monodimensional vectors. It returns the last element of the vector. Will crash if called on an empty vector.
+This function is only available for monodimensional vectors. It returns the last element of the vector. Will trigger an error if called on an empty vector.
 
 \begin{example}
 \begin{cppcode}
@@ -600,7 +634,7 @@ v.back() == v[v.size()-1]; // always true
 
 \item \cppinline{T& vec::front()}
 
-This function is only available for monodimensional vectors. It returns the first element of the vector. Will crash if called on an empty vector.
+This function is only available for monodimensional vectors. It returns the first element of the vector. Will trigger an error if called on an empty vector.
 
 \begin{example}
 \begin{cppcode}
@@ -619,15 +653,17 @@ The behavior of this function is different for monodimensional and multidimensio
 vec1i v = {1,2,3};
 v.push_back(4); // {1,2,3,4}
 
-vec2i w = {{1,2,3}, {4,5,6}};
-w.push_back({7,8,9}); // {{1,2,3}, {4,5,6}, {7,8,9}}
-w.push_back({7,8});   // error: dimensions do not match, 2 != 3
+vec2i w = {{1,2,3}, {4,5,6}}; // dims: {2,3}
+w.push_back({7,8,9}); // {{1,2,3}, {4,5,6}, {7,8,9}}  dims: {3,3}
+w.push_back({7,8});   // error: dimensions do not match
 \end{cppcode}
 \end{example}
 
-\item \cppinline{void vec::reserve(std::size_t)}
+\item \cppinline{void vec::reserve(uint_t)}
 
-This function is used for optimization, and is similar to \cppinline{std::vector::reserve()} (actually, this function is called internally). To understand what this function actually does, one needs to know the internal behavior of \stdvec. By default, the \stdvec only allocates enough memory to hold a few elements. Once the allocated memory is full, \stdvec allocates a larger amount of memory, copies the existing elements inside this new memory, and frees the old memory. This strategy allows virtually unlimited growth of a given vector, and is quite efficiently tuned. However, it is still an expensive operation, and performances can be greatly improved if one knows \emph{in advance} the total number of objects that need to be stored in the vector, so that the right amount of memory is allocated from the beginning, and no copy is required. This function does just that, it tells \stdvec how many elements it \emph{will} (or might) contain at some point, so that the vector can already allocate enough memory. This is also useful if you only have a rough idea of the future number of elements.
+This function is used for optimization, and is identical to \cppinline{std::vector::reserve()}. To understand what this function actually does, one needs to know the internal behavior of \stdvec. At any instant, the \stdvec only has allocated enough memory to hold $N$ elements (and $N$ may be larger than the actual size of the vector); $N$ is called the \emph{capacity} of the vector. Once the allocated memory is full, and a new \cppinline{push_back()} is called, \stdvec allocates a larger amount of memory (typically $2N$ elements), copies the existing elements inside this new memory, and frees the old memory. This strategy allows virtually unlimited growth of a given vector; it is quite efficiently tuned but remains an expensive operation. Performances can be greatly improved if one knows \emph{in advance} the total number of objects that need to be stored in the vector, so that the right amount of memory is allocated from the start, and no further reallocation is required. This function does just that: it tells \stdvec how many elements it will (or might) contain at some point, so that the vector can already allocate enough memory to store them all contiguously.
+
+This is also useful even if you only have a rough idea of the expected number of elements of your vector: calling a generous \cppinline{reserve(10000)} to store a few thousand elements will be more efficient than letting the vector resize itself progressively (e.g., $15$ resize operations if the allocated memory is doubled at each step). Later, if you have reserved way too much memory, you can always ask the vector to free the surplus by calling \cppinline{std::vector::shrink_to_fit()}, which will result in an additional reallocation.
 
 \begin{example}
 \begin{cppcode}
@@ -650,7 +686,10 @@ for (...) {
 
 \item \cppinline{uint_t vec::pitch(uint_t) const}
 
-This is only useful for multidimensional vectors. This function returns the ``pitch'' factor associated to a given dimension. This factor is number of elements in memory that separate two consecutive indices of this dimension. By definition, the pitch factor is \cppinline{1} for the last dimension. For the other dimensions, this is the product of all the other dimensions located between the one considered and the last dimension.
+This is only useful for multidimensional vectors. This function returns the ``pitch'' factor associated to a given dimension. This factor is number of contiguous elements in memory that separate two consecutive indices of this dimension. By definition, the pitch factor is \cppinline{1} for the last dimension, i.e., for any vector \cppinline{v}, \cppinline{v(..., i)} and \cppinline{v(..., i+k)} are separated by \cppinline{k} elements. For any dimensions $d$ of size $N_d$, the pitch $p_d$ is defined as:
+\begin{align}
+p_d = \prod_{k=d+1}^D N_k
+\end{align}
 
 \begin{example}
 \begin{cppcode}
@@ -661,17 +700,17 @@ v.pitch(0); // 48 = v.dims[2]*v.dims[1]
 \end{cppcode}
 \end{example}
 
-\item \cppinline{bool vec::is_same(const vec<D,T>&) const}
+\item \cppinline{bool vec::view_same(const vec<D,T>&) const}
 
-This function tests if the provided vector is a view inside this vector.
+This function tests if the provided argument is a view inside this vector.
 
 \begin{example}
 \begin{cppcode}
 vec1f v = {1,2,3};
 vec1f w = {1,2,3};
 vec1u id = {1,2};
-v.is_same(v[id]); // true
-v.is_same(w[id]); // false
+v.view_same(v[id]); // true
+v.view_same(w[id]); // false
 \end{cppcode}
 \end{example}
 
@@ -681,13 +720,13 @@ This function just returns a reference to this vector, and is only present to mi
 
 \item \cppinline{iterator vec::begin()} and \cppinline{iterator vec::end()}
 
-These functions allow iteration over the values of this vector. The only reason one may use these functions explicitly is when using algorithms from the standard C++ library, which often work on a pair of iterators as returned by \cppinline{begin()} and \cppinline{end()}.
+These functions allow iteration over the values of this vector. They are mean to allow range-based \cppinline{for} loops over \phypp vectors. Apart from this, the only reason one may use these functions explicitly is when using algorithms from the standard C++ library, which often work on a pair of iterators as returned by \cppinline{begin()} and \cppinline{end()}.
 
 \begin{example}
 \begin{cppcode}
 vec1f v = {1,2,3};
 // The presence of these functions allow to use vectors
-// in range-based loops
+// in range-based for loops
 for (float& f : v) {
     f += 1;
 }
@@ -697,14 +736,14 @@ for (float& f : v) {
 
 \subsection{Indexing \label{SEC:core:vec:indexing}}
 
-There are two ways to index a given vector, for both mono- and multidimensional vectors. The first way is through ``flat'' indices and the bracket indexing \cppinline{v[i]}, i.e., a single index that runs contiguously in memory, and the second way is through multidimensional indices and parenthesis indexing \cppinline{v(i)} (\ref{SEC:core:overview:multidim}). For monodimensional vectors, these two methods are perfectly identical.
+There are two ways to index a given vector, for both mono- and multidimensional vectors. The first way is through ``flat'' indices with the angled bracket notation ``\cppinline{v[i]}'', i.e., a single index that runs contiguously in memory, and the second way is through multidimensional indices and parenthesis notation ``\cppinline{v(i)}'' (these were briefly introduced in \ref{SEC:core:overview:multidim}). For monodimensional vectors, these two methods are perfectly identical.
 
-Flat indexing does not care about the details of the dimensions of a given vector. The only important thing is the total number of elements in the vector. This is the simplest and fastest\footnote{Actually there is a faster way using the \cppinline{safe} wrapper, which does not do bounds checking. See the ``Advanced'' note at the end of this section.} way to access the data inside a vector.
+Flat indexing does not care about the details of the dimensions of a given vector, and is only tied to the total number of elements in the vector. This is the simplest and fastest\footnote{Actually there is a faster way using the \cppinline{safe} wrapper, which does not do bounds checking. See the ``Advanced'' note at the end of this section.} way to access the data inside a vector.
 
 \begin{example}
 \begin{cppcode}
 vec3f v(4,5,8); // a complex 3D vector
-for (std::size_t i = 0; i < v.size(); ++i) {
+for (uint_t i : range(v)) {
     // Here we traverse the vector v regardless of its dimensions
     v[i] = 12.0 + i*i - sqrt(5.0*i) + v[i/4];
 }
@@ -716,16 +755,16 @@ Multidimensional indexing is more involved computationally, because it implies s
 \begin{example}
 \begin{cppcode}
 vec3f v(4,5,8); // a complex 3D vector
-for (std::size_t i = 0; i < v.dims[0]; ++i)
-for (std::size_t j = 0; j < v.dims[1]; ++j)
-for (std::size_t k = 0; k < v.dims[2]; ++k) {
+for (uint_t i : range(v.dims[0]))
+for (uint_t j : range(v.dims[1]))
+for (uint_t k : range(v.dims[2])) {
     // Here we traverse the vector v keeping its dimensional structure
     v(i,j,k) = 42.0 + i + j + k/(j+1);
 }
 \end{cppcode}
 \end{example}
 
-Indexing a vector can only be done with integers, e.g., \cppinline{int}, \cppinline{unsigned int}, \cppinline{int_t}, \cppinline{uint_t}, \cppinline{std::size_t}, etc. Indexing with \emph{unsigned} integers is faster because it removes the need to check for the positivity of the index, and should therefore be preferred when possible. Negative indices are allowed though, and they are interpreted as \emph{reverse} indices, where \cppinline{-1} refers to the last element of the vector, \cppinline{-2} the one before the last, etc.
+Indexing a vector can only be done with integers, e.g., \cppinline{int}, \cppinline{unsigned int}, \cppinline{int_t}, \cppinline{uint_t}, \cppinline{std::size_t}, etc. Indexing with \emph{unsigned} integers is faster because it removes the need to check for the positivity of the index, and should therefore be preferred when possible. Negative indices are allowed, and they are interpreted as \emph{reverse} indices, where \cppinline{-1} refers to the last element of the vector, \cppinline{-2} the one before the last, etc.
 
 \begin{example}
 \begin{cppcode}
@@ -761,14 +800,14 @@ v[id] = 12;
 v = 12; // now v only contains a single element equal to 12
 \end{cppcode}
 
-Not only is this not very practical to write, it is error prone and not very clear. If we decide to add an element to \cppinline{v}, we also have to modify \cppinline{id}. Not only this, but it will most likely be slower than writing the loop directly, because the compiler may not realize that you are accessing all the elements contiguously, and will fail to optimize it properly. For this reason, we also introduce the ``placeholder'' symbol, defined as a single underscore \cppinline{_}. When used as an index, it means ``all the indices in the range''. Coming back to our example:
+Not only is this not very practical to write, it is error prone and not very clear. If we decide to add an element to \cppinline{v}, we also have to modify \cppinline{id}. Not only this, but it will most likely be slower than writing the loop directly, because the compiler may not realize that you are accessing all the elements contiguously, and will fail to optimize it properly. For this reason, we also introduce the ``placeholder'' symbol, defined as a single underscore ``\cppinline{_}''. When used as an index, it means ``all the indices in the range''. Coming back to our example:
 
 \begin{cppcode}
 vec1i v = {1,2,3,4};
 v[_] = 12; // it cannot get much shorter
 \end{cppcode}
 
-This placeholder index can be used in all situations, with both flat and multidimensional indexing. It can be further refined to only encompass a fraction of the whole range, using a peculiar syntax\footnote{Be warned that this feature has been introduced recently and may not survive in the future.}:
+This placeholder index can be used in all situations, with both flat and multidimensional indexing. It can be further refined to only encompass a fraction of the whole range, using a specific syntax:
 
 \begin{cppcode}
 vec1i v = {1,2,3,4};
@@ -777,14 +816,14 @@ v[2-_] = 12;   // only access the indices 2 to 3
 v[1-_-2] = 12; // only access the indices 1 to 2
 \end{cppcode}
 
-Except for the special case of the placeholder index \cppinline{_}, all the indexing methods described above perform \emph{bound checks} before accessing each element. In other words, the vector class makes sure that each index is smaller than either the total size of the vector (for flat indices) or the length of its corresponding dimension (for multidimensional indices). If this condition is not satisfied, an assertion is raised explaining the problem, and the program is stopped immediately to prevent memory corruption.
+Except for the special case of this placeholder index, all the indexing methods described above perform \emph{bound checks} before accessing each element. In other words, the vector class makes sure that each index is smaller than either the total size of the vector (for flat indices) or the length of its corresponding dimension (for multidimensional indices). If this condition is not satisfied, an assertion is raised explaining the problem, and the program is stopped immediately to prevent memory corruption.
 
 \begin{advanced}
-This bound checking has a small but noticeable impact on performances. In most cases, the added security is definitely worth it. Indeed, accessing a vector with an out of bounds index has very unpredictable impacts on the behavior of the program: sometimes it will crash, but most of the time it will not. Memory will be silently corrupted, the problem will be hard to notice, but the consequences can be terrible... Then, identifying the root of the problem to fix it may prove even more challenging. This is why bound checking is enabled by default.
+This bound checking has a small but noticeable impact on performances. In most cases, the added security is definitely worth it. Indeed, accessing a vector with an out-of-bounds index has very unpredictable impacts on the behavior of the program: sometimes it will crash, but most of the time it will not and memory will be silently corrupted. These problems are hard to notice, and can have terrible consequences... Identifying the root of the problem and fixing it may prove even more challenging. This is why bound checking is enabled by default.
 
-However, there are cases where bound checking is superfluous, for example if we already know \emph{by construction} that the indices we are dealing with will always be valid. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element, then most of the time will be spent iterating from one index to the next and loading the value in the CPU cache, and bound checking can take a significant amount of the total time.
+However, there are cases where bound checking is superfluous, for example if we already know \emph{by construction} that our indices will always be valid. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element, then most of the time will be spent iterating from one index to the next and loading the value in the CPU cache, and bound checking can take a significant amount of the total time.
 
-For this reason, the \phypp vector also offers an alternative indexing interface, the \emph{safe} interface, that behaves exactly like the standard interface described above, except that it does not perform bound checking. One may access it using \cppinline{v.safe[i]} for flat indexing, or \cppinline{v.safe(x,y)} for multidimensional indexing, and it can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times.
+For this reason, the \phypp vector also offers an alternative indexing interface, the so-called \emph{safe} interface. It behaves exactly like the standard indexing interface described above, except that it does not perform bound checking. One may use this interface with the ``\cppinline{v.safe[i]}'' notation for flat indexing, or ``\cppinline{v.safe(x,y)}'' for multidimensional indexing. It can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times. Just be certain to use this interface when you \emph{know for sure} what you are doing. A good strategy is to always use the standard interface and, when the program runs successfully, switch to the safe interface for the most time-consuming code sections.
 \end{advanced}
 
 \subsection{Operators \label{SEC:core:vec:operator}}
@@ -794,14 +833,14 @@ The set of available operators depend on the type of the elements contained in t
 \begin{itemize}
 \item For arithmetic types (\cppinline{int}, \cppinline{unsigned int}, \cppinline{float} and \cppinline{double}): addition (\cppinline{+}), subtraction (\cppinline{-}), multiplication (\cppinline{*}), division (\cppinline{/}) and (integer types only) modulo (\cppinline{%}).
 
-\item For \cppinline{bool}: and (\cppinline{&&}), or (\cppinline{||}) and negation (\cppinline{!}).
+\item For \cppbool: and (\cppinline{&&}), or (\cppinline{||}) and negation (\cppinline{!}).
 
 \item For \cppinline{std::string}: concatenation (\cppinline{+}).
 
 \item For all types: less than (\cppinline{<}), less than or equal (\cppinline{<=}), greater than (\cppinline{>}), greather than or equal (\cppinline{>=}), equal (\cppinline{==}) and not equal (\cppinline{!=}).
 \end{itemize}
 
-In all cases, the operator overloading allows mixing together vectors of different types (as long as they are convertible one to another) and scalar values.
+In all cases, operator overloading allows mixing together vectors of different types (as long as they are mutually convertible) and scalar values.
 
 \begin{example}
 \begin{cppcode}
@@ -824,24 +863,150 @@ struct vec<Dimension,ElementType*>;
 //            note the asterisk ^
 \end{cppcode}
 
-The public interface of the view class is very similar to that of the normal vector, and we will not repeat it here. There are some important differences though, which are inherent to the goal of this class. In particular, there is no available constructor (you do now create a view yourself, you ask for it from an existing vector that will create it for you), and the \cppinline|resize()| function is not available. Lastly, the view implements \cppinline|concretize()|, differently.
+The public interface of the view class is very similar to that of the normal vector, and we will not repeat it here. There are some important differences though, which are inherent to the goal of this class. In particular, there is no available constructor (you cannot create a view yourself, you ask for it from an existing vector that will create it for you), and the \cppinline|resize()| or \cppinline|push_back()| functions are not available. Lastly, the view implements \cppinline|concretize()|, differently (see below).
 
-Thanks to their strong similarity, we will not distinguish in the other sections between vectors and views, and will consider views as just another kind of vectors. Indeed, the interface of these two classes has been designed for views to be completely interchangeable with vectors, and vice versa, so that the code of any given function is generally written once and is valid for both types.
+Thanks to their strong similarity, we will not distinguish vectors and views in the following sections; views are just another kind of vectors. Indeed, the interface of these two classes has been designed for views to be completely interchangeable with vectors, and {\it vice versa}, so that the code of any given function is generally written once and is valid for both types.
 
 \subsection{Member functions \label{SEC:core:view:member_fun}}
 
 \begin{itemize}
 \item \cppinline|vec<D,T> vec<D,T*>::concretize() const|
 
-This function creates a new vector out of the elements of this view. The returned vector is completely independent from this view, or the original vector this view is currently pointing to. This function is mostly useful when writing generic functions. Indeed, views are implicitly convertible to normal vectors on assignment (\ref{SEC:core:vec:constructor}).
+This function creates a new vector containing a copy of the elements of this view. The returned vector is completely independent from this view and its parent vector. This function is mostly useful when writing generic functions. Indeed, views are implicitly convertible to normal vectors on assignment (\ref{SEC:core:vec:constructor}).
 \end{itemize}
 
-\section{Metaprogramming traits and functions (WIP) \label{SEC:core:meta}}
+\section{Writing generic functions \label{SEC:core:meta}}
 
 \begin{warning}
-This whole section is more advanced than the rest. It is describing the sets of helper types and metaprogramming functions that one can use to write new functions. It is intended to be followed by readers already familiar with the \phypp library, and with good knowledge of C++ metaprogramming.
+This section is more advanced than the rest of this chapter. It is intended to be read by users already familiar with the \phypp library, and with fair knowledge of C++ metaprogramming.
 \end{warning}
 
+\subsection{Guidelines}
+
+
+\subsection{Type and dimension manipulation}
+
+\begin{itemize}
+\item \cppinline|template<typename T> rtype_t|
+
+This metafunction will obtain the \emph{interface} type corresponding to the provided type \cppinline|T| by removing \cppconst qualifiers and pointers. This is mostly useful to create the return type of generic functions taking vector as arguments, to support both regular vectors and views.
+
+\begin{example}
+\begin{cppcode}
+template<typename T>
+vec<1,rtype_t<T>> foo(const vec<1,T>& v) {
+    vec<1,rtype_t<T>> cv; // create a new vector with the
+                          // same "interface" type as 'v'
+
+    // Modify cv ...
+
+    return cv;
+}
+
+vec1i v = {0, 1, 2, 3, 4};
+foo(v);    // input type: vec<1,int>,  output type: vec<1,int>
+foo(v[_]); // input type: vec<1,int*>, output type: vec<1,int>
+\end{cppcode}
+\end{example}
+
+\item \cppinline|template<typename T> vtype_t|
+
+This metafunction will obtain the most suitable \emph{interface} type corresponding to the provided raw type \cppinline|T|, where \cppinline|T| can be any C++ built-in type. In particular, this function binds \cppinline|/*const*/ char*| into \cppinline|std::string|. It is used, e.g., by \cppinline{replicate()} (\ref{SEC:support:generic:dims}) to avoid creating instances of \cppinline|vec<D,char*>| which would be unusable.
+
+\begin{example}
+\begin{cppcode}
+template<typename T>
+vec<1,vtype_t<T>> foo(const T& v) {
+    vec<1,vtype_t<T>> cv; // create a new vector with the
+                          // right "interface" expected for 'T'
+
+    // Modify cv ...
+
+    return cv;
+}
+
+foo(1.0);   // input type: double,      output type: vec<1,double>
+foo(false); // input type: bool,        output type: vec<1,bool>
+foo("abc"); // input type: const char*, output type: vec<1,std::string>
+\end{cppcode}
+\end{example}
+
+\item \cppinline|template<typename T> dtype_t|
+
+This metafunction converts a vector \emph{interface} type (i.e., the type shown to the user) into a \emph{data} type (i.e., the type stored internally in the \stdvec). For most vectors, the two types are the same, namely \cppinline|dtype_t<T> == T|. The only exception is \cppinline|dtype_t<bool> == char|, because we cannot use \cppinline|std::vector<bool>| (see \ref{SEC:core:vec:member_var}).
+
+It should not be necessary to use this metafunction in library code: all the vector interfaces (standard and safe) already take care of the conversion. Therefore, the only reason why you may need it is if you interact directly with the \stdvec, which is not advisable.
+
+\item \cppinline|template<typename ... Args> dim_total|
+
+This metafunction computes the total number of dimensions generated by a list of template types. For each type in the list, \cppinline{std::array<T,N>} will add \cppinline{N} to the total, while other types will count for \cppinline{1}. This function is useful to predict the type of a vector constructed with a list of dimensions (\ref{SEC:core:vec:constructor}). It use used, e.g., by \cppinline|replicate()| (\ref{SEC:support:generic:dims}) and \cppinline|randomn()| (\ref{SEC:support:math:random}).
+
+\begin{example}
+\begin{cppcode}
+template<typename ... Args>
+vec<dim_total<Args...>,float> foo(const Args& ... dims) {
+    // Create a new vector of floats with the provided dimensions
+    vec<dim_total<Args...>,float> v(dims...);
+
+    // Modify v ...
+
+    return v;
+}
+
+foo(1);         // output type: vec<1,float> dims: {1}
+foo(1,2);       // output type: vec<2,float> dims: {1,2}
+vec2f u = {{1,2},{3,4},{5,6}};
+foo(u.dims);    // output type: vec<2,float> dims: {3,2}
+foo(u.dims, 5); // output type: vec<3,float> dims: {3,2,5}
+\end{cppcode}
+\end{example}
+
+\end{itemize}
+
+\subsection{Type checking}
+
+\begin{itemize}
+
+\item \cppinline|template<typename T> is_vec|
+
+This trait equals \cpptruetype if \cppinline|T| is (or decays into) a \phypp vector, i.e., \cppinline|vec<D,U>|. It is generally used in combination with \cppinline|std::enable_if| to provide two implementations of a function: one for vectors, and another for scalars. The vector version is usually specified explicitly with a \cppinline|vec<D,T>| argument, and the scalar version with a more generic \cppinline|T|. To prevent ambiguous matches, the second version sometimes needs to be explicitly disabled when \cppinline|T| is a vector.
+
+\begin{example}
+\begin{cppcode}
+template<std::size_t D, typename T, typename ... Args>
+void foo(const vec<D,T>& v, const Args& ... args) {
+    // Do something... (on a vector)
+}
+
+template<typename T>
+void foo(const T& t, int i) {
+    // Do something similar... (on a scalar)
+}
+
+foo(1, 1);       // picks up the scalar version
+foo(vec1u{}, 1); // error: call is ambiguous
+
+// Corrected version of the scalar 'foo':
+template<typename T, typename enable =
+    typename std::enable_if<!is_vec<T>::value>::type>
+void foo(const T& t, int i) {
+    // Do something similar... (on a scalar)
+}
+
+foo(1, 1);       // picks up the scalar version
+foo(vec1u{}, 1); // picks up the vector version
+\end{cppcode}
+\end{example}
+
+\item \cppinline|template<typename T> is_dim_elem|
+
+This trait equals \cpptruetype if \cppinline|T| is (or decays into) a valid dimension type, i.e., either an integer or an \cppinline{std::array}.
+
+\item \cppinline|template<typename ... Args> is_dim_list|
+
+This trait equals \cpptruetype if, for each type \cppinline|T| inside the list \cppinline|Args...|, the trait \cppinline{is_dim_elem<T>} is satisfied. It can be used to check if an argument list is a valid list of dimensions that can be used to create a new vector (\ref{SEC:core:vec:constructor}).
+
+\end{itemize}
 
 % Functions:
 

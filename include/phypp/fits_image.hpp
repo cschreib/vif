@@ -48,6 +48,50 @@ namespace fits {
             int anynul;
             fits_read_img(fptr_, type, 1, v.size(), &def, v.data.data(), &anynul, &status_);
         }
+
+        template<typename Type = double>
+        Type read_pixel(vec1u p) const {
+            status_ = 0;
+
+            int naxis;
+            fits_get_img_dim(fptr_, &naxis, &status_);
+            phypp_check_fits(uint_t(naxis) == p.size(), "FITS file has wrong number of dimensions "
+                "(expected "+strn(p.size())+", got "+strn(naxis)+")");
+
+            int bitpix;
+            std::vector<long> naxes(naxis);
+            fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
+
+            uint_t ppos = 1;
+            uint_t pitch = 1;
+            bool no_error = true;
+            for (uint_t i : range(p)) {
+                no_error = no_error && p.safe[naxis-1-i] < uint_t(naxes[i]);
+                ppos += p.safe[naxis-1-i]*pitch;
+                pitch *= naxes[i];
+            }
+
+            if (!no_error) {
+                vec<1,long> nn; nn.data = naxes; nn.dims = p.dims;
+                nn = reverse(nn);
+                phypp_check_fits(no_error,
+                    "FITS file has too small dimensions (reading pixel "+strn(p)+
+                    " in dims "+strn(nn)+")");
+            }
+
+            int type = bitpix_to_type(bitpix);
+            phypp_check_fits(traits<Type>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(Type)+", got "+type_to_string_(type)+")");
+
+            type = traits<Type>::ttype;
+
+            Type val;
+            Type def = traits<Type>::def();
+            int anynul;
+            fits_read_img(fptr_, type, ppos, 1, &def, &val, &anynul, &status_);
+
+            return val;
+        }
     };
 
     // Output FITS table (write only, overwrites existing files)

@@ -2167,6 +2167,10 @@ auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeX>& x, const T& nx) ->
     return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);
 }
 
+inline double bilinear(double v1, double v2, double v3, double v4, double x, double y) {
+    return v1*(1.0-x)*(1.0-y) + v2*(1.0-x)*y + v3*x*(1.0-y) + v4*x*y;
+}
+
 template<typename Type>
 rtype_t<Type> bilinear(const vec<2,Type>& map, double x, double y) {
     int_t tix = floor(x);
@@ -2193,8 +2197,8 @@ rtype_t<Type> bilinear(const vec<2,Type>& map, double x, double y) {
     uint_t ix = tix;
     uint_t iy = tiy;
 
-    return map.safe(ix,iy)*(1.0 - dx)*(1.0 - dy) + map.safe(ix,iy+1)*(1.0 - dx)*dy
-        + map.safe(ix+1,iy)*dx*(1.0 - dy) + map.safe(ix+1,iy+1)*dx*dy;
+    return bilinear(map.safe(ix,iy), map.safe(ix,iy+1),
+                    map.safe(ix+1,iy), map.safe(ix+1,iy+1), dx, dy);
 }
 
 template<typename Type>
@@ -2251,8 +2255,8 @@ rtype_t<Type> bilinear_strict(const vec<2,Type>& map, double x, double y,
     uint_t ix = tix;
     uint_t iy = tiy;
 
-    return map.safe(ix,iy)*(1.0 - dx)*(1.0 - dy) + map.safe(ix,iy+1)*(1.0 - dx)*dy
-        + map.safe(ix+1,iy)*dx*(1.0 - dy) + map.safe(ix+1,iy+1)*dx*dy;
+    return bilinear(map.safe(ix,iy), map.safe(ix,iy+1),
+                    map.safe(ix+1,iy), map.safe(ix+1,iy+1), dx, dy);
 }
 
 template<typename Type>

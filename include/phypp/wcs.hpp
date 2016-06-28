@@ -214,7 +214,10 @@ namespace fits {
         wcsprm* w = nullptr;
         int nwcs  = 0;
 
-        wcs() = default;
+        explicit wcs(uint_t naxis = 2) : w(new wcsprm), nwcs(1) {
+            w->flag = -1;
+            wcsini(true, naxis, w);
+        }
 
         explicit wcs(const fits::header& hdr) {
             // Enable error reporting
@@ -295,9 +298,9 @@ namespace fits {
 #endif
     }
 
-    template<typename T = double, typename U = double, typename V, typename W>
-    void ad2xy(const fits::wcs& w, const vec<1,T>& ra, const vec<1,U>& dec,
-        vec<1,V>& x, vec<1,W>& y) {
+    template<std::size_t D = 1, typename T = double, typename U = double, typename V, typename W>
+    void ad2xy(const fits::wcs& w, const vec<D,T>& ra, const vec<D,U>& dec,
+        vec<D,V>& x, vec<D,W>& y) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -307,21 +310,20 @@ namespace fits {
         phypp_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
             strn(ra.size())+" vs "+strn(dec.size())+")");
 
-        std::size_t ngal = ra.size();
+        uint_t ngal = ra.size();
         if (ngal == 0) {
             x.clear(); y.clear();
             return;
         }
 
         uint_t naxis = w.w->naxis;
-        vec1d world(naxis*ngal);
-        vec1u ids1 = naxis*uindgen(ngal);
-        vec1u ids2 = ids1+1;
-        world.safe[ids1] = ra;
-        world.safe[ids2] = dec;
+        vec2d world(ngal, naxis);
+        for (uint_t i : range(ngal)) {
+            world.safe(i,0) = ra.safe[i];
+            world.safe(i,1) = dec.safe[i];
+        }
 
-        vec1d pos(naxis*ngal);
-
+        vec2d pos(ngal, naxis);
         std::vector<double> phi(ngal), theta(ngal);
         std::vector<double> itmp(naxis*ngal);
         std::vector<int>    stat(ngal);
@@ -335,14 +337,19 @@ namespace fits {
 
         phypp_check(status == 0, "error in WCS conversion");
 
-        x = pos.safe[ids1];
-        y = pos.safe[ids2];
+        x.dims = ra.dims; x.resize();
+        y.dims = dec.dims; y.resize();
+
+        for (uint_t i : range(ngal)) {
+            x.safe[i] = pos.safe(i,0);
+            y.safe[i] = pos.safe(i,1);
+        }
 #endif
     }
 
-    template<typename T = double, typename U = double, typename V, typename W>
-    void xy2ad(const fits::wcs& w, const vec<1,T>& x, const vec<1,U>& y,
-        vec<1,V>& ra, vec<1,W>& dec) {
+    template<std::size_t D = 1, typename T = double, typename U = double, typename V, typename W>
+    void xy2ad(const fits::wcs& w, const vec<D,T>& x, const vec<D,U>& y,
+        vec<D,V>& ra, vec<D,W>& dec) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -352,21 +359,20 @@ namespace fits {
         phypp_check(x.size() == y.size(), "x and y arrays do not match sizes ("+
             strn(x.size())+" vs "+strn(y.size())+")");
 
-        std::size_t ngal = x.size();
+        uint_t ngal = x.size();
         if (ngal == 0) {
             ra.clear(); dec.clear();
             return;
         }
 
         uint_t naxis = w.w->naxis;
-        vec1d map(naxis*ngal);
-        vec1u ids1 = naxis*uindgen(ngal);
-        vec1u ids2 = ids1+1;
-        map.safe[ids1] = x;
-        map.safe[ids2] = y;
+        vec2d map(ngal, naxis);
+        for (uint_t i : range(ngal)) {
+            map.safe(i,0) = x.safe[i];
+            map.safe(i,1) = y.safe[i];
+        }
 
-        vec1d world(naxis*ngal);
-
+        vec2d world(ngal, naxis);
         std::vector<double> phi(ngal), theta(ngal);
         std::vector<double> itmp(naxis*ngal);
         std::vector<int>    stat(ngal);
@@ -380,8 +386,13 @@ namespace fits {
 
         phypp_check(status == 0, "error in WCS conversion");
 
-        ra = world.safe[ids1];
-        dec = world.safe[ids2];
+        ra.dims = x.dims; ra.resize();
+        dec.dims = y.dims; dec.resize();
+
+        for (uint_t i : range(ngal)) {
+            ra.safe[i] = world.safe(i,0);
+            dec.safe[i] = world.safe(i,1);
+        }
 #endif
     }
 
