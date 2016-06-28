@@ -282,7 +282,11 @@ inline vec2s regex_extract(const std::string& ts, const std::string& regex) {
         vec1s tret;
         tret.reserve(nmatch);
         for (uint_t i : range(nmatch)) {
-            tret.push_back(ts.substr(offset+m[i+1].rm_so, m[i+1].rm_eo - m[i+1].rm_so));
+            if (m[i+1].rm_eo > m[i+1].rm_so) {
+                tret.push_back(ts.substr(offset+m[i+1].rm_so, m[i+1].rm_eo - m[i+1].rm_so));
+            } else {
+                tret.push_back("");
+            }
         }
 
         append<0>(ret, reform(std::move(tret), 1, nmatch));
