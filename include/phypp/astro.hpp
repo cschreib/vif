@@ -3,6 +3,7 @@
 
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"
+#include "phypp/fits.hpp"
 #include "phypp/error.hpp"
 #include "phypp/image.hpp"
 #include "phypp/thread.hpp"
