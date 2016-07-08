@@ -24,20 +24,20 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">int_t</span><span class="o">&gt;</span>  <span class="n">indgen</span><span class="p">(...)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">int_t</span><span class="o">&gt;</span>  <span class="n">indgen</span><span class="p">(...)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">uint_t</span><span class="o">&gt;</span> <span class="n">uindgen</span><span class="p">(...)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">uint_t</span><span class="o">&gt;</span> <span class="n">uindgen</span><span class="p">(...)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">float</span><span class="o">&gt;</span>  <span class="n">findgen</span><span class="p">(...)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">float</span><span class="o">&gt;</span>  <span class="n">findgen</span><span class="p">(...)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">dindgen</span><span class="p">(...)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">dindgen</span><span class="p">(...)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-These functions will create a new vector, whose dimensions are specified in argument like in the dimension constructor SEC:core:vec:constructor or <div class="highlight-inline"><pre><span class="n">vec</span><span class="o">::</span><span class="n">resize</span><span class="p">()</span></pre></div> SEC:core:vec:member_fun. After this vector is created, the function will fill it with values that start at <div class="highlight-inline"><pre><span class="mi">0</span></pre></div> and increment by steps of <div class="highlight-inline"><pre><span class="mi">1</span></pre></div> until the end of the vector.
+These functions will create a new vector, whose dimensions are specified in argument like in the dimension constructor SEC:core:vec:constructor or <div class="highlight-inline"><pre><span></span><span class="n">vec</span><span class="o">::</span><span class="n">resize</span><span class="p">()</span></pre></div> SEC:core:vec:member_fun. After this vector is created, the function will fill it with values that start at <div class="highlight-inline"><pre><span></span><span class="mi">0</span></pre></div> and increment by steps of <div class="highlight-inline"><pre><span></span><span class="mi">1</span></pre></div> until the end of the vector.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="n">indgen</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>    <span class="c1">// {0,1,2,3,4}</span>
+<div class="highlight"><pre><span></span><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="n">indgen</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>    <span class="c1">// {0,1,2,3,4}</span>
 <span class="n">vec2u</span> <span class="n">w</span> <span class="o">=</span> <span class="n">uindgen</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span> <span class="c1">// {{0,1}, {2,3}, {4,5}}</span>
 </pre></div>
 <hr><br>

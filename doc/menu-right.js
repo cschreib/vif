@@ -26,6 +26,7 @@ document.write('\
 </ul><br></li> \
 <li><span class="menu-alpha-heading">C</span><br> \
 <ul> \
+<li><a href="functions_support_astro_flux_cgs2uJy.html">cgs2uJy</a></li> \
 <li><a href="functions_support_image_circular_mask.html">circular_mask</a></li> \
 <li><a href="functions_support_math_lowlevel_clamp.html">clamp</a></li> \
 <li><a href="functions_support_string_modify_collapse.html">collapse</a></li> \
@@ -218,6 +219,10 @@ document.write('\
 <li><a href="functions_support_print_print.html">note</a></li> \
 <li><a href="functions_support_time_now.html">now</a></li> \
 </ul><br></li> \
+<li><span class="menu-alpha-heading">O</span><br> \
+<ul> \
+<li><a href="functions_support_math_reduce_mean.html">optimal_mean</a></li> \
+</ul><br></li> \
 <li><span class="menu-alpha-heading">P</span><br> \
 <ul> \
 <li><a href="functions_support_math_reduce_count.html">partial_count</a></li> \
@@ -287,6 +292,7 @@ document.write('\
 <li><a href="functions_support_generic_rearrange_reverse.html">reverse</a></li> \
 <li><a href="functions_support_math_sequence_rgen.html">rgen</a></li> \
 <li><a href="functions_support_math_sequence_rgen.html">rgen_log</a></li> \
+<li><a href="functions_support_math_sequence_rgen.html">rgen_step</a></li> \
 <li><a href="functions_support_math_reduce_rms.html">rms</a></li> \
 <li><a href="functions_support_image_rotate.html">rotate</a></li> \
 <li><a href="functions_support_math_reduce_run_dim.html">run_dim</a></li> \
@@ -307,6 +313,7 @@ document.write('\
 <li><a href="functions_support_thread_fork.html">spawn</a></li> \
 <li><a href="functions_support_file_system_remove_extension.html">spit_extension</a></li> \
 <li><a href="functions_support_string_modify_split.html">split</a></li> \
+<li><a href="functions_support_string_modify_split.html">split_any_of</a></li> \
 <li><a href="functions_support_math_lowlevel_e10.html">sqr</a></li> \
 <li><a href="functions_support_string_modify_start_with.html">start_with</a></li> \
 <li><a href="functions_support_math_reduce_stddev.html">stddev</a></li> \
@@ -334,6 +341,7 @@ document.write('\
 </ul><br></li> \
 <li><span class="menu-alpha-heading">U</span><br> \
 <ul> \
+<li><a href="functions_support_astro_flux_cgs2uJy.html">uJy2cgs</a></li> \
 <li><a href="functions_support_astro_flux_lsun2uJy.html">uJy2lsun</a></li> \
 <li><a href="functions_support_astro_flux_uJy2mag.html">uJy2mag</a></li> \
 <li><a href="functions_support_generic_sequence_indgen.html">uindgen</a></li> \

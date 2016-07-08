@@ -24,16 +24,16 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">equal_range</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1u</span> <span class="n">equal_range</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-Similarly to <div class="highlight-inline"><pre><span class="n">lower_bound</span></pre></div>, <div class="highlight-inline"><pre><span class="n">upper_bound</span></pre></div> and <div class="highlight-inline"><pre><span class="n">bounds</span></pre></div>, this function uses a binary search algorithm to locate all the values in the input vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that are equal to <div class="highlight-inline"><pre><span class="n">x</span></pre></div>. It then returns the flat indices of all these values in a vector. It is important to note that the binary search assumes that the elements in the input vector are <span class="emphasis">sorted</span> by increasing value. This algorithm also assumes that the input vector does not contain any NaN value (\ref{SEC:support:math}).
+Similarly to <div class="highlight-inline"><pre><span></span><span class="n">lower_bound</span></pre></div>, <div class="highlight-inline"><pre><span></span><span class="n">upper_bound</span></pre></div> and <div class="highlight-inline"><pre><span></span><span class="n">bounds</span></pre></div>, this function uses a binary search algorithm to locate all the values in the input vector <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> that are equal to <div class="highlight-inline"><pre><span></span><span class="n">x</span></pre></div>. It then returns the flat indices of all these values in a vector. It is important to note that the binary search assumes that the elements in the input vector are <span class="emphasis">sorted</span> by increasing value. This algorithm also assumes that the input vector does not contain any NaN value (\ref{SEC:support:math}).
 <br><br>
 If no such value is found, an empty vector is returned.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">50</span><span class="p">};</span>
+<div class="highlight"><pre><span></span><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">50</span><span class="p">};</span>
 <span class="n">equal_range</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span> <span class="c1">// {3,4,5}</span>
 
 <span class="c1">// It&#39;s a faster version of</span>

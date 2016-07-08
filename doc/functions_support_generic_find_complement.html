@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">complement</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">,</span> <span class="n">vec1u</span> <span class="n">id</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1u</span> <span class="n">complement</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">,</span> <span class="n">vec1u</span> <span class="n">id</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function works in tandem with <div class="highlight-inline"><pre><span class="n">where</span></pre></div>. Given a vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> and a set of flat indices <div class="highlight-inline"><pre><span class="n">id</span></pre></div> (\ref{SEC:core:vec:indexing}), it will return the complementary set of indices inside this vector, i.e., all the indices of <div class="highlight-inline"><pre><span class="n">v</span></pre></div> that are <span class="emphasis">not</span> present in <div class="highlight-inline"><pre><span class="n">id</span></pre></div>.
+This function works in tandem with <div class="highlight-inline"><pre><span></span><span class="n">where</span></pre></div>. Given a vector <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> and a set of flat indices <div class="highlight-inline"><pre><span></span><span class="n">id</span></pre></div> (\ref{SEC:core:vec:indexing}), it will return the complementary set of indices inside this vector, i.e., all the indices of <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> that are <span class="emphasis">not</span> present in <div class="highlight-inline"><pre><span></span><span class="n">id</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">};</span>
+<div class="highlight"><pre><span></span><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">};</span>
 <span class="n">vec1u</span> <span class="n">id</span> <span class="o">=</span> <span class="n">where</span><span class="p">(</span><span class="n">v</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">);</span> <span class="c1">// {1,2,4}</span>
 <span class="n">vec1u</span> <span class="n">cid</span> <span class="o">=</span> <span class="n">complement</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span> <span class="c1">// {0,3}</span>
 </pre></div>

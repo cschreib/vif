@@ -24,7 +24,7 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">uint_t</span> <span class="n">distance</span><span class="p">(</span><span class="n">string</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span></span><span class="n">uint_t</span> <span class="n">distance</span><span class="p">(</span><span class="n">string</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
@@ -33,7 +33,7 @@ This function computes the <span class="emphasis">lexicographic distance</span> 
 <br><br>
 The goal of this function is to identify <span class="emphasis">near</span> matches in case a string could not be found in a pre-defined list. This is useful to suggest corrections to the user, who may have misspelled it.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;wircam_K&quot;</span><span class="p">,</span> <span class="s">&quot;hawki_Ks&quot;</span><span class="p">,</span> <span class="s">&quot;subaru_B&quot;</span><span class="p">};</span>
+<div class="highlight"><pre><span></span><span class="n">vec1s</span> <span class="n">s</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;wircam_K&quot;</span><span class="p">,</span> <span class="s">&quot;hawki_Ks&quot;</span><span class="p">,</span> <span class="s">&quot;subaru_B&quot;</span><span class="p">};</span>
 <span class="n">vec1u</span> <span class="n">d</span> <span class="o">=</span> <span class="n">distance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;wirkam_Ks&quot;</span><span class="p">);</span>
 <span class="n">d</span><span class="p">;</span> <span class="c1">// {2, 8, 8}</span>
 

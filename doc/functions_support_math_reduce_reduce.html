@@ -24,21 +24,21 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">U</span><span class="o">&gt;</span> <span class="n">reduce</span><span class="p">(</span><span class="kt">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">F</span> <span class="n">f</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">U</span><span class="o">&gt;</span> <span class="n">reduce</span><span class="p">(</span><span class="n">uint_t</span> <span class="n">d</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">v</span><span class="p">,</span> <span class="n">F</span> <span class="n">f</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This is a meta function. It applies the function <div class="highlight-inline"><pre><span class="n">f</span></pre></div> on slices of the vector <div class="highlight-inline"><pre><span class="n">v</span></pre></div> along its <div class="highlight-inline"><pre><span class="n">d</span></pre></div>th dimension (zero being the first dimension), stores the result of <div class="highlight-inline"><pre><span class="n">f</span></pre></div> on each slice inside a new vector and returns it. The function <div class="highlight-inline"><pre><span class="n">f</span></pre></div> must take a monodimensional vector in input and return a scalar value.
+This is a meta function. It applies the function <div class="highlight-inline"><pre><span></span><span class="n">f</span></pre></div> on slices of the vector <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> along its <div class="highlight-inline"><pre><span></span><span class="n">d</span></pre></div>th dimension (zero being the first dimension), stores the result of <div class="highlight-inline"><pre><span></span><span class="n">f</span></pre></div> on each slice inside a new vector and returns it. The function <div class="highlight-inline"><pre><span></span><span class="n">f</span></pre></div> must take a monodimensional vector in input and return a scalar value.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// We create a 8 x 100 x 5 vector</span>
+<div class="highlight"><pre><span></span><span class="c1">// We create a 8 x 100 x 5 vector</span>
 <span class="n">vec3d</span> <span class="n">v</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
 
 <span class="c1">// We want to compute the mean of each set of 100 values.</span>
 <span class="c1">// In other words:</span>
 <span class="n">vec2d</span> <span class="nf">m</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">5</span><span class="p">);</span>
-<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
-<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">j</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="p">{</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="nl">i</span> <span class="p">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="nl">j</span> <span class="p">:</span> <span class="n">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="p">{</span>
     <span class="n">m</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">v</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">j</span><span class="p">));</span>
 <span class="p">}</span>
 
@@ -49,7 +49,7 @@ This is a meta function. It applies the function <div class="highlight-inline"><
 <span class="c1">// dimension</span>
 </pre></div>
 <hr><br>
-Note that, since the above example can be a common operation, the same can also be achieved with <div class="highlight-inline"><pre><span class="n">m</span> <span class="o">=</span> <span class="n">partial_mean</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></pre></div>. Most of the common reduction functions also have a &ldquo;<div class="highlight-inline"><pre><span class="n">partial_</span><span class="p">...</span></pre></div>&rdquo; version.
+Note that, since the above example can be a common operation, the same can also be achieved with <div class="highlight-inline"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">partial_mean</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></pre></div>. Most of the common reduction functions also have a &ldquo;<div class="highlight-inline"><pre><span></span><span class="n">partial_</span><span class="p">...</span></pre></div>&rdquo; version.
 </div>
 </div>
   </div>

@@ -24,20 +24,20 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">sort</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1u</span> <span class="n">sort</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1u</span> <span class="n">sort</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">F</span> <span class="n">comp</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1u</span> <span class="n">sort</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">F</span> <span class="n">comp</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">inplace_sort</span><span class="p">(</span><span class="n">vec</span><span class="o">&amp;</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">void</span> <span class="n">inplace_sort</span><span class="p">(</span><span class="n">vec</span><span class="o">&amp;</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">inplace_sort</span><span class="p">(</span><span class="n">vec</span><span class="o">&amp;</span><span class="p">,</span> <span class="n">F</span> <span class="n">comp</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">void</span> <span class="n">inplace_sort</span><span class="p">(</span><span class="n">vec</span><span class="o">&amp;</span><span class="p">,</span> <span class="n">F</span> <span class="n">comp</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between <div class="highlight-inline"><pre><span class="n">sort</span></pre></div> and <div class="highlight-inline"><pre><span class="n">inplace_sort</span></pre></div> is that <div class="highlight-inline"><pre><span class="n">sort</span></pre></div> does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and <div class="highlight-inline"><pre><span class="n">inplace_sort</span></pre></div> directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
+These functions will change the order of the elements inside a given vector so that they are sorted from the smallest to the largest. The difference between <div class="highlight-inline"><pre><span></span><span class="n">sort</span></pre></div> and <div class="highlight-inline"><pre><span></span><span class="n">inplace_sort</span></pre></div> is that <div class="highlight-inline"><pre><span></span><span class="n">sort</span></pre></div> does not actually modify the provided vector, but rather returns a vector containing indices inside the provided vector, and <div class="highlight-inline"><pre><span></span><span class="n">inplace_sort</span></pre></div> directly modifies the provided vector. The later is the fastest of the two, but it is less powerful.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// First version</span>
+<div class="highlight"><pre><span></span><span class="c1">// First version</span>
 <span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">};</span>
 <span class="n">vec1u</span> <span class="n">id</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// {0,3,1,2,4}</span>
 <span class="n">v</span><span class="p">[</span><span class="n">id</span><span class="p">];</span> <span class="c1">// {1,3,5,6,7} is sorted</span>
@@ -50,22 +50,22 @@ These functions will change the order of the elements inside a given vector so t
 </pre></div>
 <hr><br>
 <br><br><span class="advanced-title">Advanced</span><div class="advanced"><hr>
-In addition, both functions can be called with a second parameter that specifies the comparison function. This can be any function object (including a lambda) that must take two arguments whose type is that of the elements in the provided vector, and that return <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> if the first element can be considered as &ldquo;inferior to&rdquo; the second element. This can be used to produce complex sorting criteria, possibly involving multiple vectors.
+In addition, both functions can be called with a second parameter that specifies the comparison function. This can be any function object (including a lambda) that must take two arguments whose type is that of the elements in the provided vector, and that return <div class="highlight-inline"><pre><span></span><span class="nb">true</span></pre></div> if the first element can be considered as &ldquo;inferior to&rdquo; the second element. This can be used to produce complex sorting criteria, possibly involving multiple vectors.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec2i</span> <span class="n">x</span> <span class="o">=</span> <span class="n">replicate</span><span class="p">(</span><span class="n">indgen</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="mi">5</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="n">vec2i</span> <span class="n">x</span> <span class="o">=</span> <span class="n">replicate</span><span class="p">(</span><span class="n">indgen</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="mi">5</span><span class="p">);</span>
 <span class="n">vec2i</span> <span class="n">y</span> <span class="o">=</span> <span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
 
 <span class="c1">// Sort the values in &#39;x&#39; and &#39;y&#39; first by ascending values of &#39;x&#39;,</span>
 <span class="c1">// then (for identical &#39;x&#39;) by descending values of &#39;y&#39;.</span>
 <span class="n">vec1u</span> <span class="n">sid</span> <span class="o">=</span> <span class="n">uindgen</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
-<span class="n">inplace_sort</span><span class="p">(</span><span class="n">sid</span><span class="p">,</span> <span class="p">[</span><span class="o">&amp;</span><span class="n">x</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">](</span><span class="kt">uint_t</span> <span class="n">i1</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">i2</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">inplace_sort</span><span class="p">(</span><span class="n">sid</span><span class="p">,</span> <span class="p">[</span><span class="o">&amp;</span><span class="n">x</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">](</span><span class="n">uint_t</span> <span class="n">i1</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">i2</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">[</span><span class="n">i2</span><span class="p">])</span> <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">[</span><span class="n">i2</span><span class="p">];</span>
     <span class="k">else</span>                <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x</span><span class="p">[</span><span class="n">i2</span><span class="p">];</span>
 <span class="p">});</span>
 
 <span class="c1">// This is the equivalent to the simpler examples above</span>
 <span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">};</span>
-<span class="n">vec1u</span> <span class="n">id</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">[](</span><span class="kt">int_t</span> <span class="n">i1</span><span class="p">,</span> <span class="kt">int_t</span> <span class="n">i2</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">vec1u</span> <span class="n">id</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">[](</span><span class="n">int_t</span> <span class="n">i1</span><span class="p">,</span> <span class="n">int_t</span> <span class="n">i2</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">i1</span> <span class="o">&lt;</span> <span class="n">i2</span><span class="p">;</span> <span class="c1">// the default is always to use the &quot;less than&quot;</span>
                     <span class="c1">// comparison operator</span>
 <span class="p">});</span>

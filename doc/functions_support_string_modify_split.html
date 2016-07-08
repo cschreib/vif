@@ -22,19 +22,31 @@
 <div class="catlist">
 <a href="category_support_04_string.html">String manipulation</a><span class="catsep">&gt;</span><a href="category_support_04_string.html#SEC_support_string_modify">String operations</a>
 </div><br>
-<span class="section">Signature</span>
+<span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1s</span> <span class="n">split</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1s</span> <span class="n">split</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+</pre></div></td></tr>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1s</span> <span class="n">split_if_any_of</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will split the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> into a vector of sub-strings each time the pattern <div class="highlight-inline"><pre><span class="n">p</span></pre></div> occurs. If no such pattern is found in <div class="highlight-inline"><pre><span class="n">s</span></pre></div>, the function returns a vector containing a single element which is the whole string <div class="highlight-inline"><pre><span class="n">s</span></pre></div>.
+The <div class="highlight-inline"><pre><span></span><span class="n">split</span></pre></div> function will split the string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div> into a vector of sub-strings each time the pattern <div class="highlight-inline"><pre><span></span><span class="n">p</span></pre></div> occurs. If no such pattern is found in <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div>, the function returns a vector containing a single element which is the whole string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div>. It should be used to parse lists of values separated by a fixed pattern, like a coma (<div class="highlight-inline"><pre><span></span><span class="sc">&#39;,&#39;</span></pre></div>).
+<br><br>
+The <div class="highlight-inline"><pre><span></span><span class="n">split_any_of</span></pre></div> function will split the string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div> into a vector of sub-strings that were separated by any character in <div class="highlight-inline"><pre><span></span><span class="n">c</span></pre></div>. If no such character is found in <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div>, the function returns a vector containing a single element which is the whole string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div>. It should be used to isolate values that are separated by a variable amount of characters, such as spaces.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s">&quot;this is the end&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s">&quot;  this is the   end&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">);</span>
+<span class="n">str</span><span class="p">;</span> <span class="c1">// {&quot;&quot;, &quot;&quot;, this&quot;, &quot;is&quot;, &quot;the&quot;, &quot;&quot;, &quot;&quot;, &quot;end&quot;};</span>
+<span class="n">str</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s">&quot;,a,b,,c,d,&quot;</span><span class="p">,</span> <span class="s">&quot;,&quot;</span><span class="p">);</span>
+<span class="n">str</span><span class="p">;</span> <span class="c1">// {&quot;&quot;, &quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;, &quot;d&quot;, &quot;&quot;};</span>
+
+<span class="n">str</span> <span class="o">=</span> <span class="n">split_any_of</span><span class="p">(</span><span class="s">&quot;  this is the   end&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">);</span>
 <span class="n">str</span><span class="p">;</span> <span class="c1">// {&quot;this&quot;, &quot;is&quot;, &quot;the&quot;, &quot;end&quot;};</span>
-<span class="n">str</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="s">&quot;a:b::c:d&quot;</span><span class="p">);</span>
-<span class="n">str</span><span class="p">;</span> <span class="c1">// {&quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;, &quot;d&quot;};</span>
+<span class="n">str</span> <span class="o">=</span> <span class="n">split_any_of</span><span class="p">(</span><span class="s">&quot;,a,b,,c,d,&quot;</span><span class="p">,</span> <span class="s">&quot;,&quot;</span><span class="p">);</span>
+<span class="n">str</span><span class="p">;</span> <span class="c1">// {&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;};</span>
+
+<span class="c1">// Split a line of text into words</span>
+<span class="n">str</span> <span class="o">=</span> <span class="n">split_any_of</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">,</span> <span class="s">&quot; </span><span class="se">\t\n\r</span><span class="s">&quot;</span><span class="p">);</span>
 </pre></div>
 <hr><br>
 </div>

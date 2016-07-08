@@ -24,16 +24,16 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">strn</span><span class="p">(</span><span class="n">T</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">string</span> <span class="n">strn</span><span class="p">(</span><span class="n">T</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">strn_sci</span><span class="p">(</span><span class="n">T</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">string</span> <span class="n">strn_sci</span><span class="p">(</span><span class="n">T</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-These functions will convert the value <div class="highlight-inline"><pre><span class="n">v</span></pre></div> into a string. This value can be of any type, as long as it is convertible to string. In particular, <div class="highlight-inline"><pre><span class="n">v</span></pre></div> can be a vector, in which case the output string will contain all the values of the vector, separated by commas, and enclosed inside curly braces <div class="highlight-inline"><pre><span class="s">&quot;{...}&quot;</span></pre></div>.
+These functions will convert the value <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> into a string. This value can be of any type, as long as it is convertible to string. In particular, <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> can be a vector, in which case the output string will contain all the values of the vector, separated by commas, and enclosed inside curly braces <div class="highlight-inline"><pre><span></span><span class="s">&quot;{...}&quot;</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">strn</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>            <span class="c1">// &quot;2&quot;</span>
+<div class="highlight"><pre><span></span><span class="n">strn</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>            <span class="c1">// &quot;2&quot;</span>
 <span class="n">strn</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>         <span class="c1">// &quot;1&quot;</span>
 <span class="n">strn</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">);</span>        <span class="c1">// &quot;foo&quot;</span>
 <span class="n">strn</span><span class="p">(</span><span class="n">vec1i</span><span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">9</span><span class="p">});</span> <span class="c1">// &quot;{2, 5, 9}&quot;</span>
@@ -41,7 +41,7 @@ These functions will convert the value <div class="highlight-inline"><pre><span 
 <hr><br>
 The second version is dedicated to floating point numbers, and will output them in scientific format.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">strn_sci</span><span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>    <span class="c1">// &quot;2.000000e+00&quot;</span>
+<div class="highlight"><pre><span></span><span class="n">strn_sci</span><span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>    <span class="c1">// &quot;2.000000e+00&quot;</span>
 <span class="n">strn_sci</span><span class="p">(</span><span class="mf">2e10</span><span class="p">);</span>   <span class="c1">// &quot;2.000000e+10&quot;</span>
 <span class="n">strn_sci</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-2</span><span class="p">);</span>  <span class="c1">// &quot;-5.000000e-02&quot;</span>
 

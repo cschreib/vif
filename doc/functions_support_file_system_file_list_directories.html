@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1s</span> <span class="n">file</span><span class="o">::</span><span class="n">list_directories</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1s</span> <span class="n">file</span><span class="o">::</span><span class="n">list_directories</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function scans the directory given in argument and returns the list of all directories it contains. An empty list is returned if no directory is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The order of the directories in the output list is undefined (can be anything): if you need a sorted list, you have to sort it yourself. Lastly, the path given in argument can contain wildcard characters <div class="highlight-inline"><pre><span class="o">*</span></pre></div>, like in <span class="fixed-width">bash</span>, to filter out the output list.
+This function scans the directory given in argument and returns the list of all directories it contains. An empty list is returned if no directory is found, or if the directory in argument does not exists. The function does not look inside sub-directories. The order of the directories in the output list is undefined (can be anything): if you need a sorted list, you have to sort it yourself. Lastly, the path given in argument can contain wildcard characters <div class="highlight-inline"><pre><span></span><span class="o">*</span></pre></div>, like in <span class="fixed-width">bash</span>, to filter out the output list.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">d</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">list_directories</span><span class="p">(</span><span class="s">&quot;/path/to/phypp/&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="n">vec1s</span> <span class="n">d</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">list_directories</span><span class="p">(</span><span class="s">&quot;/path/to/phypp/&quot;</span><span class="p">);</span>
 <span class="n">d</span><span class="p">;</span> <span class="c1">// {&quot;bin&quot;, &quot;cmake&quot;, &quot;doc&quot;, &quot;include&quot;, &quot;test&quot;, &quot;tools&quot;}</span>
 
 <span class="n">d</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">list_directories</span><span class="p">(</span><span class="s">&quot;/path/to/phypp/t*&quot;</span><span class="p">);</span>

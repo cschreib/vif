@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">remove</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">remove</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will delete the file (or directory) given in argument and return <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> on success, or if the file (or directory) did not exist. It will return <div class="highlight-inline"><pre><span class="nb">false</span></pre></div> only if the file exists but could not be removed (i.e., because you are lacking the right permissions). This function is equivalent to the <span class="fixed-width">bash</span> function <span class="fixed-width">rm -rf</span>.
+This function will delete the file (or directory) given in argument and return <div class="highlight-inline"><pre><span></span><span class="nb">true</span></pre></div> on success, or if the file (or directory) did not exist. It will return <div class="highlight-inline"><pre><span></span><span class="nb">false</span></pre></div> only if the file exists but could not be removed (i.e., because you are lacking the right permissions). This function is equivalent to the <span class="fixed-width">bash</span> function <span class="fixed-width">rm -rf</span>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// That&#39;s a bad idea, but for the sake of the example...</span>
+<div class="highlight"><pre><span></span><span class="c1">// That&#39;s a bad idea, but for the sake of the example...</span>
 <span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">remove</span><span class="p">(</span><span class="s">&quot;/home/joe/.phypprc&quot;</span><span class="p">);</span>
 <span class="n">b</span><span class="p">;</span> <span class="c1">// probably true</span>
 </pre></div>

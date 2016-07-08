@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">replace</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span></span><span class="n">string</span> <span class="n">replace</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will look inside the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> for occurrences of <div class="highlight-inline"><pre><span class="n">p</span></pre></div> and replace each of them with <div class="highlight-inline"><pre><span class="n">r</span></pre></div>. The string is unchanged if no occurrence is found. In particular, this function can be used to remove all the occurrences of <div class="highlight-inline"><pre><span class="n">p</span></pre></div> simply by setting <div class="highlight-inline"><pre><span class="n">r</span></pre></div> equal to an empty string.
+This function will look inside the string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div> for occurrences of <div class="highlight-inline"><pre><span></span><span class="n">p</span></pre></div> and replace each of them with <div class="highlight-inline"><pre><span></span><span class="n">r</span></pre></div>. The string is unchanged if no occurrence is found. In particular, this function can be used to remove all the occurrences of <div class="highlight-inline"><pre><span></span><span class="n">p</span></pre></div> simply by setting <div class="highlight-inline"><pre><span></span><span class="n">r</span></pre></div> equal to an empty string.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;I eat apples&quot;</span><span class="p">,</span> <span class="s">&quot;The apple is red&quot;</span><span class="p">};</span>
+<div class="highlight"><pre><span></span><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;I eat apples&quot;</span><span class="p">,</span> <span class="s">&quot;The apple is red&quot;</span><span class="p">};</span>
 <span class="n">vec1s</span> <span class="n">r</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;apple&quot;</span><span class="p">,</span> <span class="s">&quot;pear&quot;</span><span class="p">);</span>
 <span class="n">r</span><span class="p">;</span> <span class="c1">// {&quot;I eat pears&quot;, &quot;The pear is red&quot;}</span>
 

@@ -24,18 +24,18 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec2s</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec2s</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will analyze the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div>, perform regular expression matching (see <div class="highlight-inline"><pre><span class="n">regex_match</span></pre></div>) using the regular expression <div class="highlight-inline"><pre><span class="n">r</span></pre></div>, and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension corresponds to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
+This function will analyze the string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div>, perform regular expression matching (see <div class="highlight-inline"><pre><span></span><span class="n">regex_match</span></pre></div>) using the regular expression <div class="highlight-inline"><pre><span></span><span class="n">r</span></pre></div>, and will return a vector containing all the extracted substrings. To extract one or more substrings in the regular expression, just enclose the associated patterns in parentheses. The returned vector is two dimensional: the first dimension corresponds to the number of times the whole regular exception was matched in the provided string, the second dimension corresponds to each extracted substring.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;array{5,6.25,7,28}end45.6ddfk 3.1415&quot;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;array{5,6.25,7,28}end45.6ddfk 3.1415&quot;</span><span class="p">;</span>
 
 <span class="c1">// We want to find all floating point numbers in this mess, and</span>
 <span class="c1">// extract their integer and fractional parts separately.</span>
-<span class="n">vec2s</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">R</span><span class="s">&quot;(([0-9]+)\.([0-9]+))&quot;</span><span class="p">);</span>
+<span class="n">vec2s</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">regex_extract</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">R&quot;(([0-9]+)\.([0-9]+))&quot;</span><span class="p">);</span>
 
 <span class="c1">// The regular expression can be read like:</span>
 <span class="c1">// &#39;(&#39;   : open a new sub-expression containing...</span>

@@ -24,18 +24,18 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">uint_t</span> <span class="n">min_id</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">uint_t</span> <span class="n">min_id</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">uint_t</span> <span class="n">max_id</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">uint_t</span> <span class="n">max_id</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">pair</span><span class="o">&lt;</span><span class="kt">uint_t</span><span class="o">&gt;</span> <span class="n">minmax_ids</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">pair</span><span class="o">&lt;</span><span class="n">uint_t</span><span class="o">&gt;</span> <span class="n">minmax_ids</span><span class="p">(</span><span class="n">vec</span> <span class="n">v</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-The functions <div class="highlight-inline"><pre><span class="n">min_id</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span class="n">max_id</span><span class="p">()</span></pre></div> return respectively the index of the minimum and maximum values in <div class="highlight-inline"><pre><span class="n">v</span></pre></div>. The function <div class="highlight-inline"><pre><span class="n">minmax_ids</span><span class="p">()</span></pre></div> does both at the same time. Calling them on an empty vector will trigger an error.
+The functions <div class="highlight-inline"><pre><span></span><span class="n">min_id</span><span class="p">()</span></pre></div> and <div class="highlight-inline"><pre><span></span><span class="n">max_id</span><span class="p">()</span></pre></div> return respectively the index of the minimum and maximum values in <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div>. The function <div class="highlight-inline"><pre><span></span><span class="n">minmax_ids</span><span class="p">()</span></pre></div> does both at the same time. Calling them on an empty vector will trigger an error.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">1.5</span><span class="p">};</span>
+<div class="highlight"><pre><span></span><span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">1.5</span><span class="p">};</span>
 <span class="n">min_id</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// 0</span>
 <span class="n">max_id</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// 3</span>
 </pre></div>

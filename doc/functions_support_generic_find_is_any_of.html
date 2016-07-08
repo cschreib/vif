@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">is_any_of</span><span class="p">(</span><span class="n">T1</span> <span class="n">v1</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D2</span><span class="p">,</span><span class="n">T2</span><span class="o">&gt;</span> <span class="n">v2</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span></span><span class="kt">bool</span> <span class="n">is_any_of</span><span class="p">(</span><span class="n">T1</span> <span class="n">v1</span><span class="p">,</span> <span class="n">vec</span><span class="o">&lt;</span><span class="n">D2</span><span class="p">,</span><span class="n">T2</span><span class="o">&gt;</span> <span class="n">v2</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function looks if there is any value inside <div class="highlight-inline"><pre><span class="n">v2</span></pre></div> that is equal to <div class="highlight-inline"><pre><span class="n">v1</span></pre></div>. If so, it returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>, else it returns <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>.
+This function looks if there is any value inside <div class="highlight-inline"><pre><span></span><span class="n">v2</span></pre></div> that is equal to <div class="highlight-inline"><pre><span></span><span class="n">v1</span></pre></div>. If so, it returns <div class="highlight-inline"><pre><span></span><span class="nb">true</span></pre></div>, else it returns <div class="highlight-inline"><pre><span></span><span class="nb">false</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">};</span>
+<div class="highlight"><pre><span></span><span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">};</span>
 <span class="n">vec1i</span> <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">};</span>
 <span class="n">vec1b</span> <span class="n">b</span> <span class="o">=</span> <span class="n">is_any_of</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">d</span><span class="p">);</span> <span class="c1">// {true, false, false, false, true}</span>
 </pre></div>

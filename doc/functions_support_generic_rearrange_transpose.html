@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">transpose</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">transpose</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will transpose the provided vector so that its dimensions are swapped, i.e., <div class="highlight-inline"><pre><span class="n">v</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span></pre></div> becomes <div class="highlight-inline"><pre><span class="n">v</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">)</span></pre></div>.
+This function will transpose the provided vector so that its dimensions are swapped, i.e., <div class="highlight-inline"><pre><span></span><span class="n">v</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span></pre></div> becomes <div class="highlight-inline"><pre><span></span><span class="n">v</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">)</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec2i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">},</span> <span class="p">{</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">}};</span>
+<div class="highlight"><pre><span></span><span class="n">vec2i</span> <span class="n">v</span> <span class="o">=</span> <span class="p">{{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">},</span> <span class="p">{</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">}};</span>
 <span class="n">vec2i</span> <span class="n">w</span> <span class="o">=</span> <span class="n">transpose</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="c1">// {{1,3,5}, {2,4,6}}</span>
 <span class="c1">// now w(i,j) == v(j,i)</span>
 </pre></div>

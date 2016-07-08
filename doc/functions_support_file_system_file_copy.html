@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">copy</span><span class="p">(</span><span class="n">string</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">copy</span><span class="p">(</span><span class="n">string</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function creates a copy of the file <div class="highlight-inline"><pre><span class="n">from</span></pre></div> at the location given in <div class="highlight-inline"><pre><span class="n">to</span></pre></div> and returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div>. If the new file could not be created (e.g., because of permission issues), or if the file <div class="highlight-inline"><pre><span class="n">from</span></pre></div> could not be found or read, the function returns <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>. If the file <div class="highlight-inline"><pre><span class="n">to</span></pre></div> already exists, it will be overwritten.
+This function creates a copy of the file <div class="highlight-inline"><pre><span></span><span class="n">from</span></pre></div> at the location given in <div class="highlight-inline"><pre><span></span><span class="n">to</span></pre></div> and returns <div class="highlight-inline"><pre><span></span><span class="nb">true</span></pre></div>. If the new file could not be created (e.g., because of permission issues), or if the file <div class="highlight-inline"><pre><span></span><span class="n">from</span></pre></div> could not be found or read, the function returns <div class="highlight-inline"><pre><span></span><span class="nb">false</span></pre></div>. If the file <div class="highlight-inline"><pre><span></span><span class="n">to</span></pre></div> already exists, it will be overwritten.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">copy</span><span class="p">(</span><span class="s">&quot;/home/joe/.phypprc&quot;</span><span class="p">,</span> <span class="s">&quot;/home/bob/.phypprc&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">copy</span><span class="p">(</span><span class="s">&quot;/home/joe/.phypprc&quot;</span><span class="p">,</span> <span class="s">&quot;/home/bob/.phypprc&quot;</span><span class="p">);</span>
 <span class="n">b</span><span class="p">;</span> <span class="c1">// maybe true or false, depending on your permissions</span>
 </pre></div>
 <hr><br>

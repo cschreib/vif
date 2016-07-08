@@ -24,16 +24,16 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">int_t</span> <span class="n">sign</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span></span><span class="n">int_t</span> <span class="n">sign</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will return the sign of its argument. The most convenient way to achieve this is by returning an integer whose value is <div class="highlight-inline"><pre><span class="o">+</span><span class="mi">1</span></pre></div> for positive (or null) numbers, and <div class="highlight-inline"><pre><span class="o">-</span><span class="mi">1</span></pre></div> for strictly negative numbers. This allows convenient usage of this function inside more complex mathematical expressions without having to write conditional statements.
+This function will return the sign of its argument. The most convenient way to achieve this is by returning an integer whose value is <div class="highlight-inline"><pre><span></span><span class="o">+</span><span class="mi">1</span></pre></div> for positive (or null) numbers, and <div class="highlight-inline"><pre><span></span><span class="o">-</span><span class="mi">1</span></pre></div> for strictly negative numbers. This allows convenient usage of this function inside more complex mathematical expressions without having to write conditional statements.
 <br><br>
 The result of calling this function on &ldquo;not a number&rdquo; values is undefined.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// A stupid example.</span>
+<div class="highlight"><pre><span></span><span class="c1">// A stupid example.</span>
 <span class="n">vec1d</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1000.5</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">};</span>
 <span class="c1">// By computing the square of &#39;x&#39;, we loose its sign.</span>
 <span class="n">vec1d</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">;</span>

@@ -24,17 +24,17 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">void</span> <span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">(</span><span class="n">string</span> <span class="n">f</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function scans the file whose path is given in the string <div class="highlight-inline"><pre><span class="n">f</span></pre></div> and returns the number of lines at the beginning of the file that either: a) are empty, b) only contain spaces or tabs, or c) start with a <div class="highlight-inline"><pre><span class="sc">&#39;#&#39;</span></pre></div> (which is the <span class="emphasis">de facto</span> standard for comments in ASCII tables). The return value is typically fed to <div class="highlight-inline"><pre><span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">()</span></pre></div>.
+This function scans the file whose path is given in the string <div class="highlight-inline"><pre><span></span><span class="n">f</span></pre></div> and returns the number of lines at the beginning of the file that either: a) are empty, b) only contain spaces or tabs, or c) start with a <div class="highlight-inline"><pre><span></span><span class="sc">&#39;#&#39;</span></pre></div> (which is the <span class="emphasis">de facto</span> standard for comments in ASCII tables). The return value is typically fed to <div class="highlight-inline"><pre><span></span><span class="n">file</span><span class="o">::</span><span class="n">read_table</span><span class="p">()</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// Improving the first example of file::read_table().</span>
+<div class="highlight"><pre><span></span><span class="c1">// Improving the first example of file::read_table().</span>
 
 <span class="c1">// We first compute the number of lines to skip</span>
-<span class="kt">uint_t</span> <span class="n">nskip</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">);</span>
+<span class="n">uint_t</span> <span class="n">nskip</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">find_skip</span><span class="p">(</span><span class="s">&quot;some/ascii_table.dat&quot;</span><span class="p">);</span>
 
 <span class="c1">// Declare the vectors and their types</span>
 <span class="n">vec1u</span> <span class="n">id</span><span class="p">;</span>

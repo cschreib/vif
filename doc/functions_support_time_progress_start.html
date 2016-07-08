@@ -24,29 +24,29 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">progress_start</span><span class="p">(</span><span class="kt">uint_t</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="k">auto</span> <span class="n">progress_start</span><span class="p">(</span><span class="n">uint_t</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">progress</span><span class="p">(</span><span class="k">auto</span> <span class="n">p</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">void</span> <span class="n">progress</span><span class="p">(</span><span class="k">auto</span> <span class="n">p</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="kt">void</span> <span class="n">print_progress</span><span class="p">(</span><span class="k">auto</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span> <span class="n">i</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">m</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">void</span> <span class="n">print_progress</span><span class="p">(</span><span class="k">auto</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span> <span class="n">i</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">m</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
 These functions are used to estimate and display in the terminal the time it will take to complete a given loop as well as a progress bar. At first, this time is unknown. After the first iteration is done, we have an estimate of how long it takes to perform one single iteration. Assuming that the calculation load is evenly spread over the whole loop (i.e., that each iteration will roughly take the same amount of time to execute), we can extrapolate how long it will take to complete. Since a single iteration can be relatively short, and since there can be small variation in execution time from one iteration to another, the estimate of the remaining time is refined after each iteration until the end of the loop.
 <br><br>
-<div class="highlight-inline"><pre><span class="n">progress_start</span><span class="p">()</span></pre></div> is used to initialize the prediction code before the loop begins, and inform it of how many iterations it will go through. Then, <div class="highlight-inline"><pre><span class="n">progress</span><span class="p">()</span></pre></div> is called at the end of <span class="emphasis">each</span> iteration (be careful of early exits with <div class="highlight-inline"><pre><span class="k">continue</span></pre></div> keywords) to update the statistics and update the time estimate in the terminal. Be careful that printing to the terminal is costly, and doing so for each iteration can dramatically slow down your program. Therefore <div class="highlight-inline"><pre><span class="n">progress</span><span class="p">()</span></pre></div> has an optional argument <div class="highlight-inline"><pre><span class="n">m</span></pre></div> that specifies that printing should be done only every <div class="highlight-inline"><pre><span class="n">m</span></pre></div> iterations. Advice: for cosmetic purposes, avoid choosing values of <div class="highlight-inline"><pre><span class="n">m</span></pre></div> that end with an even digit (<div class="highlight-inline"><pre><span class="mi">0</span></pre></div> included) or <div class="highlight-inline"><pre><span class="mi">5</span></pre></div>, and avoid using <div class="highlight-inline"><pre><span class="mi">0</span></pre></div> for any digit; for example <div class="highlight-inline"><pre><span class="mi">13</span></pre></div> or <div class="highlight-inline"><pre><span class="mi">621</span></pre></div> are fine. This will make it less obvious that printing is not done for all iterations.
+<div class="highlight-inline"><pre><span></span><span class="n">progress_start</span><span class="p">()</span></pre></div> is used to initialize the prediction code before the loop begins, and inform it of how many iterations it will go through. Then, <div class="highlight-inline"><pre><span></span><span class="n">progress</span><span class="p">()</span></pre></div> is called at the end of <span class="emphasis">each</span> iteration (be careful of early exits with <div class="highlight-inline"><pre><span></span><span class="k">continue</span></pre></div> keywords) to update the statistics and update the time estimate in the terminal. Be careful that printing to the terminal is costly, and doing so for each iteration can dramatically slow down your program. Therefore <div class="highlight-inline"><pre><span></span><span class="n">progress</span><span class="p">()</span></pre></div> has an optional argument <div class="highlight-inline"><pre><span></span><span class="n">m</span></pre></div> that specifies that printing should be done only every <div class="highlight-inline"><pre><span></span><span class="n">m</span></pre></div> iterations. Advice: for cosmetic purposes, avoid choosing values of <div class="highlight-inline"><pre><span></span><span class="n">m</span></pre></div> that end with an even digit (<div class="highlight-inline"><pre><span></span><span class="mi">0</span></pre></div> included) or <div class="highlight-inline"><pre><span></span><span class="mi">5</span></pre></div>, and avoid using <div class="highlight-inline"><pre><span></span><span class="mi">0</span></pre></div> for any digit; for example <div class="highlight-inline"><pre><span></span><span class="mi">13</span></pre></div> or <div class="highlight-inline"><pre><span></span><span class="mi">621</span></pre></div> are fine. This will make it less obvious that printing is not done for all iterations.
 <br><br>
 Also, make sure that the terminal window is sufficiently large to display the whole progress bar. If not enough space is available, the output may look bad. A future version of these functions will
 fetch the width of the terminal programmatically and adjust the size of the progress bar accordingly.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="kt">uint_t</span> <span class="n">nelem</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="n">uint_t</span> <span class="n">nelem</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
 
 <span class="c1">// Initialize the estimation</span>
 <span class="k">auto</span> <span class="n">p</span> <span class="o">=</span> <span class="n">progress_start</span><span class="p">(</span><span class="n">nelem</span><span class="p">);</span>
 
 <span class="c1">// Enter the loop</span>
-<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="n">nelem</span><span class="p">))</span> <span class="p">{</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="nl">i</span> <span class="p">:</span> <span class="n">range</span><span class="p">(</span><span class="n">nelem</span><span class="p">))</span> <span class="p">{</span>
     <span class="c1">// Do some complex stuff...</span>
     <span class="c1">// Here we simulate that with a sleep() command that will block</span>
     <span class="c1">// the program for the provided duration (in seconds).</span>
@@ -76,21 +76,21 @@ fetch the width of the terminal programmatically and adjust the size of the prog
 </pre></div>
 <hr><br>
 <br><br><span class="advanced-title">Advanced</span><div class="advanced"><hr>
-The function <div class="highlight-inline"><pre><span class="n">print_progress</span><span class="p">()</span></pre></div> should be used in a situation where a calculation will be done in a fixed number of steps, but each iteration of the loop corresponds to zero or more than one such step, in an unpredictable way. In this case, you have the responsibility of figuring out how many steps were done during each iteration, and feed this progress to <div class="highlight-inline"><pre><span class="n">print_progress</span><span class="p">()</span></pre></div> which will take care of estimating the time remaining.
+The function <div class="highlight-inline"><pre><span></span><span class="n">print_progress</span><span class="p">()</span></pre></div> should be used in a situation where a calculation will be done in a fixed number of steps, but each iteration of the loop corresponds to zero or more than one such step, in an unpredictable way. In this case, you have the responsibility of figuring out how many steps were done during each iteration, and feed this progress to <div class="highlight-inline"><pre><span></span><span class="n">print_progress</span><span class="p">()</span></pre></div> which will take care of estimating the time remaining.
 <br><br>
 The typical use case is when a loop is executed over multiple threads, each taking care of a fraction of the whole loop. In this case, the main thread only maintains a global iteration counter and regularly update the progress to display a time estimate.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// The global counter, must be an atomic type for thread-safe</span>
+<div class="highlight"><pre><span></span><span class="c1">// The global counter, must be an atomic type for thread-safe</span>
 <span class="c1">// simultaneous read and write.</span>
-<span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="kt">uint_t</span><span class="o">&gt;</span> <span class="n">iter</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="n">uint_t</span><span class="o">&gt;</span> <span class="n">iter</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
 
 <span class="c1">// Some data to work on</span>
 <span class="n">vec1d</span> <span class="n">in</span> <span class="o">=</span> <span class="n">dindgen</span><span class="p">(</span><span class="mf">1e8</span><span class="p">);</span>
 <span class="n">vec1d</span> <span class="nf">out</span><span class="p">(</span><span class="mf">1e8</span><span class="p">);</span>
 
 <span class="c1">// The calculation to do</span>
-<span class="k">auto</span> <span class="n">do_stuff</span> <span class="o">=</span> <span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="kt">uint_t</span> <span class="n">begin</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">end</span><span class="p">)</span> <span class="k">mutable</span> <span class="p">{</span>
-    <span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">begin</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">auto</span> <span class="n">do_stuff</span> <span class="o">=</span> <span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">uint_t</span> <span class="n">begin</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">end</span><span class="p">)</span> <span class="k">mutable</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">begin</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
         <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">sqr</span><span class="p">(</span><span class="n">in</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="n">log10</span><span class="p">(</span><span class="n">pow</span><span class="p">(</span><span class="n">in</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mf">3.5</span><span class="p">));</span>
 
         <span class="c1">// Do not forget to update the global counter</span>
@@ -99,11 +99,11 @@ The typical use case is when a loop is executed over multiple threads, each taki
 <span class="p">};</span>
 
 <span class="c1">// Create a thread pool and launch them</span>
-<span class="kt">uint_t</span> <span class="n">nthreads</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+<span class="n">uint_t</span> <span class="n">nthreads</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
 <span class="k">auto</span> <span class="n">pool</span> <span class="o">=</span> <span class="kr">thread</span><span class="o">::</span><span class="n">pool</span><span class="p">(</span><span class="n">nthreads</span><span class="p">);</span>
-<span class="kt">uint_t</span> <span class="n">last</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-<span class="k">for</span> <span class="p">(</span><span class="kt">uint_t</span> <span class="n">i</span> <span class="o">:</span> <span class="n">range</span><span class="p">(</span><span class="n">pool</span><span class="p">))</span> <span class="p">{</span>
-    <span class="kt">uint_t</span> <span class="n">begin</span> <span class="o">=</span> <span class="n">last</span><span class="p">;</span>
+<span class="n">uint_t</span> <span class="n">last</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">uint_t</span> <span class="nl">i</span> <span class="p">:</span> <span class="n">range</span><span class="p">(</span><span class="n">pool</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">uint_t</span> <span class="n">begin</span> <span class="o">=</span> <span class="n">last</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">nthreads</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
         <span class="n">last</span> <span class="o">=</span> <span class="n">in</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
     <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
@@ -122,7 +122,7 @@ The typical use case is when a loop is executed over multiple threads, each taki
 <span class="p">}</span>
 
 <span class="c1">// Do not forget to close the threads</span>
-<span class="k">for</span> <span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span> <span class="n">t</span> <span class="o">:</span> <span class="n">pool</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">for</span> <span class="p">(</span><span class="k">auto</span><span class="o">&amp;</span> <span class="nl">t</span> <span class="p">:</span> <span class="n">pool</span><span class="p">)</span> <span class="p">{</span>
     <span class="n">t</span><span class="p">.</span><span class="n">join</span><span class="p">();</span>
 <span class="p">}</span>
 </pre></div>

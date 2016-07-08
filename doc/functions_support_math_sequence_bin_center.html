@@ -24,20 +24,20 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bin_center</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bin_center</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">bin_center</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">T</span> <span class="n">bin_center</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bin_width</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bin_width</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">bin_width</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">T</span> <span class="n">bin_width</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-The function <div class="highlight-inline"><pre><span class="n">bin_center</span><span class="p">()</span></pre></div> computes the center of each bin inside a bin vector, i.e., the value that is halfway between the lower and upper bound. The function <div class="highlight-inline"><pre><span class="n">bin_width</span><span class="p">()</span></pre></div> computes the width (or size) of each bin, i.e., the distance between the upper and lower bounds. Both functions work for any bin vector.
+The function <div class="highlight-inline"><pre><span></span><span class="n">bin_center</span><span class="p">()</span></pre></div> computes the center of each bin inside a bin vector, i.e., the value that is halfway between the lower and upper bound. The function <div class="highlight-inline"><pre><span></span><span class="n">bin_width</span><span class="p">()</span></pre></div> computes the width (or size) of each bin, i.e., the distance between the upper and lower bounds. Both functions work for any bin vector.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// First create a bin vector</span>
+<div class="highlight"><pre><span></span><span class="c1">// First create a bin vector</span>
 <span class="n">vec2d</span> <span class="n">b</span> <span class="o">=</span> <span class="n">make_bins</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
 <span class="c1">// {1.0,  1.25, 1.5,  1.75}</span>
 <span class="c1">// {1.25, 1.5,  1.75, 2.0}</span>

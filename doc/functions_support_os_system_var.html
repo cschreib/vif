@@ -24,20 +24,20 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">system_var</span><span class="p">(</span><span class="n">string</span> <span class="n">v</span><span class="p">,</span> <span class="n">string</span> <span class="n">d</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">system_var</span><span class="p">(</span><span class="n">string</span> <span class="n">v</span><span class="p">,</span> <span class="n">string</span> <span class="n">d</span><span class="p">)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">T</span> <span class="n">system_var</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">string</span> <span class="n">v</span><span class="p">,</span> <span class="n">T</span> <span class="n">d</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">T</span> <span class="n">system_var</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="n">string</span> <span class="n">v</span><span class="p">,</span> <span class="n">T</span> <span class="n">d</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function looks inside the operating system environment for a variable named <div class="highlight-inline"><pre><span class="n">v</span></pre></div> (using the C function <div class="highlight-inline"><pre><span class="n">getenv</span></pre></div>). If this variable exists, its value is returned as a string (first version), or converted into a value of type <div class="highlight-inline"><pre><span class="n">T</span></pre></div> (second version). If the conversion fails, or if the environment variable does not exist, the default value <div class="highlight-inline"><pre><span class="n">d</span></pre></div> is returned.
+This function looks inside the operating system environment for a variable named <div class="highlight-inline"><pre><span></span><span class="n">v</span></pre></div> (using the C function <div class="highlight-inline"><pre><span></span><span class="n">getenv</span></pre></div>). If this variable exists, its value is returned as a string (first version), or converted into a value of type <div class="highlight-inline"><pre><span></span><span class="n">T</span></pre></div> (second version). If the conversion fails, or if the environment variable does not exist, the default value <div class="highlight-inline"><pre><span></span><span class="n">d</span></pre></div> is returned.
 <br><br>
 Environment variables are complementary to command line arguments: they are mostly used to store system specific configurations that usually only change from one machine (or user) to another. Because they seldom change, it would be tedious to have to specify these configurations as command line arguments and provide them for each call of a given program. Instead, environment variables are set once and for all at the beginning of the user's session (on Linux this is usually done in the <span class="fixed-width">.bashrc</span> file, or equivalent), and are read on demand by each program that needs them.
 <br><br>
-By convention and for portability issues, it is recommended to specify environment variable names in full upper case (i.e., <div class="highlight-inline"><pre><span class="s">&quot;PATH&quot;</span></pre></div> and not <div class="highlight-inline"><pre><span class="s">&quot;Path&quot;</span></pre></div> or <div class="highlight-inline"><pre><span class="s">&quot;path&quot;</span></pre></div>).
+By convention and for portability issues, it is recommended to specify environment variable names in full upper case (i.e., <div class="highlight-inline"><pre><span></span><span class="s">&quot;PATH&quot;</span></pre></div> and not <div class="highlight-inline"><pre><span></span><span class="s">&quot;Path&quot;</span></pre></div> or <div class="highlight-inline"><pre><span></span><span class="s">&quot;path&quot;</span></pre></div>).
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// One typical use case is to get a path to some external component</span>
+<div class="highlight"><pre><span></span><span class="c1">// One typical use case is to get a path to some external component</span>
 <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">sed_library_dir</span> <span class="o">=</span> <span class="n">system_var</span><span class="p">(</span><span class="s">&quot;SUPERFIT_LIB_PATH&quot;</span><span class="p">);</span>
 <span class="k">if</span> <span class="p">(</span><span class="n">sed_library_dir</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span> <span class="p">{</span>
     <span class="c1">// This component is missing, try to do without or print an error</span>
@@ -48,7 +48,7 @@ By convention and for portability issues, it is recommended to specify environme
 <span class="c1">// It can also be used to modify generic behaviors, for example</span>
 <span class="c1">// configure how many threads we want to use by default in all the</span>
 <span class="c1">// programs of a given tool suite.</span>
-<span class="kt">uint_t</span> <span class="n">nthread</span> <span class="o">=</span> <span class="n">system_var</span><span class="o">&lt;</span><span class="kt">uint_t</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;MYTOOLS_NTHREADS&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="n">uint_t</span> <span class="n">nthread</span> <span class="o">=</span> <span class="n">system_var</span><span class="o">&lt;</span><span class="n">uint_t</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;MYTOOLS_NTHREADS&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
 </pre></div>
 <hr><br>
 </div>

@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<tr><td><img src="vectorized.png" alt="vectorized"></td><td><div class="highlight-sig"><pre><span></span><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> if the path given in argument corresponds to a file or directory that actually exists on the disk, and <div class="highlight-inline"><pre><span class="nb">false</span></pre></div> otherwise.
+This function returns <div class="highlight-inline"><pre><span></span><span class="nb">true</span></pre></div> if the path given in argument corresponds to a file or directory that actually exists on the disk, and <div class="highlight-inline"><pre><span></span><span class="nb">false</span></pre></div> otherwise.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;~/.phypprc&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;~/.phypprc&quot;</span><span class="p">);</span>
 <span class="n">b</span><span class="p">;</span> <span class="c1">// hopefully true</span>
 
 <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;/i/do/not/exist&quot;</span><span class="p">);</span>

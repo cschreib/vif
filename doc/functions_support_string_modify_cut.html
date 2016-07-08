@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec1s</span> <span class="n">cut</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="kt">uint_t</span> <span class="n">n</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec1s</span> <span class="n">cut</span><span class="p">(</span><span class="n">string</span> <span class="n">s</span><span class="p">,</span> <span class="n">uint_t</span> <span class="n">n</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function will split the string <div class="highlight-inline"><pre><span class="n">s</span></pre></div> into a vector of sub-strings (or &ldquo;lines&rdquo;) that are exactly <div class="highlight-inline"><pre><span class="n">n</span></pre></div> characters long (except possibly the last one). Contrary to the function <div class="highlight-inline"><pre><span class="n">wrap</span><span class="p">()</span></pre></div>, this function does not care about spaces and preserving the boundaries of words.
+This function will split the string <div class="highlight-inline"><pre><span></span><span class="n">s</span></pre></div> into a vector of sub-strings (or &ldquo;lines&rdquo;) that are exactly <div class="highlight-inline"><pre><span></span><span class="n">n</span></pre></div> characters long (except possibly the last one). Contrary to the function <div class="highlight-inline"><pre><span></span><span class="n">wrap</span><span class="p">()</span></pre></div>, this function does not care about spaces and preserving the boundaries of words.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="n">cut</span><span class="p">(</span><span class="s">&quot;this is the end&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="n">vec1s</span> <span class="n">str</span> <span class="o">=</span> <span class="n">cut</span><span class="p">(</span><span class="s">&quot;this is the end&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
 <span class="n">str</span><span class="p">;</span> <span class="c1">// {&quot;this &quot;, &quot;is th&quot;, &quot;e end&quot;};</span>
 </pre></div>
 <hr><br>

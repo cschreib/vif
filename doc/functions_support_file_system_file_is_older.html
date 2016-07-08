@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">is_older</span><span class="p">(</span><span class="n">string</span> <span class="n">f1</span><span class="p">,</span> <span class="n">string</span> <span class="n">f2</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="kt">bool</span> <span class="n">file</span><span class="o">::</span><span class="n">is_older</span><span class="p">(</span><span class="n">string</span> <span class="n">f1</span><span class="p">,</span> <span class="n">string</span> <span class="n">f2</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
-This function returns <div class="highlight-inline"><pre><span class="nb">true</span></pre></div> if the file or directory <div class="highlight-inline"><pre><span class="n">f1</span></pre></div> is <span class="emphasis">older</span> than the file or directory <div class="highlight-inline"><pre><span class="n">f2</span></pre></div>. The age of a file corresponds to the time spent since the files were last modified. If one of the two files does not exists, the function returns <div class="highlight-inline"><pre><span class="nb">false</span></pre></div>.
+This function returns <div class="highlight-inline"><pre><span></span><span class="nb">true</span></pre></div> if the file or directory <div class="highlight-inline"><pre><span></span><span class="n">f1</span></pre></div> is <span class="emphasis">older</span> than the file or directory <div class="highlight-inline"><pre><span></span><span class="n">f2</span></pre></div>. The age of a file corresponds to the time spent since the files were last modified. If one of the two files does not exists, the function returns <div class="highlight-inline"><pre><span></span><span class="nb">false</span></pre></div>.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">is_older</span><span class="p">(</span><span class="s">&quot;~/.phypprc&quot;</span><span class="p">,</span> <span class="s">&quot;/usr/bin/cp&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="kt">bool</span> <span class="n">b</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">is_older</span><span class="p">(</span><span class="s">&quot;~/.phypprc&quot;</span><span class="p">,</span> <span class="s">&quot;/usr/bin/cp&quot;</span><span class="p">);</span>
 <span class="n">b</span><span class="p">;</span> <span class="c1">// probably false</span>
 </pre></div>
 <hr><br>

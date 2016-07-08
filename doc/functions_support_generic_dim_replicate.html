@@ -24,16 +24,16 @@
 </div><br>
 <span class="section">Signatures</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">N</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span>   <span class="n">replicate</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="p">...)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">N</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span>   <span class="n">replicate</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="p">...)</span>
 </pre></div></td></tr>
-<tr><td><div class="highlight-sig"><pre><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">+</span><span class="n">N</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">replicate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span> <span class="p">...)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="o">+</span><span class="n">N</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">replicate</span><span class="p">(</span><span class="n">vec</span><span class="o">&lt;</span><span class="n">D</span><span class="p">,</span><span class="n">T</span><span class="o">&gt;</span><span class="p">,</span> <span class="p">...)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
 This function will take the provided scalar (first version) or vector (second version), and replicate it multiple times according to the provided additional parameters, to generate additional dimensions.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// First version</span>
+<div class="highlight"><pre><span></span><span class="c1">// First version</span>
 <span class="n">vec1i</span> <span class="n">v</span> <span class="o">=</span> <span class="n">replicate</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
 <span class="n">v</span><span class="p">;</span> <span class="c1">// {2,2,2,2,2} 5 times 2</span>
 <span class="n">vec2i</span> <span class="n">w</span> <span class="o">=</span> <span class="n">replicate</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>

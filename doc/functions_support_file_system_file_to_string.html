@@ -24,14 +24,14 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="n">string</span> <span class="n">file</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="n">string</span> <span class="n">file</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
 <div class="description">
 This function reads the content of the file whose path is given in argument, stores all the characters (including line break characters and spaces) inside a string an returns it. If the file does not exist, the function returns an empty string.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">r</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="s">&quot;/etc/lsb-release&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">r</span> <span class="o">=</span> <span class="n">file</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="s">&quot;/etc/lsb-release&quot;</span><span class="p">);</span>
 <span class="c1">// &#39;r&#39; now contains all the lines of the file, each</span>
 <span class="c1">// separated by a newline character &#39;\n&#39;.</span>
 </pre></div>

@@ -24,7 +24,7 @@
 </div><br>
 <span class="section">Signature</span>
 <table style="signatures">
-<tr><td><div class="highlight-sig"><pre><span class="k">auto</span> <span class="n">vectorize_lambda</span><span class="p">(</span><span class="n">T</span> <span class="n">func</span><span class="p">)</span>
+<tr><td><div class="highlight-sig"><pre><span></span><span class="k">auto</span> <span class="n">vectorize_lambda</span><span class="p">(</span><span class="n">T</span> <span class="n">func</span><span class="p">)</span>
 </pre></div></td></tr>
 </table>
 <br><span class="section">Description</span><br>
@@ -33,7 +33,7 @@ This function takes a single argument that must be a C++ lambda. In turn, this l
 <br><br>
 The function then creates a new lambda that can be called both with a scalar or a vector as the first argument. This allows easy conversion from legacy functions (e.g., from the standard library) into vectorized functions, and automatically takes care of possible optimizations.
 <br><br><span class="example">Example</span><br><hr>
-<div class="highlight"><pre><span class="c1">// Create a simple lambda</span>
+<div class="highlight"><pre><span></span><span class="c1">// Create a simple lambda</span>
 <span class="k">auto</span> <span class="n">lambda</span> <span class="o">=</span> <span class="p">[](</span><span class="kt">double</span> <span class="n">f1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">f2</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">f1</span><span class="o">*</span><span class="n">f2</span><span class="p">;</span>
 <span class="p">};</span>
