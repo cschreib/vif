@@ -494,6 +494,22 @@ double weighted_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
     return total/totalw;
 }
 
+template<std::size_t Dim, typename Type, typename TypeW>
+std::pair<double,double> optimal_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& e) {
+    phypp_check(v.dims == e.dims, "incompatible dimensions between values and uncertianties "
+        "(", v.dims, " vs. ", e.dims, ")");
+
+    double totalv = 0.0;
+    double totalw = 0.0;
+    for (uint_t i : range(v)) {
+        double w = 1.0/(e.safe[i]*e.safe[i]);
+        totalv += w*v.safe[i];
+        totalw += w;
+    }
+
+    return std::make_pair(totalv/totalw, 1/sqrt(totalw));
+}
+
 template<std::size_t Dim, typename T, typename enable =
     typename std::enable_if<std::is_same<rtype_t<T>, bool>::value>::type>
 double fraction_of(const vec<Dim,T>& b) {
