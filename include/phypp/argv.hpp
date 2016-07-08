@@ -44,7 +44,7 @@ bool read_args_n2T_(std::string& t, const U& u) {
     return true;
 }
 
-bool read_args_n2T_(std::string& t, const std::string& s) {
+inline bool read_args_n2T_(std::string& t, const std::string& s) {
     t = s;
     return true;
 }
@@ -133,7 +133,7 @@ void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std:
     }
 }
 
-void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
+inline void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
 
 template<typename T, typename ... Args>
 void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names, T& t,
@@ -236,7 +236,7 @@ void read_args(uint_t argc, char* argv[], const std::string& names, Args&& ... a
     pa.read(names, std::forward<Args>(args)...);
 }
 
-void save_args(const std::string& file, const std::string& pname, int argc, char* argv[]) {
+inline void save_args(const std::string& file, const std::string& pname, int argc, char* argv[]) {
     std::ofstream cmd(file);
     cmd << pname;
     for (int i = 1; i < argc; ++i) {
@@ -244,7 +244,7 @@ void save_args(const std::string& file, const std::string& pname, int argc, char
     }
 }
 
-std::string make_cmd(int argc, char* argv[]) {
+inline std::string make_cmd(int argc, char* argv[]) {
     std::string cmd = argv[0];
     for (int i = 1; i < argc; ++i) {
         std::string tmp = argv[i];

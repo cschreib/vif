@@ -193,7 +193,7 @@ typename vec<2,TypeV>::effective_type rotate(const vec<2,TypeV>& v, double angle
     return r;
 }
 
-vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
+inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
     vec2d m(dims);
 
     radius *= radius;
@@ -210,7 +210,7 @@ vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, d
     return m;
 }
 
-vec2d circular_mask(const std::array<uint_t,2>& dims, double radius) {
+inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius) {
     return circular_mask(dims, radius, dims[0]/2.0, dims[1]/2.0);
 }
 
@@ -241,7 +241,7 @@ auto generate_img(const std::array<uint_t,2>& dims, F&& expr) -> vec<2,decltype(
     return img;
 }
 
-vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
+inline vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
     return generate_img(dims, [&](int_t x, int_t y) {
         return exp(-(sqr(x - int_t(dims[0]/2)) + sqr(y - int_t(dims[1]/2)))/(2.0*sqr(sigma)));
     });
@@ -345,7 +345,7 @@ auto boxcar(const vec<2,T>& img, uint_t hsize, F&& func) ->
     return res;
 }
 
-vec2b mask_inflate(vec2b m, uint_t d) {
+inline vec2b mask_inflate(vec2b m, uint_t d) {
     if (d != 0) {
         // Locate edges
         vec1u ids; ids.reserve(3*sqrt(m.size()));

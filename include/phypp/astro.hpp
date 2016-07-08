@@ -85,7 +85,7 @@ struct cosmo_t {
     double wk = 0.0;
 };
 
-cosmo_t cosmo_wmap() {
+inline cosmo_t cosmo_wmap() {
     cosmo_t c;
     c.H0 = 70.0;
     c.wL = 0.73;
@@ -94,7 +94,7 @@ cosmo_t cosmo_wmap() {
     return c;
 }
 
-cosmo_t cosmo_plank() {
+inline cosmo_t cosmo_plank() {
     cosmo_t c;
     c.H0 = 67.8;
     c.wL = 0.692;
@@ -103,7 +103,7 @@ cosmo_t cosmo_plank() {
     return c;
 }
 
-cosmo_t cosmo_std() {
+inline cosmo_t cosmo_std() {
     cosmo_t c;
     c.H0 = 70.0;
     c.wL = 0.7;
@@ -112,7 +112,7 @@ cosmo_t cosmo_std() {
     return c;
 }
 
-cosmo_t get_cosmo(const std::string& name) {
+inline cosmo_t get_cosmo(const std::string& name) {
     if (name == "wmap") {
         return cosmo_wmap();
     } else if (name == "plank") {
@@ -127,7 +127,7 @@ cosmo_t get_cosmo(const std::string& name) {
     }
 }
 
-vec1s cosmo_list() {
+inline vec1s cosmo_list() {
     return {"std", "wmap", "plank"};
 }
 
@@ -796,7 +796,7 @@ randpos_status randpos_power_circle(TSeed& seed, double x0, double y0, double r0
 }
 
 // Convert a set of sexagesimal coordinates ('hh:mm:ss.ms') into degrees
-bool sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
+inline bool sex2deg(const std::string& sra, const std::string& sdec, double& ra, double& dec) {
     vec1s starr1 = split(sra, ":");
     vec1s starr2 = split(sdec, ":");
 
@@ -844,7 +844,7 @@ vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec,
 }
 
 // Convert a set of degree coordinates into sexagesimal format ('hh:mm:ss.ms')
-void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
+inline void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
     double signr = sign(ra);
     ra /= 15.0*signr;
     int_t  rah = ra;
@@ -902,7 +902,7 @@ void print_radec(const std::string& file, const vec<Dim,TR>& ra, const vec<Dim,T
     }
 }
 
-bool get_band(const vec1s& bands, const std::string& band, uint_t& bid) {
+inline bool get_band(const vec1s& bands, const std::string& band, uint_t& bid) {
     vec1u id = where(regex_match(bands, band));
     if (id.empty()) {
         error("no band matching '"+band+"'");
@@ -1223,7 +1223,7 @@ bool make_psf(const std::array<uint_t,2>& dims, double x0, double y0,
 using filter_bank_t = vec<1, filter_t>;
 using filter_db_t = std::map<std::string, std::string>;
 
-filter_db_t read_filter_db(const std::string& filename) {
+inline filter_db_t read_filter_db(const std::string& filename) {
     std::ifstream file(filename);
 
     filter_db_t db;
@@ -1249,7 +1249,7 @@ filter_db_t read_filter_db(const std::string& filename) {
     return db;
 }
 
-bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
+inline bool get_filter(const filter_db_t& db, const std::string& str, filter_t& f) {
     vec1s spl = split(str, ":");
 
     auto read_filter_file = [](std::string filename, filter_t& tf) {
@@ -1348,7 +1348,7 @@ bool get_filters(const filter_db_t& db, const vec<1,Type>& str, filter_bank_t& f
     return true;
 }
 
-void print_filters(const filter_db_t& db) {
+inline void print_filters(const filter_db_t& db) {
     for (auto& sf : db) {
         filter_t f;
         fits::read_table(sf.second, ftable(f.lam, f.res));
@@ -1359,7 +1359,7 @@ void print_filters(const filter_db_t& db) {
 
 using filter_map_t = std::map<std::string, uint_t>;
 
-filter_map_t read_filter_map(const std::string& filename) {
+inline filter_map_t read_filter_map(const std::string& filename) {
     std::ifstream file(filename);
 
     filter_map_t db;
@@ -1387,7 +1387,7 @@ filter_map_t read_filter_map(const std::string& filename) {
     return db;
 }
 
-bool get_filter_id(const filter_map_t& map, const std::string& str, uint_t& id) {
+inline bool get_filter_id(const filter_map_t& map, const std::string& str, uint_t& id) {
     auto iter = map.find(str);
     if (iter != map.end()) {
         id = iter->second;

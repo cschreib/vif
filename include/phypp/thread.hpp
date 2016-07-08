@@ -23,11 +23,11 @@ namespace thread {
 
     using pool_t = std::vector<thread_t>;
 
-    pool_t pool(uint_t n) {
+    inline pool_t pool(uint_t n) {
         return pool_t(n);
     }
 
-    void sleep_for(double duration) {
+    inline void sleep_for(double duration) {
         std::this_thread::sleep_for(std::chrono::microseconds(uint_t(duration*1e6)));
     }
 
