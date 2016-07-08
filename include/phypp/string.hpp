@@ -117,7 +117,7 @@ vec<Dim,bool> from_string(const vec<Dim,std::string*>& s, vec<Dim,T>& t) {
     return res;
 }
 
-inline std::string trim(std::string s, const std::string& chars = " \t") {
+inline std::string trim(std::string s, const std::string& chars = " \t\n\r") {
     std::size_t spos = s.find_first_of(chars);
     if (spos == 0) {
         std::size_t epos = s.find_first_not_of(chars);
