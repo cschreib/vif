@@ -1435,6 +1435,7 @@ inline bool get_filter_id(const filter_map_t& map, const std::string& str, uint_
             note("get_filter_id: did you mean one of ", candidates, "?");
         }
 
+        id = npos;
         return false;
     }
 }
@@ -1442,11 +1443,14 @@ inline bool get_filter_id(const filter_map_t& map, const std::string& str, uint_
 template<typename Type = std::string>
 bool get_filter_id(const filter_map_t& map, const vec<1,Type>& str, vec1u& id) {
     id.resize(str.size());
+    bool good = true;
     for (uint_t i : range(str.size())) {
-        if (!get_filter_id(map, str[i], id[i])) return false;
+        if (!get_filter_id(map, str[i], id[i])) {
+            good = false;
+        }
     }
 
-    return true;
+    return good;
 }
 
 #endif
