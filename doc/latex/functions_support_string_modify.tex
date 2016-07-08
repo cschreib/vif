@@ -85,15 +85,26 @@ r; // {"a,b,c", "g,,p"};
 \end{example}
 
 \funcitem \cppinline|vec1s split(string s, p)| \itt{split}
+\cppinline|vec1s split_if_any_of(string s, c)| \itt{split_any_of}
 
-This function will split the string \cppinline{s} into a vector of sub-strings each time the pattern \cppinline{p} occurs. If no such pattern is found in \cppinline{s}, the function returns a vector containing a single element which is the whole string \cppinline{s}.
+The \cppinline{split} function will split the string \cppinline{s} into a vector of sub-strings each time the pattern \cppinline{p} occurs. If no such pattern is found in \cppinline{s}, the function returns a vector containing a single element which is the whole string \cppinline{s}. It should be used to parse lists of values separated by a fixed pattern, like a coma (\cppinline{','}).
+
+The \cppinline{split_any_of} function will split the string \cppinline{s} into a vector of sub-strings that were separated by any character in \cppinline{c}. If no such character is found in \cppinline{s}, the function returns a vector containing a single element which is the whole string \cppinline{s}. It should be used to isolate values that are separated by a variable amount of characters, such as spaces.
 
 \begin{example}
 \begin{cppcode}
-vec1s str = split("this is the end", " ");
+vec1s str = split("  this is the   end", " ");
+str; // {"", "", this", "is", "the", "", "", "end"};
+str = split(",a,b,,c,d,", ",");
+str; // {"", "a", "b", "", "c", "d", ""};
+
+str = split_any_of("  this is the   end", " ");
 str; // {"this", "is", "the", "end"};
-str = split("a:b::c:d");
-str; // {"a", "b", "", "c", "d"};
+str = split_any_of(",a,b,,c,d,", ",");
+str; // {"a", "b", "c", "d"};
+
+// Split a line of text into words
+str = split_any_of(/* ... */, " \t\n\r");
 \end{cppcode}
 \end{example}
 

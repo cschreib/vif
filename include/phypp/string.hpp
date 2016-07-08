@@ -649,6 +649,25 @@ vec1s split(const std::string& ts, const T& pattern) {
     return ret;
 }
 
+template<typename T>
+vec1s split_any_of(const std::string& ts, const T& chars) {
+    vec1s ret;
+    std::size_t op = ts.find_first_not_of(chars);
+    std::size_t p = op;
+    while ((p = ts.find_first_of(chars, op)) != ts.npos) {
+        ret.data.push_back(ts.substr(op, p - op));
+        op = ts.find_first_not_of(chars, p);
+    }
+
+    if (op != ts.npos) {
+        ret.data.push_back(ts.substr(op));
+    }
+
+    ret.dims[0] = ret.size();
+
+    return ret;
+}
+
 inline vec1s cut(const std::string& ts, uint_t size) {
     uint_t ncut = floor(ts.size()/float(size));
     vec1s res(ncut);
