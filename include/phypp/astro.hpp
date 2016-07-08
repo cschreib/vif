@@ -286,6 +286,27 @@ auto mag2uJy(const T& x, double zp = 23.9) -> decltype(e10(0.4*(zp - x))) {
     return e10(0.4*(zp - x));
 }
 
+// Flux in uJy to erg/s/cm2/A (cgs), lambda in [um]
+template<typename T, typename U>
+auto uJy2cgs(const T& lam, const U& flx) -> decltype(1.0*lam*flx) {
+    const double toerg = 1.0e-29;   // 1 uJy in erg/s/cm2/Hz
+    const double c = 2.9979e8;      // speed of light in m/s
+    const double tometer = 1e-6;    // 1 um in meter
+    const double toangstrom = 1e10; // 1 meter in Angstrom
+    const double factor = toerg*c/sqr(tometer)/toangstrom; // 1 uJy to erg/s/cm2/A
+    return factor*flx/lam/lam;
+}
+
+// Flux in erg/s/cm2/A (cgs) to uJy, lambda in [A]
+template<typename T, typename U>
+auto cgs2uJy(const T& lam, const U& flx) -> decltype(1.0*lam*flx) {
+    const double toerg = 1.0e-29; // 1 uJy in erg/s/cm2/Hz
+    const double c = 2.9979e8;    // speed of light in m/s
+    const double tometer = 1e-10; // 1 Angstrom in meter
+    const double factor = tometer/(toerg*c); // 1 uJy to erg/s/cm2/A
+    return factor*flx*lam*lam;
+}
+
 // Compute the area covered by a field given a set of source coordinates [deg^2] and pre-computed
 // convex hull (as obtained from convex_hull() with the same coordinates).
 // Coordinates are assumed to be given in degrees.
