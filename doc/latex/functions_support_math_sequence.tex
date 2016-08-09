@@ -1,21 +1,24 @@
-\funcitem \cppinline|vec1u rgen(T n)| \itt{rgen}
-
-\cppinline|vec<1,T> rgen(T i, j)|
-
-\cppinline|vec1d rgen(T i, j, n)|
+\funcitem \cppinline|vec1d rgen(T i, j, n)| \itt{rgen}
 
 \cppinline|vec1d rgen_log(T i, j, n)| \itt{rgen_log}
 
-The \cppinline{rgen()} functions generate a sequence of numbers that increase linearly. The first version is equivalent to \cppinline{uindgen()} and will generate \cppinline{n} integer values starting from \cppinline{0} and increasing by step of \cppinline{1}. The second version generates integer values between \cppinline{i} and \cppinline{j} (inclusive) with step of \cppinline{1}. The third version generates \cppinline{n} floating point values between \cppinline{i} and \cppinline{j} (inclusive) with step \cppinline{(j-i)/(n-1.0)}.
+\cppinline|vec1d rgen_step(T i, j, s)| \itt{rgen_step}
 
-The \cppinline{rgen_log()} function does the same as the third \cppinline{rgen()} function except that the steps are logarithmic (i.e., linear in logarithmic space) so that the size of the step increases continuously.
+The \cppinline{rgen()} functions generate a sequence of numbers that increase linearly. The first version generates integer values between \cppinline{i} and \cppinline{j} (inclusive) with step of \cppinline{1}. The second version generates \cppinline{n} floating point values between \cppinline{i} and \cppinline{j} (inclusive) with step \cppinline{(j-i)/(n-1.0)}.
+
+The \cppinline{rgen_log()} function does the same as the second \cppinline{rgen()} function except that the steps are logarithmic (i.e., linear in logarithmic space) so that the size of the step increases continuously.
+
+The \cppinline{rgen_step()} function does the same as the second \cppinline{rgen()} function except that the third argument is the step size, rather than the number of steps. This step size must be positive. The generated sequence is guaranteed to start with the value \cppinline{i} and end with the value \cppinline{j}. If \cppinline{abs(i-j)} cannot be evenly divided by the chosen step size, i.e., if \cppinline{i + n*s < j && j < i + (n+1)*s} (with \cppinline{n} an integer), then the last value of the sequence (\cppinline{i + n*s} or \cppinline{i + (n+1)*s}, whichever is closest to \cppinline{j}) is replaced by the exact value of \cppinline{j}.
 
 \begin{example}
 \begin{cppcode}
-rgen(5); // {0,1,2,3,4}
 rgen(1,4); // {1,2,3,4}
 rgen(1,4,8); // {1,1.5,2,2.5,3,3.5,4}
+
 rgen_log(1,4,8); // {1,1.219,1.486,1.811,2.208,2.692,3.281,4}
+
+rgen_step(1,4,1); // {1,2,3,4}
+rgen_step(1,3,0.3); // {1,1.3,1.6,1.9,2.2,2.5,2.8,3}
 \end{cppcode}
 \end{example}
 

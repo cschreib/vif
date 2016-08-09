@@ -427,12 +427,12 @@ qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
 
             // Merge back the results of each thread
             for (uint_t t = 0; t < params.thread; ++t) {
-                auto ids = rgen(tend1[t] - tbeg1[t]) + tbeg1[t];
+                auto ids = rgen(tbeg1[t], tend1[t]-1);
                 res.id.safe(_,ids) = vres[t].id.safe(_,ids);
                 res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
                 if (!params.no_mirror) {
-                    ids = rgen(tend2[t] - tbeg2[t]) + tbeg2[t];
+                    ids = rgen(tbeg2[t], tend2[t]-1);
                     res.rid.safe[ids] = vres[t].rid.safe[ids];
                     res.rd.safe[ids] = vres[t].rd.safe[ids];
                 }
@@ -536,7 +536,7 @@ qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
 
             // Merge back the results of each thread
             for (uint_t t = 0; t < params.thread; ++t) {
-                auto ids = rgen(tend[t] - tbeg[t]) + tbeg[t];
+                auto ids = rgen(tbeg[t], tend[t]-1);
                 res.id.safe(_,ids) = vres[t].id.safe(_,ids);
                 res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 

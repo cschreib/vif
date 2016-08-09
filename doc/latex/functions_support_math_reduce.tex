@@ -120,11 +120,13 @@ fraction_of(0, w); // {0,0.5,1,0}
 
 \funcitem \cppinline|double mean(vec v)| \itt{mean}
 
+\cppinline|pair<double> optimal_mean(vec v, e)| \itt{optimal_mean}
+
 \cppinline|vec<D-1,double> partial_mean(uint_t d, vec<D,T> v)| \itt{partial_mean}
 
-The function \cppinline{mean()} computes the average of the values in \cppinline{v}, i.e., the sum divided by the number of elements.
+The function \cppinline{mean()} computes the average of the values in \cppinline{v}, i.e., the sum divided by the number of elements. The function \cppinline{optimal_mean()} will compute the average of the values in \cppinline{v} (\cppinline{pair.first}) optimally weigthed by their respecive uncertainties provided in \cppinline{e}, and also return the uncertainty on the average (\cppinline{pair.second}). This weighting, using the inverse square of the uncertainties, provides the optimal $S/N$ for the average value.
 
-Calling \cppinline{mean()} on an empty vector returns not-a-number.
+Calling these functions on an empty vector(s) returns not-a-number.
 
 The function \cppinline{partial_mean()} will apply \cppinline{mean()} on the \cppinline{d}th dimension of the vector (zero being the first dimension) and reduce its number of dimensions by one.
 
@@ -135,6 +137,11 @@ mean(v); // 0.8
 
 vec2d w = {{0,1,2,3,4}, {0,0,1,3,6}};
 partial_mean(0, w); // {0,0.5,1.5,3,5}
+
+vec1d e = {1,3,100,2,1};
+std::pair<double,double> om = optimal_mean(v, e);
+om.first;  // average:     0.470589
+om.second; // uncertainty: 0.650778
 \end{cppcode}
 \end{example}
 

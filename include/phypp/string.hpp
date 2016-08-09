@@ -117,7 +117,7 @@ vec<Dim,bool> from_string(const vec<Dim,std::string*>& s, vec<Dim,T>& t) {
     return res;
 }
 
-inline std::string trim(std::string s, const std::string& chars = " \t") {
+inline std::string trim(std::string s, const std::string& chars = " \t\n\r") {
     std::size_t spos = s.find_first_of(chars);
     if (spos == 0) {
         std::size_t epos = s.find_first_not_of(chars);
@@ -644,6 +644,25 @@ vec1s split(const std::string& ts, const T& pattern) {
     }
 
     ret.data.push_back(ts.substr(op));
+    ret.dims[0] = ret.size();
+
+    return ret;
+}
+
+template<typename T>
+vec1s split_any_of(const std::string& ts, const T& chars) {
+    vec1s ret;
+    std::size_t op = ts.find_first_not_of(chars);
+    std::size_t p = op;
+    while ((p = ts.find_first_of(chars, op)) != ts.npos) {
+        ret.data.push_back(ts.substr(op, p - op));
+        op = ts.find_first_not_of(chars, p);
+    }
+
+    if (op != ts.npos) {
+        ret.data.push_back(ts.substr(op));
+    }
+
     ret.dims[0] = ret.size();
 
     return ret;

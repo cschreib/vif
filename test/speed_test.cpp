@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
     } else if (test == 1) {
         double d1 = 0.1, d2 = 0.1, d3 = 0.1;
         prof("rgen", [&]() {
-            for (auto u : rgen(1e6)) {
+            for (auto u : uindgen(1e6)) {
                 d1 += u*u + fabs(log10(d1));
             }
         });

@@ -27,6 +27,36 @@ static constexpr const float  fpi = 3.14159265359;
 // Import some standard functions into the global namespace for convenience
 using std::abs;
 
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+bool is_finite(const T& t) {
+    return std::isfinite(t);
+}
+
+template<std::size_t Dim, typename Type>
+vec<Dim,bool> is_finite(const vec<Dim,Type>& v) {
+    vec<Dim,bool> r(v.dims);
+    for (uint_t i : range(v)) {
+        r.safe[i] = std::isfinite(v.safe[i]);
+    }
+
+    return r;
+}
+
+template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
+bool is_nan(const T& t) {
+    return std::isnan(t);
+}
+
+template<std::size_t Dim, typename Type>
+vec<Dim,bool> is_nan(const vec<Dim,Type>& v) {
+    vec<Dim,bool> r(v.dims);
+    for (uint_t i : range(v)) {
+        r.safe[i] = std::isnan(v.safe[i]);
+    }
+
+    return r;
+}
+
 template<typename T>
 auto e10(const T& t) -> decltype(pow(10.0, t)) {
     return pow(10.0, t);
@@ -87,6 +117,36 @@ vec1d rgen(T i, U j, V n) {
 
         return v;
     }
+}
+
+// Create a range from i to j (inclusive) with step s
+// If the range is not exactly dividable by s, the last value is forced to equal j.
+// The range will always contain both i and j (unless they are equal).
+template<typename T, typename U, typename V>
+vec1d rgen_step(T i, U j, V s) {
+    vec1d ret;
+
+    phypp_check(s > 0 && is_finite(s),
+        "'rgen_step(a,b,s)' needs a strictly positive and finite value for 's' (got ", s, ")");
+
+    uint_t n;
+    double step = s;
+    if (i < T(j)) {
+        n = round((j - i)/s) + 1;
+    } else {
+        n = round((i - j)/s) + 1;
+        step *= -1.0;
+    }
+
+    ret = dindgen(n)*step + i;
+
+    if (n > 1) {
+        ret.back() = j;
+    } else if (i - j != 0.0) {
+        ret.push_back(j);
+    }
+
+    return ret;
 }
 
 template<typename T, typename U, typename V>
@@ -257,36 +317,6 @@ rtype_t<Type> bin_width(const vec<1,Type>& b) {
         "(expected dims=2, got dims=", b.dims, ")");
 
     return b.safe[1] - b.safe[0];
-}
-
-template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-bool is_finite(const T& t) {
-    return std::isfinite(t);
-}
-
-template<std::size_t Dim, typename Type>
-vec<Dim,bool> is_finite(const vec<Dim,Type>& v) {
-    vec<Dim,bool> r(v.dims);
-    for (uint_t i : range(v)) {
-        r.safe[i] = std::isfinite(v.safe[i]);
-    }
-
-    return r;
-}
-
-template<typename T, typename enable = typename std::enable_if<!is_vec<T>::value>::type>
-bool is_nan(const T& t) {
-    return std::isnan(t);
-}
-
-template<std::size_t Dim, typename Type>
-vec<Dim,bool> is_nan(const vec<Dim,Type>& v) {
-    vec<Dim,bool> r(v.dims);
-    for (uint_t i : range(v)) {
-        r.safe[i] = std::isnan(v.safe[i]);
-    }
-
-    return r;
 }
 
 using seed_t = std::mt19937;
@@ -462,6 +492,22 @@ double weighted_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
     }
 
     return total/totalw;
+}
+
+template<std::size_t Dim, typename Type, typename TypeW>
+std::pair<double,double> optimal_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& e) {
+    phypp_check(v.dims == e.dims, "incompatible dimensions between values and uncertianties "
+        "(", v.dims, " vs. ", e.dims, ")");
+
+    double totalv = 0.0;
+    double totalw = 0.0;
+    for (uint_t i : range(v)) {
+        double w = 1.0/(e.safe[i]*e.safe[i]);
+        totalv += w*v.safe[i];
+        totalw += w;
+    }
+
+    return std::make_pair(totalv/totalw, 1/sqrt(totalw));
 }
 
 template<std::size_t Dim, typename T, typename enable =
