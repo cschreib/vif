@@ -15,6 +15,7 @@
 #include <sstream>
 #include <ctime>
 #include <tuple>
+#include <stdexcept>
 #include "phypp/vec.hpp"
 #include "phypp/math.hpp"
 #include "phypp/error.hpp"
@@ -387,6 +388,10 @@ namespace file {
         return n;
     }
 
+    struct exception : std::runtime_error {
+        exception(const std::string& w) : std::runtime_error(w) {}
+    };
+
     template<typename T, typename ... Args>
     auto columns(std::size_t n, T& t, Args& ... args) ->
         decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
@@ -517,9 +522,9 @@ namespace file {
         std::string fb;
         if (!read_value_(fs, v[i], fb)) {
             if (fb.empty()) {
-                phypp_check(false, "cannot extract value from file, too few columns on line l."+strn(i+1));
+                throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
             } else {
-                phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
+                throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
                     strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
             }
         }
@@ -538,9 +543,9 @@ namespace file {
         std::string fb;
         if (!read_value_(fs, v(i,k), fb)) {
             if (fb.empty()) {
-                phypp_check(false, "cannot extract value from file, too few columns on line l."+strn(i+1));
+                throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
             } else {
-                phypp_check(false, "cannot extract value '", fb, "' from file, wrong type for l."+
+                throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
                     strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
             }
         }
@@ -551,9 +556,12 @@ namespace file {
     void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
         std::string s;
         if (!(fs >> s)) {
-            phypp_check(!fs.eof(), "cannot extract value from file, "
-                "too few columns on line l."+strn(i+1));
+            if (fs.eof()) {
+                throw exception("cannot extract value from file, "
+                    "too few columns on line l."+strn(i+1));
+            }
         }
+
         read_table_cols_(fs, i, ++j, k, args...);
     }
 
@@ -574,8 +582,11 @@ namespace file {
 
     template<typename ... Args>
     void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
-        phypp_check(!fs.eof(), "cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
-            "too few columns on line l."+strn(i+1));
+        if (fs.eof()) {
+            throw exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
+                "too few columns on line l."+strn(i+1));
+        }
+
         std::string s;
         fs >> s;
         read_table_(fs, i, ++j, args...);
@@ -585,44 +596,48 @@ namespace file {
     void read_table(const std::string& name, std::size_t skip, Args&& ... args) {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
 
-        std::string line;
+        try {
+            std::string line;
 
-        std::size_t n = 0;
-        std::size_t rpos = 0; {
-            std::ifstream file(name.c_str());
-            while (!file.eof()) {
-                std::getline(file, line);
+            std::size_t n = 0;
+            std::size_t rpos = 0; {
+                std::ifstream file(name.c_str());
+                while (!file.eof()) {
+                    std::getline(file, line);
 
-                if (n < skip) {
-                    ++n;
-                    if (n == skip) {
-                        rpos = file.tellg();
-                    }
-                } else {
-                    if (line.find_first_not_of(" \t") != line.npos) {
+                    if (n < skip) {
                         ++n;
+                        if (n == skip) {
+                            rpos = file.tellg();
+                        }
+                    } else {
+                        if (line.find_first_not_of(" \t") != line.npos) {
+                            ++n;
+                        }
                     }
                 }
+
+                if (skip > n) return;
+
+                n -= skip;
             }
 
-            if (skip > n) return;
+            std::ifstream file(name.c_str());
+            file.seekg(rpos);
 
-            n -= skip;
-        }
+            read_table_resize_(n, args...);
 
-        std::ifstream file(name.c_str());
-        file.seekg(rpos);
+            for (std::size_t i = 0; i < n; ++i) {
+                do {
+                    std::getline(file, line);
+                } while (line.find_first_not_of(" \t") == line.npos);
 
-        read_table_resize_(n, args...);
-
-        for (std::size_t i = 0; i < n; ++i) {
-            do {
-                std::getline(file, line);
-            } while (line.find_first_not_of(" \t") == line.npos);
-
-            std::istringstream fs(line);
-            std::size_t j = 0;
-            read_table_(fs, i, j, args...);
+                std::istringstream fs(line);
+                std::size_t j = 0;
+                read_table_(fs, i, j, args...);
+            }
+        } catch (exception& e) {
+            phypp_check(false, std::string(e.what())+" (reading "+name+")");
         }
     }
 
@@ -636,8 +651,10 @@ namespace file {
             n = v.dims[0];
         }
 
-        phypp_check(v.dims[0] == n, "incorrect dimension for column "+strn(i)+" ("+
-            strn(v.dims[0])+" vs "+strn(n)+")");
+        if (v.dims[0] != n) {
+            throw exception("incorrect dimension for column "+strn(i)+" ("+
+                strn(v.dims[0])+" vs "+strn(n)+")");
+        }
 
         write_table_check_size_(n, i+1, args...);
     }
@@ -702,8 +719,12 @@ namespace file {
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
-        for (std::size_t i = 0; i < n; ++i) {
-            write_table_do_(file, cwidth, "", i, 0, args...);
+        try {
+            for (std::size_t i = 0; i < n; ++i) {
+                write_table_do_(file, cwidth, "", i, 0, args...);
+            }
+        } catch (exception& e) {
+            phypp_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
 
@@ -717,13 +738,17 @@ namespace file {
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
-        // Write header
-        std::string hdr = collapse(align_right(nhdr, cwidth));
-        if (hdr.size() > 1 && hdr[0] == ' ') hdr = hdr.substr(1);
-        file << "#" << hdr << "\n#\n";
+        try {
+            // Write header
+            std::string hdr = collapse(align_right(nhdr, cwidth));
+            if (hdr.size() > 1 && hdr[0] == ' ') hdr = hdr.substr(1);
+            file << "#" << hdr << "\n#\n";
 
-        for (std::size_t i = 0; i < n; ++i) {
-            write_table_do_(file, cwidth, "", i, 0, args...);
+            for (std::size_t i = 0; i < n; ++i) {
+                write_table_do_(file, cwidth, "", i, 0, args...);
+            }
+        } catch (exception& e) {
+            phypp_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
 
