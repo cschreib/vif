@@ -10,6 +10,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file);
 bool copy_wcs_header(int argc, char* argv[], const std::string& file);
 bool show_header(int argc, char* argv[], const std::string& file);
 bool edit_keyword(int argc, char* argv[], const std::string& file);
+bool read_keyword(int argc, char* argv[], const std::string& file);
 bool remove_keyword(int argc, char* argv[], const std::string& file);
 bool make_2d(int argc, char* argv[], const std::string& file);
 bool move_meta_columns(int argc, char* argv[], const std::string& file);
@@ -21,6 +22,7 @@ void print_cpwcs_help();
 void print_hdr_help();
 void print_editkwd_help();
 void print_rmkwd_help();
+void print_readkwd_help();
 void print_make2d_help();
 void print_meta_help();
 
@@ -49,6 +51,8 @@ int phypp_main(int argc, char* argv[]) {
             print_editkwd_help();
         } else if (op == "rmkwd") {
             print_rmkwd_help();
+        } else if (op == "readkwd") {
+            print_readkwd_help();
         } else if (op == "make2d") {
             print_make2d_help();
         } else if (op == "meta") {
@@ -76,6 +80,8 @@ int phypp_main(int argc, char* argv[]) {
             edit_keyword(argc-2, argv+2, file);
         } else if (op == "rmkwd") {
             remove_keyword(argc-2, argv+2, file);
+        } else if (op == "readkwd") {
+            read_keyword(argc-2, argv+2, file);
         } else if (op == "make2d") {
             make_2d(argc-2, argv+2, file);
         } else if (op == "meta") {
@@ -847,6 +853,81 @@ bool remove_keyword(int argc, char* argv[], const std::string& file) {
     return true;
 }
 
+void print_readkwd_help() {
+    using namespace format;
+
+    paragraph("The program will print the values of the provided keywords from the provided FITS "
+        "file. Keywords that do not exist will print empty values.");
+
+    header("List of available command line options:");
+    bullet("key", "[string array] list of keywords to remove");
+    bullet("verbose", "[flag] print additional information");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool read_keyword(int argc, char* argv[], const std::string& file) {
+    vec1s key;
+    bool help = false;
+    bool verbose = false;
+    read_args(argc, argv, arg_list(key, help, verbose));
+
+    if (help) {
+        print_readkwd_help();
+        return true;
+    }
+
+    fitsfile* fptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_image(&fptr, file.c_str(), READWRITE, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+
+        int naxis = 0;
+        fits_get_img_dim(fptr, &naxis, &status);
+        if (naxis == 0) {
+            fits_close_file(fptr, &status);
+            fits_open_table(&fptr, file.c_str(), READWRITE, &status);
+            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            if (verbose) print("loaded table file");
+        } else {
+            if (verbose) print("loaded image file");
+        }
+
+        for (auto& k : key) {
+            status = 0;
+            char val[80];
+            fits_read_keyword(fptr, k.c_str(), val, nullptr, &status);
+            if (status == 0) {
+                if (val[0] == '\'') {
+                    // String, remove quotes and trim spaces
+                    std::string sval = val;
+                    auto p0 = sval.find_first_of('\'');
+                    auto p1 = sval.find_last_of('\'');
+                    if (p0 == p1) {
+                        print("");
+                    } else {
+                        print(trim(sval.substr(p0+1, p1-p0-1)));
+                    }
+                } else {
+                    print(val);
+                }
+            } else {
+                print("");
+            }
+        }
+
+        fits_close_file(fptr, &status);
+    } catch (fits::exception& e) {
+        print(e.msg);
+        if (fptr) fits_close_file(fptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
 void print_make2d_help() {
     using namespace format;
 
@@ -1157,6 +1238,7 @@ void print_help() {
     bullet("hdr", "print the header of the provided FITS file");
     bullet("editkwd", "modify or add keywords to the provided FIST file interactively");
     bullet("rmkwd", "remove keywords from the provided FIST file");
+    bullet("readkwd", "print keywords from the provided FIST file");
     bullet("make2d", "remove extra dimensions from FITS image");
     bullet("meta", "shift all 'meta' columns into a new extension so that the file can be read in "
         "programs like TOPCAT that expect a single invariant dimension for all columns");
