@@ -196,9 +196,17 @@ typename vec<2,TypeV>::effective_type rotate(const vec<2,TypeV>& v, double angle
 inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
     vec2d m(dims);
 
+    phypp_check(radius >= 0, "radius must be a positive number");
+
+    // Identify the needed region
+    uint_t x0 = x - radius > 0 ? floor(x - radius) : 0;
+    uint_t y0 = y - radius > 0 ? floor(y - radius) : 0;
+    uint_t x1 = x + radius < dims[0]-1 ? ceil(x + radius) : dims[0]-1;
+    uint_t y1 = y + radius < dims[1]-1 ? ceil(y + radius) : dims[0]+1;
+
     radius *= radius;
-    for (uint_t ix : range(dims[0]))
-    for (uint_t iy : range(dims[1])) {
+    for (uint_t ix = x0; ix <= x1; ++ix)
+    for (uint_t iy = y0; iy <= y1; ++iy) {
         m.safe(ix,iy) = 0.25*(
             (sqr(ix-0.5 - x) + sqr(iy-0.5 - y) <= radius) +
             (sqr(ix+0.5 - x) + sqr(iy-0.5 - y) <= radius) +
