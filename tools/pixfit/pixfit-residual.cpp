@@ -3,8 +3,9 @@
 int phypp_main(int argc, char* argv[]) {
     std::string map_file;
     std::string cat_file;
+    double snr_min = dnan;
 
-    read_args(argc, argv, arg_list(name(map_file, "maps"), name(cat_file, "cat")));
+    read_args(argc, argv, arg_list(name(map_file, "maps"), name(cat_file, "cat"), snr_min));
 
     bool bad = false;
     if (map_file.empty()) {
@@ -25,6 +26,13 @@ int phypp_main(int argc, char* argv[]) {
     vec2f flux;
     vec1s bands;
     fits::read_table(cat_file, ftable(ra, dec, flux, bands));
+
+    vec1b sel = replicate(true, ra.size());
+    if (is_finite(snr_min)) {
+        vec1d lir, lir_err;
+        fits::read_table(cat_file, ftable(lir, lir_err));
+        sel = lir/lir_err > snr_min;
+    }
 
     for (auto& map : maps) {
         // Find band in catalog
@@ -49,7 +57,7 @@ int phypp_main(int argc, char* argv[]) {
         x -= 1; y -= 1;
 
         // Select sources which fall on the map and have a flux measurement
-        vec1u ids = where(is_finite(flux(_,b)) &&
+        vec1u ids = where(is_finite(flux(_,b)) && sel &&
             x >= -hsize && x < img.dims[1]+hsize &&
             y >= -hsize && y < img.dims[0]+hsize);
 
