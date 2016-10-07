@@ -1119,6 +1119,23 @@ void histogram_impl(const vec<Dim,Type>& data, const vec<2,TypeB>& bins, F&& fun
     }
 }
 
+template<std::size_t Dim, typename Type, typename TypeB, typename TypeF>
+void histogram(const vec<Dim,Type>& x, const vec<2,TypeB>& bins, TypeF&& func) {
+    using iterator = vec1u::iterator;
+    histogram_impl(x, bins,
+        [&](const vec1u& ids, uint_t i, iterator i0, iterator i1) {
+            uint_t npts = i1 - i0;
+            vec1u tids(npts);
+            uint_t k0 = i0 - ids.data.begin();
+            for (uint_t k : range(npts)) {
+                tids.safe[k] = ids.safe[k0 + k];
+            }
+
+            func(i, std::move(tids));
+        }
+    );
+}
+
 template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX,
     typename TypeBY, typename TypeF>
 void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
