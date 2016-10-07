@@ -137,11 +137,13 @@ int phypp_main(int argc, char* argv[]) {
         vec2u flux_group;
         vec1d group_flux, group_flux_err;
         vec1s bands;
+        vec1d tdust_min, tdust_max;
     } fcat;
 
     fits::read_table_loose(cat, ftable(
         fcat.id, fcat.ra, fcat.dec, fcat.z, fcat.bands, fcat.flux, fcat.flux_err,
-        fcat.flux_group_cov, fcat.flux_group, fcat.group_flux, fcat.group_flux_err
+        fcat.flux_group_cov, fcat.flux_group, fcat.group_flux, fcat.group_flux_err,
+        fcat.tdust_min, fcat.tdust_max
     ));
 
     if (fcat.z.empty()) {
@@ -169,6 +171,7 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     if (fcat.flux_err.empty()) {
+        warning("could not find any flux uncertainty, assuming SNR=5 for all bands!");
         fcat.flux_err = fcat.flux/5;
     }
 
@@ -242,6 +245,24 @@ int phypp_main(int argc, char* argv[]) {
         itdust = uindgen(libs[0].tdust.size());
     }
 
+    // Handle Tdust constraints
+    if (fcat.tdust_min.empty()) {
+        fcat.tdust_min = replicate(fnan, fcat.z.dims);
+    }
+    if (fcat.tdust_max.empty()) {
+        fcat.tdust_max = replicate(fnan, fcat.z.dims);
+    }
+
+    for (uint_t i : range(fcat.z)) {
+        if (fcat.tdust_min[i] < 0 or !is_finite(fcat.tdust_min[i])) {
+            fcat.tdust_min[i] = libs[0].tdust.front();
+        }
+
+        if (fcat.tdust_max[i] < 0 or !is_finite(fcat.tdust_max[i])) {
+            fcat.tdust_max[i] = libs[0].tdust.back();
+        }
+    }
+
     const uint_t nsed = libs[0].tdust.size();
 
     const uint_t ngal = fcat.flux.dims[0];
@@ -257,6 +278,8 @@ int phypp_main(int argc, char* argv[]) {
     vec2f flux_cov = fcat.flux_group_cov;
     vec1f group_flux = fcat.group_flux;
     vec1f group_err = fcat.group_flux_err;
+    vec1f tdustl = fcat.tdust_min;
+    vec1f tdustu = fcat.tdust_max;
 
     // Adjust input catalog
     for (uint_t i : range(ngal)) {
@@ -305,6 +328,8 @@ int phypp_main(int argc, char* argv[]) {
     flux = flux(gifit,_);
     flux_err = flux_err(gifit,_);
     flux_group = flux_group(gifit,_);
+    tdustl = tdustl[gifit];
+    tdustu = tdustu[gifit];
     gff = gff(gifit,_);
     ggf = ggf(gifit,_);
     ggg = ggg(gifit,_);
@@ -725,12 +750,22 @@ int phypp_main(int argc, char* argv[]) {
                 for (uint_t i : range(niter)) {
                     vec1d ttdust = matrix::diagonal(tdust_grid(_,tlib_id));
 
-                    double chi2 = dofit_wrap(ttdust);
+                    // Check this does not violate Tdust constraints
+                    bool bad = false;
+                    for (uint_t j : range(gids)) {
+                        if (ttdust[j] < tdustl[gids[j]] || ttdust[j] > tdustu[gids[j]]) {
+                            bad = true;
+                        }
+                    }
 
-                    // Also save the chi2 if this is the best for a given Tdust
-                    for (uint_t j : range(tnfit)) {
-                        if (chi2 < chi2_tdust_y(j,r,tlib_id[j])) {
-                            chi2_tdust_y(j,r,tlib_id[j]) = chi2;
+                    if (!bad) {
+                        double chi2 = dofit_wrap(ttdust);
+
+                        // Also save the chi2 if this is the best for a given Tdust
+                        for (uint_t j : range(tnfit)) {
+                            if (chi2 < chi2_tdust_y(j,r,tlib_id[j])) {
+                                chi2_tdust_y(j,r,tlib_id[j]) = chi2;
+                            }
                         }
                     }
 
@@ -765,6 +800,7 @@ int phypp_main(int argc, char* argv[]) {
 
             // Save chi2(Tdust) and use that to estimate uncertainty on Tdust
             chi2_tdust_y *= bchi2;
+            chi2_tdust_y /= (f.measures.size() - count(!fixed_fpah) - tnfit*2);
             for (uint_t i : range(tnfit)) {
                 vec1d tx = flatten(chi2_tdust_x(i,_,_));
                 vec1d ty = flatten(chi2_tdust_y(i,_,_));
