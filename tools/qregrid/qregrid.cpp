@@ -1,33 +1,116 @@
 #include <phypp.hpp>
 
 int phypp_main(int argc, char* argv[]) {
-    if (argc < 4) {
+    if (argc < 3) {
         return 0;
     }
 
     std::string img_src_file = argv[1];
-    std::string img_dst_file = argv[2];
-    std::string out_file = argv[3];
+    std::string out_file = argv[2];
 
+    std::string tpl;
     bool verbose = false;
-    read_args(argc-3, argv+3, arg_list(verbose));
+    double aspix = dnan;
+    double ratio = dnan;
+    read_args(argc-2, argv+2, arg_list(verbose, name(tpl, "template"), aspix, ratio));
 
     // Read source image
     fits::input_image fimgs(img_src_file);
     vec2d imgs;
     fimgs.read(imgs);
-    fits::header hdrs = fimgs.read_header();
-    fits::wcs astros(hdrs);
 
-    // Read reference image details
-    fits::input_image fimgd(img_dst_file);
-    fits::header hdrd = fimgd.read_header();
-    vec1u dims = fimgd.image_dims();
-    fits::wcs astrod(hdrd);
+    // Define input and output grids
+    fits::wcs astros;  // input astrometry
+    fits::wcs astrod;  // output astrometry
+    vec1u dims;        // dimensions of output image
+    fits::header hdrd; // FITS header of output image (with astrometry)
 
-    double aspixs, aspixd;
-    if (!get_pixel_size(astros, aspixs) || !get_pixel_size(astrod, aspixd)) {
-        return 1;
+    bool has_wcs = fimgs.has_keyword("CTYPE1");
+    if (has_wcs) {
+        astros = fits::wcs(fimgs.read_header());
+        if (!astros.is_valid()) {
+            has_wcs = false;
+        }
+    }
+
+    if (is_finite(ratio) && has_wcs) {
+        // The image has WCS information, transform the size ratio into a pixel scale change
+        double aspix_orig;
+        if (!get_pixel_size(astros, aspix_orig)) {
+            error("missing or incorrect WCS data in source image");
+            return 1;
+        }
+
+        aspix = aspix_orig/ratio;
+        ratio = dnan;
+    }
+
+    if (is_finite(ratio)) {
+        // Simple physical rescaling
+        fits::make_wcs_header_params params;
+        params.pixel_scale = 1.0;
+        params.dims_x = imgs.dims[1];
+        params.dims_y = imgs.dims[0];
+        params.sky_ref_ra = 0.0;
+        params.sky_ref_dec = 0.0;
+        params.pixel_ref_x = imgs.dims[1]/2;
+        params.pixel_ref_y = imgs.dims[0]/2;
+
+        fits::header hdrs;
+        make_wcs_header(params, hdrs);
+        astros = fits::wcs(hdrs);
+
+        dims = max(ceil(fimgs.image_dims()*ratio), 1);
+        params.pixel_scale = 1/ratio;
+        make_wcs_header(params, hdrd);
+        astrod = fits::wcs(hdrd);
+    } else {
+        // Read astrometry of input image
+        if (!has_wcs) {
+            error("missing WCS data in source image");
+            return 1;
+        }
+
+        if (!tpl.empty()) {
+            // Read output grid from template image
+            fits::input_image fimgd(tpl);
+            if (!fimgd.has_keyword("CTYPE1")) {
+                error("missing WCS data in template image");
+                return 1;
+            }
+
+            dims = fimgd.image_dims();
+            hdrd = fimgd.read_header();
+            astrod = fits::wcs(hdrd);
+            if (!astrod.is_valid()) {
+                error("invalid WCS data in template image");
+                return 1;
+            }
+        } else if (is_finite(aspix)) {
+            // Make output grid from input grid, same center, just different pixel scale
+            double aspix_orig;
+            if (!get_pixel_size(astros, aspix_orig)) {
+                error("missing or incorrect WCS data in source image");
+                return 1;
+            }
+
+            ratio = aspix/aspix_orig;
+            dims = max(ceil(fimgs.image_dims()/ratio), 1);
+
+            fits::make_wcs_header_params params;
+            params.pixel_scale = aspix;
+            params.dims_x = dims[1];
+            params.dims_y = dims[0];
+            fits::xy2ad(astros, imgs.dims[0]/2 + 1, imgs.dims[1]/2 + 1, params.sky_ref_ra, params.sky_ref_dec);
+            params.pixel_ref_x = dims[1]/2;
+            params.pixel_ref_y = dims[0]/2;
+
+            make_wcs_header(params, hdrd);
+            astrod = fits::wcs(hdrd);
+        } else {
+            error("must specify output grid with ratio=..., aspix=..., or template=...");
+            return 1;
+        }
     }
 
     // Regridded image
