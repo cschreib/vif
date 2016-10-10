@@ -383,6 +383,14 @@ namespace fits {
                 return hdr;
             }
 
+            bool has_keyword(const std::string& name) const {
+                status_ = 0;
+                char comment[80];
+                char content[80];
+                fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
+                return status_ == 0;
+            }
+
             bool read_keyword(const std::string& name, std::string& value) const {
                 status_ = 0;
                 char comment[80];
