@@ -2146,7 +2146,13 @@ affinefit_result affinefit(const TypeY& y, const TypeE& ye, const TypeX& x) {
 }
 
 inline double interpolate(double y1, double y2, double x1, double x2, double x) {
-    return y1 + (y2 - y1)*(x - x1)/(x2 - x1);
+    double a = (x - x1)/(x2 - x1);
+    return y1 + (y2 - y1)*a;
+}
+
+inline std::pair<double,double> interpolate_err(double y1, double y2, double e1, double e2, double x1, double x2, double x) {
+    double a = (x - x1)/(x2 - x1);
+    return std::make_pair(y1 + (y2 - y1)*a, sqrt(sqr(e1*(1-a)) + sqr(e2*a)));
 }
 
 // Perform linear interpolation of data 'y' of position 'x' at new positions 'nx'.
@@ -2228,6 +2234,58 @@ auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeX>& x, const T& nx) ->
     }
 
     return ylow + (yup - ylow)*(nx - xlow)/(xup - xlow);
+}
+
+// Perform linear interpolation of data 'y' of position 'x' at new positions 'nx'.
+// Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
+// the arrays contains special values (NaN, inf, ...), all the points that would use these values
+// will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
+template<std::size_t DI = 1, std::size_t DX = 1, typename TypeX2 = double, typename TypeY = double,
+    typename TypeE = double, typename TypeX1 = double>
+auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeE>& e, const vec<DI,TypeX1>& x, const vec<DX,TypeX2>& nx) ->
+    std::pair<vec<DX,decltype(y[0]*x[0])>,vec<DX,decltype(y[0]*x[0])>> {
+
+    using rtypey = rtype_t<TypeY>;
+    using rtypee = rtype_t<TypeE>;
+    using rtypex = rtype_t<TypeX1>;
+
+    phypp_check(y.size() == x.size(),
+        "interpolate: 'x' and 'y' arrays must contain the same number of elements");
+    phypp_check(y.size() >= 2,
+        "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
+
+    uint_t nmax = x.size();
+    std::pair<vec<DX,decltype(y[0]*x[0])>,vec<DX,decltype(y[0]*x[0])>> p;
+    p.first.reserve(nx.size());
+    p.second.reserve(nx.size());
+    for (auto& tx : nx) {
+        uint_t low = lower_bound(tx, x);
+
+        rtypey ylow, yup;
+        rtypee elow, eup;
+        rtypex xlow, xup;
+        if (low != npos) {
+            if (low != nmax-1) {
+                ylow = y.safe[low]; yup = y.safe[low+1];
+                elow = e.safe[low]; eup = e.safe[low+1];
+                xlow = x.safe[low]; xup = x.safe[low+1];
+            } else {
+                ylow = y.safe[low-1]; yup = y.safe[low];
+                elow = e.safe[low-1]; eup = e.safe[low];
+                xlow = x.safe[low-1]; xup = x.safe[low];
+            }
+        } else {
+            ylow = y.safe[0]; yup = y.safe[1];
+            elow = e.safe[0]; eup = e.safe[1];
+            xlow = x.safe[0]; xup = x.safe[1];
+        }
+
+        double a = (tx - xlow)/(xup - xlow);
+        p.first.push_back(ylow + (yup - ylow)*a);
+        p.second.push_back(sqrt(sqr(elow*(1-a)) + sqr(eup*a)));
+    }
+
+    return p;
 }
 
 inline double bilinear(double v1, double v2, double v3, double v4, double x, double y) {
