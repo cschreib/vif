@@ -121,6 +121,17 @@ namespace meta {
         return const_cast<T*>(t);
     }
 
+    // Shortcut for const_cast that doesn't require spelling the type
+    template<typename T>
+    const T& add_const(T& t) {
+        return const_cast<const T&>(t);
+    }
+
+    template<typename T>
+    const T* add_const(T* t) {
+        return const_cast<const T*>(t);
+    }
+
     // Get the size of an std::array
     template<typename T>
     struct array_size;

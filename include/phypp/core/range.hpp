@@ -189,25 +189,6 @@ namespace phypp {
     // Full range variable v(_)
     static impl::range_impl::full_range_t _;
 
-    inline range_t<uint_t> range(impl::range_impl::full_range_t, uint_t size) {
-        return range(size);
-    }
-
-    inline range_t<uint_t> range(const impl::range_impl::left_range_t& rng, uint_t size) {
-        impl::range_impl::check_bounds(rng, size);
-        return range(rng.last+1);
-    }
-
-    inline range_t<uint_t> range(const impl::range_impl::right_range_t& rng, uint_t size) {
-        impl::range_impl::check_bounds(rng, size);
-        return range(rng.first, size);
-    }
-
-    inline range_t<uint_t> range(const impl::range_impl::left_right_range_t& rng, uint_t size) {
-        impl::range_impl::check_bounds(rng, size);
-        return range(rng.first, rng.last+1);
-    }
-
     namespace meta {
         template<typename T>
         struct is_range : std::integral_constant<bool,

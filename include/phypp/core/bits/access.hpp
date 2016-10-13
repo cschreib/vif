@@ -262,6 +262,25 @@ namespace vec_access {
     template<>
     struct are_indices<> : std::true_type {};
 
+    inline range_t<uint_t> range(impl::range_impl::full_range_t, uint_t size) {
+        return phypp::range(size);
+    }
+
+    inline range_t<uint_t> range(const impl::range_impl::left_range_t& rng, uint_t size) {
+        phypp::impl::range_impl::check_bounds(rng, size);
+        return phypp::range(rng.last+1);
+    }
+
+    inline range_t<uint_t> range(const impl::range_impl::right_range_t& rng, uint_t size) {
+        phypp::impl::range_impl::check_bounds(rng, size);
+        return phypp::range(rng.first, size);
+    }
+
+    inline range_t<uint_t> range(const impl::range_impl::left_right_range_t& rng, uint_t size) {
+        phypp::impl::range_impl::check_bounds(rng, size);
+        return phypp::range(rng.first, rng.last+1);
+    }
+
     // Helper to build the result of v(_, rgen(1,2), 5), i.e. when at least one index is not scalar.
     // The result is another array.
     template<bool IsSafe, bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,

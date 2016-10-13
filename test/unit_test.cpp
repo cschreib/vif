@@ -29,34 +29,34 @@ int phypp_main(int argc, char* argv[]) {
             impl::vec_access::helper<true,true,3,float,int_t,int_t,int_t>::type,
             const float&>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,int_t,placeholder_t,int_t>::type,
+            impl::vec_access::helper<true,false,3,float,int_t,impl::placeholder_t,int_t>::type,
             vec<1,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,true,3,const float,int_t,placeholder_t,int_t>::type,
+            impl::vec_access::helper<true,true,3,const float,int_t,impl::placeholder_t,int_t>::type,
             vec<1,const float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,int_t,placeholder_t,int_t>::type,
+            impl::vec_access::helper<true,false,3,float,int_t,impl::placeholder_t,int_t>::type,
             vec<1,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,placeholder_t,placeholder_t,placeholder_t>::type,
+            impl::vec_access::helper<true,false,3,float,impl::placeholder_t,impl::placeholder_t,impl::placeholder_t>::type,
             vec<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,vec<1, int_t>,placeholder_t,placeholder_t>::type,
+            impl::vec_access::helper<true,false,3,float,vec<1, int_t>,impl::placeholder_t,impl::placeholder_t>::type,
             vec<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,vec<1, int_t>,placeholder_t,int_t>::type,
+            impl::vec_access::helper<true,false,3,float,vec<1, int_t>,impl::placeholder_t,int_t>::type,
             vec<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,vec<1, int_t>,placeholder_t,int_t>::type,
+            impl::vec_access::helper<true,false,3,float,vec<1, int_t>,impl::placeholder_t,int_t>::type,
             vec<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,impl::repeated_value<3,placeholder_t>>::type,
+            impl::vec_access::helper<true,false,3,float,impl::repeated_value<3,impl::placeholder_t>>::type,
             vec<3,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,impl::repeated_value<2,placeholder_t>,int_t>::type,
+            impl::vec_access::helper<true,false,3,float,impl::repeated_value<2,impl::placeholder_t>,int_t>::type,
             vec<2,float*>>::value, "wrong type of indexed array");
         static_assert(std::is_same<
-            impl::vec_access::helper<true,false,3,float,int_t,impl::repeated_value<2,placeholder_t>>::type,
+            impl::vec_access::helper<true,false,3,float,int_t,impl::repeated_value<2,impl::placeholder_t>>::type,
             vec<2,float*>>::value, "wrong type of indexed array");
     }
 
@@ -1099,7 +1099,7 @@ int phypp_main(int argc, char* argv[]) {
             struct utt { int_t i, j; } t;
         } tmp3;
 
-        merge_elements(tmp1, tmp2);
+        reflex::merge_elements(tmp1, tmp2);
 
         check(tmp1.i, "5");
         check(tmp1.j, "0");

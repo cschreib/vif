@@ -337,6 +337,7 @@ namespace phypp {
     // to fit the needs of the phy++ library.
     // Source:
     // http://code.google.com/p/smallsha1/
+    namespace impl {
     namespace sha1 {
         namespace {
             // Rotate an integer value to left.
@@ -480,10 +481,11 @@ namespace phypp {
             }
         }
     }
+    }
 
     inline std::string hash_(std::string s) {
         std::string out;
-        sha1::calc(reinterpret_cast<const unsigned char*>(s.c_str()), s.size(), out);
+        impl::sha1::calc(reinterpret_cast<const unsigned char*>(s.c_str()), s.size(), out);
         return out;
     }
 

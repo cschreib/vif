@@ -1110,14 +1110,14 @@ namespace phypp {
         phypp_check(data.dims == weight.dims, "incompatible dimensions for data and weight "
             "(", data.dims, " vs. ", weight.dims, ")");
 
-        vec1u tmp = uindgen(data.size());
+        vec1u ids = uindgen(data.size());
 
         uint_t nbin = bins.dims[1];
         vec<1,meta::rtype_t<TypeW>> counts(nbin);
 
-        auto first = tmp.data.begin();
+        auto first = ids.data.begin();
         for (uint_t i : range(nbin)) {
-            auto last = std::partition(first, tmp.data.end(), [&bins,&data,i](uint_t id) {
+            auto last = std::partition(first, ids.data.end(), [&bins,&data,i](uint_t id) {
                 return data.safe[id] >= bins.safe(0,i) && data.safe[id] < bins.safe(1,i);
             });
 
@@ -1125,41 +1125,45 @@ namespace phypp {
                 counts.safe[i] += weight.safe[*first];
             }
 
-            if (last == tmp.data.end()) break;
+            if (last == ids.data.end()) break;
         }
 
         return counts;
     }
 
+    namespace impl {
+        template<std::size_t Dim, typename Type, typename TypeB, typename F>
+        void histogram_impl(const vec<Dim,Type>& data, const vec<2,TypeB>& bins, F&& func) {
+            phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+                "dims=[2, ...], got dims=[", bins.dims, "])");
 
-    template<std::size_t Dim, typename Type, typename TypeB, typename F>
-    void histogram_impl(const vec<Dim,Type>& data, const vec<2,TypeB>& bins, F&& func) {
-        phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
-            "dims=[2, ...], got dims=[", bins.dims, "])");
+            vec1u ids = uindgen(data.size());
+            using iterator = vec1u::const_iterator;
 
-        vec1u ids = uindgen(data.size());
+            uint_t nbin = bins.dims[1];
+            auto first = ids.data.begin();
+            for (uint_t i : range(nbin)) {
+                auto last = std::partition(first, ids.data.end(), [&bins,&data,i](uint_t id) {
+                    return data.safe[id] >= bins.safe(0,i) && data.safe[id] < bins.safe(1,i);
+                });
 
-        uint_t nbin = bins.dims[1];
-        auto first = ids.data.begin();
-        for (uint_t i : range(nbin)) {
-            auto last = std::partition(first, ids.data.end(), [&bins,&data,i](uint_t id) {
-                return data.safe[id] >= bins.safe(0,i) && data.safe[id] < bins.safe(1,i);
-            });
+                func(i, meta::add_const(ids), iterator{first}, iterator{last});
 
-            func(ids, i, first, last);
-
-            if (last == ids.data.end()) break;
+                if (last == ids.data.end()) break;
+            }
         }
     }
 
     template<std::size_t Dim, typename Type, typename TypeB, typename TypeF>
     void histogram(const vec<Dim,Type>& x, const vec<2,TypeB>& bins, TypeF&& func) {
-        using iterator = vec1u::iterator;
-        histogram_impl(x, bins,
-            [&](const vec1u& ids, uint_t i, iterator i0, iterator i1) {
-                uint_t npts = i1 - i0;
-                vec1u tids(npts);
+        using iterator = vec1u::const_iterator;
+        vec1u tids;
+
+        impl::histogram_impl(x, bins,
+            [&](uint_t i, const vec1u& ids, iterator i0, iterator i1) {
+                uint_t npts = i1 - i0;(npts);
                 uint_t k0 = i0 - ids.data.begin();
+                tids.resize(npts);
                 for (uint_t k : range(npts)) {
                     tids.safe[k] = ids.safe[k0 + k];
                 }
@@ -1169,43 +1173,47 @@ namespace phypp {
         );
     }
 
-    template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX,
-        typename TypeBY, typename TypeF>
-    void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
-        const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins, TypeF&& func) {
+    namespace impl {
+        template<std::size_t Dim, typename TypeX, typename TypeY, typename TypeBX,
+            typename TypeBY, typename TypeF>
+        void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
+            const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins, TypeF&& func) {
 
-        phypp_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
-            "dims=[2, ...], got dims=[", xbins.dims, "])");
-        phypp_check(ybins.dims[0] == 2, "can only be called with a bin vector (expected "
-            "dims=[2, ...], got dims=[", ybins.dims, "])");
-        phypp_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
-            y.dims, ")");
+            phypp_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
+                "dims=[2, ...], got dims=[", xbins.dims, "])");
+            phypp_check(ybins.dims[0] == 2, "can only be called with a bin vector (expected "
+                "dims=[2, ...], got dims=[", ybins.dims, "])");
+            phypp_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
+                y.dims, ")");
 
-        vec1u ids = uindgen(x.size());
+            vec1u ids = uindgen(x.size());
 
-        uint_t nxbin = xbins.dims[1];
-        uint_t nybin = ybins.dims[1];
+            uint_t nxbin = xbins.dims[1];
+            uint_t nybin = ybins.dims[1];
 
-        auto firstx = ids.data.begin();
-        for (uint_t i : range(nxbin)) {
-            auto lastx = std::partition(firstx, ids.data.end(), [&xbins,&x,i](uint_t id) {
-                return x.safe[id] >= xbins.safe(0,i) && x.safe[id] < xbins.safe(1,i);
-            });
+            using iterator = vec1u::const_iterator;
 
-            auto firsty = firstx;
-            for (uint_t j : range(nybin)) {
-                auto lasty = std::partition(firsty, lastx, [&ybins,&y,j](uint_t id) {
-                    return y.safe[id] >= ybins.safe(0,j) && y.safe[id] < ybins.safe(1,j);
+            auto firstx = ids.data.begin();
+            for (uint_t i : range(nxbin)) {
+                auto lastx = std::partition(firstx, ids.data.end(), [&xbins,&x,i](uint_t id) {
+                    return x.safe[id] >= xbins.safe(0,i) && x.safe[id] < xbins.safe(1,i);
                 });
 
-                func(ids, i, j, firsty, lasty);
+                auto firsty = firstx;
+                for (uint_t j : range(nybin)) {
+                    auto lasty = std::partition(firsty, lastx, [&ybins,&y,j](uint_t id) {
+                        return y.safe[id] >= ybins.safe(0,j) && y.safe[id] < ybins.safe(1,j);
+                    });
 
-                if (lasty == lastx) break;
-                firsty = lasty;
+                    func(i, j, meta::add_const(ids), iterator{firsty}, iterator{lasty});
+
+                    if (lasty == lastx) break;
+                    firsty = lasty;
+                }
+
+                if (lastx == ids.data.end()) break;
+                firstx = lastx;
             }
-
-            if (lastx == ids.data.end()) break;
-            firstx = lastx;
         }
     }
 
@@ -1215,9 +1223,9 @@ namespace phypp {
 
         vec2u counts(xbins.dims[1], ybins.dims[1]);
 
-        using iterator = vec1u::iterator;
-        histogram2d_impl(x, y, xbins, ybins,
-            [&](const vec1u& ids, uint_t i, uint_t j, iterator i0, iterator i1) {
+        using iterator = vec1u::const_iterator;
+        impl::histogram2d_impl(x, y, xbins, ybins,
+            [&](uint_t i, uint_t j, const vec1u& ids, iterator i0, iterator i1) {
                 counts.safe(i,j) = i1 - i0;
             }
         );
@@ -1230,9 +1238,9 @@ namespace phypp {
     void histogram2d(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
         const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins, TypeF&& func) {
 
-        using iterator = vec1u::iterator;
-        histogram2d_impl(x, y, xbins, ybins,
-            [&](const vec1u& ids, uint_t i, uint_t j, iterator i0, iterator i1) {
+        using iterator = vec1u::const_iterator;
+        impl::histogram2d_impl(x, y, xbins, ybins,
+            [&](uint_t i, uint_t j, const vec1u& ids, iterator i0, iterator i1) {
                 uint_t npts = i1 - i0;
                 vec1u tids(npts);
                 uint_t k0 = i0 - ids.data.begin();
