@@ -330,7 +330,7 @@ namespace phypp {
         #endif
 
         add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
-    }
+    }a
 
     template<typename T, typename U, typename V>
     void catalog_t::merge(vec<1,T>& in, const U& out, const V& def, const std::string& com) {
@@ -343,7 +343,8 @@ namespace phypp {
         add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
     }
 
-    namespace astro_impl {
+    namespace impl {
+    namespace impl::astro_impl {
         template<typename M, typename V>
         struct do_catalog_merge_run {
             const reflex::member_t& m;
@@ -404,6 +405,7 @@ namespace phypp {
             }
         };
     }
+    }
 
     template<typename T, typename U, typename V>
     void catalog_t::merge(T& in, const U& out, const V& def) {
@@ -411,7 +413,7 @@ namespace phypp {
         static_assert(!std::is_same<T,T>::value, "this function requires reflection capabilities (NO_REFLECTION=0)");
         #endif
 
-        astro_impl::do_catalog_merge<T,V> run{reflex::wrap(in), def, *this};
+        impl::astro_impl::do_catalog_merge<T,V> run{reflex::wrap(in), def, *this};
         reflex::foreach_member(reflex::wrap(out), run);
     }
 

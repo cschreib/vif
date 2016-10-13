@@ -24,116 +24,118 @@ namespace phypp {
 
     #ifndef NO_LIBUNWIND
     #ifndef NO_LIBDWARF
-    // Inspired from:
-    // http://eli.thegreenplace.net/2011/02/07/how-debuggers-work-part-3-debugging-information
-    // ... and the code of add2line from:
-    // https://sourceforge.net/projects/elftoolchain/
-    struct dwarf_helper {
-        struct source_info {
-            Dwarf_Addr addr;
-            Dwarf_Unsigned line;
-            std::string filename;
+    namespace impl {
+        // Inspired from:
+        // http://eli.thegreenplace.net/2011/02/07/how-debuggers-work-part-3-debugging-information
+        // ... and the code of add2line from:
+        // https://sourceforge.net/projects/elftoolchain/
+        struct dwarf_helper {
+            struct source_info {
+                Dwarf_Addr addr;
+                Dwarf_Unsigned line;
+                std::string filename;
 
-            bool operator< (const source_info& s) const {
-                return addr > s.addr; // reverse order is intentionnal
+                bool operator< (const source_info& s) const {
+                    return addr > s.addr; // reverse order is intentionnal
+                }
+                bool operator< (Dwarf_Addr a) const {
+                    return addr > a; // reverse order is intentionnal
+                }
+            };
+
+            std::vector<source_info> db;
+
+            bool get_info(Dwarf_Addr addr, source_info& info) const {
+                auto iter = std::lower_bound(db.begin(), db.end(), addr);
+                if (iter != db.end()) {
+                    info = *iter;
+                    return true;
+                } else {
+                    return false;
+                }
             }
-            bool operator< (Dwarf_Addr a) const {
-                return addr > a; // reverse order is intentionnal
+
+            explicit dwarf_helper() {
+                // Initialize dwarf
+                int fd = -1;
+                if ((fd = open(executable_path, O_RDONLY)) < 0) {
+                    return;
+                }
+
+                Dwarf_Debug dbg = 0;
+                Dwarf_Error err;
+                if (dwarf_init(fd, DW_DLC_READ, 0, 0, &dbg, &err) != DW_DLV_OK) {
+                    close(fd);
+                    return;
+                }
+
+                // Iterate through compilation unit (CU) headers
+                while (true) {
+                    // Find next CU
+                    Dwarf_Unsigned cu_header_length, abbrev_offset, next_cu_header;
+                    Dwarf_Half version_stamp, offset_size, extension_size, address_size;
+                    int curc = dwarf_next_cu_header_b(dbg, &cu_header_length, &version_stamp, &abbrev_offset,
+                        &address_size, &offset_size, &extension_size, &next_cu_header, &err);
+                    if (curc == DW_DLV_ERROR || curc == DW_DLV_NO_ENTRY) {
+                        break;
+                    }
+
+                    // Get the CU DIE
+                    Dwarf_Die cu_die = 0, tmp_die;
+                    while (dwarf_siblingof(dbg, cu_die, &tmp_die, &err) == DW_DLV_OK) {
+                        cu_die = tmp_die;
+
+                        Dwarf_Half tag;
+                        if (dwarf_tag(cu_die, &tag, &err) != DW_DLV_OK) {
+                            cu_die = 0;
+                            break;
+                        }
+
+                        if (tag == DW_TAG_compile_unit) {
+                            break;
+                        }
+                    }
+
+                    if (cu_die == 0) continue;
+
+                    // Grab the mappings between address and source lines in this CU
+                    Dwarf_Line* lines;
+                    Dwarf_Signed nlines = 0;
+                    if (dwarf_srclines(cu_die, &lines, &nlines, &err) == DW_DLV_ERROR) {
+                        continue;
+                    }
+
+                    for (Dwarf_Signed i = 0; i < nlines; ++i) {
+                        char* filename;
+                        if (dwarf_linesrc(lines[i], &filename, &err) != DW_DLV_OK) {
+                            continue;
+                        }
+
+                        Dwarf_Unsigned lineno;
+                        if (dwarf_lineno(lines[i], &lineno, &err) != DW_DLV_OK) {
+                            continue;
+                        }
+
+                        Dwarf_Addr lineaddr;
+                        if (dwarf_lineaddr(lines[i], &lineaddr, &err) != DW_DLV_OK) {
+                            continue;
+                        }
+
+                        db.push_back({lineaddr, lineno, std::string(filename)});
+                    }
+
+                    dwarf_srclines_dealloc(dbg, lines, nlines);
+                }
+
+                // Close dwarf
+                dwarf_finish(dbg, &err);
+                close(fd);
+
+                // Sort line database for lookup later on
+                std::sort(db.begin(), db.end());
             }
         };
-
-        std::vector<source_info> db;
-
-        bool get_info(Dwarf_Addr addr, source_info& info) const {
-            auto iter = std::lower_bound(db.begin(), db.end(), addr);
-            if (iter != db.end()) {
-                info = *iter;
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        explicit dwarf_helper() {
-            // Initialize dwarf
-            int fd = -1;
-            if ((fd = open(executable_path, O_RDONLY)) < 0) {
-                return;
-            }
-
-            Dwarf_Debug dbg = 0;
-            Dwarf_Error err;
-            if (dwarf_init(fd, DW_DLC_READ, 0, 0, &dbg, &err) != DW_DLV_OK) {
-                close(fd);
-                return;
-            }
-
-            // Iterate through compilation unit (CU) headers
-            while (true) {
-                // Find next CU
-                Dwarf_Unsigned cu_header_length, abbrev_offset, next_cu_header;
-                Dwarf_Half version_stamp, offset_size, extension_size, address_size;
-                int curc = dwarf_next_cu_header_b(dbg, &cu_header_length, &version_stamp, &abbrev_offset,
-                    &address_size, &offset_size, &extension_size, &next_cu_header, &err);
-                if (curc == DW_DLV_ERROR || curc == DW_DLV_NO_ENTRY) {
-                    break;
-                }
-
-                // Get the CU DIE
-                Dwarf_Die cu_die = 0, tmp_die;
-                while (dwarf_siblingof(dbg, cu_die, &tmp_die, &err) == DW_DLV_OK) {
-                    cu_die = tmp_die;
-
-                    Dwarf_Half tag;
-                    if (dwarf_tag(cu_die, &tag, &err) != DW_DLV_OK) {
-                        cu_die = 0;
-                        break;
-                    }
-
-                    if (tag == DW_TAG_compile_unit) {
-                        break;
-                    }
-                }
-
-                if (cu_die == 0) continue;
-
-                // Grab the mappings between address and source lines in this CU
-                Dwarf_Line* lines;
-                Dwarf_Signed nlines = 0;
-                if (dwarf_srclines(cu_die, &lines, &nlines, &err) == DW_DLV_ERROR) {
-                    continue;
-                }
-
-                for (Dwarf_Signed i = 0; i < nlines; ++i) {
-                    char* filename;
-                    if (dwarf_linesrc(lines[i], &filename, &err) != DW_DLV_OK) {
-                        continue;
-                    }
-
-                    Dwarf_Unsigned lineno;
-                    if (dwarf_lineno(lines[i], &lineno, &err) != DW_DLV_OK) {
-                        continue;
-                    }
-
-                    Dwarf_Addr lineaddr;
-                    if (dwarf_lineaddr(lines[i], &lineaddr, &err) != DW_DLV_OK) {
-                        continue;
-                    }
-
-                    db.push_back({lineaddr, lineno, std::string(filename)});
-                }
-
-                dwarf_srclines_dealloc(dbg, lines, nlines);
-            }
-
-            // Close dwarf
-            dwarf_finish(dbg, &err);
-            close(fd);
-
-            // Sort line database for lookup later on
-            std::sort(db.begin(), db.end());
-        }
-    };
+    }
     #endif
 
     namespace impl {
@@ -260,7 +262,7 @@ namespace phypp {
 
         #ifndef NO_LIBDWARF
         // Initialize DWARF debug information
-        dwarf_helper debug_info;
+        impl::dwarf_helper debug_info;
         #endif
 
         // Unwind frames one by one, going up the frame stack.
@@ -288,7 +290,7 @@ namespace phypp {
 
                 #ifndef NO_LIBDWARF
                 // auto iter = debug_info.db.find(sym);
-                dwarf_helper::source_info info;
+                impl::dwarf_helper::source_info info;
                 if (debug_info.get_info(pc, info)) {
                     // Print function name and pointer offset
                     print(" - ", fname);
@@ -311,18 +313,18 @@ namespace phypp {
 
     #define phypp_check(value, ...) \
         if (!(value)) { \
-            print("\n"); \
-            error(__VA_ARGS__, "\n"); \
-            print("backtrace:"); \
-            backtrace(); \
-            print("\n"); \
+            phypp::print("\n"); \
+            phypp::error(__VA_ARGS__, "\n"); \
+            phypp::print("backtrace:"); \
+            phypp::backtrace(); \
+            phypp::print("\n"); \
             exit(EXIT_FAILURE); \
         }
     #else
     #define phypp_check(value, ...) \
         if (!(value)) { \
-            print("\n"); \
-            error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__, "\n"); \
+            phypp::print("\n"); \
+            phypp::error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__, "\n"); \
             exit(EXIT_FAILURE); \
         }
     #endif

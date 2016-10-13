@@ -3,6 +3,7 @@
 #endif
 
 namespace phypp {
+namespace impl {
     // Iterator for bool vectors (necessary to avoid std::vector<bool>)
     template<typename I>
     struct bool_iterator_policy {
@@ -66,10 +67,11 @@ namespace phypp {
     template<typename T, typename C>
     using const_reverse_ptr_iterator_base = const_reverse_iterator_base<T,C,ptr_iterator_policy<T>>;
 }
+}
 
 namespace std {
     template<typename T, typename C>
-    struct iterator_traits<phypp::bool_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::bool_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = bool;
         using pointer = value_type*;
@@ -78,7 +80,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::const_bool_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::const_bool_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = const bool;
         using pointer = value_type*;
@@ -87,7 +89,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::reverse_bool_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::reverse_bool_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = bool;
         using pointer = value_type*;
@@ -96,7 +98,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::const_reverse_bool_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::const_reverse_bool_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = const bool;
         using pointer = value_type*;
@@ -105,7 +107,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::ptr_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::ptr_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
         using pointer = value_type*;
@@ -114,7 +116,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::const_ptr_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::const_ptr_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
         using pointer = value_type*;
@@ -123,7 +125,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::reverse_ptr_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::reverse_ptr_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
         using pointer = value_type*;
@@ -132,7 +134,7 @@ namespace std {
     };
 
     template<typename T, typename C>
-    struct iterator_traits<phypp::const_reverse_ptr_iterator_base<T,C>> {
+    struct iterator_traits<phypp::impl::const_reverse_ptr_iterator_base<T,C>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::remove_pointer<typename iterator_traits<T>::value_type>::type;
         using pointer = value_type*;

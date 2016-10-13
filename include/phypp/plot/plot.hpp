@@ -7,6 +7,7 @@
 #include "phypp/color.hpp"
 #include "phypp/math.hpp"
 
+namespace phypp {
 namespace plot {
     // Different stroke drawing styles for stroke endings
     enum class cap {
@@ -808,6 +809,7 @@ namespace plot {
         }
     }
     */
+}
 }
 
 #endif

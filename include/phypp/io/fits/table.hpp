@@ -94,24 +94,26 @@ namespace fits {
     }
 
     // Traits to identify types that can be read from a FITS table
-    template<typename T>
-    struct is_readable_column_type : meta::is_any_type_of<T, meta::type_list<
-        bool, char, int_t, uint_t, float, double, std::string
-    >> {};
+    namespace impl {
+        template<typename T>
+        struct is_readable_column_type : meta::is_any_type_of<T, meta::type_list<
+            bool, char, int_t, uint_t, float, double, std::string
+        >> {};
 
-    template<std::size_t D, typename T>
-    struct is_readable_column_type<vec<D,T>> : meta::is_any_type_of<T, meta::type_list<
-        bool, char, int_t, uint_t, float, double, std::string
-    >> {};
+        template<std::size_t D, typename T>
+        struct is_readable_column_type<vec<D,T>> : meta::is_any_type_of<T, meta::type_list<
+            bool, char, int_t, uint_t, float, double, std::string
+        >> {};
 
-    template<typename T>
-    struct is_readable_column_type<reflex::struct_t<T>> : std::true_type {};
+        template<typename T>
+        struct is_readable_column_type<reflex::struct_t<T>> : std::true_type {};
 
-    template<std::size_t D, typename T>
-    struct is_readable_column_type<vec<D,T*>> : std::false_type {};
+        template<std::size_t D, typename T>
+        struct is_readable_column_type<vec<D,T*>> : std::false_type {};
 
-    template<typename T>
-    struct is_readable_column_type<phypp::impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
+        template<typename T>
+        struct is_readable_column_type<phypp::impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
+    }
 
     // Data type to describe the content of a column
     struct column_info {
@@ -174,9 +176,9 @@ namespace fits {
                 }
                 case 'B' : {
                     vec<1,char> v(repeat);
-                    char def = traits<char>::def();
+                    char def = impl::traits<char>::def();
                     int null;
-                    fits_read_col(fptr_, traits<char>::ttype, c+1, 1, 1, repeat,
+                    fits_read_col(fptr_, impl::traits<char>::ttype, c+1, 1, 1, repeat,
                         &def, v.data.data(), &null, &status_);
 
                     if (min(v) == 0 && max(v) <= 1) {
@@ -315,11 +317,11 @@ namespace fits {
             }
 
             long nelem = v.size();
-            Type def = traits<Type>::def();
+            Type def = impl::traits<Type>::def();
             int null;
             status_ = 0;
             fits_read_col(
-                fptr_, traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
+                fptr_, impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
                 v.data.data(), &null, &status_
             );
         }
@@ -328,11 +330,11 @@ namespace fits {
         void read_column_impl_(const table_read_options&, Type& v, int cid,
             long naxis, const std::array<long,max_column_dims>& naxes, long, long, bool) const {
 
-            Type def = traits<Type>::def();
+            Type def = impl::traits<Type>::def();
             int null;
             fits_read_col(
-                fptr_, traits<Type>::ttype, cid, 1, 1, 1, &def,
-                reinterpret_cast<typename traits<Type>::dtype*>(&v), &null, &status_
+                fptr_, impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
+                reinterpret_cast<typename impl::traits<Type>::dtype*>(&v), &null, &status_
             );
         }
 
@@ -365,7 +367,7 @@ namespace fits {
             char def = '\0';
             int null;
             fits_read_col(
-                fptr_, traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
+                fptr_, impl::traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
                 buffer, &null, &status_
             );
 
@@ -447,9 +449,9 @@ namespace fits {
         template<typename T>
         bool read_column_check_type_(const table_read_options& opts, int type) const {
             if (opts.allow_narrow) {
-                return traits<T>::is_convertible_narrow(type);
+                return impl::traits<T>::is_convertible_narrow(type);
             } else {
-                return traits<T>::is_convertible(type);
+                return impl::traits<T>::is_convertible(type);
             }
         }
 
@@ -541,7 +543,7 @@ namespace fits {
         read_sentry read_column_(table_read_options opts,
             const std::string& tcolname, T& value, std::false_type) const {
 
-            static_assert(is_readable_column_type<typename std::decay<T>::type>::value,
+            static_assert(impl::is_readable_column_type<typename std::decay<T>::type>::value,
                 "this value cannot be read from a FITS file");
 
             status_ = 0;
@@ -568,7 +570,7 @@ namespace fits {
             fits_get_coltype(fptr_, cid, &type, &repeat, &width, &status_);
             if (!read_column_check_type_<vtype>(opts, type)) {
                 return read_sentry{this, "wrong type for column '"+colname+"' "
-                    "(expected "+pretty_type_t(vtype)+", got "+type_to_string_(type)+")"};
+                    "(expected "+pretty_type_t(vtype)+", got "+impl::type_to_string_(type)+")"};
             }
 
             // Check if dimensions match
@@ -695,7 +697,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, is_readable_column_type>>::value,
+                filtered_second, impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
@@ -716,7 +718,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, is_readable_column_type>>::value,
+                filtered_second, impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
@@ -762,7 +764,7 @@ namespace fits {
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, is_readable_column_type>>::value,
+                arg_list, impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of readable values");
 
             // Read
@@ -776,7 +778,7 @@ namespace fits {
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, is_readable_column_type>>::value,
+                arg_list, impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of readable values");
 
             // Read
@@ -797,22 +799,23 @@ namespace fits {
     };
 
     // Traits to identify types that can be written into a FITS table
-    template<typename T>
-    struct is_writable_column_type : meta::is_any_type_of<T, meta::type_list<
-        bool, char, int_t, uint_t, float, double, std::string
-    >> {};
+    namespace impl {
+        template<typename T>
+        struct is_writable_column_type : meta::is_any_type_of<T, meta::type_list<
+            bool, char, int_t, uint_t, float, double, std::string
+        >> {};
 
-    template<std::size_t D, typename T>
-    struct is_writable_column_type<vec<D,T>> : meta::is_any_type_of<typename vec<D,T>::rtype, meta::type_list<
-        bool, char, int_t, uint_t, float, double, std::string
-    >> {};
+        template<std::size_t D, typename T>
+        struct is_writable_column_type<vec<D,T>> : meta::is_any_type_of<typename vec<D,T>::rtype, meta::type_list<
+            bool, char, int_t, uint_t, float, double, std::string
+        >> {};
 
-    template<typename T>
-    struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
+        template<typename T>
+        struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
 
-    template<typename T>
-    struct is_writable_column_type<phypp::impl::named_t<T>> : is_writable_column_type<meta::decay_t<T>> {};
-
+        template<typename T>
+        struct is_writable_column_type<phypp::impl::named_t<T>> : is_writable_column_type<meta::decay_t<T>> {};
+    }
 
     // Output FITS table (write only, overwrites existing files)
     class output_table : public virtual impl::file_base {
@@ -831,14 +834,14 @@ namespace fits {
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
         void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&, int cid) {
-            fits_write_col(fptr_, traits<Type>::ttype, cid, 1, 1, value.size(),
+            fits_write_col(fptr_, impl::traits<Type>::ttype, cid, 1, 1, value.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()), &status_);
         }
 
         template<typename Type>
         void write_column_impl_(const Type& value, const std::array<long,0>&, int cid) {
-            using dtype = typename traits<Type>::dtype;
-            fits_write_col(fptr_, traits<Type>::ttype, cid, 1, 1, 1,
+            using dtype = typename impl::traits<Type>::dtype;
+            fits_write_col(fptr_, impl::traits<Type>::ttype, cid, 1, 1, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
         }
 
@@ -857,7 +860,7 @@ namespace fits {
             }
 
             fits_write_col(
-                fptr_, traits<std::string>::ttype, cid, 1, 1,
+                fptr_, impl::traits<std::string>::ttype, cid, 1, 1,
                 value.size(), buffer, &status_
             );
 
@@ -874,7 +877,7 @@ namespace fits {
 
             char** buffer = new char*[1];
             buffer[0] = const_cast<char*>(value.c_str());
-            fits_write_col(fptr_, traits<std::string>::ttype, cid, 1, 1, 1,
+            fits_write_col(fptr_, impl::traits<std::string>::ttype, cid, 1, 1, 1,
                 buffer, &status_);
 
             delete[] buffer;
@@ -930,7 +933,7 @@ namespace fits {
                 size *= d;
             }
 
-            return strn(size)+traits<Type>::tform;
+            return strn(size)+impl::traits<Type>::tform;
         }
 
         template<std::size_t Dim>
@@ -940,7 +943,7 @@ namespace fits {
                 size *= d;
             }
 
-            return strn(size)+traits<std::string>::tform+strn(dims[0]);
+            return strn(size)+impl::traits<std::string>::tform+strn(dims[0]);
         }
 
 
@@ -965,7 +968,7 @@ namespace fits {
 
         template<typename T>
         void write_column_(const std::string& tcolname, const T& value, std::false_type) {
-            static_assert(is_writable_column_type<typename std::decay<T>::type>::value,
+            static_assert(impl::is_writable_column_type<typename std::decay<T>::type>::value,
                 "this value cannot be written into a FITS file");
 
             status_ = 0;
@@ -1069,7 +1072,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, is_writable_column_type>>::value,
+                filtered_second, impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
@@ -1083,7 +1086,7 @@ namespace fits {
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, is_writable_column_type>>::value,
+                arg_list, impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of writable values");
 
             // Read
@@ -1191,7 +1194,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, is_writable_column_type>>::value,
+                filtered_second, impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             update_columns_impl_(std::forward<Args>(args)...);
@@ -1204,7 +1207,7 @@ namespace fits {
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, is_writable_column_type>>::value,
+                arg_list, impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);

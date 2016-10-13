@@ -640,17 +640,19 @@ namespace phypp {
         return *(t.begin() + offset);
     }
 
-    template<std::size_t Dim, typename Type>
-    void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t) {}
+    namespace impl {
+        template<std::size_t Dim, typename Type>
+        void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t) {}
 
-    template<std::size_t Dim, typename Type, typename U, typename ... Args>
-    void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t, const U& u, const Args& ... args) {
-        std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
-        std::nth_element(t.begin(), t.begin() + offset, t.end());
-        r.safe[i] = *(t.begin() + offset);
-        ++i;
+        template<std::size_t Dim, typename Type, typename U, typename ... Args>
+        void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t, const U& u, const Args& ... args) {
+            std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
+            std::nth_element(t.begin(), t.begin() + offset, t.end());
+            r.safe[i] = *(t.begin() + offset);
+            ++i;
 
-        percentiles_(r, i, t, args...);
+            percentiles_(r, i, t, args...);
+        }
     }
 
     template<std::size_t Dim, typename Type, typename ... Args>
@@ -663,7 +665,7 @@ namespace phypp {
         t = v.safe[ok];
 
         typename vec<1,Type>::effective_type r = arr<meta::rtype_t<Type>>(sizeof...(Args));
-        percentiles_(r, 0, t, args...);
+        impl::percentiles_(r, 0, t, args...);
 
         return r;
     }
@@ -677,103 +679,105 @@ namespace phypp {
         return abs(tv - med) < sigma*mad;
     }
 
-    template<std::size_t Dim, typename Type>
-    typename vec<Dim,Type>::const_iterator min_(const vec<Dim,Type>& v) {
-        phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
+    namespace impl {
+        template<std::size_t Dim, typename Type>
+        typename vec<Dim,Type>::const_iterator min_(const vec<Dim,Type>& v) {
+            phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
 
-        auto iter = std::min_element(v.begin(), v.end(), [](meta::rtype_t<Type> t1, meta::rtype_t<Type> t2){
-            if (is_nan(t1)) return false;
-            if (is_nan(t2)) return true;
-            return t1 < t2;
-        });
+            auto iter = std::min_element(v.begin(), v.end(), [](meta::rtype_t<Type> t1, meta::rtype_t<Type> t2){
+                if (is_nan(t1)) return false;
+                if (is_nan(t2)) return true;
+                return t1 < t2;
+            });
 
-        if (iter == v.end()) iter = v.begin();
-        return iter;
-    }
-
-    template<std::size_t Dim, typename Type>
-    typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
-        phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
-
-        auto iter = std::max_element(v.begin(), v.end(), [](meta::rtype_t<Type> t1, meta::rtype_t<Type> t2){
-            if (is_nan(t1)) return true;
-            if (is_nan(t2)) return false;
-            return t1 < t2;
-        });
-
-        if (iter == v.end()) iter = v.begin();
-        return iter;
-    }
-
-    template<std::size_t Dim, typename Type>
-    std::pair<typename vec<Dim,Type>::const_iterator, typename vec<Dim,Type>::const_iterator>
-        minmax_(const vec<Dim,Type>& v) {
-        phypp_check(!v.empty(), "cannot find the maximum/minimum of an empty vector");
-
-        // We cannot take care of NaN using std::minmax_element and the trick of
-        // std::min_element and std::max_element. So we just roll our own...
-        // This naive version performs slightly more comparisons than the standard
-        // algorithm. This should not be noticeable, but could be improved by using a
-        // filtered iterator that automatically skips NaN values.
-        // See, e.g., boost::filter_iterator for a working implementation.
-        using iterator = typename vec<Dim,Type>::const_iterator;
-        std::pair<iterator,iterator> res;
-
-        iterator i = v.begin();
-        while (i != v.end() && is_nan(*i)) {
-            ++i;
+            if (iter == v.end()) iter = v.begin();
+            return iter;
         }
 
-        if (i == v.end()) {
-            // Only NaN
-            res.first = v.begin(); res.second = v.begin();
+        template<std::size_t Dim, typename Type>
+        typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
+            phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
+
+            auto iter = std::max_element(v.begin(), v.end(), [](meta::rtype_t<Type> t1, meta::rtype_t<Type> t2){
+                if (is_nan(t1)) return true;
+                if (is_nan(t2)) return false;
+                return t1 < t2;
+            });
+
+            if (iter == v.end()) iter = v.begin();
+            return iter;
+        }
+
+        template<std::size_t Dim, typename Type>
+        std::pair<typename vec<Dim,Type>::const_iterator, typename vec<Dim,Type>::const_iterator>
+            minmax_(const vec<Dim,Type>& v) {
+            phypp_check(!v.empty(), "cannot find the maximum/minimum of an empty vector");
+
+            // We cannot take care of NaN using std::minmax_element and the trick of
+            // std::min_element and std::max_element. So we just roll our own...
+            // This naive version performs slightly more comparisons than the standard
+            // algorithm. This should not be noticeable, but could be improved by using a
+            // filtered iterator that automatically skips NaN values.
+            // See, e.g., boost::filter_iterator for a working implementation.
+            using iterator = typename vec<Dim,Type>::const_iterator;
+            std::pair<iterator,iterator> res;
+
+            iterator i = v.begin();
+            while (i != v.end() && is_nan(*i)) {
+                ++i;
+            }
+
+            if (i == v.end()) {
+                // Only NaN
+                res.first = v.begin(); res.second = v.begin();
+                return res;
+            }
+
+            res.first = i; res.second = i;
+
+            for (++i; i != v.end(); ++i) {
+                if (is_nan(*i)) continue;
+                if (*i < *res.first)          res.first = i;
+                else if (!(*i < *res.second)) res.second = i;
+            }
+
             return res;
         }
-
-        res.first = i; res.second = i;
-
-        for (++i; i != v.end(); ++i) {
-            if (is_nan(*i)) continue;
-            if (*i < *res.first)          res.first = i;
-            else if (!(*i < *res.second)) res.second = i;
-        }
-
-        return res;
     }
 
     template<std::size_t Dim, typename Type>
     meta::rtype_t<Type> min(const vec<Dim,Type>& v) {
-        return *min_(v);
+        return *impl::min_(v);
     }
 
     template<std::size_t Dim, typename Type>
     meta::rtype_t<Type> max(const vec<Dim,Type>& v) {
-        return *max_(v);
+        return *impl::max_(v);
     }
 
     template<std::size_t Dim, typename Type>
     std::pair<meta::rtype_t<Type>,meta::rtype_t<Type>> minmax(const vec<Dim,Type>& v) {
-        auto tmp = minmax_(v);
+        auto tmp = impl::minmax_(v);
         return std::make_pair(*tmp.first, *tmp.second);
     }
 
     template<std::size_t Dim, typename Type>
     meta::rtype_t<Type> min(const vec<Dim,Type>& v, uint_t& id) {
-        auto iter = min_(v);
+        auto iter = impl::min_(v);
         id = iter - v.begin();
         return *iter;
     }
 
     template<std::size_t Dim, typename Type>
     meta::rtype_t<Type> max(const vec<Dim,Type>& v, uint_t& id) {
-        auto iter = max_(v);
+        auto iter = impl::max_(v);
         id = iter - v.begin();
         return *iter;
     }
 
     template<std::size_t Dim, typename Type>
     std::pair<meta::rtype_t<Type>,meta::rtype_t<Type>> minmax(const vec<Dim,Type>& v, std::pair<uint_t,uint_t>& ids) {
-        auto tmp = minmax_(v);
+        auto tmp = impl::minmax_(v);
         ids.first = tmp.first - v.begin();
         ids.second = tmp.second - v.begin();
         return std::make_pair(*tmp.first, *tmp.second);
@@ -781,17 +785,17 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type>
     uint_t min_id(const vec<Dim,Type>& v) {
-        return min_(v) - v.begin();
+        return impl::min_(v) - v.begin();
     }
 
     template<std::size_t Dim, typename Type>
     uint_t max_id(const vec<Dim,Type>& v) {
-        return max_(v) - v.begin();
+        return impl::max_(v) - v.begin();
     }
 
     template<std::size_t Dim, typename Type>
     std::pair<uint_t,uint_t> minmax_ids(const vec<Dim,Type>& v) {
-        auto tmp = minmax_(v);
+        auto tmp = impl::minmax_(v);
         return std::make_pair(uint_t(tmp.first - v.begin()), uint_t(tmp.second - v.begin()));
     }
 
@@ -810,7 +814,7 @@ namespace phypp {
         phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions "
             "(", v1.dims, " vs. ", v2.dims, ")");
 
-        vec<Dim,meta::rtype_t<Type1>> r = arr<meta::rtype_t<Type1>>(v1.dims);
+        vec<Dim,meta::rtype_t<Type1>> r(v1.dims);
         for (uint_t i = 0; i < v1.size(); ++i) {
             r.safe[i] = std::min<decltype(v1[0]*v2[0])>(v1.safe[i], v2.safe[i]);
         }
@@ -822,7 +826,7 @@ namespace phypp {
         phypp_check(v1.dims == v2.dims, "max: incompatible vector dimensions "
             "(", v1.dims, " vs. ", v2.dims, ")");
 
-        vec<Dim,meta::rtype_t<Type1>> r = arr<meta::rtype_t<Type1>>(v1.dims);
+        vec<Dim,meta::rtype_t<Type1>> r(v1.dims);
         for (uint_t i = 0; i < v1.size(); ++i) {
             r.safe[i] = std::max<decltype(v1[0]*v2[0])>(v1.safe[i], v2.safe[i]);
         }
@@ -831,7 +835,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type1, typename Type2>
     vec<Dim,meta::rtype_t<Type1>> min(const vec<Dim,Type1>& v1, const Type2& v2) {
-        vec<Dim,meta::rtype_t<Type1>> r = arr<meta::rtype_t<Type1>>(v1.dims);
+        vec<Dim,meta::rtype_t<Type1>> r(v1.dims);
         for (uint_t i = 0; i < v1.size(); ++i) {
             r.safe[i] = std::min<decltype(v1[0]*v2)>(v1.safe[i], v2);
         }
@@ -840,7 +844,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type1, typename Type2>
     vec<Dim,meta::rtype_t<Type1>> max(const vec<Dim,Type1>& v1, const Type2& v2) {
-        vec<Dim,meta::rtype_t<Type1>> r = arr<meta::rtype_t<Type1>>(v1.dims);
+        vec<Dim,meta::rtype_t<Type1>> r(v1.dims);
         for (uint_t i = 0; i < v1.size(); ++i) {
             r.safe[i] = std::max<decltype(v1[0]*v2)>(v1.safe[i], v2);
         }
@@ -849,7 +853,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type1, typename Type2>
     vec<Dim,meta::rtype_t<Type1>> min(const Type1& v1, const vec<Dim,Type2>& v2) {
-        vec<Dim,meta::rtype_t<Type1>> r = arr<meta::rtype_t<Type1>>(v2.dims);
+        vec<Dim,meta::rtype_t<Type1>> r(v2.dims);
         for (uint_t i = 0; i < v2.size(); ++i) {
             r.safe[i] = std::min<decltype(v1*v2[0])>(v1, v2.safe[i]);
         }
@@ -858,7 +862,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type1, typename Type2>
     vec<Dim,meta::rtype_t<Type1>> max(const Type1& v1, const vec<Dim,Type2>& v2) {
-        vec<Dim,meta::rtype_t<Type1>> r = arr<meta::rtype_t<Type1>>(v2.dims);
+        vec<Dim,meta::rtype_t<Type1>> r(v2.dims);
         for (uint_t i = 0; i < v2.size(); ++i) {
             r.safe[i] = std::max<decltype(v1*v2[0])>(v1, v2.safe[i]);
         }
@@ -885,133 +889,135 @@ namespace phypp {
         return median(abs(v - median(v)));
     }
 
-    template<typename F, F f, std::size_t Dim, typename Type, typename ... Args>
-    auto run_index_(uint_t dim, const vec<Dim,Type>& v, Args&& ... args) ->
-    vec<Dim-1,typename meta::return_type<F>::type> {
+    namespace impl {
+        template<typename F, F f, std::size_t Dim, typename Type, typename ... Args>
+        auto run_index_(uint_t dim, const vec<Dim,Type>& v, Args&& ... args) ->
+        vec<Dim-1,typename meta::return_type<F>::type> {
 
-        vec<Dim-1,typename meta::return_type<F>::type> r;
-        for (uint_t i = 0; i < dim; ++i) {
-            r.dims[i] = v.dims[i];
-        }
-        for (uint_t i = dim+1; i < Dim; ++i) {
-            r.dims[i-1] = v.dims[i];
-        }
-        r.resize();
+            vec<Dim-1,typename meta::return_type<F>::type> r;
+            for (uint_t i = 0; i < dim; ++i) {
+                r.dims[i] = v.dims[i];
+            }
+            for (uint_t i = dim+1; i < Dim; ++i) {
+                r.dims[i-1] = v.dims[i];
+            }
+            r.resize();
 
-        uint_t mpitch = 1;
-        for (uint_t i = dim+1; i < Dim; ++i) {
-            mpitch *= v.dims[i];
-        }
-
-    //  Example demonstration of the index computation:
-    //
-    //  Assume we have a 4D array of dimensions d1, d2, d3 and d4.
-    //  We want to compute an operation on the array generated by:
-    //      data[i*d2*d3*d4 + j*d3*d4 + k*d4 + l]
-    //  and by running the 'dim'th index (i, j, k or l), assigning
-    //  the value to another 3D array using a continuous index 'u'.
-    //
-    //  - (i,j,k,_) : k+j*d3+i*d2*d3 = u : mean(((u/1)*d4 + l)*1 + (u%1))
-    //      mpitch = 1
-    //
-    //  - (i,j,_,l) : l+j*d4+i*d2*d4 = u : mean(((u/d4)*d3 + k)*d4 + (u%d4))
-    //      mpitch = d4
-    //
-    //  - (i,_,k,l) : l+k*d4+i*d3*d4 = u : mean(((u/(d3*d4))*d2 + j)*d3*d4 + (u%(d3*d4)))
-    //      mpitch = d4*d3
-    //
-    //  - (_,j,k,l) : l+k*d4+j*d3*d4 = u : mean(((u/(d4*d3*d2))*d1 + i)*d2*d3*d4 + (u%(d4*d3*d2)))
-    //      mpitch = d4*d3*d2
-    //
-    //  Final recipe:
-    //      ((u/mpitch)*dim[d] + i)*mpitch + (u%mpitch)
-
-        vec<1,meta::rtype_t<Type>> tmp(v.dims[dim]);
-        for (uint_t i : range(r)) {
-            uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
-            for (uint_t j : range(tmp)) {
-                tmp.safe[j] = v.safe[base + j*mpitch];
+            uint_t mpitch = 1;
+            for (uint_t i = dim+1; i < Dim; ++i) {
+                mpitch *= v.dims[i];
             }
 
-            r.safe[i] = (*f)(tmp, std::forward<Args>(args)...);
-        }
+        //  Example demonstration of the index computation:
+        //
+        //  Assume we have a 4D array of dimensions d1, d2, d3 and d4.
+        //  We want to compute an operation on the array generated by:
+        //      data[i*d2*d3*d4 + j*d3*d4 + k*d4 + l]
+        //  and by running the 'dim'th index (i, j, k or l), assigning
+        //  the value to another 3D array using a continuous index 'u'.
+        //
+        //  - (i,j,k,_) : k+j*d3+i*d2*d3 = u : mean(((u/1)*d4 + l)*1 + (u%1))
+        //      mpitch = 1
+        //
+        //  - (i,j,_,l) : l+j*d4+i*d2*d4 = u : mean(((u/d4)*d3 + k)*d4 + (u%d4))
+        //      mpitch = d4
+        //
+        //  - (i,_,k,l) : l+k*d4+i*d3*d4 = u : mean(((u/(d3*d4))*d2 + j)*d3*d4 + (u%(d3*d4)))
+        //      mpitch = d4*d3
+        //
+        //  - (_,j,k,l) : l+k*d4+j*d3*d4 = u : mean(((u/(d4*d3*d2))*d1 + i)*d2*d3*d4 + (u%(d4*d3*d2)))
+        //      mpitch = d4*d3*d2
+        //
+        //  Final recipe:
+        //      ((u/mpitch)*dim[d] + i)*mpitch + (u%mpitch)
 
-        return r;
-    }
+            vec<1,meta::rtype_t<Type>> tmp(v.dims[dim]);
+            for (uint_t i : range(r)) {
+                uint_t base = (i%mpitch) + (i/mpitch)*v.dims[dim]*mpitch;
+                for (uint_t j : range(tmp)) {
+                    tmp.safe[j] = v.safe[base + j*mpitch];
+                }
 
-    template<std::size_t Dim, typename Type>
-    vec<1,meta::rtype_t<Type>> run_dim_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v) {
-        return v.safe[ids].concretise();
-    }
-
-    template<std::size_t Dim, typename Type, typename ... Args>
-    std::array<uint_t,Dim> run_dim_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
-        return v.dims;
-    }
-
-    template<typename F, typename ... Args>
-    void run_dim_final_(uint_t dim, F&& func, const Args& ... vs) {
-        auto ds = run_dim_get_dim_(vs...);
-        const uint_t N = meta::array_size<decltype(ds)>::size;
-
-        uint_t nint = ds[dim];
-        uint_t mpitch = 1;
-        uint_t np = 1;
-        for (uint_t i : range(N)) {
-            if (i != dim) np *= ds[i];
-            if (i > dim) mpitch *= ds[i];
-        }
-
-        vec1u ids(nint);
-        for (uint_t i : range(np)) {
-            uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
-            for (uint_t j : range(ids)) {
-                ids.safe[j] = base + j*mpitch;
+                r.safe[i] = (*f)(tmp, std::forward<Args>(args)...);
             }
 
-            func(i, run_dim_apply_ids_<N>(ids, vs)...);
-        }
-    }
-
-    template<typename ... Args1>
-    struct run_dim_unroll_ {
-        template<typename T>
-        static void run(uint_t dim, Args1&&... a1, placeholder_t, T&& t) {
-            run_dim_final_(dim, std::forward<T>(t), std::forward<Args1>(a1)...);
+            return r;
         }
 
-        template<typename T, typename ... Args2>
-        static void run(uint_t dim, Args1&&... a1, placeholder_t, T&& t, Args2&&... a2) {
-            run_dim_unroll_<Args1..., T>::run(dim, std::forward<Args1>(a1)...,
-                std::forward<T>(t), _, std::forward<Args2>(a2)...);
+        template<std::size_t Dim, typename Type>
+        vec<1,meta::rtype_t<Type>> run_dim_apply_ids_(const vec1u& ids, const vec<Dim,Type>& v) {
+            return v.safe[ids].concretise();
         }
-    };
 
-    template<std::size_t D1, typename F>
-    bool run_dim_check_dims__(const std::array<uint_t,D1>& dims, F&& func) {
-        return true;
-    }
+        template<std::size_t Dim, typename Type, typename ... Args>
+        std::array<uint_t,Dim> run_dim_get_dim_(const vec<Dim,Type>& v, const Args& ... vs) {
+            return v.dims;
+        }
 
-    template<std::size_t D1, std::size_t D2, typename Type>
-    bool run_dim_check_dims__(const std::array<uint_t,D1>& dims, const vec<D2,Type>& v) {
-        return dims == v.dims;
-    }
+        template<typename F, typename ... Args>
+        void run_dim_final_(uint_t dim, F&& func, const Args& ... vs) {
+            auto ds = run_dim_get_dim_(vs...);
+            const uint_t N = meta::array_size<decltype(ds)>::size;
 
-    template<std::size_t Dim, typename Type, typename ... Args>
-    bool run_dim_check_dims_(uint_t& dim, const vec<Dim,Type>& v, const Args& ... vs) {
-        dim = Dim;
-        return count({!run_dim_check_dims__(v.dims, vs)...}) == 0;
+            uint_t nint = ds[dim];
+            uint_t mpitch = 1;
+            uint_t np = 1;
+            for (uint_t i : range(N)) {
+                if (i != dim) np *= ds[i];
+                if (i > dim) mpitch *= ds[i];
+            }
+
+            vec1u ids(nint);
+            for (uint_t i : range(np)) {
+                uint_t base = (i%mpitch) + (i/mpitch)*nint*mpitch;
+                for (uint_t j : range(ids)) {
+                    ids.safe[j] = base + j*mpitch;
+                }
+
+                func(i, run_dim_apply_ids_<N>(ids, vs)...);
+            }
+        }
+
+        template<typename ... Args1>
+        struct run_dim_unroll_ {
+            template<typename T>
+            static void run(uint_t dim, Args1&&... a1, impl::placeholder_t, T&& t) {
+                run_dim_final_(dim, std::forward<T>(t), std::forward<Args1>(a1)...);
+            }
+
+            template<typename T, typename ... Args2>
+            static void run(uint_t dim, Args1&&... a1, impl::placeholder_t, T&& t, Args2&&... a2) {
+                run_dim_unroll_<Args1..., T>::run(dim, std::forward<Args1>(a1)...,
+                    std::forward<T>(t), _, std::forward<Args2>(a2)...);
+            }
+        };
+
+        template<std::size_t D1, typename F>
+        bool run_dim_check_dims__(const std::array<uint_t,D1>& dims, F&& func) {
+            return true;
+        }
+
+        template<std::size_t D1, std::size_t D2, typename Type>
+        bool run_dim_check_dims__(const std::array<uint_t,D1>& dims, const vec<D2,Type>& v) {
+            return dims == v.dims;
+        }
+
+        template<std::size_t Dim, typename Type, typename ... Args>
+        bool run_dim_check_dims_(uint_t& dim, const vec<Dim,Type>& v, const Args& ... vs) {
+            dim = Dim;
+            return count({!run_dim_check_dims__(v.dims, vs)...}) == 0;
+        }
     }
 
     // Iterate over one dimension of the provided vector and call a function for each slice.
     template<typename ... Args>
     void run_dim(uint_t dim, Args&& ... args) {
         uint_t Dim;
-        bool check = run_dim_check_dims_(Dim, args...);
+        bool check = impl::run_dim_check_dims_(Dim, args...);
         phypp_check(check, "incompatible dimensions of input vectors");
         phypp_check(dim < Dim, "reduction dimension is incompatible with input vectors");
 
-        run_dim_unroll_<>::run(dim, _, std::forward<Args>(args)...);
+        impl::run_dim_unroll_<>::run(dim, _, std::forward<Args>(args)...);
     }
 
     template<typename F, std::size_t Dim, typename Type>
@@ -1037,7 +1043,7 @@ namespace phypp {
         return r;
     }
 
-    #define RUN_INDEX(func) \
+    #define MAKE_PARTIAL(func) \
         template<typename T, typename ... Args> \
         struct func ## _run_index_wrapper_ { \
             static auto run(const vec<1,T>& v, Args&& ... args) -> \
@@ -1053,22 +1059,22 @@ namespace phypp {
                 "(", dim, " vs. ", v.dims, ")"); \
             using wrapper = func ## _run_index_wrapper_<meta::rtype_t<Type>, Args...>; \
             using fptr = decltype(&wrapper::run); \
-            return run_index_<fptr, &wrapper::run>(dim, v, std::forward<Args>(args)...); \
+            return impl::run_index_<fptr, &wrapper::run>(dim, v, std::forward<Args>(args)...); \
         }
 
-    RUN_INDEX(total);
-    RUN_INDEX(count);
-    RUN_INDEX(fraction_of);
-    RUN_INDEX(mean);
-    RUN_INDEX(median);
-    RUN_INDEX(min);
-    RUN_INDEX(max);
-    RUN_INDEX(percentile);
-    RUN_INDEX(rms);
-    RUN_INDEX(stddev);
-    RUN_INDEX(mad);
+    MAKE_PARTIAL(total);
+    MAKE_PARTIAL(count);
+    MAKE_PARTIAL(fraction_of);
+    MAKE_PARTIAL(mean);
+    MAKE_PARTIAL(median);
+    MAKE_PARTIAL(min);
+    MAKE_PARTIAL(max);
+    MAKE_PARTIAL(percentile);
+    MAKE_PARTIAL(rms);
+    MAKE_PARTIAL(stddev);
+    MAKE_PARTIAL(mad);
 
-    #undef RUN_INDEX
+    #undef MAKE_PARTIAL
 
     template<std::size_t Dim, typename Type, typename TypeB>
     vec1u histogram(const vec<Dim,Type>& data, const vec<2,TypeB>& bins) {
@@ -1239,26 +1245,28 @@ namespace phypp {
         );
     }
 
-    template<std::size_t Dim, typename Type>
-    void data_info_(const vec<Dim,Type>& v) {
-        vec1u idok = where(is_finite(v));
-        print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
-        if (idok.size() == 0) return;
+    namespace impl {
+        template<std::size_t Dim, typename Type>
+        void data_info_(const vec<Dim,Type>& v) {
+            vec1u idok = where(is_finite(v));
+            print(idok.size(), "/", v.size(), " valid values (dims: ", v.dims, ")");
+            if (idok.size() == 0) return;
 
-        vec<1,meta::rtype_t<Type>> tv = v.safe[idok];
+            vec<1,meta::rtype_t<Type>> tv = v.safe[idok];
 
-        print(" min : ", min(tv));
-        print(" 15% : ", percentile(tv, 0.15));
-        print(" 50% : ", median(tv));
-        print(" mean: ", mean(tv));
-        print(" 85% : ", percentile(tv, 0.85));
-        print(" max : ", max(tv));
-        print(" rms : ", stddev(tv - median(tv)));
+            print(" min : ", min(tv));
+            print(" 15% : ", percentile(tv, 0.15));
+            print(" 50% : ", median(tv));
+            print(" mean: ", mean(tv));
+            print(" 85% : ", percentile(tv, 0.85));
+            print(" max : ", max(tv));
+            print(" rms : ", stddev(tv - median(tv)));
+        }
     }
 
     #define data_info(x) \
         print("data info: ", #x, " (", typeid(x).name(), ")"); \
-        data_info_(x);
+        phypp::impl::data_info_(x);
 
     template<typename T>
     auto sign(const T& t) -> decltype(2*(t >= 0) - 1) {
@@ -1729,15 +1737,17 @@ namespace phypp {
     // ----------------
 
     #ifndef NO_LAPACK
-    extern "C" void dgetrf_(int* n, int* m, double* a, int* lda, int* ipiv, int* info);
-    extern "C" void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work, int* lwork, int* info);
-    extern "C" void dsytrf_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work,
-        int* lwork, int* info);
-    extern "C" void dsytri_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work, int* info);
-    extern "C" void dsysv_(char* uplo, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
-        int* ldb, double* work, int* lwork, int* info);
-    extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
-        double* work, int* lwork, int* info);
+    namespace lapack {
+        extern "C" void dgetrf_(int* n, int* m, double* a, int* lda, int* ipiv, int* info);
+        extern "C" void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work, int* lwork, int* info);
+        extern "C" void dsytrf_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work,
+            int* lwork, int* info);
+        extern "C" void dsytri_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work, int* info);
+        extern "C" void dsysv_(char* uplo, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
+            int* ldb, double* work, int* lwork, int* info);
+        extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
+            double* work, int* lwork, int* info);
+    }
     #endif
 
     namespace matrix {
@@ -1755,14 +1765,14 @@ namespace phypp {
             int info;
 
             vec<1,int> ipiv(n);
-            dgetrf_(&n, &n, i.data.data(), &lda, ipiv.data.data(), &info);
+            lapack::dgetrf_(&n, &n, i.data.data(), &lda, ipiv.data.data(), &info);
             if (info < 0) {
                 return false;
             }
 
             vec1d work(n);
             int lw = n;
-            dgetri_(&n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
+            lapack::dgetri_(&n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
             if (info != 0) {
                 return false;
             }
@@ -1799,12 +1809,12 @@ namespace phypp {
             vec1d work(lw);
             vec<1,int> ipiv(n);
 
-            dsytrf_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
+            lapack::dsytrf_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &lw, &info);
             if (info < 0) {
                 return false;
             }
 
-            dsytri_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &info);
+            lapack::dsytri_(&uplo, &n, i.data.data(), &lda, ipiv.data.data(), work.data.data(), &info);
             if (info != 0) {
                 return false;
             }
@@ -1845,7 +1855,7 @@ namespace phypp {
             vec1d work(lw);
             vec<1,int> ipiv(n);
 
-            dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
+            lapack::dsysv_(&uplo, &n, &nrhs, alpha.data.data(), &lda, ipiv.data.data(), beta.data.data(),
                 &ldb, work.data.data(), &lw, &info);
             if (info != 0) {
                 return false;
@@ -1887,7 +1897,7 @@ namespace phypp {
 
             vec1d work(lw);
 
-            dsyev_(&jobz, &uplo, &n, a.data.data(), &lda, vals.data.data(), work.data.data(),
+            lapack::dsyev_(&jobz, &uplo, &n, a.data.data(), &lda, vals.data.data(), work.data.data(),
                 &lw, &info);
             if (info != 0) {
                 return false;
@@ -1926,85 +1936,87 @@ namespace phypp {
             MAKE_MEMBER(params), MAKE_MEMBER(errors), MAKE_MEMBER(cov));
     };
 
-    template<typename T, typename TypeE>
-    void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t) {
-        cache.safe(i,_) = flatten(t/ye);
-    }
+    namespace impl {
+        template<typename T, typename TypeE>
+        void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t) {
+            cache.safe(i,_) = flatten(t/ye);
+        }
 
-    template<typename T, typename TypeE, typename ... Args>
-    void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t, Args&& ... args) {
-        cache.safe(i,_) = flatten(t/ye);
-        linfit_make_cache_(cache, ye, i+1, args...);
-    }
+        template<typename T, typename TypeE, typename ... Args>
+        void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t, Args&& ... args) {
+            cache.safe(i,_) = flatten(t/ye);
+            linfit_make_cache_(cache, ye, i+1, args...);
+        }
 
-    template<typename TypeY, typename TypeE>
-    linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
-        linfit_result fr;
+        template<typename TypeY, typename TypeE>
+        linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
+            linfit_result fr;
 
-        uint_t np = cache.dims[0];
-        uint_t nm = cache.dims[1];
+            uint_t np = cache.dims[0];
+            uint_t nm = cache.dims[1];
 
-        // Solving 'y +/- e = sum over i of a[i]*x[i]' to get all a[i]'s
-        vec2d alpha(np,np);
-        vec1d beta(np);
-        auto tmp = flatten(y/ye);
-        for (uint_t i = 0; i < np; ++i) {
-            for (uint_t j = 0; j < np; ++j) {
-                if (i <= j) {
-                    alpha.safe(i,j) = 0.0;
-                    // alpha(i,j) = sum over all points of x[i]*x[j]/e^2
-                    for (uint_t m = 0; m < nm; ++m) {
-                        alpha.safe(i,j) += cache.safe(i,m)*cache.safe(j,m);
+            // Solving 'y +/- e = sum over i of a[i]*x[i]' to get all a[i]'s
+            vec2d alpha(np,np);
+            vec1d beta(np);
+            auto tmp = flatten(y/ye);
+            for (uint_t i = 0; i < np; ++i) {
+                for (uint_t j = 0; j < np; ++j) {
+                    if (i <= j) {
+                        alpha.safe(i,j) = 0.0;
+                        // alpha(i,j) = sum over all points of x[i]*x[j]/e^2
+                        for (uint_t m = 0; m < nm; ++m) {
+                            alpha.safe(i,j) += cache.safe(i,m)*cache.safe(j,m);
+                        }
+                    } else {
+                        alpha.safe(i,j) = alpha.safe(j,i);
                     }
-                } else {
-                    alpha.safe(i,j) = alpha.safe(j,i);
+                }
+
+                beta.safe[i] = 0.0;
+                // beta[i] = sum over all points of x[i]*y/e^2
+                for (uint_t m = 0; m < nm; ++m) {
+                    beta.safe[i] += cache.safe(i,m)*tmp.safe[m];
                 }
             }
 
-            beta.safe[i] = 0.0;
-            // beta[i] = sum over all points of x[i]*y/e^2
-            for (uint_t m = 0; m < nm; ++m) {
-                beta.safe[i] += cache.safe(i,m)*tmp.safe[m];
+            if (!matrix::inplace_invert_symmetric(alpha)) {
+                fr.success = false;
+                fr.chi2 = dnan;
+                fr.params = replicate(dnan, np);
+                fr.errors = replicate(dnan, np);
+                matrix::symmetrize(alpha);
+                fr.cov = alpha;
+                return fr;
             }
-        }
 
-        if (!matrix::inplace_invert_symmetric(alpha)) {
-            fr.success = false;
-            fr.chi2 = dnan;
-            fr.params = replicate(dnan, np);
-            fr.errors = replicate(dnan, np);
             matrix::symmetrize(alpha);
+            fr.success = true;
+            fr.params = matrix::product(alpha, beta);
+            fr.errors = sqrt(matrix::diagonal(alpha));
             fr.cov = alpha;
+
+            vec1d model(nm);
+            for (uint_t m = 0; m < nm; ++m) {
+                model.safe[m] = 0.0;
+                for (uint_t i = 0; i < np; ++i) {
+                    model.safe[m] += fr.params.safe[i]*cache.safe(i,m);
+                }
+            }
+
+            fr.chi2 = total(sqr(model - tmp));
+
             return fr;
         }
 
-        matrix::symmetrize(alpha);
-        fr.success = true;
-        fr.params = matrix::product(alpha, beta);
-        fr.errors = sqrt(matrix::diagonal(alpha));
-        fr.cov = alpha;
+        template<typename TY>
+        void linfit_error_dims_(const TY& y, uint_t i) {}
 
-        vec1d model(nm);
-        for (uint_t m = 0; m < nm; ++m) {
-            model.safe[m] = 0.0;
-            for (uint_t i = 0; i < np; ++i) {
-                model.safe[m] += fr.params.safe[i]*cache.safe(i,m);
-            }
+        template<typename TY, typename U, typename ... Args>
+        void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
+            phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
+                i, " (", dim(y), " vs. ", dim(t), ")");
+            linfit_error_dims_(y, i+1, args...);
         }
-
-        fr.chi2 = total(sqr(model - tmp));
-
-        return fr;
-    }
-
-    template<typename TY>
-    void linfit_error_dims_(const TY& y, uint_t i) {}
-
-    template<typename TY, typename U, typename ... Args>
-    void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
-        phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
-            i, " (", dim(y), " vs. ", dim(t), ")");
-        linfit_error_dims_(y, i+1, args...);
     }
 
     template<typename TypeY, typename TypeE, typename ... Args>
@@ -2013,16 +2025,16 @@ namespace phypp {
         if (bad) {
             phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
                 "YE arrays (", dim(y), " vs. ", dim(ye), ")");
-            linfit_error_dims_(y, 0, args...);
+            impl::linfit_error_dims_(y, 0, args...);
         }
 
         uint_t np = sizeof...(Args);
         uint_t nm = n_elements(y);
 
         vec2d cache(np,nm);
-        linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
+        impl::linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
 
-        return linfit_do_(y, ye, cache);
+        return impl::linfit_do_(y, ye, cache);
     }
 
     template<std::size_t Dim, typename TypeY, typename TypeE, typename TypeX>
@@ -2051,7 +2063,7 @@ namespace phypp {
             }
         }
 
-        return linfit_do_(y, ye, cache);
+        return impl::linfit_do_(y, ye, cache);
     }
 
     template<typename TypeE>
@@ -2070,7 +2082,7 @@ namespace phypp {
             cache.resize(np,nm);
             beta.resize(np);
             alpha.resize(np,np);
-            linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
+            impl::linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
 
             // Solving 'y +/- e = sum over i of a[i]*x[i]' to get all a[i]'s
             for (uint_t i = 0; i < np; ++i)
@@ -2703,10 +2715,10 @@ namespace phypp {
         return r;
     }
 
-    struct no_check {};
-
-    template <typename T>
+    template <typename T = double>
     struct convex_hull {
+        struct no_check {};
+
         static_assert(!std::is_pointer<T>::value,
             "convex_hull can only be created from plain types, pointers and vector views "
             "are not supported");
@@ -2721,7 +2733,8 @@ namespace phypp {
 
         // Build a hull without security checks
         // example: convex_hull(x, y, no_check{});
-        convex_hull(vec<1,T> tx, vec<1,T> ty, no_check) :
+        template <typename U = double>
+        convex_hull(vec<1,T> tx, vec<1,T> ty, typename convex_hull<U>::no_check) :
             x(std::move(tx)), y(std::move(ty)), validated(true) {}
 
         // Number of vertices in the hull
@@ -2834,7 +2847,7 @@ namespace phypp {
         res.data.resize(k);
         res.dims[0] = k;
 
-        convex_hull<meta::rtype_t<T>> hull(x.safe[res], y.safe[res], no_check{});
+        convex_hull<meta::rtype_t<T>> hull(x.safe[res], y.safe[res], convex_hull<>::no_check{});
         hull.orient = 1; // counter-clockwise by construction
         hull.closed = true; // closed by construction
 

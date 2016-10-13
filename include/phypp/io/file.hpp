@@ -399,6 +399,8 @@ namespace file {
     }
 
     namespace impl {
+        using placeholder_t = phypp::impl::placeholder_t;
+
         inline void read_table_resize_(std::size_t n) {}
 
         template<typename T, typename ... Args>
@@ -406,7 +408,7 @@ namespace file {
         template<typename U, typename ... VArgs, typename ... Args>
         void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args);
         template<typename ... Args>
-        void read_table_resize_(std::size_t n, placeholder_t, Args& ... args);
+        void read_table_resize_(std::size_t n, impl::placeholder_t, Args& ... args);
 
         template<typename T, typename ... Args>
         void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args) {
@@ -419,7 +421,7 @@ namespace file {
         template<typename Type, typename ... VArgs>
         void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args);
         template<typename ... VArgs>
-        void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args);
+        void read_table_resize_cols_(std::size_t n, std::size_t m, impl::placeholder_t, VArgs&... args);
 
         template<typename Type, typename ... VArgs>
         void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args) {
@@ -428,7 +430,7 @@ namespace file {
         }
 
         template<typename ... VArgs>
-        void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args) {
+        void read_table_resize_cols_(std::size_t n, std::size_t m, impl::placeholder_t, VArgs&... args) {
             read_table_resize_cols_(n, m, args...);
         }
 
@@ -444,7 +446,7 @@ namespace file {
         }
 
         template<typename ... Args>
-        void read_table_resize_(std::size_t n, placeholder_t, Args& ... args) {
+        void read_table_resize_(std::size_t n, impl::placeholder_t, Args& ... args) {
             read_table_resize_(n, args...);
         }
 
@@ -516,7 +518,7 @@ namespace file {
         template<typename U, typename ... VArgs, typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
         template<typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args);
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args);
 
         template<typename T, typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
@@ -537,7 +539,7 @@ namespace file {
         template<typename T, typename ... VArgs>
         void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
         template<typename ... VArgs>
-        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args);
+        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args);
 
         template<typename T, typename ... VArgs>
         void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
@@ -554,7 +556,7 @@ namespace file {
         }
 
         template<typename ... VArgs>
-        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
+        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args) {
             std::string s;
             if (!(fs >> s)) {
                 if (fs.eof()) {
@@ -582,7 +584,7 @@ namespace file {
         }
 
         template<typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args) {
             if (fs.eof()) {
                 throw exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
                     "too few columns on line l."+strn(i+1));

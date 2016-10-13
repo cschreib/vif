@@ -32,38 +32,38 @@ namespace phypp {
         dtype<T> make_step(dtype<T> e, dtype<T> b, dtype<T> n) {
             return (e-b)/n;
         }
+
+        template<typename T>
+        struct iterator_t;
+
+        template<typename T>
+        struct iterator_t<range_t<T>> {
+            const range_t<T>& range;
+            uint_t i;
+
+            iterator_t& operator++ (int) {
+                ++i;
+                return *this;
+            }
+
+            iterator_t operator++ () {
+                return iterator_t{range, i++};
+            }
+
+            T operator * () const {
+                return range.b + range.d*i;
+            }
+
+            bool operator == (const iterator_t& iter) const {
+                return iter.i == i && &iter.range == &range;
+            }
+
+            bool operator != (const iterator_t& iter) const {
+                return iter.i != i || &iter.range != &range;
+            }
+        };
     }
     }
-
-    template<typename T>
-    struct range_iterator_t;
-
-    template<typename T>
-    struct range_iterator_t<range_t<T>> {
-        const range_t<T>& range;
-        uint_t i;
-
-        range_iterator_t& operator++ (int) {
-            ++i;
-            return *this;
-        }
-
-        range_iterator_t operator++ () {
-            return range_iterator_t{range, i++};
-        }
-
-        T operator * () const {
-            return range.b + range.d*i;
-        }
-
-        bool operator == (const range_iterator_t& iter) const {
-            return iter.i == i && &iter.range == &range;
-        }
-
-        bool operator != (const range_iterator_t& iter) const {
-            return iter.i != i || &iter.range != &range;
-        }
-    };
 
     template<typename T>
     struct range_t {
@@ -74,7 +74,7 @@ namespace phypp {
         range_t(T b_, T e_, uint_t n_) : b(b_), e(e_),
             d(n_ == 0 ? 0 : impl::range_impl::make_step<T>(e_, b_, n_)), n(n_) {}
 
-        using iterator = range_iterator_t<range_t>;
+        using iterator = impl::range_impl::iterator_t<range_t>;
 
         iterator begin() const { return iterator{*this, 0}; }
         iterator end() const { return iterator{*this, n}; }
@@ -100,48 +100,46 @@ namespace phypp {
         return range(n.size());
     }
 
-    // Full range variable v(_)
-    static struct full_range_t {} _;
-
-    using placeholder_t = full_range_t;
-
-    // Left range variable v(_-last)
-    struct left_range_t {
-        uint_t last;
-    };
-
-    // Right range variable v(first-_)
-    struct right_range_t {
-        uint_t first;
-    };
-
-    // Left-right range variable v(first-_-last)
-    struct left_right_range_t {
-        uint_t first, last;
-    };
-
-    template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
-    left_range_t operator - (full_range_t, T last) {
-        return left_range_t{static_cast<uint_t>(last)};
-    }
-
-    template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
-    left_right_range_t operator - (T first, left_range_t left) {
-        return left_right_range_t{static_cast<uint_t>(first), left.last};
-    }
-
-    template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
-    right_range_t operator - (T first, full_range_t) {
-        return right_range_t{static_cast<uint_t>(first)};
-    }
-
-    template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
-    left_right_range_t operator - (right_range_t right, T last) {
-        return left_right_range_t{right.first, static_cast<uint_t>(last)};
-    }
-
     namespace impl {
     namespace range_impl {
+        // Full range v(_)
+        struct full_range_t {};
+
+        // Left range variable v(_-last)
+        struct left_range_t {
+            uint_t last;
+        };
+
+        // Right range variable v(first-_)
+        struct right_range_t {
+            uint_t first;
+        };
+
+        // Left-right range variable v(first-_-last)
+        struct left_right_range_t {
+            uint_t first, last;
+        };
+
+        template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+        left_range_t operator - (full_range_t, T last) {
+            return left_range_t{static_cast<uint_t>(last)};
+        }
+
+        template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+        left_right_range_t operator - (T first, left_range_t left) {
+            return left_right_range_t{static_cast<uint_t>(first), left.last};
+        }
+
+        template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+        right_range_t operator - (T first, full_range_t) {
+            return right_range_t{static_cast<uint_t>(first)};
+        }
+
+        template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
+        left_right_range_t operator - (right_range_t right, T last) {
+            return left_right_range_t{right.first, static_cast<uint_t>(last)};
+        }
+
         template<typename T>
         void check_lower_bounds(const T& right, uint_t size) {
             phypp_check(right.first < size, "lower bound of range goes past the "
@@ -184,21 +182,28 @@ namespace phypp {
     }
     }
 
-    inline range_t<uint_t> range(full_range_t, uint_t size) {
+    namespace impl {
+        using placeholder_t = impl::range_impl::full_range_t; 
+    }
+
+    // Full range variable v(_)
+    static impl::range_impl::full_range_t _;
+
+    inline range_t<uint_t> range(impl::range_impl::full_range_t, uint_t size) {
         return range(size);
     }
 
-    inline range_t<uint_t> range(const left_range_t& rng, uint_t size) {
+    inline range_t<uint_t> range(const impl::range_impl::left_range_t& rng, uint_t size) {
         impl::range_impl::check_bounds(rng, size);
         return range(rng.last+1);
     }
 
-    inline range_t<uint_t> range(const right_range_t& rng, uint_t size) {
+    inline range_t<uint_t> range(const impl::range_impl::right_range_t& rng, uint_t size) {
         impl::range_impl::check_bounds(rng, size);
         return range(rng.first, size);
     }
 
-    inline range_t<uint_t> range(const left_right_range_t& rng, uint_t size) {
+    inline range_t<uint_t> range(const impl::range_impl::left_right_range_t& rng, uint_t size) {
         impl::range_impl::check_bounds(rng, size);
         return range(rng.first, rng.last+1);
     }
@@ -206,8 +211,10 @@ namespace phypp {
     namespace meta {
         template<typename T>
         struct is_range : std::integral_constant<bool,
-            std::is_same<T,full_range_t>::value || std::is_same<T,left_range_t>::value ||
-            std::is_same<T,right_range_t>::value || std::is_same<T,left_right_range_t>::value> {};
+            std::is_same<T,impl::range_impl::full_range_t>::value || 
+            std::is_same<T,impl::range_impl::left_range_t>::value ||
+            std::is_same<T,impl::range_impl::right_range_t>::value || 
+            std::is_same<T,impl::range_impl::left_right_range_t>::value> {};
     }
 }
 

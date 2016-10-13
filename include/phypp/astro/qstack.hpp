@@ -158,7 +158,7 @@ namespace phypp {
                     Type null = fnan;
                     int anynul = 0;
                     long inc[2] = {1, 1};
-                    fits_read_subset(img.fptr, fits::traits<Type>::ttype, p0b, p1b, inc, &null,
+                    fits_read_subset(img.fptr, fits::impl::traits<Type>::ttype, p0b, p1b, inc, &null,
                         subcut.data.data(), &anynul, &img.status);
 
                     long x0 = p0b[0]-p0[0];
@@ -171,7 +171,7 @@ namespace phypp {
                     Type null = fnan;
                     int anynul = 0;
                     long inc[2] = {1, 1};
-                    fits_read_subset(img.fptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
+                    fits_read_subset(img.fptr, fits::impl::traits<Type>::ttype, p0, p1, inc, &null,
                         cut.data.data(), &anynul, &img.status);
                 }
 
@@ -322,9 +322,9 @@ namespace phypp {
             int anynul = 0;
             long inc[2] = {1, 1};
 
-            fits_read_subset(fptr,  fits::traits<Type>::ttype, p0, p1, inc, &null,
+            fits_read_subset(fptr,  fits::impl::traits<Type>::ttype, p0, p1, inc, &null,
                 cut.data.data(),  &anynul, &status);
-            fits_read_subset(wfptr, fits::traits<Type>::ttype, p0, p1, inc, &null,
+            fits_read_subset(wfptr, fits::impl::traits<Type>::ttype, p0, p1, inc, &null,
                 wcut.data.data(), &anynul, &status);
 
             // Discard any source that contains a bad pixel (either infinite or NaN)

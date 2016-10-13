@@ -2,6 +2,7 @@
 #define PHYPP_CORE_ITERATOR_BASE_HPP
 
 namespace phypp {
+namespace impl {
     template<typename T, typename C, typename P>
     class iterator_base;
 
@@ -393,6 +394,7 @@ namespace phypp {
             return iterator_base<T,C,P>(i.base());
         }
     };
+}
 }
 
 #endif

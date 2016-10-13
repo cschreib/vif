@@ -392,35 +392,35 @@ namespace phypp {
             return v;
         }
 
-        vec<1,Type*> operator [] (full_range_t rng) {
+        vec<1,Type*> operator [] (impl::range_impl::full_range_t rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,Type*> operator [] (const left_range_t& rng) {
+        vec<1,Type*> operator [] (const impl::range_impl::left_range_t& rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,Type*> operator [] (const right_range_t& rng) {
+        vec<1,Type*> operator [] (const impl::range_impl::right_range_t& rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,Type*> operator [] (const left_right_range_t& rng) {
+        vec<1,Type*> operator [] (const impl::range_impl::left_right_range_t& rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (full_range_t rng) const {
+        vec<1,const Type*> operator [] (impl::range_impl::full_range_t rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (const left_range_t& rng) const {
+        vec<1,const Type*> operator [] (const impl::range_impl::left_range_t& rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (const right_range_t& rng) const {
+        vec<1,const Type*> operator [] (const impl::range_impl::right_range_t& rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (const left_right_range_t& rng) const {
+        vec<1,const Type*> operator [] (const impl::range_impl::left_right_range_t& rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
@@ -505,35 +505,35 @@ namespace phypp {
                 return v;
             }
 
-            vec<1,Type*> operator [] (full_range_t rng) {
+            vec<1,Type*> operator [] (impl::range_impl::full_range_t rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,Type*> operator [] (const left_range_t& rng) {
+            vec<1,Type*> operator [] (const impl::range_impl::left_range_t& rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,Type*> operator [] (const right_range_t& rng) {
+            vec<1,Type*> operator [] (const impl::range_impl::right_range_t& rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,Type*> operator [] (const left_right_range_t& rng) {
+            vec<1,Type*> operator [] (const impl::range_impl::left_right_range_t& rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (full_range_t rng) const {
+            vec<1,const Type*> operator [] (impl::range_impl::full_range_t rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (const left_range_t& rng) const {
+            vec<1,const Type*> operator [] (const impl::range_impl::left_range_t& rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (const right_range_t& rng) const {
+            vec<1,const Type*> operator [] (const impl::range_impl::right_range_t& rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (const left_right_range_t& rng) const {
+            vec<1,const Type*> operator [] (const impl::range_impl::left_right_range_t& rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
@@ -602,8 +602,8 @@ namespace phypp {
 
         #undef OPERATOR
 
-        using iterator = typename vec_iterator_type<vec>::iterator;
-        using const_iterator = typename vec_iterator_type<vec>::const_iterator;
+        using iterator = typename impl::vec_iterator_type<vec>::iterator;
+        using const_iterator = typename impl::vec_iterator_type<vec>::const_iterator;
 
         iterator begin() {
             return data.begin();
@@ -906,35 +906,35 @@ namespace phypp {
             return v;
         }
 
-        vec<1,Type*> operator [] (full_range_t rng) {
+        vec<1,Type*> operator [] (impl::range_impl::full_range_t rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,Type*> operator [] (const left_range_t& rng) {
+        vec<1,Type*> operator [] (const impl::range_impl::left_range_t& rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,Type*> operator [] (const right_range_t& rng) {
+        vec<1,Type*> operator [] (const impl::range_impl::right_range_t& rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,Type*> operator [] (const left_right_range_t& rng) {
+        vec<1,Type*> operator [] (const impl::range_impl::left_right_range_t& rng) {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (full_range_t rng) const {
+        vec<1,const Type*> operator [] (impl::range_impl::full_range_t rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (const left_range_t& rng) const {
+        vec<1,const Type*> operator [] (const impl::range_impl::left_range_t& rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (const right_range_t& rng) const {
+        vec<1,const Type*> operator [] (const impl::range_impl::right_range_t& rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
-        vec<1,const Type*> operator [] (const left_right_range_t& rng) const {
+        vec<1,const Type*> operator [] (const impl::range_impl::left_right_range_t& rng) const {
             return impl::vec_access::bracket_access(*this, rng);
         }
 
@@ -1019,35 +1019,35 @@ namespace phypp {
                 return v;
             }
 
-            vec<1,Type*> operator [] (full_range_t rng) {
+            vec<1,Type*> operator [] (impl::range_impl::full_range_t rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,Type*> operator [] (const left_range_t& rng) {
+            vec<1,Type*> operator [] (const impl::range_impl::left_range_t& rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,Type*> operator [] (const right_range_t& rng) {
+            vec<1,Type*> operator [] (const impl::range_impl::right_range_t& rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,Type*> operator [] (const left_right_range_t& rng) {
+            vec<1,Type*> operator [] (const impl::range_impl::left_right_range_t& rng) {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (full_range_t rng) const {
+            vec<1,const Type*> operator [] (impl::range_impl::full_range_t rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (const left_range_t& rng) const {
+            vec<1,const Type*> operator [] (const impl::range_impl::left_range_t& rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (const right_range_t& rng) const {
+            vec<1,const Type*> operator [] (const impl::range_impl::right_range_t& rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
-            vec<1,const Type*> operator [] (const left_right_range_t& rng) const {
+            vec<1,const Type*> operator [] (const impl::range_impl::left_right_range_t& rng) const {
                 return impl::vec_access::bracket_access(parent, rng);
             }
 
@@ -1121,8 +1121,8 @@ namespace phypp {
         using base_iterator = typename vtype::iterator;
         using base_const_iterator = typename vtype::const_iterator;
 
-        using iterator = ptr_iterator_base<base_iterator, vec>;
-        using const_iterator = const_ptr_iterator_base<base_const_iterator, vec>;
+        using iterator = impl::ptr_iterator_base<base_iterator, vec>;
+        using const_iterator = impl::const_ptr_iterator_base<base_const_iterator, vec>;
 
         iterator begin() {
             return data.begin();

@@ -251,7 +251,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             double def = dnan;
             int null;
             fits_read_col(
-                fptr, fits::traits<double>::ttype, id, 1, 1, repeat, &def, v.data.data(),
+                fptr, fits::impl::traits<double>::ttype, id, 1, 1, repeat, &def, v.data.data(),
                 &null, &status
             );
 
@@ -268,7 +268,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             fits::phypp_check_cfitsio(status, "cannot re-write TDIM for column '"+col+"'");
 
             fits_write_col(
-                fptr, fits::traits<double>::ttype, id, 1, 1, n_elements(v),
+                fptr, fits::impl::traits<double>::ttype, id, 1, 1, n_elements(v),
                 const_cast<vec2d::dtype*>(v.data.data()), &status
             );
             fits::phypp_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
@@ -414,7 +414,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
 
                 // Write the output data
-                fits_write_col(ofptr, fits::traits<std::string>::ttype, oc, 1, 1, nrow, data, &status);
+                fits_write_col(ofptr, fits::impl::traits<std::string>::ttype, oc, 1, 1, nrow, data, &status);
                 fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
 
                 delete[] data;

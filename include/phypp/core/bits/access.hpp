@@ -170,16 +170,16 @@ namespace vec_access {
         std::integral_constant<std::size_t, N> {};
 
     template<>
-    struct output_dim_<full_range_t> :
+    struct output_dim_<impl::range_impl::full_range_t> :
         std::integral_constant<std::size_t, 1> {};
     template<>
-    struct output_dim_<left_range_t> :
+    struct output_dim_<impl::range_impl::left_range_t> :
         std::integral_constant<std::size_t, 1> {};
     template<>
-    struct output_dim_<right_range_t> :
+    struct output_dim_<impl::range_impl::right_range_t> :
         std::integral_constant<std::size_t, 1> {};
     template<>
-    struct output_dim_<left_right_range_t> :
+    struct output_dim_<impl::range_impl::left_right_range_t> :
         std::integral_constant<std::size_t, 1> {};
 
     template<std::size_t N, typename T>
@@ -207,16 +207,16 @@ namespace vec_access {
         std::integral_constant<std::size_t, N> {};
 
     template<>
-    struct input_dim_<full_range_t> :
+    struct input_dim_<impl::range_impl::full_range_t> :
         std::integral_constant<std::size_t, 1> {};
     template<>
-    struct input_dim_<left_range_t> :
+    struct input_dim_<impl::range_impl::left_range_t> :
         std::integral_constant<std::size_t, 1> {};
     template<>
-    struct input_dim_<right_range_t> :
+    struct input_dim_<impl::range_impl::right_range_t> :
         std::integral_constant<std::size_t, 1> {};
     template<>
-    struct input_dim_<left_right_range_t> :
+    struct input_dim_<impl::range_impl::left_right_range_t> :
         std::integral_constant<std::size_t, 1> {};
 
     template<std::size_t N, typename T>

@@ -21,230 +21,8 @@ namespace fits {
         }
     };
 
-    template<typename T>
-    struct traits;
-
-    template<>
-    struct traits<std::string> {
-        using dtype = char;
-
-        static const char tform = 'A';
-        static const int ttype = TSTRING;
-
-        static std::string def() {
-            return "";
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TSTRING) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TSTRING) return true;
-            return false;
-        }
-    };
-
-    template<>
-    struct traits<bool> {
-        using dtype = char;
-
-        static const char tform = 'B';
-        static const int ttype = TBYTE;
-        static const int image_type = BYTE_IMG;
-
-        static bool def() {
-            return false;
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TLOGICAL) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TLOGICAL) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-    };
-
-    template<>
-    struct traits<char> {
-        using dtype = char;
-
-        static const char tform = 'S';
-        static const int ttype = TSBYTE;
-        static const int image_type = SBYTE_IMG;
-
-        static bool def() {
-            return '\0';
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TBYTE) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TBYTE) return true;
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-    };
-
-    template<>
-    struct traits<uint_t> {
-        using dtype = uint_t;
-
-        static const char tform = 'J';
-        static const int ttype = TLONG;
-        static const int image_type = LONG_IMG;
-
-        static uint_t def() {
-            return 0;
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-    };
-
-    template<>
-    struct traits<int_t> {
-        using dtype = int_t;
-
-        static const char tform = 'J';
-        static const int ttype = TLONG;
-        static const int image_type = LONG_IMG;
-
-        static int_t def() {
-            return 0;
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-    };
-
-    template<>
-    struct traits<float> {
-        using dtype = float;
-
-        static const char tform = 'E';
-        static const int ttype = TFLOAT;
-        static const int image_type = FLOAT_IMG;
-
-        static float def() {
-            return fnan;
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TFLOAT) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TFLOAT) return true;
-            if (type == TDOUBLE) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-    };
-
-    template<>
-    struct traits<double> {
-        using dtype = double;
-
-        static const char tform = 'D';
-        static const int ttype = TDOUBLE;
-        static const int image_type = DOUBLE_IMG;
-
-        static float def() {
-            return dnan;
-        }
-
-        static bool is_convertible(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TFLOAT) return true;
-            if (type == TDOUBLE) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-
-        static bool is_convertible_narrow(int type) {
-            if (type == TSHORT) return true;
-            if (type == TLONG) return true;
-            if (type == TLONGLONG) return true;
-            if (type == TFLOAT) return true;
-            if (type == TDOUBLE) return true;
-            if (type == TBIT) return true;
-            if (type == TBYTE) return true;
-            if (type == TINT32BIT) return true;
-            return false;
-        }
-    };
-
     #define phypp_check_fits(assertion, msg) \
-        do { if (!(assertion)) throw fits::exception(msg); } while(0)
+        do { if (!(assertion)) throw phypp::fits::exception(msg); } while(0)
 
     inline void phypp_check_cfitsio(int status, const std::string& msg) {
         if (status != 0) {
@@ -263,34 +41,256 @@ namespace fits {
 
     using header = std::string;
 
-    inline int bitpix_to_type(int bitpix) {
-        switch(bitpix) {
-            case BYTE_IMG   : return TBYTE;
-            case SHORT_IMG  : return TSHORT;
-            case LONG_IMG   : return TLONG;
-            case FLOAT_IMG  : return TFLOAT;
-            case DOUBLE_IMG : return TDOUBLE;
-            default : throw fits::exception("unknown image type '"+strn(bitpix)+"'");
-        }
-    }
-
-    inline std::string type_to_string_(int type) {
-        if (type == TSTRING) return "string";
-        if (type == TSHORT) return "short";
-        if (type == TLONG) return "long";
-        if (type == TLONGLONG) return "long long";
-        if (type == TFLOAT) return "float";
-        if (type == TDOUBLE) return "double";
-        if (type == TLOGICAL) return "bool";
-        if (type == TBIT) return "bool";
-        if (type == TBYTE) return "char";
-        if (type == TINT32BIT) return "int32";
-        if (type == TCOMPLEX) return "complex float";
-        if (type == TDBLCOMPLEX) return "complex double";
-        return "unknown ("+strn(type)+")";
-    }
-
     namespace impl {
+        template<typename T>
+        struct traits;
+
+        template<>
+        struct traits<std::string> {
+            using dtype = char;
+
+            static const char tform = 'A';
+            static const int ttype = TSTRING;
+
+            static std::string def() {
+                return "";
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TSTRING) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TSTRING) return true;
+                return false;
+            }
+        };
+
+        template<>
+        struct traits<bool> {
+            using dtype = char;
+
+            static const char tform = 'B';
+            static const int ttype = TBYTE;
+            static const int image_type = BYTE_IMG;
+
+            static bool def() {
+                return false;
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TLOGICAL) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TLOGICAL) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        template<>
+        struct traits<char> {
+            using dtype = char;
+
+            static const char tform = 'S';
+            static const int ttype = TSBYTE;
+            static const int image_type = SBYTE_IMG;
+
+            static bool def() {
+                return '\0';
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TBYTE) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TBYTE) return true;
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        template<>
+        struct traits<uint_t> {
+            using dtype = uint_t;
+
+            static const char tform = 'J';
+            static const int ttype = TLONG;
+            static const int image_type = LONG_IMG;
+
+            static uint_t def() {
+                return 0;
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        template<>
+        struct traits<int_t> {
+            using dtype = int_t;
+
+            static const char tform = 'J';
+            static const int ttype = TLONG;
+            static const int image_type = LONG_IMG;
+
+            static int_t def() {
+                return 0;
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        template<>
+        struct traits<float> {
+            using dtype = float;
+
+            static const char tform = 'E';
+            static const int ttype = TFLOAT;
+            static const int image_type = FLOAT_IMG;
+
+            static float def() {
+                return fnan;
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TFLOAT) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TFLOAT) return true;
+                if (type == TDOUBLE) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        template<>
+        struct traits<double> {
+            using dtype = double;
+
+            static const char tform = 'D';
+            static const int ttype = TDOUBLE;
+            static const int image_type = DOUBLE_IMG;
+
+            static float def() {
+                return dnan;
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TFLOAT) return true;
+                if (type == TDOUBLE) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TFLOAT) return true;
+                if (type == TDOUBLE) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        inline int bitpix_to_type(int bitpix) {
+            switch(bitpix) {
+                case BYTE_IMG   : return TBYTE;
+                case SHORT_IMG  : return TSHORT;
+                case LONG_IMG   : return TLONG;
+                case FLOAT_IMG  : return TFLOAT;
+                case DOUBLE_IMG : return TDOUBLE;
+                default : throw fits::exception("unknown image type '"+strn(bitpix)+"'");
+            }
+        }
+
+        inline std::string type_to_string_(int type) {
+            if (type == TSTRING) return "string";
+            if (type == TSHORT) return "short";
+            if (type == TLONG) return "long";
+            if (type == TLONGLONG) return "long long";
+            if (type == TFLOAT) return "float";
+            if (type == TDOUBLE) return "double";
+            if (type == TLOGICAL) return "bool";
+            if (type == TBIT) return "bool";
+            if (type == TBYTE) return "char";
+            if (type == TINT32BIT) return "int32";
+            if (type == TCOMPLEX) return "complex float";
+            if (type == TDBLCOMPLEX) return "complex double";
+            return "unknown ("+strn(type)+")";
+        }
+
         enum file_type {
             generic_file,
             image_file,
@@ -437,7 +437,7 @@ namespace fits {
                 std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void write_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
-                fits_update_key(fptr_, fits::traits<meta::decay_t<T>>::ttype,
+                fits_update_key(fptr_, fits::impl::traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
             }
@@ -446,7 +446,7 @@ namespace fits {
                 std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void add_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
-                fits_write_key(fptr_, fits::traits<meta::decay_t<T>>::ttype,
+                fits_write_key(fptr_, fits::impl::traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
             }

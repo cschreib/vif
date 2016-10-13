@@ -960,31 +960,32 @@ namespace phypp {
         return true;
     }
 
-    template<typename Cat>
-    vec1s get_band_get_notes_(const Cat& cat, std::false_type) {
-        return replicate("?", cat.bands.size());
+    namespace impl {
+        template<typename Cat>
+        vec1s get_band_get_notes_(const Cat& cat, std::false_type) {
+            return replicate("?", cat.bands.size());
+        }
+
+        template<typename Cat>
+        vec1s get_band_get_notes_(const Cat& cat, std::true_type) {
+            return cat.notes;
+        }
+
+        template<typename Cat>
+        struct get_band_has_notes_impl_ {
+            template <typename U> static std::true_type dummy(typename std::decay<
+                decltype(std::declval<U&>().notes)>::type*);
+            template <typename U> static std::false_type dummy(...);
+            using type = decltype(dummy<Cat>(0));
+        };
+
+        template<typename Cat>
+        using get_band_has_notes_ = typename get_band_has_notes_impl_<typename std::decay<Cat>::type>::type;
     }
-
-    template<typename Cat>
-    vec1s get_band_get_notes_(const Cat& cat, std::true_type) {
-        return cat.notes;
-    }
-
-    template<typename Cat>
-    struct get_band_has_notes_impl_ {
-        template <typename U> static std::true_type dummy(typename std::decay<
-            decltype(std::declval<U&>().notes)>::type*);
-        template <typename U> static std::false_type dummy(...);
-        using type = decltype(dummy<Cat>(0));
-    };
-
-    template<typename Cat>
-    using get_band_has_notes_ = typename get_band_has_notes_impl_<typename std::decay<Cat>::type>::type;
-
 
     template<typename Cat>
     bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
-        vec1s notes = get_band_get_notes_(cat, get_band_has_notes_<Cat>{});
+        vec1s notes = impl::get_band_get_notes_(cat, impl::get_band_has_notes_<Cat>{});
         vec1u id = where(regex_match(cat.bands, band));
         if (id.empty()) {
             error("no band matching '"+band+"'");
