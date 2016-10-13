@@ -102,8 +102,8 @@ vec<1,T> rgen(T i, U j) {
 }
 
 // Create a range of n steps from i to j (inclusive)
-template<typename T, typename U, typename V>
-vec1d rgen(T i, U j, V n) {
+template<typename T, typename U>
+vec1d rgen(T i, U j, uint_t n) {
     phypp_check(n >= 0, "'rgen(a,b,n)' needs a positive or null value for 'n' (got ", n, ")");
 
     if (n == 1) {
