@@ -6,6 +6,7 @@
 #include "phypp/math/math.hpp"
 
 namespace phypp {
+namespace astro {
     template<typename Type>
     vec<2,meta::rtype_t<Type>> enlarge(const vec<2,Type>& v, const std::array<uint_t,4> upix,
         const meta::rtype_t<Type>& def = 0.0) {
@@ -410,6 +411,7 @@ namespace phypp {
 
         return m;
     }
+}
 }
 
 #endif

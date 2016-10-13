@@ -10,6 +10,7 @@
 #include "phypp/astro/image.hpp"
 
 namespace phypp {
+namespace astro {
     static std::string data_dir = system_var("PHYPP_DATA_DIR", "./");
     static std::string temporary_dir = system_var("PHYPP_TMP_DIR", "./");
 
@@ -960,7 +961,10 @@ namespace phypp {
         return true;
     }
 
-    namespace impl {
+}
+
+namespace impl {
+    namespace astro_impl {
         template<typename Cat>
         vec1s get_band_get_notes_(const Cat& cat, std::false_type) {
             return replicate("?", cat.bands.size());
@@ -982,10 +986,15 @@ namespace phypp {
         template<typename Cat>
         using get_band_has_notes_ = typename get_band_has_notes_impl_<typename std::decay<Cat>::type>::type;
     }
+}
 
+namespace astro {
     template<typename Cat>
     bool get_band(const Cat& cat, const std::string& band, uint_t& bid) {
-        vec1s notes = impl::get_band_get_notes_(cat, impl::get_band_has_notes_<Cat>{});
+        vec1s notes = impl::astro_impl::get_band_get_notes_(
+            cat, impl::astro_impl::get_band_has_notes_<Cat>{}
+        );
+        
         vec1u id = where(regex_match(cat.bands, band));
         if (id.empty()) {
             error("no band matching '"+band+"'");
@@ -1454,6 +1463,7 @@ namespace phypp {
 
         return good;
     }
+}
 }
 
 #endif

@@ -5,6 +5,7 @@
 #include "phypp/math/mpfit.hpp"
 
 namespace phypp {
+namespace astro {
     // Convolve each SED with the response curve of the filters
     template<typename TLib, typename TFi>
     vec2d template_observed(const TLib& lib, const vec<1,TFi>& filters) {
@@ -536,6 +537,7 @@ namespace phypp {
 
         return res;
     }
+}
 }
 
 #endif

@@ -4,6 +4,7 @@
 #include "phypp/astro/astro.hpp"
 
 namespace phypp {
+namespace astro {
     struct qxmatch_res {
         vec2u id;
         vec2d d;
@@ -33,9 +34,10 @@ namespace phypp {
         bool brute_force = false;
         bool no_mirror = false;
     };
+}
 
-    namespace impl {
-    namespace qxmatch {
+namespace impl {
+    namespace qxmatch_impl {
         struct depth_cache {
             struct depth_t {
                 vec1i bx, by;
@@ -122,8 +124,9 @@ namespace phypp {
             }
         };
     }
-    }
+}
 
+namespace astro {
     template<typename TypeR1, typename TypeD1, typename TypeR2, typename TypeD2>
     qxmatch_res qxmatch(const vec<1,TypeR1>& ra1, const vec<1,TypeD1>& dec1,
         const vec<1,TypeR2>& ra2, const vec<1,TypeD2>& dec2,
@@ -238,13 +241,13 @@ namespace phypp {
             }
 
             // Precompute generic bucket geometry
-            impl::qxmatch::depth_cache depths(nra, ndec, cell_size);
+            impl::qxmatch_impl::depth_cache depths(nra, ndec, cell_size);
 
             auto dist_proj = [] (double dist) {
                 return sqr(sin(dist/(3600.0*(180.0/dpi)*2)));
             };
 
-            auto work1 = [&] (uint_t i, impl::qxmatch::depth_cache& tdepths, qxmatch_res& tres) {
+            auto work1 = [&] (uint_t i, impl::qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
                 int_t x0 = idx1[i];
                 int_t y0 = idy1[i];
 
@@ -294,7 +297,7 @@ namespace phypp {
                 } while (tres.d.safe(nth-1,i) > reached_distance && d < tdepths.size());
             };
 
-            auto work2 = [&] (uint_t j, impl::qxmatch::depth_cache& tdepths, qxmatch_res& tres) {
+            auto work2 = [&] (uint_t j, impl::qxmatch_impl::depth_cache& tdepths, qxmatch_res& tres) {
                 int_t x0 = idx2[j];
                 int_t y0 = idy2[j];
 
@@ -667,6 +670,7 @@ namespace phypp {
 
         return ret;
     }
+}
 }
 
 #endif

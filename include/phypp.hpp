@@ -18,3 +18,5 @@
 #include "phypp/astro/astro.hpp"
 
 using namespace phypp;
+using namespace phypp::astro;
+

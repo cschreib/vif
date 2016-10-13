@@ -4,8 +4,8 @@
 #include "phypp/astro/astro.hpp"
 
 namespace phypp {
-    namespace impl {
-    namespace qstack {
+namespace impl {
+    namespace qstack_impl {
         struct image_workspace {
             int status = 0;
             fitsfile* fptr = nullptr;
@@ -72,8 +72,9 @@ namespace phypp {
             }
         };
     }
-    }
+}
 
+namespace astro {
     struct qstack_params {
         bool keep_nan = false;
         bool save_offsets = false;
@@ -100,7 +101,7 @@ namespace phypp {
             sects.push_back(filename);
         }
 
-        std::vector<impl::qstack::image_workspace> imgs;
+        std::vector<impl::qstack_impl::image_workspace> imgs;
         imgs.reserve(sects.size());
         for (auto& s : sects) {
             imgs.emplace_back(s, ra, dec);
@@ -389,9 +390,10 @@ namespace phypp {
             func(tfcube, twcube);
         }
     }
-
-    namespace impl {
-    namespace qstack {
+}
+ 
+namespace impl {
+    namespace qstack_impl {
         template<typename Type>
         vec<3,meta::rtype_t<Type>> bootstrap_apply_id_(const vec1u& ids, const vec<3,Type>& cube) {
             return cube(ids,_,_).concretise();
@@ -402,14 +404,15 @@ namespace phypp {
             return cube.dims[0];
         }
     }
-    }
+}
 
+namespace astro {
     template<typename TypeS, typename F, typename ... Args>
     void qstack_bootstrap(uint_t nbstrap, uint_t nsel, TypeS& seed, F&& func, const Args& ... cubes) {
-        const uint_t nsrc = impl::qstack::bootstrap_get_size_(cubes...);
+        const uint_t nsrc = impl::qstack_impl::bootstrap_get_size_(cubes...);
         for (uint_t i = 0; i < nbstrap; ++i) {
             vec1u ids = randomi(seed, 0, nsrc-1, nsel);
-            func(impl::qstack::bootstrap_apply_id_(ids, cubes)...);
+            func(impl::qstack_impl::bootstrap_apply_id_(ids, cubes)...);
         }
     }
 
@@ -454,6 +457,7 @@ namespace phypp {
 
         return bs;
     }
+}
 }
 
 #endif

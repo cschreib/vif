@@ -6,6 +6,7 @@
 #include "phypp/astro/qxmatch.hpp"
 
 namespace phypp {
+namespace astro {
     struct comment_pool_t {
         std::map<std::string, std::string> var_pool;
         std::vector<std::string> com_list;
@@ -342,9 +343,10 @@ namespace phypp {
 
         add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
     }
+}
 
-    namespace impl {
-    namespace impl::astro_impl {
+namespace impl {
+    namespace astro_impl {
         template<typename M, typename V>
         struct do_catalog_merge_run {
             const reflex::member_t& m;
@@ -405,8 +407,9 @@ namespace phypp {
             }
         };
     }
-    }
+}
 
+namespace astro {
     template<typename T, typename U, typename V>
     void catalog_t::merge(T& in, const U& out, const V& def) {
         #ifdef NO_REFLECTION
@@ -465,6 +468,7 @@ namespace phypp {
         append<1>(pool.flux, tflux);
         append<1>(pool.flux_err, terr);
     }
+}
 }
 
 #endif
