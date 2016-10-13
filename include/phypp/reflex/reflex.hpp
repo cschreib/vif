@@ -260,20 +260,17 @@ namespace reflex {
         data_t _reflex;
     };
 
-    template<typename T, typename U>
-    using constify = typename std::conditional<std::is_const<T>::value, const U, U>::type;
-
     #ifdef DISABLE_REFLECTION
     template<typename T>
     struct struct_t {
-        constify<T,data_t>& data;
+        meta::constify<data_t,T>& data;
         using member_types = empty_t::_reflex_types;
         static const std::size_t member_count = member_types::count;
     };
     #else
     template<typename T>
     struct struct_t {
-        constify<T,data_t>& data;
+        meta::constify<data_t,T>& data;
         using member_types = typename T::_reflex_types;
         static const std::size_t member_count = member_types::count;
     };
