@@ -5,11 +5,10 @@
 #include <iostream>
 #include <sstream>
 #include <array>
-#include "phypp/reflex.hpp"
 
 template<typename T>
 void print(const T& t) {
-    std::cout << reflex::wrap(t) << std::endl;
+    std::cout << t << std::endl;
 }
 
 template<typename T, typename ... Args>
