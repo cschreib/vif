@@ -1046,19 +1046,6 @@ int phypp_main(int argc, char* argv[]) {
 
 #ifndef NO_REFLECTION
     {
-        print("Reflection: print a structure");
-        struct {
-            int_t i = 5;
-            vec1f j = indgen(3);
-            struct {
-                int_t u = -1;
-                int_t v = 2;
-            } k;
-        } str;
-
-        check(str, "{ i=5, j={0, 1, 2}, k={ u=-1, v=2 } }");
-    }
-    {
         print("Reflection: save & write a structure");
         struct tmp_t {
             vec1d f = indgen(3);
@@ -1079,7 +1066,10 @@ int phypp_main(int argc, char* argv[]) {
         fits::write_table("out/reflex_tbl.fits", tmp);
         fits::read_table("out/reflex_tbl.fits", tmp2);
 
-        check(tmp2, strn(tmp));
+        check(tmp2.f, strn(tmp.f));
+        check(tmp2.s, strn(tmp.s));
+        check(tmp2.t.u, strn(tmp.t.u));
+        check(tmp2.t.v, strn(tmp.t.v));
     }
 
     {
@@ -1111,7 +1101,11 @@ int phypp_main(int argc, char* argv[]) {
 
         merge_elements(tmp1, tmp2);
 
-        check(tmp1, "{ i=5, j=0, t={ k=0, v=toto, w=0 } }");
+        check(tmp1.i, "5");
+        check(tmp1.j, "0");
+        check(tmp1.t.k, "0");
+        check(tmp1.t.v, "toto");
+        check(tmp1.t.w, "0");
     }
 
     {
@@ -1127,7 +1121,8 @@ int phypp_main(int argc, char* argv[]) {
         tmp2.i = 6;
         tmp2.j.k = 12;
 
-        check(tmp2, "{ i=6, j={ k=12 } }");
+        check(tmp2.i, "6");
+        check(tmp2.j.k, "12");
         check(reflex::seek_name(tmp1.j.k), "tmp.j.k");
         check(reflex::seek_name(tmp2.j.k), "tmp.j.k");
     }

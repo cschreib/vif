@@ -84,7 +84,6 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     if (xmatch) {
-
         qxmatch_params p; p.nth = nsrc; p.brute_force = true;
         auto res = qxmatch(tra, tdec, cra, cdec, p);
 

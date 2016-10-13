@@ -1,7 +1,7 @@
-#ifndef ASTRO_QSTACK_HPP
-#define ASTRO_QSTACK_HPP
+#ifndef PHYPP_ASTRO_QSTACK_HPP
+#define PHYPP_ASTRO_QSTACK_HPP
 
-#include "phypp/astro.hpp"
+#include "phypp/astro/astro.hpp"
 
 namespace qstack_impl {
     struct image_workspace {

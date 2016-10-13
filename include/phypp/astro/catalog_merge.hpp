@@ -1,7 +1,7 @@
 #ifndef ASTRO_CATALOG_MERGE_HPP
 #define ASTRO_CATALOG_MERGE_HPP
 
-#include "phypp/astro.hpp"
+#include "phypp/astro/astro.hpp"
 #include "phypp/astro/qxmatch.hpp"
 #include <list>
 

@@ -39,7 +39,7 @@ int phypp_main(int argc, char* argv[]) {
             vec1s bands, notes;
         } fcat;
 
-        fits::read_table_loose(cat_file, fcat);
+        fits::read_table_loose(cat_file, ftable(fcat.id, fcat.ra, fcat.dec, fcat.bands, fcat.notes));
         if (fcat.ra.empty()) {
             fits::read_table_loose(cat_file, "pos.ra", fcat.ra, "pos.dec", fcat.dec);
             if (fcat.ra.empty()) {

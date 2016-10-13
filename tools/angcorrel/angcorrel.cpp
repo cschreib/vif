@@ -13,10 +13,10 @@ int phypp_main(int argc, char* argv[]) {
     };
 
     cat_t cat;
-    fits::read_table(argv[1], cat);
+    fits::read_table(argv[1], ftable(cat.ra, cat.dec));
 
     cat_t fcat;
-    fits::read_table(argv[2], fcat);
+    fits::read_table(argv[2], ftable(fcat.ra, fcat.dec));
 
     vec1d range = {1.0, 40.0};
     uint_t nbin = 10;

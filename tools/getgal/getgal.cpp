@@ -50,7 +50,7 @@ int phypp_main(int argc, char* argv[]) {
             vec1u id;
         } tmp;
 
-        fits::read_table_loose(tsrc[0], tmp);
+        fits::read_table_loose(tsrc[0], ftable(tmp.ra, tmp.dec, tmp.name, tmp.id));
         if (tmp.ra.empty() || tmp.dec.empty()) {
             error("missing RA and Dec coordinates in this FITS file");
             return 1;
@@ -72,7 +72,7 @@ int phypp_main(int argc, char* argv[]) {
         ra = tmp.ra;
         dec = tmp.dec;
     } else if (tsrc.size() == 1 && end_with(tsrc[0], ".reg")) {
-        file::read_table(tsrc[0], 0, ra, dec);
+        file::read_table(tsrc[0], file::find_skip(tsrc[0]), ra, dec);
         name = strna(uindgen(ra.size())) + "_";
     } else if (tsrc.size() == 2) {
         name.resize(1);

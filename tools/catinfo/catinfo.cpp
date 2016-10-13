@@ -13,8 +13,10 @@ int phypp_main(int argc, char* argv[]) {
         std::string version;
         std::string changelog;
     } cat;
-
-    fits::read_table_loose(fcat, cat);
+        
+    fits::read_table_loose(fcat, ftable(
+        cat.catalogs, cat.comments, cat.version, cat.changelog
+    ));
 
     print(fcat+"\n");
 

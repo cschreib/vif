@@ -1,8 +1,8 @@
-#ifndef ASTRO_TEMPLATE_FIT_HPP
-#define ASTRO_TEMPLATE_FIT_HPP
+#ifndef PHYPP_ASTRO_TEMPLATE_FIT_HPP
+#define PHYPP_ASTRO_TEMPLATE_FIT_HPP
 
-#include "phypp/astro.hpp"
-#include "phypp/mpfit.hpp"
+#include "phypp/astro/astro.hpp"
+#include "phypp/math/mpfit.hpp"
 
 // Convolve each SED with the response curve of the filters
 template<typename TLib, typename TFi>

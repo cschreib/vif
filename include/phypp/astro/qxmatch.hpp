@@ -1,7 +1,7 @@
-#ifndef ASTRO_QXMATCH_HPP
-#define ASTRO_QXMATCH_HPP
+#ifndef PHYPP_ASTRO_QXMATCH_HPP
+#define PHYPP_ASTRO_QXMATCH_HPP
 
-#include "phypp/astro.hpp"
+#include "phypp/astro/astro.hpp"
 
 struct qxmatch_res {
     vec2u id;

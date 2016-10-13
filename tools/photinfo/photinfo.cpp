@@ -17,17 +17,14 @@ int phypp_main(int argc, char* argv[]) {
 
     struct {
         vec1d ra, dec;
-
-        struct {
-            vec1d ra, dec;
-        } pos;
-
         vec2f flux, flux_err;
         vec1s bands, notes;
         vec1f lambda;
     } cat;
 
-    fits::read_table_loose(argv[1], cat);
+    fits::read_table_loose(argv[1], ftable(
+        cat.ra, cat.dec, cat.flux, cat.flux_err, cat.bands, cat.notes, cat.lambda
+    ));
 
     uint_t ngal = cat.flux.dims[0];
 
@@ -48,8 +45,7 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     if (cat.ra.empty() || cat.dec.empty()) {
-        cat.ra = cat.pos.ra;
-        cat.dec = cat.pos.dec;
+        fits::read_table_loose(argv[1], "pos.ra", cat.ra, "pos.dec", cat.dec);
     }
 
     if (cat.ra.empty() || cat.dec.empty()) {
