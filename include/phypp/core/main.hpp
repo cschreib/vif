@@ -3,13 +3,16 @@
 
 #include "phypp/core/error.hpp"
 
-const char* executable_path;
+namespace phypp {
+    const char* executable_path;
+}
 
+// New entry point
 int phypp_main(int argc, char* argv[]);
 
 // Define the standard main function
 int main(int argc, char* argv[]) {
-    executable_path = argv[0];
+    phypp::executable_path = argv[0];
     return phypp_main(argc, argv);
 }
 

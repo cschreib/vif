@@ -35,22 +35,22 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 template<std::size_t D, typename T>
-rtype_t<T> fstddev(const vec<D,T>& v) {
+meta::rtype_t<T> fstddev(const vec<D,T>& v) {
     return stddev(v[where(is_finite(v))]);
 }
 
 template<std::size_t D, typename T>
-rtype_t<T> frms(const vec<D,T>& v) {
+meta::rtype_t<T> frms(const vec<D,T>& v) {
     return rms(v[where(is_finite(v))]);
 }
 
 template<std::size_t D, typename T>
-rtype_t<T> fmean(const vec<D,T>& v) {
+meta::rtype_t<T> fmean(const vec<D,T>& v) {
     return mean(v[where(is_finite(v))]);
 }
 
 template<std::size_t D, typename T>
-rtype_t<T> fmedian(const vec<D,T>& v) {
+meta::rtype_t<T> fmedian(const vec<D,T>& v) {
     return median(v[where(is_finite(v))]);
 }
 

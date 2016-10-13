@@ -2,7 +2,7 @@
 
 template<std::size_t D, typename T>
 void read_column_(const std::string& filename, const std::string& colname,
-    vec<D,std::string>& v, type_list<T>) {
+    vec<D,std::string>& v, meta::type_list<T>) {
 
     vec<D,T> tmp;
     fits::read_table(filename, colname, tmp);
@@ -11,7 +11,7 @@ void read_column_(const std::string& filename, const std::string& colname,
 
 template<std::size_t D>
 void read_column_(const std::string& filename, const std::string& colname,
-    vec<D,std::string>& v, type_list<std::string>) {
+    vec<D,std::string>& v, meta::type_list<std::string>) {
 
     fits::read_table(filename, colname, v);
 }
@@ -50,7 +50,7 @@ do_next check_rows(const std::string& colname, uint_t tmp_row, uint_t& nrow,
 
 template<std::size_t D, typename T>
 do_next read_column_(const std::string& filename, const std::string& colname,
-    vec<D,std::string>& v, uint_t& nrow, const vec1u& ids, type_list<T>) {
+    vec<D,std::string>& v, uint_t& nrow, const vec1u& ids, meta::type_list<T>) {
 
     vec<D,T> tmp;
     fits::read_table(filename, colname, tmp);
@@ -71,7 +71,7 @@ do_next read_column_(const std::string& filename, const std::string& colname,
 
 template<std::size_t D>
 do_next read_column_(const std::string& filename, const std::string& colname,
-    vec<D,std::string>& v, uint_t& nrow, const vec1u& ids, type_list<std::string>) {
+    vec<D,std::string>& v, uint_t& nrow, const vec1u& ids, meta::type_list<std::string>) {
 
     fits::read_table(filename, colname, v);
 
@@ -91,14 +91,14 @@ template<std::size_t D, typename T>
 void read_column(const std::string& filename, const std::string& colname,
     vec<D,std::string>& v) {
 
-    read_column_<D>(filename, colname, v, type_list<T>{});
+    read_column_<D>(filename, colname, v, meta::type_list<T>{});
 }
 
 template<std::size_t D, typename T>
 do_next read_column(const std::string& filename, const std::string& colname,
     vec<D,std::string>& v, uint_t& nrow, const vec1u& ids) {
 
-    return read_column_<D>(filename, colname, v, nrow, ids, type_list<T>{});
+    return read_column_<D>(filename, colname, v, nrow, ids, meta::type_list<T>{});
 }
 
 template<std::size_t Dim>

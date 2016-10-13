@@ -1,14 +1,14 @@
 #include <phypp.hpp>
-#include <phypp/unit_test.hpp>
+#include <phypp/test/unit_test.hpp>
 
 template<typename T>
 void assert_is_vec() {
-    static_assert(is_vec<T>::value, "failed is_vec");
+    static_assert(meta::is_vec<T>::value, "failed meta::is_vec");
 }
 
 template<typename T>
 void assert_not_is_vec() {
-    static_assert(!is_vec<T>::value, "failed !is_vec");
+    static_assert(!meta::is_vec<T>::value, "failed !meta::is_vec");
 }
 
 template<typename T>
@@ -933,36 +933,36 @@ void test_vec_convert_to() {
 
 template<typename T>
 struct convert_to {
-    using list = type_list<>;
+    using list = meta::type_list<>;
 };
 
 template<>
 struct convert_to<uint_t> {
-    using list = type_list<int_t,float,double>;
+    using list = meta::type_list<int_t,float,double>;
 };
 
 template<>
 struct convert_to<int_t> {
-    using list = type_list<uint_t,float,double>;
+    using list = meta::type_list<uint_t,float,double>;
 };
 
 template<>
 struct convert_to<float> {
-    using list = type_list<uint_t,int_t,double>;
+    using list = meta::type_list<uint_t,int_t,double>;
 };
 
 template<>
 struct convert_to<double> {
-    using list = type_list<uint_t,int_t,float>;
+    using list = meta::type_list<uint_t,int_t,float>;
 };
 
 template<typename T>
-void test_vec_convert_iter(type_list<> list) {}
+void test_vec_convert_iter(meta::type_list<> list) {}
 
 template<typename T, typename U, typename ... Args>
-void test_vec_convert_iter(type_list<U,Args...> list) {
+void test_vec_convert_iter(meta::type_list<U,Args...> list) {
     test_vec_convert_to<T,U>();
-    test_vec_convert_iter<T>(type_list<Args...>{});
+    test_vec_convert_iter<T>(meta::type_list<Args...>{});
 }
 
 template<typename T>
@@ -1022,7 +1022,7 @@ void test() {
     print(" ");
 }
 
-int main(int argc, char* argv[]) {
+int phypp_main(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "line") {
             check_show_line = true;

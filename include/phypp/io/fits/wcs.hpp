@@ -9,6 +9,7 @@
 #include "phypp/core/error.hpp"
 #include "phypp/io/fits/fits.hpp"
 
+namespace phypp {
 namespace fits {
     struct make_wcs_header_params {
         // The pixel size in arcsec
@@ -397,8 +398,8 @@ namespace fits {
     }
 
     template<typename T = double, typename U = double, typename V, typename W,
-        typename enable = typename std::enable_if<!is_vec<T>::value &&
-            !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
+        typename enable = typename std::enable_if<!meta::is_vec<T>::value &&
+            !meta::is_vec<U>::value && !meta::is_vec<V>::value && !meta::is_vec<W>::value>::type>
     void ad2xy(const fits::wcs& w, const T& ra, const U& dec, V& x, W& y) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
@@ -432,8 +433,8 @@ namespace fits {
     }
 
     template<typename T = double, typename U = double, typename V, typename W,
-        typename enable = typename std::enable_if<!is_vec<T>::value &&
-            !is_vec<U>::value && !is_vec<V>::value && !is_vec<W>::value>::type>
+        typename enable = typename std::enable_if<!meta::is_vec<T>::value &&
+            !meta::is_vec<U>::value && !meta::is_vec<V>::value && !meta::is_vec<W>::value>::type>
     void xy2ad(const fits::wcs& w, const T& x, const U& y, V& ra, W& dec) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
@@ -516,6 +517,7 @@ namespace fits {
         return true;
 #endif
     }
+}
 }
 
 #endif

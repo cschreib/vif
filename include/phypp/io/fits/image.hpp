@@ -3,6 +3,7 @@
 
 #include "phypp/io/fits/base.hpp"
 
+namespace phypp {
 namespace fits {
     // FITS input table (read only)
     class input_image : public virtual impl::file_base {
@@ -130,7 +131,7 @@ namespace fits {
                 naxes[i] = v.dims[Dim-1-i];
             }
 
-            fits_create_img(fptr_, traits<rtype_t<Type>>::image_type, Dim,
+            fits_create_img(fptr_, traits<meta::rtype_t<Type>>::image_type, Dim,
                 naxes.data(), &status_);
 
             write_impl_(v.concretise());
@@ -175,8 +176,8 @@ namespace fits {
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
 
             int type = bitpix_to_type(bitpix);
-            phypp_check_fits(traits<rtype_t<Type>>::is_convertible(type), "wrong image type "
-                "(expected "+pretty_type_t(rtype_t<Type>)+", got "+type_to_string_(type)+")");
+            phypp_check_fits(traits<meta::rtype_t<Type>>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(meta::rtype_t<Type>)+", got "+type_to_string_(type)+")");
 
             std::array<uint_t,Dim> d;
             for (uint_t i : range(Dim)) {
@@ -189,6 +190,7 @@ namespace fits {
             write_impl_(v.concretise());
         }
     };
+}
 }
 
 #endif

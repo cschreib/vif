@@ -16,3 +16,5 @@
 #include "phypp/math/math.hpp"
 #include "phypp/astro/image.hpp"
 #include "phypp/astro/astro.hpp"
+
+using namespace phypp;

@@ -1,6 +1,12 @@
 #ifndef PHYPP_MATH_SIMPLE_COMPLEX_HPP
 #define PHYPP_MATH_SIMPLE_COMPLEX_HPP
 
+#ifndef USE_PHYPP_COMPLEX
+#include <complex>
+#endif
+
+#include "phypp/core/vec.hpp"
+
 #ifdef USE_PHYPP_COMPLEX
 
 namespace phypp {
@@ -118,28 +124,29 @@ namespace phypp {
     complex<T> operator- (complex<T> c) {
         return {-c.re, -c.im};
     }
+
+    #define MAKE_TYPEDEFS(N) \
+        using vec##N##cf  = vec<N, phypp::complex<float>>; \
+        using vec##N##cd  = vec<N, phypp::complex<double>>;
 }
 
-#define MAKE_TYPEDEFS(N) \
-    using vec##N##cf  = vec<N, phypp::complex<float>>; \
-    using vec##N##cd  = vec<N, phypp::complex<double>>;
 #else
 
-#include <complex>
+namespace phypp {
+    #define MAKE_TYPEDEFS(N) \
+        using vec##N##cf  = vec<N, std::complex<float>>; \
+        using vec##N##cd  = vec<N, std::complex<double>>;
 
-#define MAKE_TYPEDEFS(N) \
-    using vec##N##cf  = vec<N, std::complex<float>>; \
-    using vec##N##cd  = vec<N, std::complex<double>>;
+    #endif
 
-#endif
+    MAKE_TYPEDEFS(1)
+    MAKE_TYPEDEFS(2)
+    MAKE_TYPEDEFS(3)
+    MAKE_TYPEDEFS(4)
+    MAKE_TYPEDEFS(5)
+    MAKE_TYPEDEFS(6)
 
-MAKE_TYPEDEFS(1)
-MAKE_TYPEDEFS(2)
-MAKE_TYPEDEFS(3)
-MAKE_TYPEDEFS(4)
-MAKE_TYPEDEFS(5)
-MAKE_TYPEDEFS(6)
-
-#undef MAKE_TYPEDEFS
+    #undef MAKE_TYPEDEFS
+}
 
 #endif

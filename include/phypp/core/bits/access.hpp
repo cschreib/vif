@@ -1,3 +1,22 @@
+#ifndef PHYPP_INCLUDING_CORE_VEC_BITS
+#error this file is not meant to be included separately, include "phypp/core/vec.hpp" instead
+#endif
+
+namespace phypp {
+    namespace impl {
+       // Tag a value to indicate that is has to repeated N times
+        template<std::size_t N, typename T>
+        struct repeated_value {
+            T value;
+        };
+    }
+
+    template<std::size_t N, typename T>
+    impl::repeated_value<N,T> repeat(T t) {
+        return impl::repeated_value<N,T>{t};
+    }
+
+namespace impl {
 namespace vec_access {
     // Unwrap repeated_value arguments into individual arguments
     template<typename ... IArgs>
@@ -58,7 +77,7 @@ namespace vec_access {
         template<typename ... OArgs>
         struct out {
             template<typename F, typename U>
-            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs,
+            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, meta::cte_t<0>, IArgs& ... iargs,
                 OArgs& ... oargs) {
 
                 using actor = typename unfolder<IArgs...>::template out<OArgs...>;
@@ -66,17 +85,17 @@ namespace vec_access {
             }
 
             template<typename F, std::size_t I, typename U>
-            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs,
+            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, meta::cte_t<I>, IArgs& ... iargs,
                 OArgs& ... oargs) {
 
                 using actor = typename unfolder::template out<OArgs..., T>;
-                return actor::unfold_repeat(std::forward<F>(func), t, cte_t<I-1>(),
+                return actor::unfold_repeat(std::forward<F>(func), t, meta::cte_t<I-1>(),
                     iargs..., oargs..., t.value);
             }
 
             template<typename F, typename U>
             static out_type<F,OArgs...> unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
-                return unfold_repeat(std::forward<F>(func), t, cte_t<N>(), iargs..., oargs...);
+                return unfold_repeat(std::forward<F>(func), t, meta::cte_t<N>(), iargs..., oargs...);
             }
         };
     };
@@ -102,7 +121,7 @@ namespace vec_access {
         template<typename ... OArgs>
         struct out {
             template<typename F, typename U>
-            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<0>, IArgs& ... iargs,
+            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, meta::cte_t<0>, IArgs& ... iargs,
                 OArgs& ... oargs) {
 
                 using actor = typename unfolder<IArgs...>::template out<OArgs...>;
@@ -110,17 +129,17 @@ namespace vec_access {
             }
 
             template<typename F, std::size_t I, typename U>
-            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, cte_t<I>, IArgs& ... iargs,
+            static out_type<F,OArgs...> unfold_repeat(F&& func, U& t, meta::cte_t<I>, IArgs& ... iargs,
                 OArgs& ... oargs) {
 
                 using actor = typename unfolder::template out<OArgs..., const T>;
-                return actor::unfold_repeat(std::forward<F>(func), t, cte_t<I-1>(),
+                return actor::unfold_repeat(std::forward<F>(func), t, meta::cte_t<I-1>(),
                     iargs..., oargs..., t.value);
             }
 
             template<typename F, typename U>
             static out_type<F,OArgs...> unfold(F&& func, U& t, IArgs& ... iargs, OArgs& ... oargs) {
-                return unfold_repeat(std::forward<F>(func), t, cte_t<N>(), iargs..., oargs...);
+                return unfold_repeat(std::forward<F>(func), t, meta::cte_t<N>(), iargs..., oargs...);
             }
         };
     };
@@ -164,7 +183,7 @@ namespace vec_access {
         std::integral_constant<std::size_t, 1> {};
 
     template<std::size_t N, typename T>
-    struct output_dim_<repeated_value<N,T>> :
+    struct output_dim_<impl::repeated_value<N,T>> :
         std::integral_constant<std::size_t, N*output_dim_<T>::value> {};
 
     template<typename T>
@@ -201,7 +220,7 @@ namespace vec_access {
         std::integral_constant<std::size_t, 1> {};
 
     template<std::size_t N, typename T>
-    struct input_dim_<repeated_value<N,T>> :
+    struct input_dim_<impl::repeated_value<N,T>> :
         std::integral_constant<std::size_t, N*input_dim_<T>::value> {};
 
     template<typename T>
@@ -224,13 +243,13 @@ namespace vec_access {
 
     template<typename T>
     struct is_index_base : std::integral_constant<bool,
-        std::is_integral<T>::value || is_range<T>::value || is_index_vector<T>::value> {};
+        std::is_integral<T>::value || meta::is_range<T>::value || is_index_vector<T>::value> {};
 
     template<typename T>
     struct is_repeated_index : std::false_type {};
 
     template<std::size_t N, typename T>
-    struct is_repeated_index<repeated_value<N,T>> : is_index_base<T> {};
+    struct is_repeated_index<impl::repeated_value<N,T>> : is_index_base<T> {};
 
     template<typename T>
     struct is_index : std::integral_constant<bool,
@@ -238,7 +257,7 @@ namespace vec_access {
 
     template<typename ... Args>
     struct are_indices : std::integral_constant<bool,
-        are_all_true<bool_list<is_index<Args>::value...>>::value> {};
+        meta::are_all_true<meta::bool_list<is_index<Args>::value...>>::value> {};
 
     template<>
     struct are_indices<> : std::true_type {};
@@ -259,31 +278,31 @@ namespace vec_access {
 
         // Functions to build the dimension of the resulting vector
         template<std::size_t IT, std::size_t IV, typename T>
-        static void do_resize_impl_(type&, itype&, cte_t<IT>, cte_t<IV>, const T&, std::false_type) {}
+        static void do_resize_impl_(type&, itype&, meta::cte_t<IT>, meta::cte_t<IV>, const T&, std::false_type) {}
 
         template<std::size_t IT, std::size_t IV, typename T>
-        static void do_resize_impl_(type& t, itype& v, cte_t<IT>, cte_t<IV>, const T& rng, std::true_type) {
-            t.dims[IT] = range_impl::range_size(rng, v.dims[IV]);
+        static void do_resize_impl_(type& t, itype& v, meta::cte_t<IT>, meta::cte_t<IV>, const T& rng, std::true_type) {
+            t.dims[IT] = impl::range_impl::range_size(rng, v.dims[IV]);
         }
 
         template<std::size_t IT, std::size_t IV, typename T>
-        static void do_resize_(type& t, itype& v, cte_t<IT> d1, cte_t<IV> d2, const T& i) {
-            do_resize_impl_(t, v, d1, d2, i, is_range<T>{});
+        static void do_resize_(type& t, itype& v, meta::cte_t<IT> d1, meta::cte_t<IV> d2, const T& i) {
+            do_resize_impl_(t, v, d1, d2, i, meta::is_range<T>{});
         }
 
         template<std::size_t IT, std::size_t IV, typename T>
-        static void do_resize_(type& t, itype&, cte_t<IT>, cte_t<IV>, const vec<1,T>& ids) {
+        static void do_resize_(type& t, itype&, meta::cte_t<IT>, meta::cte_t<IV>, const vec<1,T>& ids) {
             t.dims[IT] = ids.size();
         }
 
         template<std::size_t IT, std::size_t IV, typename T, typename ... Args2>
-        static void resize_(type& t, itype& v, cte_t<IT> it, cte_t<IV> iv, const T& i,
+        static void resize_(type& t, itype& v, meta::cte_t<IT> it, meta::cte_t<IV> iv, const T& i,
             const Args2& ... args) {
             do_resize_(t, v, it, iv, i);
-            resize_(t, v, cte_t<IT+output_dim<T>::value>(), cte_t<IV+input_dim<T>::value>(), args...);
+            resize_(t, v, meta::cte_t<IT+output_dim<T>::value>(), meta::cte_t<IV+input_dim<T>::value>(), args...);
         }
 
-        static void resize_(type& t, itype& v, cte_t<ODim>, cte_t<Dim>) {
+        static void resize_(type& t, itype& v, meta::cte_t<ODim>, meta::cte_t<Dim>) {
             t.resize();
         }
 
@@ -305,71 +324,71 @@ namespace vec_access {
 
         // Functions to populate the resulting vector
         template<typename T>
-        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
+        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<Dim-1>,
             const std::array<uint_t, Dim>& pitch, std::false_type, const T& ix) {
 
-            t.data[itx] = ptr<Type>(v.data[ivx+to_idx<Dim-1>(v,ix)]);
+            t.data[itx] = impl::ptr<Type>(v.data[ivx+to_idx<Dim-1>(v,ix)]);
             ++itx;
         }
 
         template<typename T>
-        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
+        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<Dim-1>,
             const std::array<uint_t, Dim>& pitch, std::true_type, const T& rng) {
 
             for (uint_t j : range(rng, v.dims[Dim-1])) {
-                t.data[itx] = ptr<Type>(v.data[ivx+j]);
+                t.data[itx] = impl::ptr<Type>(v.data[ivx+j]);
                 ++itx;
             }
         }
 
         template<typename T>
-        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1> d,
+        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<Dim-1> d,
             const std::array<uint_t, Dim>& pitch, const T& ix) {
 
-            make_indices_(t, itx, v, ivx, d, pitch, is_range<T>{}, ix);
+            make_indices_(t, itx, v, ivx, d, pitch, meta::is_range<T>{}, ix);
         }
 
         template<typename T>
-        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<Dim-1>,
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<Dim-1>,
             const std::array<uint_t, Dim>& pitch, const vec<1,T>& ids) {
 
             for (uint_t j : ids) {
-                t.data[itx] = ptr<Type>(v.data[ivx+to_idx<Dim-1>(v,j)]);
+                t.data[itx] = impl::ptr<Type>(v.data[ivx+to_idx<Dim-1>(v,j)]);
                 ++itx;
             }
         }
 
         template<std::size_t IV, typename T, typename ... Args2>
-        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV>,
+        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<IV>,
             const std::array<uint_t, Dim>& pitch, std::false_type, const T& ix, const Args2& ... i) {
 
             make_indices_(t, itx, v, ivx +
-                to_idx<IV>(v,ix)*pitch[IV], cte_t<IV+1>(), pitch, i...
+                to_idx<IV>(v,ix)*pitch[IV], meta::cte_t<IV+1>(), pitch, i...
             );
         }
 
         template<std::size_t IV, typename T, typename ... Args2>
-        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV>,
+        static void make_indices_impl_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<IV>,
             const std::array<uint_t, Dim>& pitch, std::true_type, const T& rng, const Args2& ... i) {
 
             for (uint_t j : range(rng, v.dims[IV])) {
-                make_indices_(t, itx, v, ivx + j*pitch[IV], cte_t<IV+1>(), pitch, i...);
+                make_indices_(t, itx, v, ivx + j*pitch[IV], meta::cte_t<IV+1>(), pitch, i...);
             }
         }
 
         template<std::size_t IV, typename T, typename ... Args2>
-        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV> d,
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<IV> d,
             const std::array<uint_t, Dim>& pitch, const T& ix, const Args2& ... i) {
 
-            make_indices_impl_(t, itx, v, ivx, d, pitch, is_range<T>{}, ix, i...);
+            make_indices_impl_(t, itx, v, ivx, d, pitch, meta::is_range<T>{}, ix, i...);
         }
 
         template<std::size_t IV, typename T, typename ... Args2>
-        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, cte_t<IV>,
+        static void make_indices_(type& t, uint_t& itx, itype& v, uint_t ivx, meta::cte_t<IV>,
             const std::array<uint_t, Dim>& pitch, const vec<1,T>& ids, const Args2& ... i) {
 
             for (uint_t j : ids) {
-                make_indices_(t, itx, v, ivx + to_idx<IV>(v,j)*pitch[IV], cte_t<IV+1>(),
+                make_indices_(t, itx, v, ivx + to_idx<IV>(v,j)*pitch[IV], meta::cte_t<IV+1>(),
                     pitch, i...
                 );
             }
@@ -377,8 +396,8 @@ namespace vec_access {
 
         template<typename ... UArgs>
         static type access_(itype& v, const UArgs& ... i) {
-            type t(vec_ref_tag, get_parent(v));
-            resize_(t, v, cte_t<0>(), cte_t<0>(), i...);
+            type t(impl::vec_ref_tag, get_parent(v));
+            resize_(t, v, meta::cte_t<0>(), meta::cte_t<0>(), i...);
 
             // TODO: (optimization) cache this on vector construction
             std::array<uint_t, Dim> pitch;
@@ -390,7 +409,7 @@ namespace vec_access {
             }
 
             uint_t itx = 0;
-            make_indices_(t, itx, v, 0, cte_t<0>(), pitch, i...);
+            make_indices_(t, itx, v, 0, meta::cte_t<0>(), pitch, i...);
             return t;
         }
 
@@ -431,15 +450,15 @@ namespace vec_access {
         }
 
         // Access functions
-        template<typename T, typename enable = typename std::enable_if<is_range<T>::value>::type>
+        template<typename T, typename enable = typename std::enable_if<meta::is_range<T>::value>::type>
         static type access(itype& v, const T& rng) {
-            type t(vec_ref_tag, get_parent(v));
-            t.dims[0] = range_impl::range_size(rng, v.dims[0]);
+            type t(impl::vec_ref_tag, get_parent(v));
+            t.dims[0] = impl::range_impl::range_size(rng, v.dims[0]);
             t.resize();
 
             uint_t itx = 0;
             for (uint_t i : range(rng, v.dims[0])) {
-                t.data[itx] = ptr<Type>(v.data[i]);
+                t.data[itx] = impl::ptr<Type>(v.data[i]);
                 ++itx;
             }
 
@@ -448,13 +467,13 @@ namespace vec_access {
 
         template<typename T>
         static type access(itype& v, const vec<1,T>& ids) {
-            type t(vec_ref_tag, get_parent(v));
+            type t(impl::vec_ref_tag, get_parent(v));
             t.dims[0] = ids.size();
             t.resize();
 
             uint_t itx = 0;
             for (uint_t i : ids) {
-                t.data[itx] = ptr<Type>(v.data[to_idx(v,i)]);
+                t.data[itx] = impl::ptr<Type>(v.data[to_idx(v,i)]);
                 ++itx;
             }
 
@@ -473,7 +492,7 @@ namespace vec_access {
         using itype = typename std::conditional<IsConst,
             const vec<Dim,Type>, vec<Dim,Type>>::type;
         using type = typename std::conditional<IsConst,
-            const dtype_t<rptype>&, dtype_t<rptype>&>::type;
+            const meta::dtype_t<rptype>&, meta::dtype_t<rptype>&>::type;
 
         // Adapter to switch between safe/unsafe array indexing
         template<std::size_t D, typename T>
@@ -527,7 +546,7 @@ namespace vec_access {
         using itype = typename std::conditional<IsConst,
             const vec<1,Type>, vec<1,Type>>::type;
         using type = typename std::conditional<IsConst,
-            const dtype_t<rptype>&, dtype_t<rptype>&>::type;
+            const meta::dtype_t<rptype>&, meta::dtype_t<rptype>&>::type;
 
         // Adapter to switch between safe/unsafe array indexing
         static uint_t to_idx_(itype& v, const T& t, std::true_type) {
@@ -553,17 +572,19 @@ namespace vec_access {
 
     template<typename V, typename T>
     auto bracket_access(V& parent, const T& rng) ->
-        vec<1,constify<typename V::rtype, V>*> {
-        vec<1,constify<typename V::rtype, V>*> v(vec_ref_tag, parent);
-        v.dims[0] = range_impl::range_size(rng, parent.size());
+        vec<1,meta::constify<typename V::rtype, V>*> {
+        vec<1,meta::constify<typename V::rtype, V>*> v(impl::vec_ref_tag, parent);
+        v.dims[0] = impl::range_impl::range_size(rng, parent.size());
         v.data.resize(v.dims[0]);
 
         uint_t itx = 0;
         for (uint_t i : range(rng, parent.size())) {
-            v.data[itx] = ptr<typename V::rtype>(parent.data[i]);
+            v.data[itx] = impl::ptr<typename V::rtype>(parent.data[i]);
             ++itx;
         }
 
         return v;
     }
+}
+}
 }

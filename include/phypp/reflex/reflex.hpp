@@ -4,15 +4,14 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include "phypp/core/typedefs.hpp"
 #include "phypp/core/variadic.hpp"
 
-template<std::size_t Dim, typename Type>
-struct vec;
+namespace phypp {
+    template<std::size_t Dim, typename Type>
+    struct vec;
 
-using int_t = std::ptrdiff_t;
-using uint_t = std::size_t;
-
-struct rgb;
+    struct rgb;
 
 #ifdef NO_REFLECTION
 #undef DISABLE_REFLECTION
@@ -194,14 +193,14 @@ namespace reflex {
     };
 
     template<typename T>
-    void do_init_set_name_(member_t& m, T& d, data_t* parent, cte_t<true>) {
+    void do_init_set_name_(member_t& m, T& d, data_t* parent, meta::cte_t<true>) {
         d._reflex.name = m.name;
         d._reflex.parent = parent;
         m.reflex = &d._reflex;
     }
 
     template<typename T>
-    void do_init_set_name_(member_t& m, T& d, data_t* parent, cte_t<false>) {}
+    void do_init_set_name_(member_t& m, T& d, data_t* parent, meta::cte_t<false>) {}
 
     template<std::size_t N, typename ... Args>
     auto get_value(type_list<Args...> tl, member_t& m) ->
@@ -218,23 +217,23 @@ namespace reflex {
     }
 
     template<typename ... Args, typename T>
-    void do_init_(type_list<Args...> tl, cte_t<0>, T* t, data_impl_t& data) {}
+    void do_init_(type_list<Args...> tl, meta::cte_t<0>, T* t, data_impl_t& data) {}
 
     template<typename ... Args, std::size_t N, typename T>
-    void do_init_(type_list<Args...> tl, cte_t<N>, T* t, data_impl_t& data) {
+    void do_init_(type_list<Args...> tl, meta::cte_t<N>, T* t, data_impl_t& data) {
         member_t& m = data.members[N-1];
         m.parent = &t->_reflex;
         auto& v = get_value<N-1>(tl, m);
         do_init_set_name_(m, v, &t->_reflex,
-            cte_t<has_reflex<typename std::decay<decltype(v)>::type>::value>()
+            meta::cte_t<has_reflex<typename std::decay<decltype(v)>::type>::value>()
         );
-        do_init_(tl, cte_t<N-1>(), t, data);
+        do_init_(tl, meta::cte_t<N-1>(), t, data);
     }
 
     template<typename ... Args, typename T>
     data_impl_t do_init(type_list<Args...> tl, T* t, data_impl_t&& data) {
         data_impl_t d = std::move(data);
-        do_init_(tl, cte_t<sizeof...(Args)>(), t, d);
+        do_init_(tl, meta::cte_t<sizeof...(Args)>(), t, d);
         return d;
     }
 
@@ -345,7 +344,7 @@ namespace reflex {
 
 #ifndef NO_REFLECTION
     #define MAKE_MEMBER(name) reflex::member_t{#name, typeid(name), nullptr, \
-        reinterpret_cast<void*>(remove_const(&name))}
+        reinterpret_cast<void*>(meta::remove_const(&name))}
 
     #define MEMBERS1(...) using _reflex_types = decltype(reflex::make_types_decay_(__VA_ARGS__))
 
@@ -362,5 +361,6 @@ namespace reflex {
     #define MEMBERS2(name, ...)
     #define NO_MEMBER(name)
 #endif
+}
 
 #endif

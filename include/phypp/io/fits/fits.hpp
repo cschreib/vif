@@ -5,6 +5,7 @@
 #include "phypp/io/fits/table.hpp"
 #include "phypp/io/fits/image.hpp"
 
+namespace phypp {
 namespace fits {
     // Return the number of dimensions of a FITS file
     // Note: will return 0 for FITS tables
@@ -137,15 +138,15 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void read_table(const std::string& filename, file::macroed_t,
+    void read_table(const std::string& filename, file::impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::input_table(filename).read_columns(file::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::input_table(filename).read_columns(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
     }
 
     template<typename ... Args>
-    void read_table_loose(const std::string& filename, file::macroed_t,
+    void read_table_loose(const std::string& filename, file::impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::input_table(filename).read_columns(fits::missing, file::macroed_t{}, names,
+        fits::input_table(filename).read_columns(fits::missing, file::impl::macroed_t{}, names,
             std::forward<Args>(args)...);
     }
 
@@ -166,9 +167,9 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void write_table(const std::string& filename, file::macroed_t,
+    void write_table(const std::string& filename, file::impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::output_table(filename).write_columns(file::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::output_table(filename).write_columns(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -185,9 +186,9 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void update_table(const std::string& filename, file::macroed_t,
+    void update_table(const std::string& filename, file::impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::table(filename).update_columns(file::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::table(filename).update_columns(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -206,6 +207,7 @@ namespace fits {
     inline void display(const std::string& name1, const std::string& name2, const std::string& name3) {
         fork("ds9 -rgb -red "+name1+" -green "+name2+" -blue "+name3);
     }
+}
 }
 
 #endif

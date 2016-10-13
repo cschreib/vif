@@ -16,6 +16,7 @@
 #include "phypp/core/error.hpp"
 #include "phypp/math/math.hpp"
 
+namespace phypp {
 namespace file {
     namespace impl {
         // Emulate directory and file listing windows functions
@@ -397,198 +398,200 @@ namespace file {
         return std::tuple_cat(std::make_tuple(n), std::tie(t, args...));
     }
 
-    inline void read_table_resize_(std::size_t n) {}
+    namespace impl {
+        inline void read_table_resize_(std::size_t n) {}
 
-    template<typename T, typename ... Args>
-    void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args);
-    template<typename U, typename ... VArgs, typename ... Args>
-    void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args);
-    template<typename ... Args>
-    void read_table_resize_(std::size_t n, placeholder_t, Args& ... args);
+        template<typename T, typename ... Args>
+        void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args);
+        template<typename U, typename ... VArgs, typename ... Args>
+        void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args);
+        template<typename ... Args>
+        void read_table_resize_(std::size_t n, placeholder_t, Args& ... args);
 
-    template<typename T, typename ... Args>
-    void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args) {
-        v.resize(n);
-        read_table_resize_(n, args...);
-    }
-
-    inline void read_table_resize_cols_(std::size_t n, std::size_t m) {}
-
-    template<typename Type, typename ... VArgs>
-    void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args);
-    template<typename ... VArgs>
-    void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args);
-
-    template<typename Type, typename ... VArgs>
-    void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args) {
-        v.resize(n, m);
-        read_table_resize_cols_(n, m, args...);
-    }
-
-    template<typename ... VArgs>
-    void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args) {
-        read_table_resize_cols_(n, m, args...);
-    }
-
-    template<typename U, typename ... VArgs, std::size_t ... S>
-    void read_table_resize_cols_i_(std::size_t n, std::size_t m, std::tuple<U,VArgs&...>& v, seq_t<S...>) {
-        read_table_resize_cols_(n, m, std::get<S>(v)...);
-    }
-
-    template<typename U, typename ... VArgs, typename ... Args>
-    void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args) {
-        read_table_resize_cols_i_(n, std::get<0>(v), v, typename gen_seq<1, sizeof...(VArgs)>::type());
-        read_table_resize_(n, args...);
-    }
-
-    template<typename ... Args>
-    void read_table_resize_(std::size_t n, placeholder_t, Args& ... args) {
-        read_table_resize_(n, args...);
-    }
-
-    template<typename I, typename T>
-    bool read_value_(I& in, T& v, std::string& fallback) {
-        auto pos = in.tellg();
-        in >> fallback;
-
-        std::istringstream ss(fallback);
-        ss >> v;
-        if (ss.fail() || !ss.eof()) {
-            in.clear();
-            in.seekg(pos);
-            return false;
+        template<typename T, typename ... Args>
+        void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args) {
+            v.resize(n);
+            read_table_resize_(n, args...);
         }
 
-        return true;
-    }
+        inline void read_table_resize_cols_(std::size_t n, std::size_t m) {}
 
-    template<typename I, typename T>
-    bool read_value_float_(I& in, T& v, std::string& fallback) {
-        auto pos = in.tellg();
-        in >> fallback;
+        template<typename Type, typename ... VArgs>
+        void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args);
+        template<typename ... VArgs>
+        void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args);
 
-        std::istringstream ss(fallback);
-        ss >> v;
-        if (ss.fail()) {
-            std::string s = trim(toupper(fallback));
-            if (s == "NAN" || s == "+NAN" || s == "-NAN") {
-                v = dnan;
-                return true;
-            } else if (s == "+INF" || s == "INF+" || s == "INF") {
-                v = dinf;
-                return true;
-            } else if (s == "-INF" || s == "INF-") {
-                v = -dinf;
-                return true;
-            } else if (s == "NULL") {
-                v = dnan;
-                return true;
+        template<typename Type, typename ... VArgs>
+        void read_table_resize_cols_(std::size_t n, std::size_t m, vec<2,Type>& v, VArgs&... args) {
+            v.resize(n, m);
+            read_table_resize_cols_(n, m, args...);
+        }
+
+        template<typename ... VArgs>
+        void read_table_resize_cols_(std::size_t n, std::size_t m, placeholder_t, VArgs&... args) {
+            read_table_resize_cols_(n, m, args...);
+        }
+
+        template<typename U, typename ... VArgs, std::size_t ... S>
+        void read_table_resize_cols_i_(std::size_t n, std::size_t m, std::tuple<U,VArgs&...>& v, meta::seq_t<S...>) {
+            read_table_resize_cols_(n, m, std::get<S>(v)...);
+        }
+
+        template<typename U, typename ... VArgs, typename ... Args>
+        void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args) {
+            read_table_resize_cols_i_(n, std::get<0>(v), v, typename meta::gen_seq<1, sizeof...(VArgs)>::type());
+            read_table_resize_(n, args...);
+        }
+
+        template<typename ... Args>
+        void read_table_resize_(std::size_t n, placeholder_t, Args& ... args) {
+            read_table_resize_(n, args...);
+        }
+
+        template<typename I, typename T>
+        bool read_value_(I& in, T& v, std::string& fallback) {
+            auto pos = in.tellg();
+            in >> fallback;
+
+            std::istringstream ss(fallback);
+            ss >> v;
+            if (ss.fail() || !ss.eof()) {
+                in.clear();
+                in.seekg(pos);
+                return false;
             }
 
-            in.clear();
-            in.seekg(pos);
-            return false;
-        } else if (!ss.eof()) {
-            in.clear();
-            in.seekg(pos);
-            return false;
+            return true;
         }
 
-        return true;
-    }
+        template<typename I, typename T>
+        bool read_value_float_(I& in, T& v, std::string& fallback) {
+            auto pos = in.tellg();
+            in >> fallback;
 
-    template<typename I>
-    bool read_value_(I& in, float& v, std::string& fallback) {
-        return read_value_float_(in, v, fallback);
-    }
+            std::istringstream ss(fallback);
+            ss >> v;
+            if (ss.fail()) {
+                std::string s = trim(toupper(fallback));
+                if (s == "NAN" || s == "+NAN" || s == "-NAN") {
+                    v = dnan;
+                    return true;
+                } else if (s == "+INF" || s == "INF+" || s == "INF") {
+                    v = dinf;
+                    return true;
+                } else if (s == "-INF" || s == "INF-") {
+                    v = -dinf;
+                    return true;
+                } else if (s == "NULL") {
+                    v = dnan;
+                    return true;
+                }
 
-    template<typename I>
-    bool read_value_(I& in, double& v, std::string& fallback) {
-        return read_value_float_(in, v, fallback);
-    }
-
-    inline void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
-
-    template<typename T, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args);
-    template<typename U, typename ... VArgs, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
-    template<typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args);
-
-    template<typename T, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
-        std::string fb;
-        if (!read_value_(fs, v[i], fb)) {
-            if (fb.empty()) {
-                throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
-            } else {
-                throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                    strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                in.clear();
+                in.seekg(pos);
+                return false;
+            } else if (!ss.eof()) {
+                in.clear();
+                in.seekg(pos);
+                return false;
             }
+
+            return true;
         }
-        read_table_(fs, i, ++j, args...);
-    }
 
-    inline void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
+        template<typename I>
+        bool read_value_(I& in, float& v, std::string& fallback) {
+            return read_value_float_(in, v, fallback);
+        }
 
-    template<typename T, typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
-    template<typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args);
+        template<typename I>
+        bool read_value_(I& in, double& v, std::string& fallback) {
+            return read_value_float_(in, v, fallback);
+        }
 
-    template<typename T, typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
-        std::string fb;
-        if (!read_value_(fs, v(i,k), fb)) {
-            if (fb.empty()) {
-                throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
-            } else {
-                throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                    strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+        inline void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
+
+        template<typename T, typename ... Args>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args);
+        template<typename U, typename ... VArgs, typename ... Args>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
+        template<typename ... Args>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args);
+
+        template<typename T, typename ... Args>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
+            std::string fb;
+            if (!read_value_(fs, v[i], fb)) {
+                if (fb.empty()) {
+                    throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                } else {
+                    throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
+                        strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                }
             }
+            read_table_(fs, i, ++j, args...);
         }
-        read_table_cols_(fs, i, ++j, k, args...);
-    }
 
-    template<typename ... VArgs>
-    void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
-        std::string s;
-        if (!(fs >> s)) {
+        inline void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
+
+        template<typename T, typename ... VArgs>
+        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
+        template<typename ... VArgs>
+        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args);
+
+        template<typename T, typename ... VArgs>
+        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
+            std::string fb;
+            if (!read_value_(fs, v(i,k), fb)) {
+                if (fb.empty()) {
+                    throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                } else {
+                    throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
+                        strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                }
+            }
+            read_table_cols_(fs, i, ++j, k, args...);
+        }
+
+        template<typename ... VArgs>
+        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, placeholder_t, VArgs&... args) {
+            std::string s;
+            if (!(fs >> s)) {
+                if (fs.eof()) {
+                    throw exception("cannot extract value from file, "
+                        "too few columns on line l."+strn(i+1));
+                }
+            }
+
+            read_table_cols_(fs, i, ++j, k, args...);
+        }
+
+        template<typename U, typename ... VArgs, std::size_t ... S>
+        void read_table_cols_i_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, std::tuple<U,VArgs&...>& v, meta::seq_t<S...>) {
+            read_table_cols_(fs, i, j, k, std::get<S>(v)...);
+        }
+
+        template<typename U, typename ... VArgs, typename ... Args>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args) {
+            std::size_t n = std::get<0>(v);
+            for (std::size_t k = 0; k < n; ++k) {
+                read_table_cols_i_(fs, i, j, k, v, typename meta::gen_seq<1, sizeof...(VArgs)>::type());
+            }
+
+            read_table_(fs, i, j, args...);
+        }
+
+        template<typename ... Args>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
             if (fs.eof()) {
-                throw exception("cannot extract value from file, "
+                throw exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
                     "too few columns on line l."+strn(i+1));
             }
+
+            std::string s;
+            fs >> s;
+            read_table_(fs, i, ++j, args...);
         }
-
-        read_table_cols_(fs, i, ++j, k, args...);
-    }
-
-    template<typename U, typename ... VArgs, std::size_t ... S>
-    void read_table_cols_i_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, std::tuple<U,VArgs&...>& v, seq_t<S...>) {
-        read_table_cols_(fs, i, j, k, std::get<S>(v)...);
-    }
-
-    template<typename U, typename ... VArgs, typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args) {
-        std::size_t n = std::get<0>(v);
-        for (std::size_t k = 0; k < n; ++k) {
-            read_table_cols_i_(fs, i, j, k, v, typename gen_seq<1, sizeof...(VArgs)>::type());
-        }
-
-        read_table_(fs, i, j, args...);
-    }
-
-    template<typename ... Args>
-    void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, placeholder_t, Args& ... args) {
-        if (fs.eof()) {
-            throw exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
-                "too few columns on line l."+strn(i+1));
-        }
-
-        std::string s;
-        fs >> s;
-        read_table_(fs, i, ++j, args...);
     }
 
     template<typename ... Args>
@@ -624,7 +627,7 @@ namespace file {
             std::ifstream file(name.c_str());
             file.seekg(rpos);
 
-            read_table_resize_(n, args...);
+            impl::read_table_resize_(n, args...);
 
             for (std::size_t i = 0; i < n; ++i) {
                 do {
@@ -633,94 +636,96 @@ namespace file {
 
                 std::istringstream fs(line);
                 std::size_t j = 0;
-                read_table_(fs, i, j, args...);
+                impl::read_table_(fs, i, j, args...);
             }
         } catch (exception& e) {
             phypp_check(false, std::string(e.what())+" (reading "+name+")");
         }
     }
 
-    inline void write_table_check_size_(std::size_t n, std::size_t i) {}
+    namespace impl {
+        inline void write_table_check_size_(std::size_t n, std::size_t i) {}
 
-    template<std::size_t Dim, typename Type, typename ... Args>
-    void write_table_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
-        const Args& ... args) {
+        template<std::size_t Dim, typename Type, typename ... Args>
+        void write_table_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
+            const Args& ... args) {
 
-        if (n == 0) {
-            n = v.dims[0];
+            if (n == 0) {
+                n = v.dims[0];
+            }
+
+            if (v.dims[0] != n) {
+                throw exception("incorrect dimension for column "+strn(i)+" ("+
+                    strn(v.dims[0])+" vs "+strn(n)+")");
+            }
+
+            write_table_check_size_(n, i+1, args...);
         }
 
-        if (v.dims[0] != n) {
-            throw exception("incorrect dimension for column "+strn(i)+" ("+
-                strn(v.dims[0])+" vs "+strn(n)+")");
+        inline void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j) {
+            file << '\n';
         }
 
-        write_table_check_size_(n, i+1, args...);
-    }
+        template<typename Type, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args);
 
-    inline void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j) {
-        file << '\n';
-    }
+        template<typename Type, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<1,Type>& v, const Args& ... args) {
 
-    template<typename Type, typename ... Args>
-    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args);
-
-    template<typename Type, typename ... Args>
-    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j, const vec<1,Type>& v, const Args& ... args) {
-
-        if (j == 0) {
-            file << std::string(sep.size(), ' ');
-        } else {
-            file << sep;
-        }
-
-        std::string s = strn(v[i]);
-        if (s.size() < cwidth) {
-            file << std::string(cwidth - s.size(), ' ');
-        }
-
-        file << s;
-
-        write_table_do_(file, cwidth, sep, i, j+1, args...);
-    }
-
-    template<typename Type, typename ... Args>
-    void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-        std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
-
-        for (uint_t k = 0; k < v.dims[1]; ++k) {
             if (j == 0) {
                 file << std::string(sep.size(), ' ');
             } else {
                 file << sep;
             }
 
-            std::string s = strn(v(i,k));
+            std::string s = strn(v[i]);
             if (s.size() < cwidth) {
                 file << std::string(cwidth - s.size(), ' ');
             }
 
             file << s;
-            ++j;
+
+            write_table_do_(file, cwidth, sep, i, j+1, args...);
         }
 
-        write_table_do_(file, cwidth, sep, i, j, args...);
+        template<typename Type, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
+
+            for (uint_t k = 0; k < v.dims[1]; ++k) {
+                if (j == 0) {
+                    file << std::string(sep.size(), ' ');
+                } else {
+                    file << sep;
+                }
+
+                std::string s = strn(v(i,k));
+                if (s.size() < cwidth) {
+                    file << std::string(cwidth - s.size(), ' ');
+                }
+
+                file << s;
+                ++j;
+            }
+
+            write_table_do_(file, cwidth, sep, i, j, args...);
+        }
     }
 
     template<typename ... Args>
     void write_table(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;
-        write_table_check_size_(n, t, args...);
+        impl::write_table_check_size_(n, t, args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
         try {
             for (std::size_t i = 0; i < n; ++i) {
-                write_table_do_(file, cwidth, "", i, 0, args...);
+                impl::write_table_do_(file, cwidth, "", i, 0, args...);
             }
         } catch (exception& e) {
             phypp_check(false, std::string(e.what())+" (writing "+filename+")");
@@ -732,7 +737,7 @@ namespace file {
         const Args& ... args) {
 
         std::size_t n = 0, t = 0;
-        write_table_check_size_(n, t, args...);
+        impl::write_table_check_size_(n, t, args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
@@ -744,111 +749,114 @@ namespace file {
             file << "#" << hdr << "\n#\n";
 
             for (std::size_t i = 0; i < n; ++i) {
-                write_table_do_(file, cwidth, "", i, 0, args...);
+                impl::write_table_do_(file, cwidth, "", i, 0, args...);
             }
         } catch (exception& e) {
             phypp_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
 
-    struct macroed_t {};
-    #define ftable(...) file::macroed_t(), #__VA_ARGS__, __VA_ARGS__
+    #define ftable(...) file::impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
 
-    inline std::string bake_macroed_name(std::string t) {
-        // Just remove the leading object before the '.' operator
-        auto p = t.find_first_of('.');
-        if (p != t.npos) {
-            t = t.substr(p+1);
+    namespace impl {
+        struct macroed_t {};
+
+        inline std::string bake_macroed_name(std::string t) {
+            // Just remove the leading object before the '.' operator
+            auto p = t.find_first_of('.');
+            if (p != t.npos) {
+                t = t.substr(p+1);
+            }
+            return t;
         }
-        return t;
-    }
 
-    inline std::string pop_macroed_name(std::string& s) {
-        static const std::array<char,3> opening = {{'(', '[', '{'}};
-        static const std::array<char,3> closing = {{')', ']', '}'}};
+        inline std::string pop_macroed_name(std::string& s) {
+            static const std::array<char,3> opening = {{'(', '[', '{'}};
+            static const std::array<char,3> closing = {{')', ']', '}'}};
 
-        std::string name;
+            std::string name;
 
-        // Locate the next comma (',') that is not part of some nested function call
-        // or constructor. Need a small parser...
-        std::vector<uint_t> stack;
-        uint_t p0 = s.find_first_not_of(" \t");
-        uint_t pos = p0;
-        for (; pos < s.size(); ++pos) {
-            if (stack.empty() && s[pos] == ',') break;
-            for (uint_t k : range(opening)) {
-                if (s[pos] == opening[k]) {
-                    stack.push_back(k);
-                    break;
-                } else if (s[pos] == closing[k]) {
-                    phypp_check(stack.back() == k,
-                        "library bug: error parsing macroed name list: '", s, "'");
-                    stack.pop_back();
-                    break;
+            // Locate the next comma (',') that is not part of some nested function call
+            // or constructor. Need a small parser...
+            std::vector<uint_t> stack;
+            uint_t p0 = s.find_first_not_of(" \t");
+            uint_t pos = p0;
+            for (; pos < s.size(); ++pos) {
+                if (stack.empty() && s[pos] == ',') break;
+                for (uint_t k : range(opening)) {
+                    if (s[pos] == opening[k]) {
+                        stack.push_back(k);
+                        break;
+                    } else if (s[pos] == closing[k]) {
+                        phypp_check(stack.back() == k,
+                            "library bug: error parsing macroed name list: '", s, "'");
+                        stack.pop_back();
+                        break;
+                    }
                 }
             }
+
+            uint_t p1 = pos;
+            if (pos != s.size()) {
+                ++p1;
+            }
+
+            --pos;
+
+            // Extract the trimmed name
+            pos = s.find_last_not_of(" \t", pos);
+            name = s.substr(p0, pos+1-p0);
+
+            // Remove that element from the name list
+            s = s.substr(p1);
+
+            return name;
         }
 
-        uint_t p1 = pos;
-        if (pos != s.size()) {
-            ++p1;
+        inline vec1s split_macroed_names(std::string s) {
+            vec1s names;
+
+            do {
+                names.push_back(pop_macroed_name(s));
+            } while (!s.empty());
+
+            return names;
         }
 
-        --pos;
+        inline void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i) {}
 
-        // Extract the trimmed name
-        pos = s.find_last_not_of(" \t", pos);
-        name = s.substr(p0, pos+1-p0);
+        template<typename T, typename ... Args>
+        void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args);
+        template<typename T, typename ... Args>
+        void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args);
 
-        // Remove that element from the name list
-        s = s.substr(p1);
+        template<typename T, typename ... Args>
+        void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args) {
+            write_table_hdr_fix_2d_(vnames, i+1, args...);
+        }
 
-        return name;
-    }
+        template<typename T, typename ... Args>
+        void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args) {
+            std::string base = vnames[i];
 
-    inline vec1s split_macroed_names(std::string s) {
-        vec1s names;
+            vec1s ncols = base+"_"+strna(uindgen(v.dims[1])+1);
+            vnames.data.insert(vnames.data.begin()+i+1, ncols.begin()+1, ncols.end());
+            vnames[i] = ncols[0];
+            vnames.dims[0] += v.dims[1]-1;
 
-        do {
-            names.push_back(pop_macroed_name(s));
-        } while (!s.empty());
-
-        return names;
-    }
-
-    inline void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i) {}
-
-    template<typename T, typename ... Args>
-    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args);
-    template<typename T, typename ... Args>
-    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args);
-
-    template<typename T, typename ... Args>
-    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const T&, const Args& ... args) {
-        write_table_hdr_fix_2d_(vnames, i+1, args...);
-    }
-
-    template<typename T, typename ... Args>
-    void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args) {
-        std::string base = vnames[i];
-
-        vec1s ncols = base+"_"+strna(uindgen(v.dims[1])+1);
-        vnames.data.insert(vnames.data.begin()+i+1, ncols.begin()+1, ncols.end());
-        vnames[i] = ncols[0];
-        vnames.dims[0] += v.dims[1]-1;
-
-        write_table_hdr_fix_2d_(vnames, i+v.dims[1], args...);
+            write_table_hdr_fix_2d_(vnames, i+v.dims[1], args...);
+        }
     }
 
     template<typename ... Args>
-    void write_table_hdr(const std::string& filename, std::size_t cwidth, macroed_t,
+    void write_table_hdr(const std::string& filename, std::size_t cwidth, impl::macroed_t,
         const std::string& names, const Args& ... args) {
-        vec1s vnames = file::split_macroed_names(names);
+        vec1s vnames = file::impl::split_macroed_names(names);
         for (auto& s : vnames) {
-            s = file::bake_macroed_name(s);
+            s = file::impl::bake_macroed_name(s);
         }
 
-        write_table_hdr_fix_2d_(vnames, 0, args...);
+        impl::write_table_hdr_fix_2d_(vnames, 0, args...);
 
         write_table_hdr(filename, cwidth, vnames, args...);
     }
@@ -856,15 +864,16 @@ namespace file {
     template<typename ... Args>
     void write_table_csv(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;
-        write_table_check_size_(n, t,args...);
+        impl::write_table_check_size_(n, t,args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
         for (std::size_t i = 0; i < n; ++i) {
-            write_table_do_(file, cwidth, ",", i, 0, args...);
+            impl::write_table_do_(file, cwidth, ",", i, 0, args...);
         }
     }
+}
 }
 
 inline bool fork(const std::string& cmd) {

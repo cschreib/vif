@@ -10,6 +10,7 @@
 #include "phypp/io/file.hpp"
 #include "phypp/math/math.hpp"
 
+namespace phypp {
 namespace fits {
     struct exception : std::exception {
         explicit exception(const std::string& m) : msg(m) {}
@@ -433,19 +434,19 @@ namespace fits {
             }
 
             template<typename T, typename enable = typename
-                std::enable_if<!is_string<decay_t<T>>::value>::type>
+                std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void write_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
-                fits_update_key(fptr_, fits::traits<decay_t<T>>::ttype,
+                fits_update_key(fptr_, fits::traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
             }
 
             template<typename T, typename enable = typename
-                std::enable_if<!is_string<decay_t<T>>::value>::type>
+                std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void add_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
-                fits_write_key(fptr_, fits::traits<decay_t<T>>::ttype,
+                fits_write_key(fptr_, fits::traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
             }
@@ -668,6 +669,7 @@ namespace fits {
 
         return true;
     }
+}
 }
 
 #endif

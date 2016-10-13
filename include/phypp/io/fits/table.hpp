@@ -4,6 +4,7 @@
 #include "phypp/reflex/reflex_helpers.hpp"
 #include "phypp/io/fits/base.hpp"
 
+namespace phypp {
 namespace fits {
     // Reading options
     struct table_read_options {
@@ -94,12 +95,12 @@ namespace fits {
 
     // Traits to identify types that can be read from a FITS table
     template<typename T>
-    struct is_readable_column_type : is_any_type_of<T, type_list<
+    struct is_readable_column_type : meta::is_any_type_of<T, meta::type_list<
         bool, char, int_t, uint_t, float, double, std::string
     >> {};
 
     template<std::size_t D, typename T>
-    struct is_readable_column_type<vec<D,T>> : is_any_type_of<T, type_list<
+    struct is_readable_column_type<vec<D,T>> : meta::is_any_type_of<T, meta::type_list<
         bool, char, int_t, uint_t, float, double, std::string
     >> {};
 
@@ -110,7 +111,7 @@ namespace fits {
     struct is_readable_column_type<vec<D,T*>> : std::false_type {};
 
     template<typename T>
-    struct is_readable_column_type<named_t<T>> : is_readable_column_type<decay_t<T>> {};
+    struct is_readable_column_type<phypp::impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
 
     // Data type to describe the content of a column
     struct column_info {
@@ -657,7 +658,7 @@ namespace fits {
         template<typename T>
         read_sentry read_column(const table_read_options& opts,
             const std::string& tcolname, T&& value) const {
-            return read_column_(opts, tcolname, std::forward<T>(value), reflex::enabled<decay_t<T>>{});
+            return read_column_(opts, tcolname, std::forward<T>(value), reflex::enabled<meta::decay_t<T>>{});
         }
 
         template<typename T>
@@ -682,18 +683,18 @@ namespace fits {
     public :
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
             (sizeof...(Args) > 1)>::type>
         void read_columns(const table_read_options& opts, Args&& ... args) const {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
-            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
-            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = meta::filter_type_list<meta::bool_list<true,false>, arg_list>;
+            using filtered_second = meta::filter_type_list<meta::bool_list<false,true>, arg_list>;
 
             static_assert(
-                are_all_true<binary_first_apply_type_to_bool_list<
+                meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 filtered_second, is_readable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
@@ -702,19 +703,19 @@ namespace fits {
         }
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
-            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, table_read_options>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, table_read_options>::value &&
             (sizeof...(Args) > 1)>::type>
         void read_columns(Args&& ... args) const {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
-            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
-            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = meta::filter_type_list<meta::bool_list<true,false>, arg_list>;
+            using filtered_second = meta::filter_type_list<meta::bool_list<false,true>, arg_list>;
 
             static_assert(
-                are_all_true<binary_first_apply_type_to_bool_list<
+                meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 filtered_second, is_readable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
@@ -724,62 +725,62 @@ namespace fits {
 
     private :
 
-        void read_columns_impl_(const table_read_options&, file::macroed_t, const std::string&) const {
+        void read_columns_impl_(const table_read_options&, file::impl::macroed_t, const std::string&) const {
             // Nothing more to do
         }
 
         template<typename T, typename ... Args>
-        void read_columns_impl_(const table_read_options& opts, file::macroed_t,
+        void read_columns_impl_(const table_read_options& opts, file::impl::macroed_t,
             std::string names, T& value, Args&& ... args) const {
 
-            std::string tcolname = file::pop_macroed_name(names);
-            read_column(opts, file::bake_macroed_name(tcolname), value);
-            read_columns_impl_(opts, file::macroed_t{}, names, std::forward<Args>(args)...);
+            std::string tcolname = file::impl::pop_macroed_name(names);
+            read_column(opts, file::impl::bake_macroed_name(tcolname), value);
+            read_columns_impl_(opts, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
         template<typename T, typename ... Args>
-        void read_columns_impl_(const table_read_options& opts, file::macroed_t,
-            std::string names, const named_t<T>& value, Args&& ... args) const {
+        void read_columns_impl_(const table_read_options& opts, file::impl::macroed_t,
+            std::string names, const phypp::impl::named_t<T>& value, Args&& ... args) const {
 
-            file::pop_macroed_name(names);
+            file::impl::pop_macroed_name(names);
             read_column(opts, value.name, value.obj);
-            read_columns_impl_(opts, file::macroed_t{}, names, std::forward<Args>(args)...);
+            read_columns_impl_(opts, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename ... Args>
-        void read_columns_impl_(file::macroed_t, const std::string& names, Args&& ... args) const {
-            read_columns_impl_(table_read_options{}, file::macroed_t{}, names, std::forward<Args>(args)...);
+        void read_columns_impl_(file::impl::macroed_t, const std::string& names, Args&& ... args) const {
+            read_columns_impl_(table_read_options{}, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
 
         template<typename ... Args>
-        void read_columns(const table_read_options& opts, file::macroed_t, const std::string& names,
+        void read_columns(const table_read_options& opts, file::impl::macroed_t, const std::string& names,
             Args&& ... args) const {
 
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 arg_list, is_readable_column_type>>::value,
                 "arguments must be a sequence of readable values");
 
             // Read
-            read_columns_impl_(opts, file::macroed_t{}, names, std::forward<Args>(args)...);
+            read_columns_impl_(opts, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename ... Args>
-        void read_columns(file::macroed_t, const std::string& names, Args&& ... args) const {
+        void read_columns(file::impl::macroed_t, const std::string& names, Args&& ... args) const {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 arg_list, is_readable_column_type>>::value,
                 "arguments must be a sequence of readable values");
 
             // Read
-            read_columns_impl_(table_read_options{}, file::macroed_t{}, names, std::forward<Args>(args)...);
+            read_columns_impl_(table_read_options{}, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
@@ -797,12 +798,12 @@ namespace fits {
 
     // Traits to identify types that can be written into a FITS table
     template<typename T>
-    struct is_writable_column_type : is_any_type_of<T, type_list<
+    struct is_writable_column_type : meta::is_any_type_of<T, meta::type_list<
         bool, char, int_t, uint_t, float, double, std::string
     >> {};
 
     template<std::size_t D, typename T>
-    struct is_writable_column_type<vec<D,T>> : is_any_type_of<typename vec<D,T>::rtype, type_list<
+    struct is_writable_column_type<vec<D,T>> : meta::is_any_type_of<typename vec<D,T>::rtype, meta::type_list<
         bool, char, int_t, uint_t, float, double, std::string
     >> {};
 
@@ -810,7 +811,7 @@ namespace fits {
     struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
 
     template<typename T>
-    struct is_writable_column_type<named_t<T>> : is_writable_column_type<decay_t<T>> {};
+    struct is_writable_column_type<phypp::impl::named_t<T>> : is_writable_column_type<meta::decay_t<T>> {};
 
 
     // Output FITS table (write only, overwrites existing files)
@@ -923,7 +924,7 @@ namespace fits {
         }
 
         template<typename Type, std::size_t Dim>
-        std::string write_column_make_tform_(type_list<Type>, const std::array<long,Dim>& dims) {
+        std::string write_column_make_tform_(meta::type_list<Type>, const std::array<long,Dim>& dims) {
             uint_t size = 1;
             for (uint_t d : dims) {
                 size *= d;
@@ -933,7 +934,7 @@ namespace fits {
         }
 
         template<std::size_t Dim>
-        std::string write_column_make_tform_(type_list<std::string>, const std::array<long,Dim>& dims) {
+        std::string write_column_make_tform_(meta::type_list<std::string>, const std::array<long,Dim>& dims) {
             uint_t size = 1;
             for (uint_t d : dims) {
                 size *= d;
@@ -979,7 +980,7 @@ namespace fits {
 
             // Create empty column
             std::string colname = toupper(tcolname);
-            std::string tform = write_column_make_tform_(type_list<vtype>{}, dims);
+            std::string tform = write_column_make_tform_(meta::type_list<vtype>{}, dims);
             fits_insert_col(
                 fptr_, cid, const_cast<char*>(colname.c_str()),
                 const_cast<char*>(tform.c_str()), &status_
@@ -1018,7 +1019,7 @@ namespace fits {
 
         template<typename T>
         void write_column(const std::string& colname, T&& value) {
-            write_column_(colname, std::forward<T>(value), reflex::enabled<decay_t<T>>{});
+            write_column_(colname, std::forward<T>(value), reflex::enabled<meta::decay_t<T>>{});
         }
 
     private :
@@ -1033,41 +1034,41 @@ namespace fits {
             write_columns_impl_(std::forward<Args>(args)...);
         }
 
-        void write_columns_impl_(file::macroed_t, std::string) {
+        void write_columns_impl_(file::impl::macroed_t, std::string) {
             // Nothing to do
         }
 
         template<typename T, typename ... Args>
-        void write_columns_impl_(file::macroed_t, std::string names, T& value, Args&& ... args) {
-            std::string tcolname = file::pop_macroed_name(names);
-            write_column(file::bake_macroed_name(tcolname), value);
-            write_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        void write_columns_impl_(file::impl::macroed_t, std::string names, T& value, Args&& ... args) {
+            std::string tcolname = file::impl::pop_macroed_name(names);
+            write_column(file::impl::bake_macroed_name(tcolname), value);
+            write_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename T, typename ... Args>
-        void write_columns_impl_(file::macroed_t, std::string names, const named_t<T>& value,
+        void write_columns_impl_(file::impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
             Args&& ... args) {
 
-            file::pop_macroed_name(names);
+            file::impl::pop_macroed_name(names);
             write_column(value.name, value.obj);
-            write_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+            write_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
             (sizeof...(Args) > 1)>::type>
         void write_columns(Args&& ... args) {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
-            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
-            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = meta::filter_type_list<meta::bool_list<true,false>, arg_list>;
+            using filtered_second = meta::filter_type_list<meta::bool_list<false,true>, arg_list>;
 
             static_assert(
-                are_all_true<binary_first_apply_type_to_bool_list<
+                meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 filtered_second, is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
@@ -1076,17 +1077,17 @@ namespace fits {
         }
 
         template<typename ... Args>
-        void write_columns(file::macroed_t, const std::string& names, Args&& ... args) {
+        void write_columns(file::impl::macroed_t, const std::string& names, Args&& ... args) {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 arg_list, is_writable_column_type>>::value,
                 "arguments must be a sequence of writable values");
 
             // Read
-            write_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+            write_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
@@ -1129,10 +1130,10 @@ namespace fits {
         template<typename ... Args>
         void remove_columns(Args&& ... args) {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
-                are_all_true<binary_first_apply_type_to_bool_list<
+                meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 arg_list, std::is_convertible, std::string>>::value,
                 "arguments must be a sequence of column names");
 
@@ -1155,41 +1156,41 @@ namespace fits {
             update_columns_impl_(std::forward<Args>(args)...);
         }
 
-        void update_columns_impl_(file::macroed_t, std::string) {
+        void update_columns_impl_(file::impl::macroed_t, std::string) {
             // Nothing to do
         }
 
         template<typename T, typename ... Args>
-        void update_columns_impl_(file::macroed_t, std::string names, T& value, Args&& ... args) {
-            std::string tcolname = file::pop_macroed_name(names);
-            update_column(file::bake_macroed_name(tcolname), value);
-            update_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+        void update_columns_impl_(file::impl::macroed_t, std::string names, T& value, Args&& ... args) {
+            std::string tcolname = file::impl::pop_macroed_name(names);
+            update_column(file::impl::bake_macroed_name(tcolname), value);
+            update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename T, typename ... Args>
-        void update_columns_impl_(file::macroed_t, std::string names, const named_t<T>& value,
+        void update_columns_impl_(file::impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
             Args&& ... args) {
 
-            file::pop_macroed_name(names);
+            file::impl::pop_macroed_name(names);
             update_column(value.name, value.obj);
-            update_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+            update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<first_type<type_list<Args...>>>::type, file::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
             (sizeof...(Args) > 1)>::type>
         void update_columns(Args&& ... args) {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
-            using filtered_first  = filter_type_list<bool_list<true,false>, arg_list>;
-            using filtered_second = filter_type_list<bool_list<false,true>, arg_list>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
+            using filtered_first  = meta::filter_type_list<meta::bool_list<true,false>, arg_list>;
+            using filtered_second = meta::filter_type_list<meta::bool_list<false,true>, arg_list>;
 
             static_assert(
-                are_all_true<binary_first_apply_type_to_bool_list<
+                meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 filtered_second, is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
@@ -1197,16 +1198,16 @@ namespace fits {
         }
 
         template<typename ... Args>
-        void update_columns(file::macroed_t, std::string names, Args&& ... args) {
+        void update_columns(file::impl::macroed_t, std::string names, Args&& ... args) {
             // Check types of arguments
-            using arg_list = type_list<typename std::decay<Args>::type...>;
+            using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
-                are_all_true<unary_apply_type_to_bool_list<
+                meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 arg_list, is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
-            update_columns_impl_(file::macroed_t{}, names, std::forward<Args>(args)...);
+            update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     private :
@@ -1227,6 +1228,7 @@ namespace fits {
             reflex::foreach_member(reflex::wrap(t), do_update_struct_{this});
         }
     };
+}
 }
 
 #endif

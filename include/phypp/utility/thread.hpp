@@ -1,10 +1,11 @@
 #ifndef PHYPP_UTILITY_THREAD_HPP
 #define PHYPP_UTILITY_THREAD_HPP
 
-#include "phypp/core/vec.hpp"
 #include <thread>
 #include <atomic>
+#include "phypp/core/vec.hpp"
 
+namespace phypp {
 namespace thread {
     struct thread_t {
         std::unique_ptr<std::thread> impl;
@@ -194,6 +195,7 @@ namespace thread {
             }
         }
     };
+}
 }
 
 #endif
