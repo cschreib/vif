@@ -2113,6 +2113,7 @@ namespace phypp {
                 fr.errors = replicate(dnan, np);
             } else {
                 fr.success = true;
+                fr.errors = sqrt(matrix::diagonal(alpha));
             }
 
             matrix::symmetrize(alpha);
@@ -2139,7 +2140,6 @@ namespace phypp {
             }
 
             fr.params = matrix::product(alpha, beta);
-            fr.errors = sqrt(matrix::diagonal(alpha));
 
             vec1d model(nm);
             for (uint_t m = 0; m < nm; ++m) {
