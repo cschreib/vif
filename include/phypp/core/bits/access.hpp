@@ -262,21 +262,21 @@ namespace vec_access {
     template<>
     struct are_indices<> : std::true_type {};
 
-    inline range_t<uint_t> range(impl::range_impl::full_range_t, uint_t size) {
+    inline impl::range_impl::range_t<uint_t> range(impl::range_impl::full_range_t, uint_t size) {
         return phypp::range(size);
     }
 
-    inline range_t<uint_t> range(const impl::range_impl::left_range_t& rng, uint_t size) {
+    inline impl::range_impl::range_t<uint_t> range(const impl::range_impl::left_range_t& rng, uint_t size) {
         phypp::impl::range_impl::check_bounds(rng, size);
         return phypp::range(rng.last+1);
     }
 
-    inline range_t<uint_t> range(const impl::range_impl::right_range_t& rng, uint_t size) {
+    inline impl::range_impl::range_t<uint_t> range(const impl::range_impl::right_range_t& rng, uint_t size) {
         phypp::impl::range_impl::check_bounds(rng, size);
         return phypp::range(rng.first, size);
     }
 
-    inline range_t<uint_t> range(const impl::range_impl::left_right_range_t& rng, uint_t size) {
+    inline impl::range_impl::range_t<uint_t> range(const impl::range_impl::left_right_range_t& rng, uint_t size) {
         phypp::impl::range_impl::check_bounds(rng, size);
         return phypp::range(rng.first, rng.last+1);
     }

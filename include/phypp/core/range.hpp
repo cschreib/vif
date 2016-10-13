@@ -5,11 +5,11 @@
 #include "phypp/core/typedefs.hpp"
 
 namespace phypp {
-    template<typename T>
-    struct range_t;
-
-    namespace impl {
+namespace impl {
     namespace range_impl {
+        template<typename T>
+        struct range_t;
+
         template<typename T>
         struct has_size_t {
             template <typename U> static std::true_type dummy(typename std::decay<
@@ -62,46 +62,22 @@ namespace phypp {
                 return iter.i != i || &iter.range != &range;
             }
         };
-    }
-    }
 
-    template<typename T>
-    struct range_t {
-        T b, e;
-        impl::range_impl::dtype<T> d;
-        uint_t n;
+        template<typename T>
+        struct range_t {
+            T b, e;
+            dtype<T> d;
+            uint_t n;
 
-        range_t(T b_, T e_, uint_t n_) : b(b_), e(e_),
-            d(n_ == 0 ? 0 : impl::range_impl::make_step<T>(e_, b_, n_)), n(n_) {}
+            range_t(T b_, T e_, uint_t n_) : b(b_), e(e_),
+                d(n_ == 0 ? 0 : make_step<T>(e_, b_, n_)), n(n_) {}
 
-        using iterator = impl::range_impl::iterator_t<range_t>;
+            using iterator = iterator_t<range_t>;
 
-        iterator begin() const { return iterator{*this, 0}; }
-        iterator end() const { return iterator{*this, n}; }
-    };
+            iterator begin() const { return iterator{*this, 0}; }
+            iterator end() const { return iterator{*this, n}; }
+        };
 
-    template<typename T, typename U = T>
-    range_t<T> range(T i, U e, uint_t n) {
-        return range_t<T>(i, e, n);
-    }
-
-    template<typename T, typename U = T>
-    range_t<T> range(T i, U e) {
-        return range(i, e, std::abs(impl::range_impl::dtype<T>(e)-impl::range_impl::dtype<T>(i)));
-    }
-
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    range_t<T> range(T n) {
-        return range(T(0), n);
-    }
-
-    template<typename T, typename enable = typename std::enable_if<impl::range_impl::has_size<T>::value>::type>
-    range_t<uint_t> range(const T& n) {
-        return range(n.size());
-    }
-
-    namespace impl {
-    namespace range_impl {
         // Full range v(_)
         struct full_range_t {};
 
@@ -180,23 +156,45 @@ namespace phypp {
             return (rng.last+1) - rng.first;
         }
     }
-    }
 
-    namespace impl {
-        using placeholder_t = impl::range_impl::full_range_t; 
-    }
+    using placeholder_t = impl::range_impl::full_range_t; 
+}
 
     // Full range variable v(_)
     static impl::range_impl::full_range_t _;
 
-    namespace meta {
-        template<typename T>
-        struct is_range : std::integral_constant<bool,
-            std::is_same<T,impl::range_impl::full_range_t>::value || 
-            std::is_same<T,impl::range_impl::left_range_t>::value ||
-            std::is_same<T,impl::range_impl::right_range_t>::value || 
-            std::is_same<T,impl::range_impl::left_right_range_t>::value> {};
+    // Define a range from start 'i', end 'e' (exclusive), and number of steps 'n'
+    template<typename T, typename U = T>
+    impl::range_impl::range_t<T> range(T i, U e, uint_t n) {
+        return impl::range_impl::range_t<T>(i, e, n);
     }
+
+    // Define a range from start 'i', end 'e' (exclusive) in integer steps
+    template<typename T, typename U = T>
+    impl::range_impl::range_t<T> range(T i, U e) {
+        return range(i, e, std::abs(impl::range_impl::dtype<T>(e)-impl::range_impl::dtype<T>(i)));
+    }
+
+    // Define a range from '0' to 'n' (exclusive) in integer steps 
+    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    impl::range_impl::range_t<T> range(T n) {
+        return range(T(0), n);
+    }
+
+    // Define a range from '0' to 'n.size()' (exclusive) in integer steps
+    template<typename T, typename enable = typename std::enable_if<impl::range_impl::has_size<T>::value>::type>
+    impl::range_impl::range_t<uint_t> range(const T& n) {
+        return range(n.size());
+    }
+
+namespace meta {
+    template<typename T>
+    struct is_range : std::integral_constant<bool,
+        std::is_same<T,impl::range_impl::full_range_t>::value || 
+        std::is_same<T,impl::range_impl::left_range_t>::value ||
+        std::is_same<T,impl::range_impl::right_range_t>::value || 
+        std::is_same<T,impl::range_impl::left_right_range_t>::value> {};
+}
 }
 
 #endif
