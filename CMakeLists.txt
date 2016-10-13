@@ -339,6 +339,11 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
 endif()
 
+# make sure the destination folder is clean before installing there
+# this will remove headers that were moved by a refactoring
+install(CODE "message(\"-- Deleting:   ${CMAKE_INSTALL_PREFIX}/include/phypp\")")
+install(CODE "file(REMOVE_RECURSE ${CMAKE_INSTALL_PREFIX}/include/phypp)")
+
 # install headers
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/phypp/ DESTINATION include/phypp
     FILES_MATCHING PATTERN "*.hpp")
