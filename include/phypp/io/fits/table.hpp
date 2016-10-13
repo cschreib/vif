@@ -969,7 +969,7 @@ namespace fits {
         template<typename T>
         void write_column_(const std::string& tcolname, const T& value, std::false_type) {
             static_assert(impl::is_writable_column_type<typename std::decay<T>::type>::value,
-                "this value cannot be written into a FITS file");
+                "this variable cannot be written into a FITS file");
 
             status_ = 0;
 
