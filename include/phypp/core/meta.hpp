@@ -1,5 +1,5 @@
-#ifndef PHYPP_CORE_VARIADIC_HPP
-#define PHYPP_CORE_VARIADIC_HPP
+#ifndef PHYPP_CORE_META_HPP
+#define PHYPP_CORE_META_HPP
 
 #include <type_traits>
 #include <array>
@@ -29,22 +29,30 @@ namespace meta {
     // Class holding an integer value.
     template<std::size_t I>
     struct cte_t {};
+}
 
-    // Return a particular element of a variadic list
-    template<std::size_t N, typename T, typename ... Args>
-    auto get_(cte_t<N>, cte_t<N>, T&& t, Args&& ... args) -> decltype(std::forward<T>(t)) {
-        return std::forward<T>(t);
+namespace impl {
+    namespace meta_impl {
+        // Return a particular element of a variadic list
+        template<std::size_t N, typename T, typename ... Args>
+        auto get_(meta::cte_t<N>, meta::cte_t<N>, T&& t, Args&& ... args) -> decltype(std::forward<T>(t)) {
+            return std::forward<T>(t);
+        }
+
+        template<std::size_t I, std::size_t N, typename T, typename ... Args>
+        auto get_(meta::cte_t<I>, meta::cte_t<N>, T&& t, Args&& ... args) ->
+            decltype(get_(meta::cte_t<I+1>(), meta::cte_t<N>(), std::forward<Args>(args)...)) {
+            return get_(meta::cte_t<I+1>(), meta::cte_t<N>(), std::forward<Args>(args)...);
+        }
     }
+}
 
-    template<std::size_t I, std::size_t N, typename T, typename ... Args>
-    auto get_(cte_t<I>, cte_t<N>, T&& t, Args&& ... args) ->
-        decltype(get_(cte_t<I+1>(), cte_t<N>(), std::forward<Args>(args)...)) {
-        return get_(cte_t<I+1>(), cte_t<N>(), std::forward<Args>(args)...);
-    }
-
+namespace meta {
+    // Return the element N of a parameter list
     template<std::size_t N, typename ... Args>
-    auto get(Args&& ... args) -> decltype(get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...)) {
-        return get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...);
+    auto get(Args&& ... args) -> 
+        decltype(impl::meta_impl::get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...)) {
+        return impl::meta_impl::get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...);
     }
 
     // Shortcut for std::decay
@@ -140,6 +148,7 @@ namespace meta {
     struct array_size<std::array<T,N>> {
         static const std::size_t size = N;
     };
+}
 
     //////////////////////////////////////
     //
@@ -153,18 +162,22 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List>
         struct first_type_t;
 
         template<typename T, typename ... Args>
-        struct first_type_t<type_list<T, Args...>> {
+        struct first_type_t<meta::type_list<T, Args...>> {
             using type = T;
         };
     }
+}
 
+namespace meta {
     template<typename List>
-    using first_type = typename impl::first_type_t<List>::type;
+    using first_type = typename impl::meta_impl::first_type_t<List>::type;
+}
 
     //////////////////////////////////////
     //
@@ -185,68 +198,72 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
-        template<typename Filter, typename RunningFilter, typename List, typename Append = type_list<>>
+namespace impl {
+    namespace meta_impl {
+        template<typename Filter, typename RunningFilter, typename List, typename Append = meta::type_list<>>
         struct filter_type_list_t;
 
         template<bool ... F, bool ... RF, typename ... Filtered>
         struct filter_type_list_t<
-            bool_list<F...>,
-            bool_list<RF...>,
-            type_list<>,
-            type_list<Filtered...>
+            meta::bool_list<F...>,
+            meta::bool_list<RF...>,
+            meta::type_list<>,
+            meta::type_list<Filtered...>
             > {
-            using type = type_list<Filtered...>;
+            using type = meta::type_list<Filtered...>;
         };
 
         template<bool ... F, typename T, typename ... Args, typename ... Filtered>
         struct filter_type_list_t<
-            bool_list<F...>,
-            bool_list<>,
-            type_list<T, Args...>,
-            type_list<Filtered...>
+            meta::bool_list<F...>,
+            meta::bool_list<>,
+            meta::type_list<T, Args...>,
+            meta::type_list<Filtered...>
             > {
             using type = typename filter_type_list_t<
-                bool_list<F...>,
-                bool_list<F...>,
-                type_list<T, Args...>,
-                type_list<Filtered...>
+                meta::bool_list<F...>,
+                meta::bool_list<F...>,
+                meta::type_list<T, Args...>,
+                meta::type_list<Filtered...>
             >::type;
         };
 
         template<bool ... F, bool ... RF, typename A1, typename ... Args, typename ... Filtered>
         struct filter_type_list_t<
-            bool_list<F...>,
-            bool_list<true, RF...>,
-            type_list<A1, Args...>,
-            type_list<Filtered...>
+            meta::bool_list<F...>,
+            meta::bool_list<true, RF...>,
+            meta::type_list<A1, Args...>,
+            meta::type_list<Filtered...>
             > {
             using type = typename filter_type_list_t<
-                bool_list<F...>,
-                bool_list<RF...>,
-                type_list<Args...>,
-                type_list<Filtered..., A1>
+                meta::bool_list<F...>,
+                meta::bool_list<RF...>,
+                meta::type_list<Args...>,
+                meta::type_list<Filtered..., A1>
             >::type;
         };
 
         template<bool ... F, bool ... RF, typename A1, typename ... Args, typename ... Filtered>
         struct filter_type_list_t<
-            bool_list<F...>,
-            bool_list<false, RF...>,
-            type_list<A1, Args...>,
-            type_list<Filtered...>
+            meta::bool_list<F...>,
+            meta::bool_list<false, RF...>,
+            meta::type_list<A1, Args...>,
+            meta::type_list<Filtered...>
             > {
             using type = typename filter_type_list_t<
-                bool_list<F...>,
-                bool_list<RF...>,
-                type_list<Args...>,
-                type_list<Filtered...>
+                meta::bool_list<F...>,
+                meta::bool_list<RF...>,
+                meta::type_list<Args...>,
+                meta::type_list<Filtered...>
             >::type;
         };
     }
+}
 
+namespace meta {
     template<typename Filter, typename List>
-    using filter_type_list = typename impl::filter_type_list_t<Filter, Filter, List>::type;
+    using filter_type_list = 
+        typename impl::meta_impl::filter_type_list_t<Filter, Filter, List>::type;
 
     //////////////////////////////////////
     //
@@ -339,6 +356,7 @@ namespace meta {
 
     template<typename List>
     struct are_any_true : bool_constant<!are_all_false<List>::value> {};
+}
 
     //////////////////////////////////////
     //
@@ -353,18 +371,23 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List, template<typename> class Function>
         struct unary_apply_type_to_type_list_t;
 
         template<typename ... Args, template<typename> class Function>
-        struct unary_apply_type_to_type_list_t<type_list<Args...>, Function> {
-            using type = type_list<typename Function<Args>::type...>;
+        struct unary_apply_type_to_type_list_t<meta::type_list<Args...>, Function> {
+            using type = meta::type_list<typename Function<Args>::type...>;
         };
     }
+}
 
+namespace meta {
     template<typename List, template<typename> class Function>
-    using unary_apply_type_to_type_list = typename impl::unary_apply_type_to_type_list_t<List, Function>::type;
+    using unary_apply_type_to_type_list = 
+        typename impl::meta_impl::unary_apply_type_to_type_list_t<List, Function>::type;
+}
 
     //////////////////////////////////////
     //
@@ -379,21 +402,27 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List, typename T, template<typename> class Function>
         struct unary_apply_type_to_value_list_t;
 
         template<typename ... Args, typename T, template<typename> class Function>
-        struct unary_apply_type_to_value_list_t<type_list<Args...>, T, Function> {
-            using type = value_list<T, Function<Args>::value...>;
+        struct unary_apply_type_to_value_list_t<meta::type_list<Args...>, T, Function> {
+            using type = meta::value_list<T, Function<Args>::value...>;
         };
     }
+}
 
+namespace meta {
     template<typename List, typename T, template<typename> class Function>
-    using unary_apply_type_to_value_list = typename impl::unary_apply_type_to_value_list_t<List, T, Function>::type;
+    using unary_apply_type_to_value_list = 
+        typename impl::meta_impl::unary_apply_type_to_value_list_t<List, T, Function>::type;
 
     template<typename List, template<typename> class Function>
-    using unary_apply_type_to_bool_list = typename impl::unary_apply_type_to_value_list_t<List, bool, Function>::type;
+    using unary_apply_type_to_bool_list = 
+        typename impl::meta_impl::unary_apply_type_to_value_list_t<List, bool, Function>::type;
+}
 
     //////////////////////////////////////
     //
@@ -410,18 +439,23 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List, template<typename,typename> class Function, typename A1>
         struct binary_second_apply_type_to_type_list_t;
 
         template<typename ... Args, template<typename,typename> class Function, typename A1>
-        struct binary_second_apply_type_to_type_list_t<type_list<Args...>, Function, A1> {
-            using type = type_list<typename Function<A1,Args>::type...>;
+        struct binary_second_apply_type_to_type_list_t<meta::type_list<Args...>, Function, A1> {
+            using type = meta::type_list<typename Function<A1,Args>::type...>;
         };
     }
+}
 
+namespace meta {
     template<typename List, template<typename,typename> class Function, typename A1>
-    using binary_second_apply_type_to_type_list = typename impl::binary_second_apply_type_to_type_list_t<List, Function, A1>::type;
+    using binary_second_apply_type_to_type_list = 
+        typename impl::meta_impl::binary_second_apply_type_to_type_list_t<List, Function, A1>::type;
+}
 
     //////////////////////////////////////
     //
@@ -436,21 +470,27 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List, typename T, template<typename,typename> class Function, typename A1>
         struct binary_second_apply_type_to_value_list_t;
 
         template<typename ... Args, typename T, template<typename,typename> class Function, typename A1>
-        struct binary_second_apply_type_to_value_list_t<type_list<Args...>, T, Function, A1> {
-            using type = value_list<T, Function<A1,Args>::value...>;
+        struct binary_second_apply_type_to_value_list_t<meta::type_list<Args...>, T, Function, A1> {
+            using type = meta::value_list<T, Function<A1,Args>::value...>;
         };
     }
+}
 
+namespace meta {
     template<typename List, typename T, template<typename,typename> class Function, typename A1>
-    using binary_second_apply_type_to_value_list = typename impl::binary_second_apply_type_to_value_list_t<List, T, Function, A1>::type;
+    using binary_second_apply_type_to_value_list = 
+        typename impl::meta_impl::binary_second_apply_type_to_value_list_t<List, T, Function, A1>::type;
 
     template<typename List, template<typename,typename> class Function, typename A1>
-    using binary_second_apply_type_to_bool_list = binary_second_apply_type_to_value_list<List, bool, Function, A1>;
+    using binary_second_apply_type_to_bool_list = 
+        binary_second_apply_type_to_value_list<List, bool, Function, A1>;
+}
 
     //////////////////////////////////////
     //
@@ -467,18 +507,23 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List, template<typename,typename> class Function, typename A2>
         struct binary_first_apply_type_to_type_list_t;
 
         template<typename ... Args, template<typename,typename> class Function, typename A2>
-        struct binary_first_apply_type_to_type_list_t<type_list<Args...>, Function, A2> {
-            using type = type_list<typename Function<Args,A2>::type...>;
+        struct binary_first_apply_type_to_type_list_t<meta::type_list<Args...>, Function, A2> {
+            using type = meta::type_list<typename Function<Args,A2>::type...>;
         };
     }
+}
 
+namespace meta {
     template<typename List, template<typename,typename> class Function, typename A2>
-    using binary_first_apply_type_to_type_list = typename impl::binary_first_apply_type_to_type_list_t<List, Function, A2>::type;
+    using binary_first_apply_type_to_type_list = 
+        typename impl::meta_impl::binary_first_apply_type_to_type_list_t<List, Function, A2>::type;
+}
 
     //////////////////////////////////////
     //
@@ -493,21 +538,26 @@ namespace meta {
     //
     //////////////////////////////////////
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename List, typename T, template<typename,typename> class Function, typename A2>
         struct binary_first_apply_type_to_value_list_t;
 
         template<typename ... Args, typename T, template<typename,typename> class Function, typename A2>
-        struct binary_first_apply_type_to_value_list_t<type_list<Args...>, T, Function, A2> {
-            using type = value_list<T, Function<Args,A2>::value...>;
+        struct binary_first_apply_type_to_value_list_t<meta::type_list<Args...>, T, Function, A2> {
+            using type = meta::value_list<T, Function<Args,A2>::value...>;
         };
     }
+}
 
+namespace meta {
     template<typename List, typename T, template<typename,typename> class Function, typename A2>
-    using binary_first_apply_type_to_value_list = typename impl::binary_first_apply_type_to_value_list_t<List, T, Function, A2>::type;
+    using binary_first_apply_type_to_value_list = 
+        typename impl::meta_impl::binary_first_apply_type_to_value_list_t<List, T, Function, A2>::type;
 
     template<typename List, template<typename,typename> class Function, typename A2>
-    using binary_first_apply_type_to_bool_list = binary_first_apply_type_to_value_list<List, bool, Function, A2>;
+    using binary_first_apply_type_to_bool_list = 
+        binary_first_apply_type_to_value_list<List, bool, Function, A2>;
 
     //////////////////////////////////////
     //

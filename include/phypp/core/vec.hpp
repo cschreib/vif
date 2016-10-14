@@ -9,7 +9,7 @@
 #include <initializer_list>
 #include "phypp/core/typedefs.hpp"
 #include "phypp/core/range.hpp"
-#include "phypp/core/variadic.hpp"
+#include "phypp/core/meta.hpp"
 #include "phypp/core/error.hpp"
 #include "phypp/core/iterator_base.hpp"
 

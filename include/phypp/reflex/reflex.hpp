@@ -5,7 +5,7 @@
 #include <typeinfo>
 #include <vector>
 #include "phypp/core/typedefs.hpp"
-#include "phypp/core/variadic.hpp"
+#include "phypp/core/meta.hpp"
 
 namespace phypp {
     template<std::size_t Dim, typename Type>

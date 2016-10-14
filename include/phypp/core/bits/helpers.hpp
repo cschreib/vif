@@ -33,18 +33,22 @@ namespace meta {
             typename std::remove_cv<T>::type
         >::type
     >::type;
+}
 
     // Helper to check if a given type is a generic vector.
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename T>
         struct is_vec_ : public std::false_type {};
 
         template<std::size_t Dim, typename Type>
         struct is_vec_<vec<Dim,Type>> : public std::true_type {};
     }
+}
 
+namespace meta {
     template<typename T>
-    using is_vec = impl::is_vec_<typename std::decay<T>::type>;
+    using is_vec = impl::meta_impl::is_vec_<typename std::decay<T>::type>;
 
     // Return the data type of the provided type
     template<typename T>
@@ -97,18 +101,22 @@ namespace meta {
     template<typename T>
     struct dim_total<T> : std::integral_constant<std::size_t,
         dim_index<typename std::decay<T>::type>::value> {};
+    }
 
     // Trait to figure out if type list matches an dimension list
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename T>
         struct is_dim_elem_ : std::is_integral<T> {};
 
         template<typename T, std::size_t N>
         struct is_dim_elem_<std::array<T,N>> : std::true_type {};
     }
+}
 
+namespace meta {
     template<typename T>
-    using is_dim_elem = impl::is_dim_elem_<typename std::decay<T>::type>;
+    using is_dim_elem = impl::meta_impl::is_dim_elem_<typename std::decay<T>::type>;
 
     template<typename ... Args>
     struct is_dim_list : std::integral_constant<bool,
@@ -116,9 +124,10 @@ namespace meta {
 
     template<>
     struct is_dim_list<> : std::true_type {};
+}
 
-    // Trait to define if a vector type can be implicitly converted into another
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         template<typename TFrom, typename TTo>
         struct vec_implicit_convertible_ : std::is_convertible<TFrom,TTo> {};
 
@@ -129,22 +138,23 @@ namespace meta {
         struct vec_implicit_convertible_<bool,TTo> : std::false_type {};
         template<>
         struct vec_implicit_convertible_<bool,bool> : std::true_type{};
-    }
 
+        template<typename TFrom, typename TTo>
+        struct vec_explicit_convertible_ : std::is_convertible<TFrom,TTo> {};
+    }
+}
+
+namespace meta {
+    // Trait to define if a vector type can be implicitly converted into another
     template<typename TFrom, typename TTo>
-    using vec_implicit_convertible = impl::vec_implicit_convertible_<
+    using vec_implicit_convertible = impl::meta_impl::vec_implicit_convertible_<
         typename std::decay<typename std::remove_pointer<TFrom>::type>::type,
         typename std::decay<typename std::remove_pointer<TTo>::type>::type
     >;
 
     // Trait to define if a vector type can be explicitly converted into another
-    namespace impl {
-        template<typename TFrom, typename TTo>
-        struct vec_explicit_convertible_ : std::is_convertible<TFrom,TTo> {};
-    }
-
     template<typename TFrom, typename TTo>
-    using vec_explicit_convertible = impl::vec_explicit_convertible_<
+    using vec_explicit_convertible = impl::meta_impl::vec_explicit_convertible_<
         typename std::decay<typename std::remove_pointer<TFrom>::type>::type,
         typename std::decay<typename std::remove_pointer<TTo>::type>::type
     >;
