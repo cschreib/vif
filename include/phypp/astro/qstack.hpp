@@ -2,6 +2,7 @@
 #define PHYPP_ASTRO_QSTACK_HPP
 
 #include "phypp/astro/astro.hpp"
+#include "phypp/astro/wcs.hpp"
 
 namespace phypp {
 namespace impl {
@@ -10,7 +11,7 @@ namespace impl {
             int status = 0;
             fitsfile* fptr = nullptr;
             long width, height;
-            fits::wcs astro;
+            astro::wcs astro;
             vec1d x, y;
 
             image_workspace() = default;
@@ -23,11 +24,11 @@ namespace impl {
                 char* hstr = nullptr;
                 int nkeys  = 0;
                 fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
-                astro = fits::wcs(hstr);
+                astro = astro::wcs(hstr);
                 free(hstr);
 
                 // Convert ra/dec to x/y
-                fits::ad2xy(astro, ra, dec, x, y);
+                astro::ad2xy(astro, ra, dec, x, y);
 
                 // Get the dimensions of the image
                 int naxis = 0;
@@ -258,7 +259,7 @@ namespace astro {
         char* hstr = nullptr;
         int nkeys  = 0;
         fits_hdr2str(fptr, 0, nullptr, 0, &hstr, &nkeys, &status);
-        fits::wcs astro(hstr);
+        astro::wcs astro(hstr);
         free(hstr);
 
         // Get the dimensions of the image
@@ -292,7 +293,7 @@ namespace astro {
 
         // Convert ra/dec to x/y
         vec1d x, y;
-        fits::ad2xy(astro, ra, dec, x, y);
+        astro::ad2xy(astro, ra, dec, x, y);
 
         // Allocate memory to hold all the cutouts
         if (cube.empty()) {

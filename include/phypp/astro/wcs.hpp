@@ -11,7 +11,7 @@
 #include "phypp/astro/astro.hpp"
 
 namespace phypp {
-namespace fits {
+namespace astro {
     struct make_wcs_header_params {
         // The pixel size in arcsec
         double pixel_scale = dnan;
@@ -30,25 +30,25 @@ namespace fits {
         }
 
         if (is_finite(params.pixel_scale)) {
-            if (!setkey(hdr, "CDELT1", -params.pixel_scale/3600.0)) {
+            if (!fits::setkey(hdr, "CDELT1", -params.pixel_scale/3600.0)) {
                 error("make_wcs_header: could not set keyword 'CDELT1' to '",
                     -params.pixel_scale, "'");
                 return false;
             }
-            if (!setkey(hdr, "CDELT2", params.pixel_scale/3600.0)) {
+            if (!fits::setkey(hdr, "CDELT2", params.pixel_scale/3600.0)) {
                 error("make_wcs_header: could not set keyword 'CDELT2' to '",
                     params.pixel_scale, "'");
                 return false;
             }
-            if (!setkey(hdr, "CTYPE1", "'RA---TAN'")) {
+            if (!fits::setkey(hdr, "CTYPE1", "'RA---TAN'")) {
                 error("make_wcs_header: could not set keyword 'CTYPE1' to 'RA---TAN'");
                 return false;
             }
-            if (!setkey(hdr, "CTYPE2", "'DEC--TAN'")) {
+            if (!fits::setkey(hdr, "CTYPE2", "'DEC--TAN'")) {
                 error("make_wcs_header: could not set keyword 'CTYPE2' to 'DEC--TAN'");
                 return false;
             }
-            if (!setkey(hdr, "EQUINOX", 2000.0)) {
+            if (!fits::setkey(hdr, "EQUINOX", 2000.0)) {
                 error("make_wcs_header: could not set keyword 'EQUINOX' to '",
                     2000.0, "'");
                 return false;
@@ -56,12 +56,12 @@ namespace fits {
         }
 
         if (is_finite(params.pixel_ref_x) && is_finite(params.pixel_ref_y)) {
-            if (!setkey(hdr, "CRPIX1", params.pixel_ref_x)) {
+            if (!fits::setkey(hdr, "CRPIX1", params.pixel_ref_x)) {
                 error("make_wcs_header: could not set keyword 'CRPIX1' to '",
                     params.pixel_ref_x, "'");
                 return false;
             }
-            if (!setkey(hdr, "CRPIX2", params.pixel_ref_y)) {
+            if (!fits::setkey(hdr, "CRPIX2", params.pixel_ref_y)) {
                 error("make_wcs_header: could not set keyword 'CRPIX2' to '",
                     params.pixel_ref_y, "'");
                 return false;
@@ -69,12 +69,12 @@ namespace fits {
         }
 
         if (is_finite(params.sky_ref_ra) && is_finite(params.sky_ref_dec)) {
-            if (!setkey(hdr, "CRVAL1", params.sky_ref_ra)) {
+            if (!fits::setkey(hdr, "CRVAL1", params.sky_ref_ra)) {
                 error("make_wcs_header: could not set keyword 'CRVAL1' to '",
                     params.sky_ref_ra, "'");
                 return false;
             }
-            if (!setkey(hdr, "CRVAL2", params.sky_ref_dec)) {
+            if (!fits::setkey(hdr, "CRVAL2", params.sky_ref_dec)) {
                 error("make_wcs_header: could not set keyword 'CRVAL2' to '",
                     params.sky_ref_dec, "'");
                 return false;
@@ -82,16 +82,16 @@ namespace fits {
         }
 
         if (params.dims_x != npos && params.dims_y != npos) {
-            if (!setkey(hdr, "META_0", 2u)) {
+            if (!fits::setkey(hdr, "META_0", 2u)) {
                 error("make_wcs_header: could not set keyword 'META_0' to '", 2u, "'");
                 return false;
             }
-            if (!setkey(hdr, "META_1", params.dims_x)) {
+            if (!fits::setkey(hdr, "META_1", params.dims_x)) {
                 error("make_wcs_header: could not set keyword 'META_1' to '",
                     params.dims_x, "'");
                 return false;
             }
-            if (!setkey(hdr, "META_2", params.dims_y)) {
+            if (!fits::setkey(hdr, "META_2", params.dims_y)) {
                 error("make_wcs_header: could not set keyword 'META_2' to '",
                     params.dims_y, "'");
                 return false;
@@ -291,17 +291,17 @@ namespace fits {
 #endif
 
     template<typename Dummy = void>
-    fits::wcs extast(const fits::header& hdr) {
+    astro::wcs extast(const fits::header& hdr) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        return fits::wcs(hdr);
+        return astro::wcs(hdr);
 #endif
     }
 
     template<std::size_t D = 1, typename T = double, typename U = double, typename V, typename W>
-    void ad2xy(const fits::wcs& w, const vec<D,T>& ra, const vec<D,U>& dec,
+    void ad2xy(const astro::wcs& w, const vec<D,T>& ra, const vec<D,U>& dec,
         vec<D,V>& x, vec<D,W>& y) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
@@ -350,7 +350,7 @@ namespace fits {
     }
 
     template<std::size_t D = 1, typename T = double, typename U = double, typename V, typename W>
-    void xy2ad(const fits::wcs& w, const vec<D,T>& x, const vec<D,U>& y,
+    void xy2ad(const astro::wcs& w, const vec<D,T>& x, const vec<D,U>& y,
         vec<D,V>& ra, vec<D,W>& dec) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
@@ -401,7 +401,7 @@ namespace fits {
     template<typename T = double, typename U = double, typename V, typename W,
         typename enable = typename std::enable_if<!meta::is_vec<T>::value &&
             !meta::is_vec<U>::value && !meta::is_vec<V>::value && !meta::is_vec<W>::value>::type>
-    void ad2xy(const fits::wcs& w, const T& ra, const U& dec, V& x, W& y) {
+    void ad2xy(const astro::wcs& w, const T& ra, const U& dec, V& x, W& y) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -436,7 +436,7 @@ namespace fits {
     template<typename T = double, typename U = double, typename V, typename W,
         typename enable = typename std::enable_if<!meta::is_vec<T>::value &&
             !meta::is_vec<U>::value && !meta::is_vec<V>::value && !meta::is_vec<W>::value>::type>
-    void xy2ad(const fits::wcs& w, const T& x, const U& y, V& ra, W& dec) {
+    void xy2ad(const astro::wcs& w, const T& x, const U& y, V& ra, W& dec) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -471,7 +471,7 @@ namespace fits {
     // Obtain the pixel size of a given image in arsec/pixel.
     // Will fail (return false) if no WCS information is present in the image.
     template<typename Dummy = void>
-    bool get_pixel_size(const fits::wcs& wcs, double& aspix) {
+    bool get_pixel_size(const astro::wcs& wcs, double& aspix) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -482,8 +482,8 @@ namespace fits {
 
         // Convert radius to number of pixels
         vec1d r, d;
-        fits::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
-        aspix = astro::angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
+        astro::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
+        aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
 
         return true;
 #endif
@@ -502,7 +502,7 @@ namespace fits {
             return get_pixel_size(sects[0], aspix);
         } else {
             fits::header hdr = fits::read_header(file);
-            auto wcs = fits::wcs(hdr);
+            auto wcs = astro::wcs(hdr);
             if (!get_pixel_size(wcs, aspix)) {
                 warning("could not extract WCS information");
                 note("parsing '", file, "'");

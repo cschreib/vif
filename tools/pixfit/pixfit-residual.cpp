@@ -53,7 +53,7 @@ int phypp_main(int argc, char* argv[]) {
 
         // Get pixel coordinates
         vec1d x, y;
-        fits::ad2xy(fits::extast(hdr), ra, dec, x, y);
+        astro::ad2xy(astro::wcs(hdr), ra, dec, x, y);
         x -= 1; y -= 1;
 
         // Select sources which fall on the map and have a flux measurement

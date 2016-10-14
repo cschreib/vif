@@ -20,7 +20,7 @@ int phypp_main(int argc, char* argv[]) {
 
         int_t hsize;
         double aspix;
-        if (fits::get_pixel_size(file, aspix)) {
+        if (astro::get_pixel_size(file, aspix)) {
             hsize = ceil(radius/aspix);
         } else {
             return 1;
@@ -43,7 +43,7 @@ int phypp_main(int argc, char* argv[]) {
         }
 
         // Build new header
-        fits::header nhdr = fits::filter_wcs(fits::read_header(file));
+        fits::header nhdr = astro::filter_wcs(fits::read_header(file));
         if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[0]) ||
             !fits::setkey(nhdr, "CRPIX2", hsize+1+qout.dy[0]) ||
             !fits::setkey(nhdr, "CRVAL1", ra) ||

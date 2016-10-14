@@ -188,7 +188,7 @@ int phypp_main(int argc, char* argv[]) {
         if (is_finite(radius)) {
             // Convert radius to number of pixels
             double aspix;
-            if (fits::get_pixel_size(mfile[b], aspix)) {
+            if (astro::get_pixel_size(mfile[b], aspix)) {
                 hsize = ceil(radius/aspix);
                 if (hsize < 10) hsize = 10;
             } else {
@@ -220,7 +220,7 @@ int phypp_main(int argc, char* argv[]) {
         }
 
         for (uint_t i : range(ids)) {
-            fits::header nhdr = fits::filter_wcs(fits::read_header_sectfits(mfile[b], qout.sect[i]));
+            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(mfile[b], qout.sect[i]));
             if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[i]) ||
                 !fits::setkey(nhdr, "CRPIX2", hsize+1+qout.dy[i]) ||
                 !fits::setkey(nhdr, "CRVAL1", ra[ids[i]]) ||
@@ -248,7 +248,7 @@ int phypp_main(int argc, char* argv[]) {
         vec2d empty(2*hsize + 1, 2*hsize + 1);
         empty[_] = dnan;
         for (uint_t i : range(nids)) {
-            fits::header nhdr = fits::filter_wcs(fits::read_header_sectfits(mfile[b], 0));
+            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(mfile[b], 0));
             if (!fits::setkey(nhdr, "CRPIX1", hsize+1) ||
                 !fits::setkey(nhdr, "CRPIX2", hsize+1) ||
                 !fits::setkey(nhdr, "CRVAL1", ra[nids[i]]) ||

@@ -9,7 +9,7 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     fits::header hdr = fits::read_header(argv[1]);
-    fits::wcs astro(hdr);
+    astro::wcs astro(hdr);
 
     uint_t nc = argc - 2;
     if (nc % 2 != 0) {
@@ -39,7 +39,7 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     vec1d px, py;
-    fits::ad2xy(astro, ra, dec, px, py);
+    astro::ad2xy(astro, ra, dec, px, py);
 
     for (uint_t c : range(nc)) {
         print(px[c], "    ", py[c]);

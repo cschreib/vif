@@ -65,7 +65,7 @@ int phypp_main(int argc, char* argv[]) {
     } else {
         if (arcsec) {
             double aspix;
-            if (!fits::get_pixel_size(fimg, aspix)) {
+            if (!astro::get_pixel_size(fimg, aspix)) {
                 error("could not read the pixel size of this image, please provide the beam "
                     "size in pixels and remove the 'arcsec' keyword");
                 return 1;

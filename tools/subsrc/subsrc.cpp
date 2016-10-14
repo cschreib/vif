@@ -128,9 +128,9 @@ int phypp_main(int argc, char* argv[]) {
 
     print(cat.ra.size(), " sources to subtract from the image");
 
-    fits::wcs astro(hdr);
+    astro::wcs w(hdr);
     vec1d x, y;
-    fits::ad2xy(astro, cat.ra, cat.dec, x, y);
+    astro::ad2xy(w, cat.ra, cat.dec, x, y);
 
     vec2d psf(img.dims);
     auto pg = progress_start(cat.ra.size());

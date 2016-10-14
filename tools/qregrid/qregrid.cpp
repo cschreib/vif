@@ -20,14 +20,14 @@ int phypp_main(int argc, char* argv[]) {
     fimgs.read(imgs);
 
     // Define input and output grids
-    fits::wcs astros;  // input astrometry
-    fits::wcs astrod;  // output astrometry
+    astro::wcs astros;  // input astrometry
+    astro::wcs astrod;  // output astrometry
     vec1u dims;        // dimensions of output image
     fits::header hdrd; // FITS header of output image (with astrometry)
 
     bool has_wcs = fimgs.has_keyword("CTYPE1");
     if (has_wcs) {
-        astros = fits::wcs(fimgs.read_header());
+        astros = astro::wcs(fimgs.read_header());
         if (!astros.is_valid()) {
             has_wcs = false;
         }
@@ -36,7 +36,7 @@ int phypp_main(int argc, char* argv[]) {
     if (is_finite(ratio) && has_wcs) {
         // The image has WCS information, transform the size ratio into a pixel scale change
         double aspix_orig;
-        if (!get_pixel_size(astros, aspix_orig)) {
+        if (!astro::get_pixel_size(astros, aspix_orig)) {
             error("missing or incorrect WCS data in source image");
             return 1;
         }
@@ -47,7 +47,7 @@ int phypp_main(int argc, char* argv[]) {
 
     if (is_finite(ratio)) {
         // Simple physical rescaling
-        fits::make_wcs_header_params params;
+        astro::make_wcs_header_params params;
         params.pixel_scale = 1.0;
         params.dims_x = imgs.dims[1];
         params.dims_y = imgs.dims[0];
@@ -57,13 +57,13 @@ int phypp_main(int argc, char* argv[]) {
         params.pixel_ref_y = imgs.dims[0]/2;
 
         fits::header hdrs;
-        make_wcs_header(params, hdrs);
-        astros = fits::wcs(hdrs);
+        astro::make_wcs_header(params, hdrs);
+        astros = astro::wcs(hdrs);
 
         dims = max(ceil(fimgs.image_dims()*ratio), 1);
         params.pixel_scale = 1/ratio;
-        make_wcs_header(params, hdrd);
-        astrod = fits::wcs(hdrd);
+        astro::make_wcs_header(params, hdrd);
+        astrod = astro::wcs(hdrd);
     } else {
         // Read astrometry of input image
         if (!has_wcs) {
@@ -81,7 +81,7 @@ int phypp_main(int argc, char* argv[]) {
 
             dims = fimgd.image_dims();
             hdrd = fimgd.read_header();
-            astrod = fits::wcs(hdrd);
+            astrod = astro::wcs(hdrd);
             if (!astrod.is_valid()) {
                 error("invalid WCS data in template image");
                 return 1;
@@ -89,7 +89,7 @@ int phypp_main(int argc, char* argv[]) {
         } else if (is_finite(aspix)) {
             // Make output grid from input grid, same center, just different pixel scale
             double aspix_orig;
-            if (!get_pixel_size(astros, aspix_orig)) {
+            if (!astro::get_pixel_size(astros, aspix_orig)) {
                 error("missing or incorrect WCS data in source image");
                 return 1;
             }
@@ -97,16 +97,16 @@ int phypp_main(int argc, char* argv[]) {
             ratio = aspix/aspix_orig;
             dims = max(ceil(fimgs.image_dims()/ratio), 1);
 
-            fits::make_wcs_header_params params;
+            astro::make_wcs_header_params params;
             params.pixel_scale = aspix;
             params.dims_x = dims[1];
             params.dims_y = dims[0];
-            fits::xy2ad(astros, imgs.dims[0]/2 + 1, imgs.dims[1]/2 + 1, params.sky_ref_ra, params.sky_ref_dec);
+            astro::xy2ad(astros, imgs.dims[0]/2 + 1, imgs.dims[1]/2 + 1, params.sky_ref_ra, params.sky_ref_dec);
             params.pixel_ref_x = dims[1]/2;
             params.pixel_ref_y = dims[0]/2;
 
-            make_wcs_header(params, hdrd);
-            astrod = fits::wcs(hdrd);
+            astro::make_wcs_header(params, hdrd);
+            astrod = astro::wcs(hdrd);
         } else {
             error("must specify output grid with ratio=..., aspix=..., or template=...");
             return 1;
@@ -174,8 +174,8 @@ int phypp_main(int argc, char* argv[]) {
     vec1d ply(res.dims[1]+1);
     for (uint_t ix : range(res.dims[1]+1)) {
         double tra, tdec;
-        fits::xy2ad(astrod, ix+0.5, 0.5, tra, tdec);
-        fits::ad2xy(astros, tra, tdec, plx.safe[ix], ply.safe[ix]);
+        astro::xy2ad(astrod, ix+0.5, 0.5, tra, tdec);
+        astro::ad2xy(astros, tra, tdec, plx.safe[ix], ply.safe[ix]);
         plx.safe[ix] -= 1.0; ply.safe[ix] -= 1.0;
     }
 
@@ -184,8 +184,8 @@ int phypp_main(int argc, char* argv[]) {
         vec1d puy(res.dims[1]+1);
         for (uint_t ix : range(res.dims[1]+1)) {
             double tra, tdec;
-            fits::xy2ad(astrod, ix+0.5, iy+1.5, tra, tdec);
-            fits::ad2xy(astros, tra, tdec, pux.safe[ix], puy.safe[ix]);
+            astro::xy2ad(astrod, ix+0.5, iy+1.5, tra, tdec);
+            astro::ad2xy(astros, tra, tdec, pux.safe[ix], puy.safe[ix]);
             pux.safe[ix] -= 1.0; puy.safe[ix] -= 1.0;
         }
 

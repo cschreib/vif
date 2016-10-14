@@ -286,7 +286,7 @@ int phypp_main(int argc, char* argv[]) {
 
             // Compute physical size of the requested aperture
             double aspix;
-            if (!fits::get_pixel_size(map.img, aspix)) {
+            if (!astro::get_pixel_size(map.img, aspix)) {
                 error("could not read pixel size from '", map.img, "', missing WCS?");
                 return 1;
             }
@@ -514,7 +514,7 @@ int phypp_main(int argc, char* argv[]) {
 
         uint_t nsrc = ra.size();
         vec1d x, y;
-        fits::ad2xy(fits::extast(hdr), ra, dec, x, y);
+        astro::ad2xy(astro::wcs(hdr), ra, dec, x, y);
         x -= 1; y -= 1;
 
         // Only keep the sources which fall on the map
@@ -928,7 +928,7 @@ int phypp_main(int argc, char* argv[]) {
 
             // Convert all sources to image coordinates
             vec1d tx, ty;
-            fits::ad2xy(fits::extast(hdr), old_cat.ra, old_cat.dec, tx, ty);
+            astro::ad2xy(astro::wcs(hdr), old_cat.ra, old_cat.dec, tx, ty);
             tx -= 1; ty -= 1;
 
             vec1i tix = round(tx), tiy = round(ty);
