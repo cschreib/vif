@@ -1,5 +1,5 @@
-#ifndef PHYPP_IO_FITS_FITS_HPP
-#define PHYPP_IO_FITS_FITS_HPP
+#ifndef PHYPP_IO_FITS_HPP
+#define PHYPP_IO_FITS_HPP
 
 #include "phypp/io/fits/base.hpp"
 #include "phypp/io/fits/table.hpp"
@@ -138,15 +138,15 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void read_table(const std::string& filename, file::impl::macroed_t,
+    void read_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::input_table(filename).read_columns(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::input_table(filename).read_columns(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
     }
 
     template<typename ... Args>
-    void read_table_loose(const std::string& filename, file::impl::macroed_t,
+    void read_table_loose(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::input_table(filename).read_columns(fits::missing, file::impl::macroed_t{}, names,
+        fits::input_table(filename).read_columns(fits::missing, impl::ascii_impl::macroed_t{}, names,
             std::forward<Args>(args)...);
     }
 
@@ -167,9 +167,9 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void write_table(const std::string& filename, file::impl::macroed_t,
+    void write_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::output_table(filename).write_columns(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::output_table(filename).write_columns(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -186,9 +186,9 @@ namespace fits {
     }
 
     template<typename ... Args>
-    void update_table(const std::string& filename, file::impl::macroed_t,
+    void update_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::table(filename).update_columns(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::table(filename).update_columns(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>

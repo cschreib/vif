@@ -7,7 +7,7 @@
 #endif
 
 #include "phypp/core/error.hpp"
-#include "phypp/io/fits/fits.hpp"
+#include "phypp/io/fits.hpp"
 
 namespace phypp {
 namespace fits {

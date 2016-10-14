@@ -64,8 +64,10 @@ namespace fits {
         opts.last_row = r2;
         return opts;
     };
+}
 
-    namespace impl {
+namespace impl {
+    namespace fits_impl {
         template<typename T>
         struct data_type {
             using type = T;
@@ -91,10 +93,8 @@ namespace fits {
         struct data_dim<vec<D,std::string>> {
             static constexpr const uint_t value = D+1;
         };
-    }
 
-    // Traits to identify types that can be read from a FITS table
-    namespace impl {
+        // Traits to identify types that can be read from a FITS table
         template<typename T>
         struct is_readable_column_type : meta::is_any_type_of<T, meta::type_list<
             bool, char, int_t, uint_t, float, double, std::string
@@ -112,9 +112,11 @@ namespace fits {
         struct is_readable_column_type<vec<D,T*>> : std::false_type {};
 
         template<typename T>
-        struct is_readable_column_type<phypp::impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
+        struct is_readable_column_type<impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
     }
+}
 
+namespace fits {
     // Data type to describe the content of a column
     struct column_info {
         std::string name;
@@ -126,12 +128,12 @@ namespace fits {
     };
 
     // FITS input table (read only)
-    class input_table : public virtual impl::file_base {
+    class input_table : public virtual impl::fits_impl::file_base {
     public :
         explicit input_table(const std::string& filename) :
-            impl::file_base(impl::table_file, filename, impl::read_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_only) {}
         explicit input_table(const std::string& filename, uint_t hdu) :
-            impl::file_base(impl::table_file, filename, impl::read_only) {
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_only) {
             reach_hdu(hdu);
         }
 
@@ -176,9 +178,9 @@ namespace fits {
                 }
                 case 'B' : {
                     vec<1,char> v(repeat);
-                    char def = impl::traits<char>::def();
+                    char def = impl::fits_impl::traits<char>::def();
                     int null;
-                    fits_read_col(fptr_, impl::traits<char>::ttype, c+1, 1, 1, repeat,
+                    fits_read_col(fptr_, impl::fits_impl::traits<char>::ttype, c+1, 1, 1, repeat,
                         &def, v.data.data(), &null, &status_);
 
                     if (min(v) == 0 && max(v) <= 1) {
@@ -317,11 +319,11 @@ namespace fits {
             }
 
             long nelem = v.size();
-            Type def = impl::traits<Type>::def();
+            Type def = impl::fits_impl::traits<Type>::def();
             int null;
             status_ = 0;
             fits_read_col(
-                fptr_, impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
                 v.data.data(), &null, &status_
             );
         }
@@ -330,11 +332,11 @@ namespace fits {
         void read_column_impl_(const table_read_options&, Type& v, int cid,
             long naxis, const std::array<long,max_column_dims>& naxes, long, long, bool) const {
 
-            Type def = impl::traits<Type>::def();
+            Type def = impl::fits_impl::traits<Type>::def();
             int null;
             fits_read_col(
-                fptr_, impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
-                reinterpret_cast<typename impl::traits<Type>::dtype*>(&v), &null, &status_
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
+                reinterpret_cast<typename impl::fits_impl::traits<Type>::dtype*>(&v), &null, &status_
             );
         }
 
@@ -367,7 +369,7 @@ namespace fits {
             char def = '\0';
             int null;
             fits_read_col(
-                fptr_, impl::traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
+                fptr_, impl::fits_impl::traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
                 buffer, &null, &status_
             );
 
@@ -449,9 +451,9 @@ namespace fits {
         template<typename T>
         bool read_column_check_type_(const table_read_options& opts, int type) const {
             if (opts.allow_narrow) {
-                return impl::traits<T>::is_convertible_narrow(type);
+                return impl::fits_impl::traits<T>::is_convertible_narrow(type);
             } else {
-                return impl::traits<T>::is_convertible(type);
+                return impl::fits_impl::traits<T>::is_convertible(type);
             }
         }
 
@@ -543,7 +545,7 @@ namespace fits {
         read_sentry read_column_(table_read_options opts,
             const std::string& tcolname, T& value, std::false_type) const {
 
-            static_assert(impl::is_readable_column_type<typename std::decay<T>::type>::value,
+            static_assert(impl::fits_impl::is_readable_column_type<typename std::decay<T>::type>::value,
                 "this value cannot be read from a FITS file");
 
             status_ = 0;
@@ -561,8 +563,8 @@ namespace fits {
             }
 
             // Collect data on the output type
-            using vtype = typename impl::data_type<T>::type;
-            const uint_t vdim = impl::data_dim<T>::value;
+            using vtype = typename impl::fits_impl::data_type<T>::type;
+            const uint_t vdim = impl::fits_impl::data_dim<T>::value;
 
             // Check if type match
             int type;
@@ -570,7 +572,7 @@ namespace fits {
             fits_get_coltype(fptr_, cid, &type, &repeat, &width, &status_);
             if (!read_column_check_type_<vtype>(opts, type)) {
                 return read_sentry{this, "wrong type for column '"+colname+"' "
-                    "(expected "+pretty_type_t(vtype)+", got "+impl::type_to_string_(type)+")"};
+                    "(expected "+pretty_type_t(vtype)+", got "+impl::fits_impl::type_to_string_(type)+")"};
             }
 
             // Check if dimensions match
@@ -685,7 +687,7 @@ namespace fits {
     public :
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, impl::ascii_impl::macroed_t>::value &&
             (sizeof...(Args) > 1)>::type>
         void read_columns(const table_read_options& opts, Args&& ... args) const {
             // Check types of arguments
@@ -697,7 +699,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, impl::is_readable_column_type>>::value,
+                filtered_second, impl::fits_impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
@@ -705,7 +707,7 @@ namespace fits {
         }
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, impl::ascii_impl::macroed_t>::value &&
             !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, table_read_options>::value &&
             (sizeof...(Args) > 1)>::type>
         void read_columns(Args&& ... args) const {
@@ -718,7 +720,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, impl::is_readable_column_type>>::value,
+                filtered_second, impl::fits_impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
@@ -727,36 +729,36 @@ namespace fits {
 
     private :
 
-        void read_columns_impl_(const table_read_options&, file::impl::macroed_t, const std::string&) const {
+        void read_columns_impl_(const table_read_options&, impl::ascii_impl::macroed_t, const std::string&) const {
             // Nothing more to do
         }
 
         template<typename T, typename ... Args>
-        void read_columns_impl_(const table_read_options& opts, file::impl::macroed_t,
+        void read_columns_impl_(const table_read_options& opts, impl::ascii_impl::macroed_t,
             std::string names, T& value, Args&& ... args) const {
 
-            std::string tcolname = file::impl::pop_macroed_name(names);
-            read_column(opts, file::impl::bake_macroed_name(tcolname), value);
-            read_columns_impl_(opts, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            std::string tcolname = impl::ascii_impl::pop_macroed_name(names);
+            read_column(opts, impl::ascii_impl::bake_macroed_name(tcolname), value);
+            read_columns_impl_(opts, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
         template<typename T, typename ... Args>
-        void read_columns_impl_(const table_read_options& opts, file::impl::macroed_t,
-            std::string names, const phypp::impl::named_t<T>& value, Args&& ... args) const {
+        void read_columns_impl_(const table_read_options& opts, impl::ascii_impl::macroed_t,
+            std::string names, const impl::named_t<T>& value, Args&& ... args) const {
 
-            file::impl::pop_macroed_name(names);
+            impl::ascii_impl::pop_macroed_name(names);
             read_column(opts, value.name, value.obj);
-            read_columns_impl_(opts, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            read_columns_impl_(opts, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename ... Args>
-        void read_columns_impl_(file::impl::macroed_t, const std::string& names, Args&& ... args) const {
-            read_columns_impl_(table_read_options{}, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+        void read_columns_impl_(impl::ascii_impl::macroed_t, const std::string& names, Args&& ... args) const {
+            read_columns_impl_(table_read_options{}, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
 
         template<typename ... Args>
-        void read_columns(const table_read_options& opts, file::impl::macroed_t, const std::string& names,
+        void read_columns(const table_read_options& opts, impl::ascii_impl::macroed_t, const std::string& names,
             Args&& ... args) const {
 
             // Check types of arguments
@@ -764,25 +766,25 @@ namespace fits {
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, impl::is_readable_column_type>>::value,
+                arg_list, impl::fits_impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of readable values");
 
             // Read
-            read_columns_impl_(opts, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            read_columns_impl_(opts, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename ... Args>
-        void read_columns(file::impl::macroed_t, const std::string& names, Args&& ... args) const {
+        void read_columns(impl::ascii_impl::macroed_t, const std::string& names, Args&& ... args) const {
             // Check types of arguments
             using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, impl::is_readable_column_type>>::value,
+                arg_list, impl::fits_impl::is_readable_column_type>>::value,
                 "arguments must be a sequence of readable values");
 
             // Read
-            read_columns_impl_(table_read_options{}, file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            read_columns_impl_(table_read_options{}, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
@@ -797,9 +799,11 @@ namespace fits {
             read_columns(table_read_options{}, t);
         }
     };
+}
 
     // Traits to identify types that can be written into a FITS table
-    namespace impl {
+namespace impl {
+    namespace fits_impl {
         template<typename T>
         struct is_writable_column_type : meta::is_any_type_of<T, meta::type_list<
             bool, char, int_t, uint_t, float, double, std::string
@@ -814,15 +818,17 @@ namespace fits {
         struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
 
         template<typename T>
-        struct is_writable_column_type<phypp::impl::named_t<T>> : is_writable_column_type<meta::decay_t<T>> {};
+        struct is_writable_column_type<impl::named_t<T>> : is_writable_column_type<meta::decay_t<T>> {};
     }
+}
 
+namespace fits {
     // Output FITS table (write only, overwrites existing files)
-    class output_table : public virtual impl::file_base {
+    class output_table : public virtual impl::fits_impl::file_base {
     public :
 
         explicit output_table(const std::string& filename) :
-            impl::file_base(impl::table_file, filename, impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
 
         output_table(output_table&&) = default;
         output_table(const output_table&) = delete;
@@ -834,14 +840,14 @@ namespace fits {
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
         void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&, int cid) {
-            fits_write_col(fptr_, impl::traits<Type>::ttype, cid, 1, 1, value.size(),
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, value.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()), &status_);
         }
 
         template<typename Type>
         void write_column_impl_(const Type& value, const std::array<long,0>&, int cid) {
-            using dtype = typename impl::traits<Type>::dtype;
-            fits_write_col(fptr_, impl::traits<Type>::ttype, cid, 1, 1, 1,
+            using dtype = typename impl::fits_impl::traits<Type>::dtype;
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
         }
 
@@ -860,7 +866,7 @@ namespace fits {
             }
 
             fits_write_col(
-                fptr_, impl::traits<std::string>::ttype, cid, 1, 1,
+                fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1,
                 value.size(), buffer, &status_
             );
 
@@ -877,7 +883,7 @@ namespace fits {
 
             char** buffer = new char*[1];
             buffer[0] = const_cast<char*>(value.c_str());
-            fits_write_col(fptr_, impl::traits<std::string>::ttype, cid, 1, 1, 1,
+            fits_write_col(fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1, 1,
                 buffer, &status_);
 
             delete[] buffer;
@@ -933,7 +939,7 @@ namespace fits {
                 size *= d;
             }
 
-            return strn(size)+impl::traits<Type>::tform;
+            return strn(size)+impl::fits_impl::traits<Type>::tform;
         }
 
         template<std::size_t Dim>
@@ -943,7 +949,7 @@ namespace fits {
                 size *= d;
             }
 
-            return strn(size)+impl::traits<std::string>::tform+strn(dims[0]);
+            return strn(size)+impl::fits_impl::traits<std::string>::tform+strn(dims[0]);
         }
 
 
@@ -968,7 +974,7 @@ namespace fits {
 
         template<typename T>
         void write_column_(const std::string& tcolname, const T& value, std::false_type) {
-            static_assert(impl::is_writable_column_type<typename std::decay<T>::type>::value,
+            static_assert(impl::fits_impl::is_writable_column_type<typename std::decay<T>::type>::value,
                 "this variable cannot be written into a FITS file");
 
             status_ = 0;
@@ -978,7 +984,7 @@ namespace fits {
             ++cid;
 
             // Collect data on the input type
-            using vtype = typename impl::data_type<T>::type;
+            using vtype = typename impl::fits_impl::data_type<T>::type;
             const auto dims = write_column_get_dims_(value);
 
             // Create empty column
@@ -1037,30 +1043,30 @@ namespace fits {
             write_columns_impl_(std::forward<Args>(args)...);
         }
 
-        void write_columns_impl_(file::impl::macroed_t, std::string) {
+        void write_columns_impl_(impl::ascii_impl::macroed_t, std::string) {
             // Nothing to do
         }
 
         template<typename T, typename ... Args>
-        void write_columns_impl_(file::impl::macroed_t, std::string names, T& value, Args&& ... args) {
-            std::string tcolname = file::impl::pop_macroed_name(names);
-            write_column(file::impl::bake_macroed_name(tcolname), value);
-            write_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+        void write_columns_impl_(impl::ascii_impl::macroed_t, std::string names, T& value, Args&& ... args) {
+            std::string tcolname = impl::ascii_impl::pop_macroed_name(names);
+            write_column(impl::ascii_impl::bake_macroed_name(tcolname), value);
+            write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename T, typename ... Args>
-        void write_columns_impl_(file::impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
+        void write_columns_impl_(impl::ascii_impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
             Args&& ... args) {
 
-            file::impl::pop_macroed_name(names);
+            impl::ascii_impl::pop_macroed_name(names);
             write_column(value.name, value.obj);
-            write_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, impl::ascii_impl::macroed_t>::value &&
             (sizeof...(Args) > 1)>::type>
         void write_columns(Args&& ... args) {
             // Check types of arguments
@@ -1072,7 +1078,7 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, impl::is_writable_column_type>>::value,
+                filtered_second, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
@@ -1080,17 +1086,17 @@ namespace fits {
         }
 
         template<typename ... Args>
-        void write_columns(file::impl::macroed_t, const std::string& names, Args&& ... args) {
+        void write_columns(impl::ascii_impl::macroed_t, const std::string& names, Args&& ... args) {
             // Check types of arguments
             using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, impl::is_writable_column_type>>::value,
+                arg_list, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of writable values");
 
             // Read
-            write_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
@@ -1105,11 +1111,11 @@ namespace fits {
     class table : public output_table, public input_table {
     public :
         explicit table(const std::string& filename) :
-            impl::file_base(impl::table_file, filename, impl::read_write),
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
             output_table(filename), input_table(filename) {}
 
         explicit table(const std::string& filename, uint_t hdu) :
-            impl::file_base(impl::table_file, filename, impl::read_write),
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
             output_table(filename), input_table(filename) {
             reach_hdu(hdu);
         }
@@ -1159,30 +1165,30 @@ namespace fits {
             update_columns_impl_(std::forward<Args>(args)...);
         }
 
-        void update_columns_impl_(file::impl::macroed_t, std::string) {
+        void update_columns_impl_(impl::ascii_impl::macroed_t, std::string) {
             // Nothing to do
         }
 
         template<typename T, typename ... Args>
-        void update_columns_impl_(file::impl::macroed_t, std::string names, T& value, Args&& ... args) {
-            std::string tcolname = file::impl::pop_macroed_name(names);
-            update_column(file::impl::bake_macroed_name(tcolname), value);
-            update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+        void update_columns_impl_(impl::ascii_impl::macroed_t, std::string names, T& value, Args&& ... args) {
+            std::string tcolname = impl::ascii_impl::pop_macroed_name(names);
+            update_column(impl::ascii_impl::bake_macroed_name(tcolname), value);
+            update_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
         template<typename T, typename ... Args>
-        void update_columns_impl_(file::impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
+        void update_columns_impl_(impl::ascii_impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
             Args&& ... args) {
 
-            file::impl::pop_macroed_name(names);
+            impl::ascii_impl::pop_macroed_name(names);
             update_column(value.name, value.obj);
-            update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            update_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     public :
 
         template<typename ... Args, typename enable = typename std::enable_if<
-            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, file::impl::macroed_t>::value &&
+            !std::is_same<typename std::decay<meta::first_type<meta::type_list<Args...>>>::type, impl::ascii_impl::macroed_t>::value &&
             (sizeof...(Args) > 1)>::type>
         void update_columns(Args&& ... args) {
             // Check types of arguments
@@ -1194,23 +1200,23 @@ namespace fits {
                 meta::are_all_true<meta::binary_first_apply_type_to_bool_list<
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                filtered_second, impl::is_writable_column_type>>::value,
+                filtered_second, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             update_columns_impl_(std::forward<Args>(args)...);
         }
 
         template<typename ... Args>
-        void update_columns(file::impl::macroed_t, std::string names, Args&& ... args) {
+        void update_columns(impl::ascii_impl::macroed_t, std::string names, Args&& ... args) {
             // Check types of arguments
             using arg_list = meta::type_list<typename std::decay<Args>::type...>;
 
             static_assert(
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
-                arg_list, impl::is_writable_column_type>>::value,
+                arg_list, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
-            update_columns_impl_(file::impl::macroed_t{}, names, std::forward<Args>(args)...);
+            update_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
     private :

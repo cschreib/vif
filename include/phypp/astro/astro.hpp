@@ -6,7 +6,8 @@
 #include "phypp/core/error.hpp"
 #include "phypp/utility/thread.hpp"
 #include "phypp/math/math.hpp"
-#include "phypp/io/fits/fits.hpp"
+#include "phypp/io/fits.hpp"
+#include "phypp/io/ascii.hpp"
 #include "phypp/astro/image.hpp"
 
 namespace phypp {
@@ -1289,7 +1290,7 @@ namespace astro {
             if (end_with(filename, ".fits")) {
                 fits::input_table(filename).read_columns(fits::narrow, ftable(tf.lam, tf.res));
             } else {
-                file::read_table(filename, file::find_skip(filename), tf.lam, tf.res);
+                ascii::read_table(filename, ascii::find_skip(filename), tf.lam, tf.res);
             }
         };
 

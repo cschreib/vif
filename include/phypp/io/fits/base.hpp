@@ -7,7 +7,8 @@
 #include "phypp/core/print.hpp"
 #include "phypp/core/error.hpp"
 #include "phypp/utility/generic.hpp"
-#include "phypp/io/file.hpp"
+#include "phypp/io/filesystem.hpp"
+#include "phypp/io/ascii.hpp"
 #include "phypp/math/math.hpp"
 
 namespace phypp {
@@ -40,8 +41,10 @@ namespace fits {
     }
 
     using header = std::string;
+}
 
-    namespace impl {
+namespace impl {
+    namespace fits_impl {
         template<typename T>
         struct traits;
 
@@ -343,7 +346,7 @@ namespace fits {
                     }
                 }
 
-                phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
+                fits::phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
             }
 
             file_base(file_base&& in) : type_(in.type_), rights_(in.rights_),
@@ -437,7 +440,7 @@ namespace fits {
                 std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void write_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
-                fits_update_key(fptr_, fits::impl::traits<meta::decay_t<T>>::ttype,
+                fits_update_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
             }
@@ -446,7 +449,7 @@ namespace fits {
                 std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void add_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
-                fits_write_key(fptr_, fits::impl::traits<meta::decay_t<T>>::ttype,
+                fits_write_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
             }
@@ -544,14 +547,16 @@ namespace fits {
 
         static struct readwrite_tag_t {} readwrite_tag;
     }
+}
 
+namespace fits {
     // Generic FITS file (read only)
-    class generic_file : public virtual impl::file_base {
+    class generic_file : public virtual impl::fits_impl::file_base {
     public :
         explicit generic_file(const std::string& filename) :
-            impl::file_base(impl::generic_file, filename, impl::read_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::generic_file, filename, impl::fits_impl::read_only) {}
         explicit generic_file(const std::string& filename, uint_t hdu) :
-            impl::file_base(impl::generic_file, filename, impl::read_only) {
+            impl::fits_impl::file_base(impl::fits_impl::generic_file, filename, impl::fits_impl::read_only) {
             reach_hdu(hdu);
         }
     };

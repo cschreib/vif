@@ -6,12 +6,12 @@
 namespace phypp {
 namespace fits {
     // FITS input table (read only)
-    class input_image : public virtual impl::file_base {
+    class input_image : public virtual impl::fits_impl::file_base {
     public :
         explicit input_image(const std::string& filename) :
-            impl::file_base(impl::image_file, filename, impl::read_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_only) {}
         explicit input_image(const std::string& filename, uint_t hdu) :
-            impl::file_base(impl::image_file, filename, impl::read_only) {
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_only) {
             reach_hdu(hdu);
         }
 
@@ -33,11 +33,11 @@ namespace fits {
             std::vector<long> naxes(naxis);
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
 
-            int type = impl::bitpix_to_type(bitpix);
-            phypp_check_fits(impl::traits<Type>::is_convertible(type), "wrong image type "
-                "(expected "+pretty_type_t(Type)+", got "+impl::type_to_string_(type)+")");
+            int type = impl::fits_impl::bitpix_to_type(bitpix);
+            phypp_check_fits(impl::fits_impl::traits<Type>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(Type)+", got "+impl::fits_impl::type_to_string_(type)+")");
 
-            type = impl::traits<Type>::ttype;
+            type = impl::fits_impl::traits<Type>::ttype;
 
             for (uint_t i : range(naxis)) {
                 v.dims[i] = naxes[naxis-1-i];
@@ -45,7 +45,7 @@ namespace fits {
 
             v.resize();
 
-            Type def = impl::traits<Type>::def();
+            Type def = impl::fits_impl::traits<Type>::def();
             int anynul;
             fits_read_img(fptr_, type, 1, v.size(), &def, v.data.data(), &anynul, &status_);
         }
@@ -80,14 +80,14 @@ namespace fits {
                     " in dims "+strn(nn)+")");
             }
 
-            int type = impl::bitpix_to_type(bitpix);
-            phypp_check_fits(impl::traits<Type>::is_convertible(type), "wrong image type "
-                "(expected "+pretty_type_t(Type)+", got "+impl::type_to_string_(type)+")");
+            int type = impl::fits_impl::bitpix_to_type(bitpix);
+            phypp_check_fits(impl::fits_impl::traits<Type>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(Type)+", got "+impl::fits_impl::type_to_string_(type)+")");
 
-            type = impl::traits<Type>::ttype;
+            type = impl::fits_impl::traits<Type>::ttype;
 
             Type val;
-            Type def = impl::traits<Type>::def();
+            Type def = impl::fits_impl::traits<Type>::def();
             int anynul;
             fits_read_img(fptr_, type, ppos, 1, &def, &val, &anynul, &status_);
 
@@ -96,16 +96,16 @@ namespace fits {
     };
 
     // Output FITS table (write only, overwrites existing files)
-    class output_image : public virtual impl::file_base {
+    class output_image : public virtual impl::fits_impl::file_base {
     protected :
 
-        explicit output_image(const std::string& filename, impl::readwrite_tag_t) :
-            impl::file_base(impl::image_file, filename, impl::write_only) {}
+        explicit output_image(const std::string& filename, impl::fits_impl::readwrite_tag_t) :
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
     public :
 
         explicit output_image(const std::string& filename) :
-            impl::file_base(impl::image_file, filename, impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
         output_image(output_image&&) = default;
         output_image(const output_image&) = delete;
@@ -116,7 +116,7 @@ namespace fits {
 
         template<std::size_t Dim, typename Type>
         void write_impl_(const vec<Dim,Type>& v) {
-            fits_write_img(fptr_, impl::traits<Type>::ttype, 1, v.size(),
+            fits_write_img(fptr_, impl::fits_impl::traits<Type>::ttype, 1, v.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(v.data.data()), &status_);
         }
 
@@ -131,7 +131,7 @@ namespace fits {
                 naxes[i] = v.dims[Dim-1-i];
             }
 
-            fits_create_img(fptr_, impl::traits<meta::rtype_t<Type>>::image_type, Dim,
+            fits_create_img(fptr_, impl::fits_impl::traits<meta::rtype_t<Type>>::image_type, Dim,
                 naxes.data(), &status_);
 
             write_impl_(v.concretise());
@@ -140,7 +140,7 @@ namespace fits {
         void write_empty() {
             status_ = 0;
             long naxes = 0;
-            fits_create_img(fptr_, impl::traits<float>::image_type, 0, &naxes, &status_);
+            fits_create_img(fptr_, impl::fits_impl::traits<float>::image_type, 0, &naxes, &status_);
         }
     };
 
@@ -148,12 +148,12 @@ namespace fits {
     class image : public output_image, public input_image {
     public :
         explicit image(const std::string& filename) :
-            impl::file_base(impl::image_file, filename, impl::read_write),
-            output_image(filename, impl::readwrite_tag), input_image(filename) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_write),
+            output_image(filename, impl::fits_impl::readwrite_tag), input_image(filename) {}
 
         explicit image(const std::string& filename, uint_t hdu) :
-            impl::file_base(impl::image_file, filename, impl::read_write),
-            output_image(filename, impl::readwrite_tag), input_image(filename) {
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_write),
+            output_image(filename, impl::fits_impl::readwrite_tag), input_image(filename) {
             reach_hdu(hdu);
         }
 
@@ -175,9 +175,9 @@ namespace fits {
             std::vector<long> naxes(naxis);
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
 
-            int type = impl::bitpix_to_type(bitpix);
-            phypp_check_fits(impl::traits<meta::rtype_t<Type>>::is_convertible(type), "wrong image type "
-                "(expected "+pretty_type_t(meta::rtype_t<Type>)+", got "+impl::type_to_string_(type)+")");
+            int type = impl::fits_impl::bitpix_to_type(bitpix);
+            phypp_check_fits(impl::fits_impl::traits<meta::rtype_t<Type>>::is_convertible(type), "wrong image type "
+                "(expected "+pretty_type_t(meta::rtype_t<Type>)+", got "+impl::fits_impl::type_to_string_(type)+")");
 
             std::array<uint_t,Dim> d;
             for (uint_t i : range(Dim)) {

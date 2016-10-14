@@ -188,7 +188,7 @@ int phypp_main(int argc, char* argv[]) {
             std::string posh = pos.empty() ? "" : pos+".";
             fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
         } else {
-            file::read_table(cat, file::find_skip(cat), fcat.ra, fcat.dec);
+            ascii::read_table(cat, ascii::find_skip(cat), fcat.ra, fcat.dec);
         }
 
         if (!cids.empty()) {

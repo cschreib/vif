@@ -1,15 +1,8 @@
-#ifndef PHYPP_IO_FILE_HPP
-#define PHYPP_IO_FILE_HPP
+#ifndef PHYPP_IO_ASCII_HPP
+#define PHYPP_IO_ASCII_HPP
 
-#include <dirent.h>
-#include <unistd.h>
-#include <fnmatch.h>
-#include <cstring>
-#include <cstdio>
-#include <sys/stat.h>
 #include <fstream>
 #include <sstream>
-#include <ctime>
 #include <tuple>
 #include <stdexcept>
 #include "phypp/core/vec.hpp"
@@ -17,357 +10,10 @@
 #include "phypp/math/math.hpp"
 
 namespace phypp {
-namespace file {
-    namespace impl {
-        // Emulate directory and file listing windows functions
-        // Note : Taken directly from Ogre3D
-        // http://www.ogre3d.org/
-        struct _finddata_t {
-            char *name;
-            int attrib;
-            unsigned long size;
-        };
-
-        struct _find_search_t {
-            char *pattern;
-            char *curfn;
-            char *directory;
-            int dirlen;
-            DIR *dirfd;
-        };
-
-        #define _A_NORMAL 0x00  /* Normalfile-Noread/writerestrictions */
-        #define _A_RDONLY 0x01  /* Read only file */
-        #define _A_HIDDEN 0x02  /* Hidden file */
-        #define _A_SYSTEM 0x04  /* System file */
-        #define _A_SUBDIR 0x10  /* Subdirectory */
-        #define _A_ARCH   0x20  /* Archive file */
-
-        int _findclose(long id);
-        int _findnext(long id, _finddata_t *data);
-
-        inline long _findfirst(const char *pattern, _finddata_t *data) {
-            _find_search_t *fs = new _find_search_t;
-            fs->curfn = NULL;
-            fs->pattern = NULL;
-
-            const char *mask = strrchr(pattern, '/');
-            if (mask) {
-                fs->dirlen = mask - pattern;
-                mask++;
-                fs->directory = static_cast<char*>(malloc(fs->dirlen + 1));
-                memcpy(fs->directory, pattern, fs->dirlen);
-                fs->directory[fs->dirlen] = 0;
-            } else {
-                mask = pattern;
-                fs->directory = strdup(".");
-                fs->dirlen = 1;
-            }
-
-            fs->dirfd = opendir(fs->directory);
-            if (!fs->dirfd) {
-                _findclose(reinterpret_cast<long>(fs));
-                return -1;
-            }
-
-            if (strcmp(mask, "*.*") == 0) {
-                mask += 2;
-            }
-
-            fs->pattern = strdup(mask);
-
-            if (_findnext(reinterpret_cast<long>(fs), data) < 0) {
-                _findclose(reinterpret_cast<long>(fs));
-                return -1;
-            }
-
-            return reinterpret_cast<long>(fs);
-        }
-
-        inline int _findnext(long id, _finddata_t *data) {
-            _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
-
-            dirent *entry;
-            for (;;) {
-                if (!(entry = readdir(fs->dirfd))) {
-                    return -1;
-                }
-
-                if (fnmatch(fs->pattern, entry->d_name, 0) == 0) {
-                    break;
-                }
-            }
-
-            if (fs->curfn) {
-                free(fs->curfn);
-            }
-
-            data->name = fs->curfn = strdup(entry->d_name);
-
-            size_t namelen = strlen(entry->d_name);
-            char *xfn = new char[fs->dirlen + 1 + namelen + 1];
-            sprintf(xfn, "%s/%s", fs->directory, entry->d_name);
-
-            struct stat stat_buf;
-            if (stat(xfn, &stat_buf)) {
-                data->attrib = _A_NORMAL;
-                data->size = 0;
-            } else {
-                if (S_ISDIR(stat_buf.st_mode)) {
-                    data->attrib = _A_SUBDIR;
-                } else {
-                    data->attrib = _A_NORMAL;
-                }
-
-                data->size = stat_buf.st_size;
-            }
-
-            delete[] xfn;
-
-            if (data->name [0] == '.') {
-                data->attrib |= _A_HIDDEN;
-            }
-
-            return 0;
-        }
-
-        inline int _findclose(long id) {
-            int ret;
-            _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
-
-            ret = fs->dirfd ? closedir(fs->dirfd) : 0;
-            free(fs->pattern);
-            free(fs->directory);
-            if (fs->curfn)
-                free(fs->curfn);
-            delete fs;
-
-            return ret;
-        }
-    }
-
-    inline bool exists(const std::string& file) {
-        if (file.empty()) {
-            return false;
-        }
-
-        std::ifstream f(file.c_str());
-        return f.is_open();
-    }
-
-    inline bool is_older(const std::string& file1, const std::string& file2) {
-        struct stat st1, st2;
-        if (::stat(file1.c_str(), &st1) != 0) return false;
-        if (::stat(file2.c_str(), &st2) != 0) return false;
-        return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
-    }
-
-    inline bool is_absolute_path(const std::string& file) {
-        auto pos = file.find_first_not_of(" \t");
-        return pos != file.npos && file[pos] == '/';
-    }
-
-    inline bool copy(const std::string& file_from, const std::string& file_to) {
-        std::ifstream src(file_from, std::ios::binary);
-        if (!src.is_open()) return false;
-        std::ofstream dst(file_to,   std::ios::binary);
-        if (!dst.is_open()) return false;
-        dst << src.rdbuf();
-        return true;
-    }
-
-    inline bool remove(const std::string& file) {
-        return !file::exists(file) || ::remove(file.c_str()) == 0;
-    }
-
-    inline std::string to_string(const std::string& file_name) {
-        std::string   dst;
-        std::ifstream src(file_name, std::ios::binary);
-        if (src) {
-            src.seekg(0, std::ios::end);
-            dst.resize(src.tellg());
-            src.seekg(0, std::ios::beg);
-            src.read(&dst[0], dst.size());
-            src.close();
-        }
-
-        return dst;
-    }
-
-    inline vec1s list_directories(const std::string& pattern = "*") {
-        vec1s dlist;
-
-        long handle, res;
-        struct impl::_finddata_t tagData;
-
-        handle = impl::_findfirst(pattern.c_str(), &tagData);
-        res = 0;
-        while (handle != -1 && res != -1) {
-            if ((tagData.attrib & _A_HIDDEN) != 0) {
-                res = impl::_findnext(handle, &tagData);
-                continue;
-            }
-
-            if ((tagData.attrib & _A_SUBDIR) != 0) {
-                std::string s = tagData.name;
-                if (s != "." && s != "..") {
-                    dlist.data.push_back(s);
-                }
-            }
-
-            res = impl::_findnext(handle, &tagData);
-        }
-
-        if (handle != -1) {
-            impl::_findclose(handle);
-        }
-
-        dlist.dims[0] = dlist.size();
-        return dlist;
-    }
-
-    inline vec1s list_files(const std::string& pattern = "*") {
-        vec1s flist;
-
-        long handle, res;
-        struct impl::_finddata_t tagData;
-
-        handle = impl::_findfirst(pattern.c_str(), &tagData);
-        res = 0;
-        while (handle != -1 && res != -1) {
-            if ((tagData.attrib & _A_HIDDEN) != 0) {
-                res = impl::_findnext(handle, &tagData);
-                continue;
-            }
-
-            if ((tagData.attrib & _A_SUBDIR) == 0) {
-                flist.data.push_back(tagData.name);
-            }
-
-            res = impl::_findnext(handle, &tagData);
-        }
-
-        if (handle != -1) {
-            impl::_findclose(handle);
-        }
-
-        flist.dims[0] = flist.size();
-        return flist;
-    }
-
-    inline std::string directorize(const std::string& path) {
-        std::string dir = trim(path);
-        if (!dir.empty() && dir.back() != '/') {
-            dir.push_back('/');
-        }
-
-        return dir;
-    }
-
-    // Same behavior as 'basename'
-    inline std::string get_basename(std::string path) {
-        auto pos = path.find_last_of('/');
-        if (pos == path.npos) {
-            return path;
-        } else {
-            auto lpos = path.find_last_not_of(' ');
-            if (pos == lpos) {
-                if (pos == 0) {
-                    return "/";
-                } else {
-                    pos = path.find_last_of('/', pos-1);
-                    if (pos == path.npos) {
-                        return path.substr(lpos);
-                    } else {
-                        return path.substr(pos+1, lpos-pos-1);
-                    }
-                }
-            } else {
-                return path.substr(pos+1);
-            }
-        }
-    }
-
-    inline std::string remove_extension(std::string s) {
-        auto p = s.find_last_of('.');
-        if (p == s.npos) return s;
-        return s.substr(0u, p);
-    }
-
-    inline std::string get_extension(std::string s) {
-        auto p = s.find_last_of('.');
-        if (p == s.npos) return "";
-        return s.substr(p);
-    }
-
-    inline std::pair<std::string,std::string> split_extension(std::string s) {
-        auto p = s.find_last_of('.');
-        if (p == s.npos) return std::make_pair(s, std::string{});
-        return std::make_pair(s.substr(0u, p), s.substr(p));
-    }
-
-    // Same behavior as 'dirname'
-    inline std::string get_directory(const std::string& path) {
-        auto pos = path.find_last_of('/');
-        if (pos == path.npos) {
-            return "./";
-        } else if (pos == path.find_last_not_of(' ')) {
-            if (pos == 0) {
-                return "/";
-            } else {
-                pos = path.find_last_of('/', pos-1);
-                if (pos == path.npos) {
-                    return "./";
-                } else {
-                    return path.substr(0, pos+1);
-                }
-            }
-        } else {
-            return path.substr(0, pos+1);
-        }
-    }
-
-    inline bool mkdir(const std::string& path) {
-        if (path.empty()) return true;
-        vec1s dirs = split(path, "/");
-        std::string tmp;
-        for (auto& d : dirs) {
-            if (d.empty()) continue;
-            if (!tmp.empty() || start_with(path, "/")) tmp += "/";
-            tmp += d;
-            bool res = (::mkdir(tmp.c_str(), 0775) == 0) || (errno == EEXIST);
-            if (!res) return false;
-        }
-        return true;
-    }
-
-
-#define VECTORIZE(name) \
-    template<std::size_t Dim, typename Type, typename ... Args, \
-        typename enable = typename std::enable_if< \
-            std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type> \
-    auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
-        vec<Dim,decltype(name(v[0], args...))> { \
-        using ntype = decltype(name(v[0], args...)); \
-        vec<Dim,ntype> r(v.dims); \
-        for (uint_t i : range(v)) { \
-            r.safe[i] = name(v.safe[i], args...); \
-        } \
-        return r; \
-    }
-
-    VECTORIZE(directorize)
-    VECTORIZE(is_absolute_path)
-    VECTORIZE(get_basename)
-    VECTORIZE(get_directory)
-    VECTORIZE(remove_extension)
-    VECTORIZE(get_extension)
-    VECTORIZE(split_extension)
-    VECTORIZE(mkdir)
-    VECTORIZE(exists)
-    VECTORIZE(is_older)
-
-#undef VECTORIZE
+namespace ascii {
+    struct exception : std::runtime_error {
+        exception(const std::string& w) : std::runtime_error(w) {}
+    };
 
     inline uint_t find_skip(const std::string& name) {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
@@ -388,17 +34,15 @@ namespace file {
         return n;
     }
 
-    struct exception : std::runtime_error {
-        exception(const std::string& w) : std::runtime_error(w) {}
-    };
-
     template<typename T, typename ... Args>
     auto columns(std::size_t n, T& t, Args& ... args) ->
         decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
         return std::tuple_cat(std::make_tuple(n), std::tie(t, args...));
     }
+}
 
-    namespace impl {
+namespace impl {
+    namespace ascii_impl {
         using placeholder_t = phypp::impl::placeholder_t;
 
         inline void read_table_resize_(std::size_t n) {}
@@ -525,9 +169,9 @@ namespace file {
             std::string fb;
             if (!read_value_(fs, v[i], fb)) {
                 if (fb.empty()) {
-                    throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                    throw ascii::exception("cannot extract value from file, too few columns on line l."+strn(i+1));
                 } else {
-                    throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
+                    throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
                         strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
                 }
             }
@@ -546,9 +190,9 @@ namespace file {
             std::string fb;
             if (!read_value_(fs, v(i,k), fb)) {
                 if (fb.empty()) {
-                    throw exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                    throw ascii::exception("cannot extract value from file, too few columns on line l."+strn(i+1));
                 } else {
-                    throw exception("cannot extract value '"+fb+"' from file, wrong type for l."+
+                    throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
                         strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
                 }
             }
@@ -560,7 +204,7 @@ namespace file {
             std::string s;
             if (!(fs >> s)) {
                 if (fs.eof()) {
-                    throw exception("cannot extract value from file, "
+                    throw ascii::exception("cannot extract value from file, "
                         "too few columns on line l."+strn(i+1));
                 }
             }
@@ -586,7 +230,7 @@ namespace file {
         template<typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args) {
             if (fs.eof()) {
-                throw exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
+                throw ascii::exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
                     "too few columns on line l."+strn(i+1));
             }
 
@@ -595,7 +239,9 @@ namespace file {
             read_table_(fs, i, ++j, args...);
         }
     }
+}
 
+namespace ascii {
     template<typename ... Args>
     void read_table(const std::string& name, std::size_t skip, Args&& ... args) {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
@@ -629,7 +275,7 @@ namespace file {
             std::ifstream file(name.c_str());
             file.seekg(rpos);
 
-            impl::read_table_resize_(n, args...);
+            impl::ascii_impl::read_table_resize_(n, args...);
 
             for (std::size_t i = 0; i < n; ++i) {
                 do {
@@ -638,14 +284,16 @@ namespace file {
 
                 std::istringstream fs(line);
                 std::size_t j = 0;
-                impl::read_table_(fs, i, j, args...);
+                impl::ascii_impl::read_table_(fs, i, j, args...);
             }
-        } catch (exception& e) {
+        } catch (ascii::exception& e) {
             phypp_check(false, std::string(e.what())+" (reading "+name+")");
         }
     }
+}
 
-    namespace impl {
+namespace impl {
+    namespace ascii_impl {
         inline void write_table_check_size_(std::size_t n, std::size_t i) {}
 
         template<std::size_t Dim, typename Type, typename ... Args>
@@ -657,7 +305,7 @@ namespace file {
             }
 
             if (v.dims[0] != n) {
-                throw exception("incorrect dimension for column "+strn(i)+" ("+
+                throw ascii::exception("incorrect dimension for column "+strn(i)+" ("+
                     strn(v.dims[0])+" vs "+strn(n)+")");
             }
 
@@ -716,20 +364,22 @@ namespace file {
             write_table_do_(file, cwidth, sep, i, j, args...);
         }
     }
+}
 
+namespace ascii {
     template<typename ... Args>
     void write_table(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;
-        impl::write_table_check_size_(n, t, args...);
+        impl::ascii_impl::write_table_check_size_(n, t, args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
         try {
             for (std::size_t i = 0; i < n; ++i) {
-                impl::write_table_do_(file, cwidth, "", i, 0, args...);
+                impl::ascii_impl::write_table_do_(file, cwidth, "", i, 0, args...);
             }
-        } catch (exception& e) {
+        } catch (ascii::exception& e) {
             phypp_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
@@ -739,7 +389,7 @@ namespace file {
         const Args& ... args) {
 
         std::size_t n = 0, t = 0;
-        impl::write_table_check_size_(n, t, args...);
+        impl::ascii_impl::write_table_check_size_(n, t, args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
@@ -751,16 +401,18 @@ namespace file {
             file << "#" << hdr << "\n#\n";
 
             for (std::size_t i = 0; i < n; ++i) {
-                impl::write_table_do_(file, cwidth, "", i, 0, args...);
+                impl::ascii_impl::write_table_do_(file, cwidth, "", i, 0, args...);
             }
-        } catch (exception& e) {
+        } catch (ascii::exception& e) {
             phypp_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
 
-    #define ftable(...) file::impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
+    #define ftable(...) phypp::impl::ascii_impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
+}
 
-    namespace impl {
+namespace impl {
+    namespace ascii_impl {
         struct macroed_t {};
 
         inline std::string bake_macroed_name(std::string t) {
@@ -849,16 +501,18 @@ namespace file {
             write_table_hdr_fix_2d_(vnames, i+v.dims[1], args...);
         }
     }
+}
 
+namespace ascii {
     template<typename ... Args>
-    void write_table_hdr(const std::string& filename, std::size_t cwidth, impl::macroed_t,
+    void write_table_hdr(const std::string& filename, std::size_t cwidth, impl::ascii_impl::macroed_t,
         const std::string& names, const Args& ... args) {
-        vec1s vnames = file::impl::split_macroed_names(names);
+        vec1s vnames = impl::ascii_impl::split_macroed_names(names);
         for (auto& s : vnames) {
-            s = file::impl::bake_macroed_name(s);
+            s = impl::ascii_impl::bake_macroed_name(s);
         }
 
-        impl::write_table_hdr_fix_2d_(vnames, 0, args...);
+        impl::ascii_impl::write_table_hdr_fix_2d_(vnames, 0, args...);
 
         write_table_hdr(filename, cwidth, vnames, args...);
     }
@@ -866,24 +520,16 @@ namespace file {
     template<typename ... Args>
     void write_table_csv(const std::string& filename, std::size_t cwidth, const Args& ... args) {
         std::size_t n = 0, t = 0;
-        impl::write_table_check_size_(n, t,args...);
+        impl::ascii_impl::write_table_check_size_(n, t,args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
         for (std::size_t i = 0; i < n; ++i) {
-            impl::write_table_do_(file, cwidth, ",", i, 0, args...);
+            impl::ascii_impl::write_table_do_(file, cwidth, ",", i, 0, args...);
         }
     }
 }
-}
-
-inline bool fork(const std::string& cmd) {
-    return system((cmd+" &").c_str()) == 0;
-}
-
-inline bool spawn(const std::string& cmd) {
-    return system(cmd.c_str()) == 0;
 }
 
 #endif

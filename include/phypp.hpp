@@ -10,11 +10,12 @@
 #include "phypp/utility/generic.hpp"
 #include "phypp/reflex/reflex.hpp"
 #include "phypp/reflex/reflex_helpers.hpp"
-#include "phypp/io/file.hpp"
-#include "phypp/io/fits/fits.hpp"
-#include "phypp/io/fits/wcs.hpp"
+#include "phypp/io/filesystem.hpp"
+#include "phypp/io/ascii.hpp"
+#include "phypp/io/fits.hpp"
 #include "phypp/math/math.hpp"
 #include "phypp/astro/image.hpp"
+#include "phypp/astro/wcs.hpp"
 #include "phypp/astro/astro.hpp"
 
 using namespace phypp;
