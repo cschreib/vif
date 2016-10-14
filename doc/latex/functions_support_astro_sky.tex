@@ -33,3 +33,20 @@ auto qxmatch(vec<1,T> ra1, dec1, ra2, dec2,
 \end{cppcode}
 
 \funcitem \cppinline|vec2d qdist(vec<1,T> ra, dec, auto options = default)| \itt{qdist}
+
+\funcitem \vectorfunc \cppinline|double angdistr(double ra1, dec1, ra2, dec2)| \itt{angdistr}
+
+\vectorfunc \cppinline|double angdist(double ra1, dec1, ra2, dec2)| \itt{angdist}
+
+\funcitem \cppinline|vec<D,bool> angdist_less(vec<D,double> ra1, dec1, double ra2, dec2)| \itt{angdist_less}
+
+\funcitem \cppinline|void move_ra_dec(double& ra, dec, double dra, ddec)| \itt{move_ra_dec}
+
+\cppinline|void move_ra_dec(vec<D,double>& ra, dec, double dra, ddec)|
+
+\funcitem \cppinline|void normalize_coordinates(T& ra, dec)| \itt{normalize_coordinates}
+
+\funcitem \cppinline|double vernal_angle(double ra, dec)| \itt{vernal_angle}
+
+\funcitem \cppinline|void angrot_vernal(T ra, dec, double e, U& ora, odec)| \itt{angrot_vernal}
+

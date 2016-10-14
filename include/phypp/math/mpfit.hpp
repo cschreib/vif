@@ -1,7 +1,13 @@
 #ifndef PHYPP_MATH_MPFIT_HPP
 #define PHYPP_MATH_MPFIT_HPP
 
-#include "phypp/math/math.hpp"
+#include "phypp/core/vec.hpp"
+#include "phypp/core/error.hpp"
+#include "phypp/core/range.hpp"
+#include "phypp/utility/generic.hpp"
+#include "phypp/math/base.hpp"
+#include "phypp/math/matrix.hpp"
+#include "phypp/math/reduce.hpp"
 
 namespace phypp {
     // Note:
@@ -188,9 +194,8 @@ namespace phypp {
         uint_t minmn = std::min(n, m);
         for (uint_t i : range(minmn)) {
             {
-                vec1u r = rgen(i,n-1);
                 uint_t kmax;
-                double rmax = max(rdiag[r], kmax);
+                double rmax = max(rdiag[i-_], kmax);
                 if (!is_nan(rmax) && kmax != 0) {
                     // Exchange rows
                     kmax += i;
@@ -200,9 +205,8 @@ namespace phypp {
                 }
             }
 
-            vec1u r = rgen(i,m-1);
             uint_t li = ipiv[i];
-            vec1d aii = a(li,r);
+            vec1d aii = a(li,i-_);
             double ajnorm = mpfit_enorm(aii);
 
             if (ajnorm != 0.0) {
@@ -210,14 +214,14 @@ namespace phypp {
 
                 aii /= ajnorm;
                 aii[0] += 1;
-                a(li,r) = aii;
+                a(li,i-_) = aii;
 
                 if (i+1 < n) {
                     for (uint_t k : range(i+1,n)) {
                         uint_t lk = ipiv[k];
-                        vec1d aik = a(lk,r);
+                        vec1d aik = a(lk,i-_);
                         if (a(li,i) != 0.0) {
-                            a(lk,r) = aik - aii*total(aik*aii)/a(li,i);
+                            a(lk,i-_) = aik - aii*total(aik*aii)/a(li,i);
                         }
 
                         if (rdiag[k] != 0.0) {
@@ -228,7 +232,7 @@ namespace phypp {
                             temp = rdiag[k]/wa[k];
 
                             if (0.05*sqr(temp) <= eps) {
-                                rdiag[k] = mpfit_enorm(a(lk,rgen(i+1,n-1)));
+                                rdiag[k] = mpfit_enorm(a(lk,(i+1)-_));
                                 wa[k] = rdiag[k];
                             }
                         }
@@ -252,8 +256,7 @@ namespace phypp {
         // Copy r and (q transpose)*b to preserve input and initialize s.
         // In particular, save the diagonal elements of r in x.
         for (uint_t j : range(n)) {
-            vec1u rj = rgen(j,n-1);
-            r(j,rj) = r(rj,j);
+            r(j,j-_-(n-1)) = r(j-_-(n-1),j);
         }
 
         x = r[delm];
@@ -263,7 +266,7 @@ namespace phypp {
         for (uint_t j : range(n)) {
             uint_t l = ipiv[j];
             if (diag[l] == 0.0) break;
-            sdiag[rgen(j,n-1)] = 0.0;
+            sdiag[j-_] = 0.0;
             sdiag[j] = diag[l];
 
             // The transformations to eliminate the row of d modify only a
@@ -294,10 +297,9 @@ namespace phypp {
 
                 // Accumulate the transformation in the row of s
                 if (k < n-1) {
-                    vec1u rk = rgen(k+1,n-1);
-                    vec1d tmp = cosine*r(k,rk) + sine*sdiag[rk];
-                    sdiag[rk] = -sine*r(k,rk) + cosine*sdiag[rk];
-                    r(k,rk) = tmp;
+                    vec1d tmp = cosine*r(k,(k+1)-_-(n-1)) + sine*sdiag[(k+1)-_-(n-1)];
+                    sdiag[(k+1)-_-(n-1)] = -sine*r(k,(k+1)-_-(n-1)) + cosine*sdiag[(k+1)-_-(n-1)];
+                    r(k,(k+1)-_-(n-1)) = tmp;
                 }
             }
 
@@ -311,17 +313,19 @@ namespace phypp {
         for (uint_t j : range(n)) {
             if (sdiag[j] == 0.0) {
                 nsing = j;
-                wa[rgen(j,n-1)] = 0.0;
+                wa[j-_] = 0.0;
                 break;
             }
         }
 
-        if (nsing >= 1) {
+        if (nsing >= 1u) {
             wa[nsing-1] /= sdiag[nsing-1]; // Degenerate case
-            for (uint_t j = nsing-1; j >= 1; --j) {
-                vec1u rj = rgen(j,nsing-1);
-                wa[j-1] -= total(r(j,rj)*wa(rj));
-                wa[j-1] /= sdiag[j];
+            // Reverse loop
+            uint_t j = nsing-1;
+            while (j > 0u) {
+                --j;
+                wa[j] -= total(r(j,(j+1)-_-(nsing-1))*wa[(j+1)-_-(nsing-1)]);
+                wa[j] /= sdiag[j];
             }
         }
 
@@ -349,17 +353,19 @@ namespace phypp {
         for (uint_t j : range(delm)) {
             if (abs(r[delm[j]]) < rthresh) {
                 nsing = j;
-                wa1[rgen(j,n-1)] = 0.0;
+                wa1[j-_] = 0.0;
                 break;
             }
         }
 
         if (nsing > 0u) {
-            for (uint_t j = nsing; j >= 1; --j) {
-                wa1[j-1] /= r(j-1,j-1);
-                if (j >= 2u) {
-                    vec1u rj = rgen(0,j-2);
-                    wa1[rj] -= r(j-1,rj)*wa1[j-1];
+            // Reverse loop
+            uint_t j = nsing;
+            while (j > 0u) {
+                --j;
+                wa1[j] /= r(j,j);
+                if (j >= 1u) {
+                    wa1[_-(j-1)] -= r(j,_-(j-1))*wa1[j];
                 }
             }
         }
@@ -385,8 +391,7 @@ namespace phypp {
 
             wa1[0] /= r(0,0); // Degenerate case
             for (uint_t j : range(1u,n)) {
-                vec1u rj = rgen(0,j-1);
-                wa1[j] -= total(r(j,rj)*wa1(rj));
+                wa1[j] -= total(r(j,_-(j-1))*wa1[_-(j-1)]);
                 wa1[j] /= r(j,j);
             }
 
@@ -396,8 +401,7 @@ namespace phypp {
 
         // Calculate an upper bound, paru, for the zero of the function
         for (uint_t j : range(n)) {
-            vec1u rj = rgen(0,j);
-            wa1[j] = total(r(j,rj)*qtf[rj])/diag[ipiv[j]];
+            wa1[j] = total(r(j,_-j)*qtf[_-j])/diag[ipiv[j]];
         }
 
         double gnorm = mpfit_enorm(wa1);
@@ -436,8 +440,7 @@ namespace phypp {
 
             for (uint_t j : range(n-1)) {
                 wa1[j] /= sdiag[j];
-                vec1u rj = rgen(j+1,n-1);
-                wa1[rj] -= r(j,rj)*wa1[j];
+                wa1[(j+1)-_-(n-1)] -= r(j,(j+1)-_-(n-1))*wa1[j];
             }
             wa1[n-1] /= sdiag[n-1]; // Degenerate case
 
@@ -469,10 +472,9 @@ namespace phypp {
             if (abs(r(k,k)) <= tolr) break;
             r(k,k) = 1.0/r(k,k);
             for (uint_t j : range(k)) {
-                vec1u rj = rgen(0,j);
                 double temp = r(k,k)*r(k,j);
                 r(k,j) = 0.0;
-                r(k,rj) -= temp*r(j,rj);
+                r(k,_-j) -= temp*r(j,_-j);
             }
 
             l = k+1;
@@ -482,12 +484,10 @@ namespace phypp {
         // in the full upper triangle of r
         for (uint_t k : range(l)) {
             for (uint_t j : range(k)) {
-                vec1u rj = rgen(0,j);
-                r(j,rj) += r(k,j)*r(k,rj);
+                r(j,_-j) += r(k,j)*r(k,_-j);
             }
 
-            vec1u rk = rgen(0,k);
-            r(k,rk) *= r(k,k);
+            r(k,_-k) *= r(k,k);
         }
 
         // Form the full lower triangle of the covariance matrix
@@ -514,8 +514,7 @@ namespace phypp {
 
         // Symmetrize the covariance matrix in r
         for (uint_t j : range(n)) {
-            vec1u rj = rgen(0,j);
-            r(j,rj) = r(rj,j);
+            r(j,_-j) = r(_-j,j);
             r(j,j) = wa[j];
         }
 
@@ -605,10 +604,9 @@ namespace phypp {
             // l.3371 mpfit.pro
             vec1d wa4 = fvec;
             for (uint_t p : range(n)) {
-                vec1u r = rgen(p, npt-1);
                 uint_t lp = ipiv[p];
                 if (fjac(lp,p) != 0.0) {
-                    wa4[r] -= fjac(lp,r)*total(fjac(lp,r)*wa4[r])/fjac(lp,p);
+                    wa4[p-_] -= fjac(lp,p-_)*total(fjac(lp,p-_)*wa4[p-_])/fjac(lp,p);
                 }
 
                 fjac(lp,p) = wa1(p);
@@ -617,7 +615,7 @@ namespace phypp {
 
             // Reform the Jacobian matrix (only need square R factor)
             // l.3388 mpfit.pro
-            fjac = fjac(ipiv,rgen(0,n-1));
+            fjac = fjac(ipiv,_-(n-1));
 
             // Check for overflow
             bool stop = false;
@@ -636,10 +634,9 @@ namespace phypp {
             double gnorm = 0.0;
             if (fnorm != 0.0) {
                 for (uint_t p : range(n)) {
-                    vec1u r = rgen(0,p);
                     uint_t l = ipiv[p];
                     if (wa2[l] != 0.0) {
-                        gnorm = std::max(gnorm, abs(total(fjac(p,r)*qtf[r])/wa2[l]));
+                        gnorm = std::max(gnorm, abs(total(fjac(p,_-p)*qtf[_-p])/wa2[l]));
                     }
                 }
             }
@@ -740,8 +737,7 @@ namespace phypp {
                 // derivative
                 for (uint_t j : range(n)) {
                     wa3[j] = 0.0;
-                    vec1u rj = rgen(0,j);
-                    wa3[rj] += fjac(j,rj)*wa1[ipiv[j]];
+                    wa3[_-j] += fjac(j,_-j)*wa1[ipiv[j]];
                 }
 
                 // Remember, alpha is the fraction of the full LM step actually

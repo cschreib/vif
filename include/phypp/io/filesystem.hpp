@@ -14,7 +14,6 @@
 #include <stdexcept>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/error.hpp"
-#include "phypp/math/math.hpp"
 
 namespace phypp {
 namespace impl {

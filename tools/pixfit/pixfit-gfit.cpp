@@ -1,5 +1,6 @@
 #include <phypp.hpp>
 #include <phypp/astro/template_fit.hpp>
+#include "pixfit-common.hpp"
 
 void print_help() {
     using namespace format;
@@ -118,7 +119,7 @@ int phypp_main(int argc, char* argv[]) {
     if (out.empty()) {
         vec1s spl = split(cat, ".");
         if (spl.size() > 1) {
-            out = collapse(spl[rgen(0,spl.size()-2)], ".")+"_"+suffix+".fits";
+            out = collapse(spl[_-(spl.size()-2)], ".")+"_"+suffix+".fits";
         } else {
             out = cat+"_"+suffix+".fits";
         }
@@ -224,7 +225,7 @@ int phypp_main(int argc, char* argv[]) {
             b[1] = onsed-1;
         }
 
-        itdust = rgen(b[0], b[1]);
+        itdust = uindgen(b[1]-b[0]+1) + b[0];
 
         for (uint_t l : range(2)) {
             libs[l].lam = libs[l].lam(itdust,_);

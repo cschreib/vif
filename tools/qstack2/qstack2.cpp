@@ -196,9 +196,8 @@ int phypp_main(int argc, char* argv[]) {
             if (!read_ids(cids[0], tcids[0], 0, 0, fcat.ra.size())) return 1;
             if (!read_ids(cids[1], tcids[1], 1, fcat.ra.size()-1, fcat.ra.size())) return 1;
 
-            vec1u tid = rgen(tcids[0], tcids[1]);
-            fcat.ra = fcat.ra[tid];
-            fcat.dec = fcat.dec[tid];
+            fcat.ra = fcat.ra[tcids[0]-_-tcids[1]];
+            fcat.dec = fcat.dec[tcids[0]-_-tcids[1]];
         }
 
         vec1u id = where(is_finite(fcat.ra) && is_finite(fcat.dec));
@@ -250,8 +249,7 @@ int phypp_main(int argc, char* argv[]) {
                 if (!read_ids(cids[0], tcids[0], 0, 0, cube.dims[0])) return 1;
                 if (!read_ids(cids[1], tcids[1], 1, cube.dims[0]-1, cube.dims[0])) return 1;
 
-                vec1u tid = rgen(tcids[0], tcids[1]);
-                cube = cube(tid, _, _);
+                cube = cube(tcids[0]-_-tcids[1],_,_);
             }
 
             if (verbose) print("stacking ", cube.dims[0], " sources");
@@ -310,9 +308,8 @@ int phypp_main(int argc, char* argv[]) {
                 if (!read_ids(cids[0], tcids[0], 0, 0, cube.dims[0])) return 1;
                 if (!read_ids(cids[1], tcids[1], 1, cube.dims[0]-1, cube.dims[0])) return 1;
 
-                vec1u tid = rgen(tcids[0], tcids[1]);
-                cube = cube(tid, _, _);
-                wcube = wcube(tid, _, _);
+                cube = cube(tcids[0]-_-tcids[1],_,_);
+                wcube = wcube(tcids[0]-_-tcids[1],_,_);
             }
 
             if (verbose) print("stacking ", cube.dims[0], " sources");

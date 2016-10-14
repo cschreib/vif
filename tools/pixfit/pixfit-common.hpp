@@ -275,3 +275,19 @@ vec2d read_psf(const std::string& psf_file, double beam_smear, int_t& hsize) {
 vec2d read_psf(const map_info& map, int_t& hsize) {
     return read_psf(map.psf, map.beam_smear, hsize);
 }
+
+// Find the first value in 'x' where 'y' equals zero, linearly interpolating between
+// the gridded data points
+template<typename TypeX, typename TypeY>
+double find_zero(const vec<1,TypeX>& x, const vec<1,TypeY>& y) {
+    phypp_check(x.size() == y.size(),
+        "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+
+    for (uint_t i : range(1, x.size())) {
+        if (y.safe[i]*y.safe[i-1] <= 0) {
+            return interpolate(x.safe[i-1], x.safe[i], y.safe[i-1], y.safe[i], 0.0);
+        }
+    }
+
+    return dnan;
+};

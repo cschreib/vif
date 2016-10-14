@@ -281,7 +281,7 @@ namespace vec_access {
         return phypp::range(rng.first, rng.last+1);
     }
 
-    // Helper to build the result of v(_, rgen(1,2), 5), i.e. when at least one index is not scalar.
+    // Helper to build the result of v(_, ids, 5), i.e. when at least one index is not scalar.
     // The result is another array.
     template<bool IsSafe, bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,
         typename ... Args>

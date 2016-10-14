@@ -2,6 +2,9 @@
 #define PHYPP_UTILITY_GENERIC_HPP
 
 #include "phypp/core/vec.hpp"
+#include "phypp/core/meta.hpp"
+#include "phypp/core/range.hpp"
+#include "phypp/core/error.hpp"
 #include "phypp/core/string_conversion.hpp"
 
 namespace phypp {

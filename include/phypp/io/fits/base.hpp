@@ -9,7 +9,6 @@
 #include "phypp/utility/generic.hpp"
 #include "phypp/io/filesystem.hpp"
 #include "phypp/io/ascii.hpp"
-#include "phypp/math/math.hpp"
 
 namespace phypp {
 namespace fits {

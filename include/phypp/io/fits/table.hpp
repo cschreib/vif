@@ -3,6 +3,7 @@
 
 #include "phypp/reflex/reflex_helpers.hpp"
 #include "phypp/io/fits/base.hpp"
+#include "phypp/math/reduce.hpp"
 
 namespace phypp {
 namespace fits {

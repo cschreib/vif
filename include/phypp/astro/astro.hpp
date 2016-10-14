@@ -5,7 +5,12 @@
 #include "phypp/core/vec.hpp"
 #include "phypp/core/error.hpp"
 #include "phypp/utility/thread.hpp"
-#include "phypp/math/math.hpp"
+#include "phypp/math/base.hpp"
+#include "phypp/math/linfit.hpp"
+#include "phypp/math/convex_hull.hpp"
+#include "phypp/math/histogram.hpp"
+#include "phypp/math/reduce.hpp"
+#include "phypp/math/random.hpp"
 #include "phypp/io/fits.hpp"
 #include "phypp/io/ascii.hpp"
 #include "phypp/astro/image.hpp"
@@ -14,6 +19,206 @@ namespace phypp {
 namespace astro {
     static std::string data_dir = system_var("PHYPP_DATA_DIR", "./");
     static std::string temporary_dir = system_var("PHYPP_TMP_DIR", "./");
+
+    // Compute the angular distance between two RA/Dec positions [radian].
+    // Assumes that RA & Dec coordinates are in radian.
+    inline double angdistr(double ra1, double dec1, double ra2, double dec2) {
+        double sra = sin(0.5*(ra2 - ra1));
+        double sde = sin(0.5*(dec2 - dec1));
+        return 2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)));
+    }
+
+    // Compute the angular distance between two RA/Dec positions [arcsec].
+    // Assumes that RA & Dec coordinates are in degrees.
+    inline double angdist(double tra1, double tdec1, double tra2, double tdec2) {
+        const double d2r = dpi/180.0;
+        double ra1 = d2r*tra1, ra2 = d2r*tra2, dec1 = d2r*tdec1, dec2 = d2r*tdec2;
+        double sra = sin(0.5*(ra2 - ra1));
+        double sde = sin(0.5*(dec2 - dec1));
+        return 3600.0*2.0*asin(sqrt(sde*sde + sra*sra*cos(dec2)*cos(dec1)))/d2r;
+    }
+
+    // Compute the angular distance between two RA/Dec positions [arcsec].
+    // Assumes that RA & Dec coordinates are in degrees.
+    template<std::size_t N, typename TR1, typename TD1, typename TR2, typename TD2>
+    vec<N,double> angdist(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
+        const vec<N,TR2>& tra2, const vec<N,TD2>& tdec2) {
+        phypp_check(tra1.dims == tdec1.dims, "first RA and Dec dimensions do not match (",
+            tra1.dims, " vs ", tdec1.dims, ")");
+        phypp_check(tra2.dims == tdec2.dims, "second RA and Dec dimensions do not match (",
+            tra2.dims, " vs ", tdec2.dims, ")");
+        phypp_check(tra1.dims == tra2.dims, "position sets dimensions do not match (",
+            tra1.dims, " vs ", tra2.dims, ")");
+
+        vec<N,double> res(tra1.dims);
+        for (uint_t i : range(tra1)) {
+            res.safe[i] = angdist(tra1.safe[i], tdec1.safe[i], tra2.safe[i], tdec2.safe[i]);
+        }
+
+        return res;
+    }
+
+    // Compute the angular distance between two RA/Dec positions [arcsec].
+    // Assumes that RA & Dec coordinates are in degrees.
+    template<std::size_t N, typename TR1, typename TD1>
+    vec<N,double> angdist(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
+        double tra2, double tdec2) {
+        phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
+            tra1.dims, " vs ", tdec1.dims, ")");
+
+        vec<N,double> res(tra1.dims);
+        for (uint_t i : range(tra1)) {
+            res.safe[i] = angdist(tra1.safe[i], tdec1.safe[i], tra2, tdec2);
+        }
+
+        return res;
+    }
+
+    // Compute the angular distance between two RA/Dec positions [arcsec].
+    // Assumes that RA & Dec coordinates are in degrees.
+    template<std::size_t N, typename TR1, typename TD1>
+    vec<N,bool> angdist_less(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
+        double tra2, double tdec2, double radius) {
+        phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
+            tra1.dims, " vs ", tdec1.dims, ")");
+
+        const double d2r = dpi/180.0;
+        const double rrad = d2r*radius/3600.0;
+        const double crad = sqr(sin(rrad/2.0));
+
+        vec<N,bool> res(tra1.dims);
+        for (uint_t i : range(tra1)) {
+            double ra1 = d2r*tra1.safe[i], ra2 = d2r*tra2;
+            double dec1 = d2r*tdec1.safe[i], dec2 = d2r*tdec2;
+
+            double sra = sin(0.5*(ra2 - ra1));
+            double sde = sin(0.5*(dec2 - dec1));
+
+            res.safe[i] = sqr(sde) + sqr(sra)*cos(dec2)*cos(dec1) < crad;
+        }
+
+        return res;
+    }
+
+    // Move a point in RA/Dec [degree] by an increment in [arcsec]
+    // This is an approximation for small movements of the order of a degree or less.
+    inline void move_ra_dec(double& ra, double& dec, double dra, double ddec) {
+        ra += dra/cos(dec*dpi/180.0)/3600.0;
+        dec += ddec/3600.0;
+
+        // Note: another, in principle more accurate implementation is
+        // ra *= cos(dec*dpi/180.0);
+        // dec += ddec/3600.0;
+        // ra += dra/3600.0;
+        // ra /= cos(dec*dpi/180.0);
+        // But this implementation suffers from numerical instability!
+        // The culprit is the cos(dec_old)/cos(dec_new) ratio.
+    }
+
+    template<std::size_t D, typename T, typename U>
+    void move_ra_dec(vec<D,T>& ra, vec<D,U>& dec, double dra, double ddec) {
+        phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
+            ra.dims, " vs ", dec.dims, ")");
+
+        dra /= 3600.0;
+        ddec /= 3600.0;
+        const double d2r = dpi/180.0;
+
+        for (uint_t i : range(ra)) {
+            ra.safe[i] += dra/cos(d2r*dec.safe[i]);
+            dec.safe[i] += ddec;
+        }
+    }
+
+    // Adjust RA and Dec coordinates to remain within the range [0,360] and [-90,90].
+    // The geometry is not modified, this is just a convention for the standard
+    // representation of the coordinates.
+    template<typename T, typename U, typename enable = typename std::enable_if<
+        !meta::is_vec<T>::value && !meta::is_vec<U>::value>::type>
+    void normalize_coordinates(T& ra, U& dec) {
+        while (dec > 90.0) {
+            dec = 180.0 - dec;
+            ra += 180.0;
+        }
+        while (dec < -90.0) {
+            dec = -180.0 - dec;
+            ra += 180.0;
+        }
+
+        while (ra > 360.0) {
+            ra -= 360.0;
+        }
+        while (ra < 0.0) {
+            ra += 360.0;
+        }
+    }
+
+    template<std::size_t D, typename T, typename U>
+    void normalize_coordinates(vec<D,T>& ra, vec<D,U>& dec) {
+        phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
+            ra.dims, " vs ", dec.dims, ")");
+
+        for (auto i : range(ra)) {
+            normalize_coordinates(ra.safe[i], dec.safe[i]);
+        }
+    }
+
+    // Return the rotation angle in degrees between the equator and the geodesic that passes
+    // through the celestial origin (i.e., the point of coordinates RA=0 and Dec=0) and the
+    // provided position.
+    template <typename T=void>
+    double vernal_angle(double ra, double dec) {
+        ra *= dpi/180;
+        dec *= dpi/180;
+
+        double p = sqr(sin(dec/2)) + cos(dec)*sqr(sin(ra/2));
+        double e = (180/dpi)*asin(sin(dec)/(2*(sqrt(p-p*p))));
+
+        if (ra > 180.0) e = -e;
+
+        return e;
+    }
+
+    // Rotate one set of RA/Dec positions around the vernal equinox by an angle 'e' given in
+    // degrees. NB: the vernal equinox is the line that goes from the center of Earth and
+    // passes through the celestial origin (i.e., the point of coordinates RA=0 and Dec=0).
+    // It is the 'x' axis in cartesian coordinates.
+    template <typename T1, typename T2, typename T3, typename T4>
+    void angrot_vernal(const T1& tr1, const T2& td1, double e, T3& r2, T4& d2) {
+        phypp_check(tr1.dims == td1.dims, "incompatible dimensions between RA and Dec "
+            "(", tr1.dims, " vs. ", td1.dims, ")");
+
+        e *= dpi/180.0;
+        double ce = cos(e);
+        double se = sin(e);
+
+        auto r1 = tr1*dpi/180.0;
+        auto d1 = td1*dpi/180.0;
+
+        auto cr1 = cos(r1), sr1 = sin(r1);
+        auto cd1 = cos(d1), sd1 = sin(d1);
+
+        auto x1 = cd1*cr1, y1 = cd1*sr1, z1 = sd1;
+
+        auto y2 = ce*y1 - se*z1;
+        auto z2 = ce*z1 + se*y1;
+
+        d2 = asin(z2);
+        r2 = atan2(y2, x1);
+
+        // Other solutions
+        // d2 = asin(sin(d1)*ce + cos(d1)*sin(r1)*se);
+        // r2 = acos(cos(r1)*cos(d1)/cos(d2));
+        // r2 = acos(x1/sqrt(1-sqr(z2)));
+
+        r2 *= 180/dpi;
+        d2 *= 180/dpi;
+
+        // Come back to [0, 360]
+        for (auto& r : r2) {
+            if (r < 0) r += 360.0;
+        }
+    }
 
     struct psffit_result {
         double bg;
@@ -200,7 +405,7 @@ namespace astro {
                 auto idz = where(z > 0); \
                 auto mi = min(z[idz]); \
                 auto ma = max(z[idz]); \
-                auto tz = e10(rgen(log10(mi), log10(ma), npt)); \
+                auto tz = rgen_log(mi, ma, npt); \
                 using rtype = meta::rtype_t<Type>; \
                 vec<1,rtype> td = arr<rtype>(tz.dims); \
                 for (uint_t i : range(tz)) { \
@@ -1041,16 +1246,18 @@ namespace astro {
         ids.reserve(ids.size() + x.size());
 
         // Loop over all sources
-        vec1i r = rgen(-hsize, hsize);
         for (uint_t i = 0; i < x.size(); ++i) {
             // Discard any source that falls out of the boundaries of the image
             if (x[i]-hsize < 1 || x[i]+hsize >= width || y[i] - hsize < 1 || y[i] + hsize >= height) {
                 continue;
             }
 
+            uint_t ix = round(x[i]);
+            uint_t iy = round(y[i]);
+
             // TODO: (optimization) optimize this using subsrc?
             // TODO: fix this (will probably not compile because x and y are double)
-            auto cut = img(x[i]+r, y[i]+r).concretise();
+            auto cut = img((ix-hsize)-_-(ix+hsize), (iy-hsize)-_-(iy+hsize)).concretise();
 
             // Discard any source that contains a bad pixel (either infinite or NaN)
             if (count(!is_finite(cut)) != 0) {

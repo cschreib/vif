@@ -3,7 +3,10 @@
 
 #include "phypp/core/vec.hpp"
 #include "phypp/core/error.hpp"
-#include "phypp/math/math.hpp"
+#include "phypp/core/range.hpp"
+#include "phypp/utility/generic.hpp"
+#include "phypp/math/base.hpp"
+#include "phypp/math/fourier.hpp"
 
 namespace phypp {
 namespace astro {

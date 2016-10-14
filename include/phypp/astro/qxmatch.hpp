@@ -433,12 +433,12 @@ namespace astro {
 
                 // Merge back the results of each thread
                 for (uint_t t = 0; t < params.thread; ++t) {
-                    auto ids = rgen(tbeg1[t], tend1[t]-1);
+                    auto ids = tbeg1[t]-_-(tend1[t]-1);
                     res.id.safe(_,ids) = vres[t].id.safe(_,ids);
                     res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 
                     if (!params.no_mirror) {
-                        ids = rgen(tbeg2[t], tend2[t]-1);
+                        ids = tbeg2[t]-_-(tend2[t]-1);
                         res.rid.safe[ids] = vres[t].rid.safe[ids];
                         res.rd.safe[ids] = vres[t].rd.safe[ids];
                     }
@@ -542,7 +542,7 @@ namespace astro {
 
                 // Merge back the results of each thread
                 for (uint_t t = 0; t < params.thread; ++t) {
-                    auto ids = rgen(tbeg[t], tend[t]-1);
+                    auto ids = tbeg[t]-_-(tend[t]-1);
                     res.id.safe(_,ids) = vres[t].id.safe(_,ids);
                     res.d.safe(_,ids) = vres[t].d.safe(_,ids);
 

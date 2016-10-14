@@ -1,5 +1,5 @@
-#ifndef PHYPP_IO_FITS_WCS_HPP
-#define PHYPP_IO_FITS_WCS_HPP
+#ifndef PHYPP_IO_ASTRO_WCS_HPP
+#define PHYPP_IO_ASTRO_WCS_HPP
 
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
@@ -8,6 +8,7 @@
 
 #include "phypp/core/error.hpp"
 #include "phypp/io/fits.hpp"
+#include "phypp/astro/astro.hpp"
 
 namespace phypp {
 namespace fits {
@@ -482,7 +483,7 @@ namespace fits {
         // Convert radius to number of pixels
         vec1d r, d;
         fits::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
-        aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
+        aspix = astro::angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
 
         return true;
 #endif

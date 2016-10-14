@@ -4,15 +4,14 @@
 
 \cppinline|vec1d rgen_step(T i, j, s)| \itt{rgen_step}
 
-The \cppinline{rgen()} functions generate a sequence of numbers that increase linearly. The first version generates integer values between \cppinline{i} and \cppinline{j} (inclusive) with step of \cppinline{1}. The second version generates \cppinline{n} floating point values between \cppinline{i} and \cppinline{j} (inclusive) with step \cppinline{(j-i)/(n-1.0)}.
+The \cppinline{rgen()} functions generate a sequence of numbers that increase continuously. The first version generates \cppinline{n} floating point values between \cppinline{i} and \cppinline{j} (inclusive) with step \cppinline{(j-i)/(n-1.0)}.
 
-The \cppinline{rgen_log()} function does the same as the second \cppinline{rgen()} function except that the steps are logarithmic (i.e., linear in logarithmic space) so that the size of the step increases continuously.
+The \cppinline{rgen_log()} function does the same as the \cppinline{rgen()} function except that the steps are logarithmic (i.e., linear in logarithmic space) so that the size of the step increases continuously. This function will only work with strictly positive values for \cppinline{i} and \cppinline{j}.
 
 The \cppinline{rgen_step()} function does the same as the second \cppinline{rgen()} function except that the third argument is the step size, rather than the number of steps. This step size must be positive. The generated sequence is guaranteed to start with the value \cppinline{i} and end with the value \cppinline{j}. If \cppinline{abs(i-j)} cannot be evenly divided by the chosen step size, i.e., if \cppinline{i + n*s < j && j < i + (n+1)*s} (with \cppinline{n} an integer), then the last value of the sequence (\cppinline{i + n*s} or \cppinline{i + (n+1)*s}, whichever is closest to \cppinline{j}) is replaced by the exact value of \cppinline{j}.
 
 \begin{example}
 \begin{cppcode}
-rgen(1,4); // {1,2,3,4}
 rgen(1,4,8); // {1,1.5,2,2.5,3,3.5,4}
 
 rgen_log(1,4,8); // {1,1.219,1.486,1.811,2.208,2.692,3.281,4}

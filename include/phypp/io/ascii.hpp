@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/error.hpp"
-#include "phypp/math/math.hpp"
+#include "phypp/math/base.hpp"
 
 namespace phypp {
 namespace ascii {
