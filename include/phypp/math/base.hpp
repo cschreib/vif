@@ -298,7 +298,7 @@ namespace phypp {
     #undef VECTORIZE
 
     // Create a range of n steps from i to j (inclusive)
-    template<typename T, typename U>
+    template<typename T, typename U = T>
     vec1d rgen(T i, U j, uint_t n) {
         if (n == 1) {
             return {i};
@@ -314,7 +314,7 @@ namespace phypp {
     }
 
     // Create a range of n logarithmic steps from i to j (inclusive)
-    template<typename T, typename U, typename V>
+    template<typename T, typename U = T>
     vec1d rgen_log(T i, U j, uint_t n) {
         phypp_check(i > 0 && j > 0, "'rgen_log(a,b,n)' needs a strictly positive value for 'a' and 'b' "
             "(got ", i, " and ", j, ")");
