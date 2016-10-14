@@ -470,36 +470,6 @@ namespace fits {
     // Obtain the pixel size of a given image in arsec/pixel.
     // Will fail (return false) if no WCS information is present in the image.
     template<typename Dummy = void>
-    bool get_pixel_size(const std::string& file, double& aspix) {
-#ifdef NO_WCSLIB
-        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
-            "please enable the WCSLib library to use this function");
-#else
-        if (end_with(file, ".sectfits")) {
-            vec1s sects = fits::read_sectfits(file);
-            return get_pixel_size(sects[0], aspix);
-        } else {
-            fits::header hdr = fits::read_header(file);
-            auto wcs = fits::wcs(hdr);
-            if (!wcs.is_valid()) {
-                warning("could not extract WCS information");
-                note("parsing '", file, "'");
-                return false;
-            }
-
-            // Convert radius to number of pixels
-            vec1d r, d;
-            fits::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
-            aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
-
-            return true;
-        }
-#endif
-    }
-
-    // Obtain the pixel size of a given image in arsec/pixel.
-    // Will fail (return false) if no WCS information is present in the image.
-    template<typename Dummy = void>
     bool get_pixel_size(const fits::wcs& wcs, double& aspix) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
@@ -515,6 +485,31 @@ namespace fits {
         aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
 
         return true;
+#endif
+    }
+
+    // Obtain the pixel size of a given image in arsec/pixel.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
+    bool get_pixel_size(const std::string& file, double& aspix) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        if (end_with(file, ".sectfits")) {
+            vec1s sects = fits::read_sectfits(file);
+            return get_pixel_size(sects[0], aspix);
+        } else {
+            fits::header hdr = fits::read_header(file);
+            auto wcs = fits::wcs(hdr);
+            if (!get_pixel_size(wcs, aspix)) {
+                warning("could not extract WCS information");
+                note("parsing '", file, "'");
+                return false;
+            }
+
+            return true;
+        }
 #endif
     }
 }
