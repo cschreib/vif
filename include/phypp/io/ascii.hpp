@@ -39,6 +39,12 @@ namespace ascii {
         decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
         return std::tuple_cat(std::make_tuple(n), std::tie(t, args...));
     }
+
+    template<typename T, typename ... Args>
+    auto columns(std::size_t n, const T& t, const Args& ... args) ->
+        decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
+        return std::tuple_cat(std::make_tuple(n), std::tie(t, args...));
+    }
 }
 
 namespace impl {
@@ -296,6 +302,10 @@ namespace impl {
     namespace ascii_impl {
         inline void write_table_check_size_(std::size_t n, std::size_t i) {}
 
+        template<typename U, typename ... VArgs, typename ... Args>
+        void write_table_check_size_(std::size_t& n, std::size_t i, const std::tuple<U,VArgs...>& v,
+            const Args& ... args);
+
         template<std::size_t Dim, typename Type, typename ... Args>
         void write_table_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
             const Args& ... args) {
@@ -312,6 +322,20 @@ namespace impl {
             write_table_check_size_(n, i+1, args...);
         }
 
+        template<typename U, typename ... VArgs, std::size_t ... S>
+        void write_table_check_size_tuple_(std::size_t& n, std::size_t i, const std::tuple<U,VArgs...>& v,
+            meta::seq_t<S...>) {
+            write_table_check_size_(n, i, std::get<S>(v)...);
+        }
+
+        template<typename U, typename ... VArgs, typename ... Args>
+        void write_table_check_size_(std::size_t& n, std::size_t i, const std::tuple<U,VArgs...>& v,
+            const Args& ... args) {
+
+            write_table_check_size_tuple_(n, i, v, typename meta::gen_seq<1, sizeof...(VArgs)>::type());
+            write_table_check_size_(n, i+sizeof...(VArgs), args...);
+        }
+
         inline void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j) {
             file << '\n';
@@ -320,6 +344,10 @@ namespace impl {
         template<typename Type, typename ... Args>
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args);
+
+        template<typename U, typename ... VArgs, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const std::tuple<U,VArgs...>& v, const Args& ... args);
 
         template<typename Type, typename ... Args>
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
@@ -345,7 +373,7 @@ namespace impl {
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
 
-            for (uint_t k = 0; k < v.dims[1]; ++k) {
+            for (uint_t k : range(v.dims[1])) {
                 if (j == 0) {
                     file << std::string(sep.size(), ' ');
                 } else {
@@ -363,6 +391,52 @@ namespace impl {
 
             write_table_do_(file, cwidth, sep, i, j, args...);
         }
+
+        inline void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j) {}
+
+        template<typename Type, typename ... Args>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
+
+            if (j == 0) {
+                file << std::string(sep.size(), ' ');
+            } else {
+                file << sep;
+            }
+
+
+            std::string s = strn(v(i,k));
+            if (s.size() < cwidth) {
+                file << std::string(cwidth - s.size(), ' ');
+            }
+
+            file << s;
+
+            write_table_do_tuple_(file, cwidth, sep, i, k, j+1, args...);
+        }
+
+        template<typename U, typename ... VArgs, std::size_t ... S>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const std::tuple<U,VArgs...>& v, meta::seq_t<S...>) {
+
+            write_table_do_tuple_(file, cwidth, sep, i, k, j, std::get<S>(v)...);
+        }
+
+        template<typename U, typename ... VArgs, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const std::tuple<U,VArgs...>& v, const Args& ... args) {
+
+            uint_t m = std::get<0>(v); // number of column groups
+            uint_t o = sizeof...(VArgs); // number of columns in a group
+            for (uint_t k : range(m)) {
+                write_table_do_tuple_(file, cwidth, sep, i, k, j+k*o, v, 
+                    typename meta::gen_seq<1, sizeof...(VArgs)>::type()
+                );
+            }
+
+            write_table_do_(file, cwidth, sep, i, j+m*o, args...);
+        }
     }
 }
 
@@ -376,7 +450,7 @@ namespace ascii {
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
         try {
-            for (std::size_t i = 0; i < n; ++i) {
+            for (std::size_t i : range(n)) {
                 impl::ascii_impl::write_table_do_(file, cwidth, "", i, 0, args...);
             }
         } catch (ascii::exception& e) {
@@ -400,7 +474,7 @@ namespace ascii {
             if (hdr.size() > 1 && hdr[0] == ' ') hdr = hdr.substr(1);
             file << "#" << hdr << "\n#\n";
 
-            for (std::size_t i = 0; i < n; ++i) {
+            for (std::size_t i : range(n)) {
                 impl::ascii_impl::write_table_do_(file, cwidth, "", i, 0, args...);
             }
         } catch (ascii::exception& e) {
