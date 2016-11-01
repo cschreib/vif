@@ -158,7 +158,7 @@ namespace thread {
         std::unique_ptr<std::thread>           thread_;
 
         void consume_loop_() {
-            while (!stop_on_empty_) {
+            while (!stop_on_empty_ || !jobs_.empty()) {
                 std::function<void()> job;
                 while (jobs_.pop(job)) {
                     job();
