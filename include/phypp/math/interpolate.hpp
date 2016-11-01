@@ -65,7 +65,7 @@ namespace phypp {
     // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
     // the arrays contains special values (NaN, inf, ...), all the points that would use these values
     // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-    template<std::size_t DI, typename TypeY = double, typename TypeX = double, typename T = double,
+    template<std::size_t DI = 1, typename TypeY = double, typename TypeX = double, typename T = double,
         typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
     auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeX>& x, const T& nx) ->
         decltype(y[0]*x[0]) {
