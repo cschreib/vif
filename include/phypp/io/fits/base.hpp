@@ -131,9 +131,9 @@ namespace impl {
         struct traits<uint_t> {
             using dtype = uint_t;
 
-            static const char tform = 'J';
-            static const int ttype = TLONG;
-            static const int image_type = LONG_IMG;
+            static const char tform = 'K';
+            static const int ttype = TLONGLONG;
+            static const int image_type = LONGLONG_IMG;
 
             static uint_t def() {
                 return 0;
@@ -164,9 +164,9 @@ namespace impl {
         struct traits<int_t> {
             using dtype = int_t;
 
-            static const char tform = 'J';
-            static const int ttype = TLONG;
-            static const int image_type = LONG_IMG;
+            static const char tform = 'K';
+            static const int ttype = TLONGLONG;
+            static const int image_type = LONGLONG_IMG;
 
             static int_t def() {
                 return 0;
