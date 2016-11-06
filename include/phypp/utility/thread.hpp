@@ -48,11 +48,11 @@ namespace thread {
             node* next;
         };
 
-        // Modified and read by 'procuder' only
+        // Modified and read by 'producer' only
         node* first_;
         // Modified and read by 'consumer', read by 'producer'
         std::atomic<node*> dummy_;
-        // Modified and read by 'procuder', read by 'consumer'
+        // Modified and read by 'producer', read by 'consumer'
         std::atomic<node*> last_;
 
     public :
