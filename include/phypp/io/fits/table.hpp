@@ -195,6 +195,7 @@ namespace fits {
                     ci.type = column_info::byte;
                     break;
                 }
+                case 'K' :
                 case 'J' :
                 case 'I' : {
                     ci.type = column_info::integer;
