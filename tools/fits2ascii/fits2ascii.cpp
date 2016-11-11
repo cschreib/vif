@@ -355,6 +355,36 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
+    using namespace format;
+
     print("fits2ascii v1.0");
-    print("[WIP]");
+    header("Usage: fits2ascii file.fits out.dat [options]");
+    header("Available options:");
+    bullet("include=[...]", "By default the program will export all columns to the ASCII file. "
+        "You can specify in this variable an array of regular expressions that the program will "
+        "use to identify which columns should be exported. The columns not matching the provided "
+        "regular expressions will be ignored. Be careful that these are regular expressions, not "
+        "simple search strings. In particular, the search pattern 'ra' will include columns named "
+        "'ra', but also 'radius' or 'grade'. To only match the 'ra' column, use '^ra$'.");
+    bullet("exclude=[...]", "Similar to 'include', but defines which columns to exclude rather "
+        "than which columns to include. If both 'include' and 'exclude' are used, 'exclude' is "
+        "ignored.");
+    bullet("rename=[...]", "Each element of this array should be of the form 'xxx:yyy', which "
+        "will change the name of column 'xxx' into 'yyy' in the ASCII file.");
+    bullet("split=[...]", "Each element of this array should be of the form 'xxx:y:z:...'. This "
+        "will split a 2D column named 'xxx' into multiple 1D columns. The other arguments ('y', "
+        "'z', ...) determine the name of these multiple columns by contatenation ('y+z+...'). "
+        "These can be: a) a simple string 'foo', b) an array '[foo,bar]' which must contain as "
+        "many elements as 1D columns, and c) the name of a variable in the FITS file '#names' "
+        "that contains as many strings as 1D columns. For example, if the FITS file contains a "
+        "variable 'bands' that holds the name of all the bands in a 2D column 'fluxes', then this "
+        "2D column can be exported using 'split=fluxes:flux_:#bands'. If 'bands' contains "
+        "['f435w','f606w',...], the resulting 1D columns will be named 'flux_f435w', 'flux_f606w', "
+        "etc. If the FITS file does not contain any variable you can use for naming columns, you "
+        "can use the array synthax to specify these names manually. Using the same example as "
+        "before, one would do instead 'split=fluxes:flux_:[f435w,f606w,...]'.");
+    bullet("ids=...", "Must be a path to a valid FITS file containing a column'IDS', which "
+        "will be used to define which rows of the catalog to save in the ASCII file. For example, "
+        "if IDS=[0,1,2,3] then this program will only output the data for rows 0 to 3.");
+    bullet("verbose", "Print the names of the exported columns in the terminal.");
 }
