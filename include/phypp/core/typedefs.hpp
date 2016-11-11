@@ -1,6 +1,8 @@
 #ifndef PHYPP_CORE_TYPEDEF_HPP
 #define PHYPP_CORE_TYPEDEF_HPP
 
+#include <cstddef>
+
 namespace phypp {
     // Type shortcuts
     using int_t = std::ptrdiff_t;

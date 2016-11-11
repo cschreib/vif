@@ -5,8 +5,10 @@
 #include <iostream>
 #include <sstream>
 #include <array>
+#include <typeinfo>
 #include "phypp/core/vec.hpp"
-#include "phypp/core/vec.hpp"
+#include "phypp/core/range.hpp"
+#include "phypp/core/meta.hpp"
 
 namespace std {
     template<typename O, typename T, std::size_t N>

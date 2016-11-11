@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <array>
+#include <utility>
 
 namespace phypp {
     template<typename T>
