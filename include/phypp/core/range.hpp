@@ -157,7 +157,7 @@ namespace impl {
         }
     }
 
-    using placeholder_t = impl::range_impl::full_range_t; 
+    using placeholder_t = impl::range_impl::full_range_t;
 }
 
     // Full range variable v(_)
@@ -175,7 +175,7 @@ namespace impl {
         return range(i, e, std::abs(impl::range_impl::dtype<T>(e)-impl::range_impl::dtype<T>(i)));
     }
 
-    // Define a range from '0' to 'n' (exclusive) in integer steps 
+    // Define a range from '0' to 'n' (exclusive) in integer steps
     template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     impl::range_impl::range_t<T> range(T n) {
         return range(T(0), n);
@@ -190,9 +190,9 @@ namespace impl {
 namespace meta {
     template<typename T>
     struct is_range : std::integral_constant<bool,
-        std::is_same<T,impl::range_impl::full_range_t>::value || 
+        std::is_same<T,impl::range_impl::full_range_t>::value ||
         std::is_same<T,impl::range_impl::left_range_t>::value ||
-        std::is_same<T,impl::range_impl::right_range_t>::value || 
+        std::is_same<T,impl::range_impl::right_range_t>::value ||
         std::is_same<T,impl::range_impl::left_right_range_t>::value> {};
 }
 }
