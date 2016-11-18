@@ -239,13 +239,15 @@ namespace astro {
 
             // Try a dummy coordinate conversion to see if everything is recognized
             if (w) {
-                double map[2] = {0.0, 0.0};
-                double itmp[2];
+                vec1d map = replicate(0.0, w->naxis);
+                vec1d world(w->naxis);
+                vec1d itmp(w->naxis);
                 double phi, theta;
-                double world[2];
                 int status = 0;
 
-                int ret = wcsp2s(w, 1, 2, map, itmp, &phi, &theta, world, &status);
+                int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
+                    world.data.data(), &status);
+
                 if (ret != 0) {
                     wcserr_prt(w->err, "error: ");
                     wcsvfree(&nwcs, &w);
