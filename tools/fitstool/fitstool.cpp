@@ -868,9 +868,10 @@ void print_readkwd_help() {
 
 bool read_keyword(int argc, char* argv[], const std::string& file) {
     vec1s key;
+    uint_t hdu = npos;
     bool help = false;
     bool verbose = false;
-    read_args(argc, argv, arg_list(key, help, verbose));
+    read_args(argc, argv, arg_list(key, help, verbose, hdu));
 
     if (help) {
         print_readkwd_help();
@@ -893,6 +894,15 @@ bool read_keyword(int argc, char* argv[], const std::string& file) {
             if (verbose) print("loaded table file");
         } else {
             if (verbose) print("loaded image file");
+        }
+
+        if (hdu != npos) {
+            int nhdu = 0;
+            fits_get_num_hdus(fptr, &nhdu, &status);
+            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+                "FITS file (", hdu, " vs. ", nhdu, ")");
+
+            fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
         }
 
         for (auto& k : key) {
