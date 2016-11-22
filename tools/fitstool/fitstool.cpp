@@ -572,21 +572,8 @@ bool show_header(int argc, char* argv[], const std::string& file) {
     int status = 0;
 
     try {
-        fits_open_image(&fptr, file.c_str(), READONLY, &status);
+        fits_open_file(&fptr, file.c_str(), READONLY, &status);
         fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
-
-        bool table = false;
-        int naxis = 0;
-        fits_get_img_dim(fptr, &naxis, &status);
-        if (naxis == 0) {
-            fits_close_file(fptr, &status);
-            fits_open_table(&fptr, file.c_str(), READONLY, &status);
-            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
-            if (verbose) print("loaded table file");
-            table = true;
-        } else {
-            if (verbose) print("loaded image file");
-        }
 
         if (hdu != npos) {
             int nhdu = 0;
@@ -609,13 +596,7 @@ bool show_header(int argc, char* argv[], const std::string& file) {
                 print(header.substr(i, std::min(header.size()-i, std::size_t(80))));
             }
         } else {
-            if (table) {
-                // Print column names, types and dimensions 'phy++' style, then other keywords
-                print("WIP");
-            } else {
-                // Print image dimensions and type, plus other keywords
-                print("WIP");
-            }
+            print("WIP");
         }
 
         fits_close_file(fptr, &status);
