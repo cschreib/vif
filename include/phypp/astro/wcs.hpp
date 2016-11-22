@@ -216,6 +216,11 @@ namespace astro {
         wcsprm* w = nullptr;
         int nwcs  = 0;
 
+        vec1u dims;
+
+        uint_t ra_axis = 0, dec_axis = 1;
+        uint_t x_axis = 0, y_axis = 1;
+
         explicit wcs(uint_t naxis = 2) : w(new wcsprm), nwcs(1) {
             w->flag = -1;
             wcsini(true, naxis, w);
@@ -237,8 +242,25 @@ namespace astro {
                 w = nullptr;
             }
 
-            // Try a dummy coordinate conversion to see if everything is recognized
             if (w) {
+                // Get dimensions from the FITS header
+                dims.resize(axis_count());
+                for (uint_t i : range(dims)) {
+                    uint_t dim = npos;
+                    if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
+                        dims[dims.size()-1-i] = dim;
+                    }
+                }
+
+                // Identify RA and Dec axis
+                ra_axis = x_axis = w->lon;
+                dec_axis = y_axis = w->lat;
+
+                // X is by definition the first axis, so swap them if
+                // the input file has DEC/RA instead of RA/DEC
+                if (x_axis > y_axis) std::swap(x_axis, y_axis);
+
+                // Try a dummy coordinate conversion to see if everything is recognized
                 vec1d map = replicate(0.0, w->naxis);
                 vec1d world(w->naxis);
                 vec1d itmp(w->naxis);
@@ -254,6 +276,21 @@ namespace astro {
                     w = nullptr;
                 }
             }
+        }
+
+        uint_t axis_count() const {
+            return (w ? w->naxis : 0);
+        }
+
+        uint_t find_axis(const std::string& name) const {
+            for (uint_t i : range(axis_count())) {
+                std::string ctype = split(w->ctype[i], "-")[0];
+                if (ctype == toupper(name)) {
+                    return w->naxis-1 - i;
+                }
+            }
+
+            return npos;
         }
 
         wcs(const wcs&) = delete;
@@ -302,6 +339,57 @@ namespace astro {
 #endif
     }
 
+}
+
+namespace impl {
+    namespace wcs_impl {
+        vec2d world2pix(const astro::wcs& w, const vec2d& world) {
+            vec2d pix(world.dims);
+
+            uint_t npt = world.dims[0];
+            uint_t naxis = world.dims[1];
+
+            std::vector<double> phi(npt), theta(npt);
+            std::vector<double> itmp(naxis*npt);
+            std::vector<int>    stat(npt);
+
+            int status = wcss2p(w.w, npt, naxis, world.data.data(), phi.data(), theta.data(),
+                itmp.data(), pix.data.data(), stat.data());
+
+            if (status != 0) {
+                wcserr_prt(w.w->err, "error: ");
+            }
+
+            phypp_check(status == 0, "error in WCS conversion");
+
+            return pix;
+        }
+
+        vec2d pix2world(const astro::wcs& w, vec2d pix) {
+            vec2d world(pix.dims);
+
+            uint_t npt = pix.dims[0];
+            uint_t naxis = pix.dims[1];
+
+            std::vector<double> phi(npt), theta(npt);
+            std::vector<double> itmp(naxis*npt);
+            std::vector<int>    stat(npt);
+
+            int status = wcsp2s(w.w, npt, naxis, pix.data.data(), itmp.data(),
+                phi.data(), theta.data(), world.data.data(), stat.data());
+
+            if (status != 0) {
+                wcserr_prt(w.w->err, "error: ");
+            }
+
+            phypp_check(status == 0, "error in WCS conversion");
+
+            return world;
+        }
+    }
+}
+
+namespace astro {
     template<std::size_t D = 1, typename T = double, typename U = double, typename V, typename W>
     void ad2xy(const astro::wcs& w, const vec<D,T>& ra, const vec<D,U>& dec,
         vec<D,V>& x, vec<D,W>& y) {
@@ -311,42 +399,30 @@ namespace astro {
 #else
 
         phypp_check(w.is_valid(), "invalid WCS data");
-        phypp_check(ra.size() == dec.size(), "RA and Dec arrays do not match sizes ("+
-            strn(ra.size())+" vs "+strn(dec.size())+")");
+        phypp_check(ra.dims == dec.dims, "RA and Dec arrays do not match sizes ("+
+            strn(ra.dims)+" vs "+strn(dec.dims)+")");
 
-        uint_t ngal = ra.size();
-        if (ngal == 0) {
+        uint_t npt = ra.size();
+        if (npt == 0) {
             x.clear(); y.clear();
             return;
         }
 
-        uint_t naxis = w.w->naxis;
-        vec2d world(ngal, naxis);
-        for (uint_t i : range(ngal)) {
-            world.safe(i,0) = ra.safe[i];
-            world.safe(i,1) = dec.safe[i];
+        uint_t naxis = w.axis_count();
+        vec2d world(npt, naxis);
+        for (uint_t i : range(npt)) {
+            world.safe(i,naxis-1-w.ra_axis) = ra.safe[i];
+            world.safe(i,naxis-1-w.dec_axis) = dec.safe[i];
         }
 
-        vec2d pos(ngal, naxis);
-        std::vector<double> phi(ngal), theta(ngal);
-        std::vector<double> itmp(naxis*ngal);
-        std::vector<int>    stat(ngal);
+        vec2d pix = impl::wcs_impl::world2pix(w, world);
 
-        int status = wcss2p(w.w, ngal, naxis, world.data.data(), phi.data(), theta.data(),
-            itmp.data(), pos.data.data(), stat.data());
+        x.resize(ra.dims);
+        y.resize(ra.dims);
 
-        if (status != 0) {
-            wcserr_prt(w.w->err, "error: ");
-        }
-
-        phypp_check(status == 0, "error in WCS conversion");
-
-        x.dims = ra.dims; x.resize();
-        y.dims = dec.dims; y.resize();
-
-        for (uint_t i : range(ngal)) {
-            x.safe[i] = pos.safe(i,0);
-            y.safe[i] = pos.safe(i,1);
+        for (uint_t i : range(npt)) {
+            x.safe[i] = pix.safe(i,naxis-1-w.x_axis);
+            y.safe[i] = pix.safe(i,naxis-1-w.y_axis);
         }
 #endif
     }
@@ -360,42 +436,30 @@ namespace astro {
 #else
 
         phypp_check(w.is_valid(), "invalid WCS data");
-        phypp_check(x.size() == y.size(), "x and y arrays do not match sizes ("+
-            strn(x.size())+" vs "+strn(y.size())+")");
+        phypp_check(x.dims == y.dims, "x and y arrays do not match sizes ("+
+            strn(x.dims)+" vs "+strn(y.dims)+")");
 
-        uint_t ngal = x.size();
-        if (ngal == 0) {
+        uint_t npt = x.size();
+        if (npt == 0) {
             ra.clear(); dec.clear();
             return;
         }
 
-        uint_t naxis = w.w->naxis;
-        vec2d map(ngal, naxis);
-        for (uint_t i : range(ngal)) {
-            map.safe(i,0) = x.safe[i];
-            map.safe(i,1) = y.safe[i];
+        uint_t naxis = w.axis_count();
+        vec2d pix(npt, naxis);
+        for (uint_t i : range(npt)) {
+            pix.safe(i,naxis-1-w.x_axis) = x.safe[i];
+            pix.safe(i,naxis-1-w.y_axis) = y.safe[i];
         }
 
-        vec2d world(ngal, naxis);
-        std::vector<double> phi(ngal), theta(ngal);
-        std::vector<double> itmp(naxis*ngal);
-        std::vector<int>    stat(ngal);
+        vec2d world = impl::wcs_impl::pix2world(w, pix);
 
-        int status = wcsp2s(w.w, ngal, naxis, map.data.data(), itmp.data(),
-            phi.data(), theta.data(), world.data.data(), stat.data());
+        ra.resize(x.dims);
+        dec.resize(x.dims);
 
-        if (status != 0) {
-            wcserr_prt(w.w->err, "error: ");
-        }
-
-        phypp_check(status == 0, "error in WCS conversion");
-
-        ra.dims = x.dims; ra.resize();
-        dec.dims = y.dims; dec.resize();
-
-        for (uint_t i : range(ngal)) {
-            ra.safe[i] = world.safe(i,0);
-            dec.safe[i] = world.safe(i,1);
+        for (uint_t i : range(npt)) {
+            ra.safe[i] = world.safe(i,naxis-1-w.ra_axis);
+            dec.safe[i] = world.safe(i,naxis-1-w.dec_axis);
         }
 #endif
     }
@@ -408,30 +472,15 @@ namespace astro {
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        phypp_check(w.is_valid(), "invalid WCS data");
+        vec<1,T> tra  = replicate(ra,  1);
+        vec<1,T> tdec = replicate(dec, 1);
+        vec<1,V> tx;
+        vec<1,W> ty;
 
-        uint_t naxis = w.w->naxis;
-        vec1d world(naxis);
-        world.safe[0] = ra;
-        world.safe[1] = dec;
+        ad2xy(w, tra, tdec, tx, ty);
 
-        vec1d pos(naxis);
-
-        double phi, theta;
-        std::vector<double> itmp(naxis);
-        int stat;
-
-        int status = wcss2p(w.w, 1, naxis, world.data.data(), &phi, &theta, itmp.data(),
-            pos.data.data(), &stat);
-
-        if (status != 0) {
-            wcserr_prt(w.w->err, "error: ");
-        }
-
-        phypp_check(status == 0, "error in WCS conversion");
-
-        x = pos.safe[0];
-        y = pos.safe[1];
+        x = tx.safe[0];
+        y = ty.safe[0];
 #endif
     }
 
@@ -443,30 +492,15 @@ namespace astro {
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        phypp_check(w.is_valid(), "invalid WCS data");
+        vec<1,T> tx = replicate(x, 1);
+        vec<1,T> ty = replicate(y, 1);
+        vec<1,V> tra;
+        vec<1,W> tdec;
 
-        uint_t naxis = w.w->naxis;
-        vec1d map(naxis);
-        map.safe[0] = x;
-        map.safe[1] = y;
+        xy2ad(w, tx, ty, tra, tdec);
 
-        vec1d world(naxis);
-
-        double phi, theta;
-        std::vector<double> itmp(naxis);
-        int stat;
-
-        int status = wcsp2s(w.w, 1, naxis, map.data.data(), itmp.data(), &phi, &theta,
-            world.data.data(), &stat);
-
-        if (status != 0) {
-            wcserr_prt(w.w->err, "error: ");
-        }
-
-        phypp_check(status == 0, "error in WCS conversion");
-
-        ra = world.safe[0];
-        dec = world.safe[1];
+        ra = tra.safe[0];
+        dec = tdec.safe[0];
 #endif
     }
 
@@ -513,6 +547,35 @@ namespace astro {
 
             return true;
         }
+#endif
+    }
+
+    // Obtain the pixel size of a given image in arsec/pixel.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Type = double>
+    vec<1,Type> build_axis(const astro::wcs& wcs, uint_t axis) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Type,Type>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        uint_t naxis = wcs.axis_count();
+
+        phypp_check(wcs.is_valid(), "invalid WCS data");
+        phypp_check(axis < naxis, "trying to use an axis that does not exist (",
+            axis, " vs ", naxis, ")");
+
+        uint_t npix = wcs.dims[axis];
+
+        vec2d pix(npix, naxis);
+        pix(_,naxis-1-axis) = dindgen(npix)+1;
+        for (uint_t i : range(naxis)) {
+            if (i == axis) continue;
+            pix(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+        }
+
+        vec2d world = impl::wcs_impl::pix2world(wcs, pix);
+
+        return world(_,naxis-1-axis);
 #endif
     }
 }
