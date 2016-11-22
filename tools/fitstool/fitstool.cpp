@@ -474,26 +474,29 @@ bool copy_wcs_header(int argc, char* argv[], const std::string& file) {
     }
 
     // List of keywords taken from 'cphead' (WCSTools)
-    vec1s keywords = {"RA", "DEC", "EPOCH", "EQUINOX", "RADECSYS", "SECPIX", "SECPIX1",
-        "SECPIX2", "CTYPE1", "CTYPE2", "CRVAL1", "CRVAL2", "CDELT1", "CDELT2", "CRPIX1",
-        "CRPIX2", "CROTA1", "CROTA2", "IMWCS", "CD1_1", "CD1_2", "CD2_1", "CD2_2", "PC1_1",
-        "PC1_2", "PC2_1", "PC2_2", "PC001001", "PC001002", "PC002001", "PC002002",
-        "LATPOLE", "LONPOLE"};
+    vec1s keywords = {"RA", "DEC", "EPOCH", "EQUINOX", "RADECSYS", "SECPIX", "IMWCS",
+        "PC001001", "PC001002", "PC002001", "PC002002", "LATPOLE", "LONPOLE"};
 
     for (uint_t i = 1; i < 13; ++i) {
         keywords.push_back("CO1_"+strn(i));
-    }
-    for (uint_t i = 1; i < 13; ++i) {
         keywords.push_back("CO2_"+strn(i));
     }
     for (uint_t i = 0; i < 10; ++i) {
         keywords.push_back("PROJP"+strn(i));
-    }
-    for (uint_t i = 0; i < 10; ++i) {
         keywords.push_back("PV1_"+strn(i));
-    }
-    for (uint_t i = 0; i < 10; ++i) {
         keywords.push_back("PV2_"+strn(i));
+        keywords.push_back("CTYPE"+strn(i));
+        keywords.push_back("CUNIT"+strn(i));
+        keywords.push_back("CRVAL"+strn(i));
+        keywords.push_back("CRPIX"+strn(i));
+        keywords.push_back("CDELT"+strn(i));
+        keywords.push_back("CROTA"+strn(i));
+        keywords.push_back("SECPIX"+strn(i));
+        keywords.push_back("CD"+strn(i));
+        for (uint_t j = 0; j < 10; ++j) {
+            keywords.push_back("CD"+strn(i)+"_"+strn(j));
+            keywords.push_back("PC"+strn(i)+"_"+strn(j));
+        }
     }
 
     fitsfile* fptr1;
