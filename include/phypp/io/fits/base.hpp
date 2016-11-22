@@ -40,6 +40,13 @@ namespace fits {
     }
 
     using header = std::string;
+
+    enum hdu_type {
+        null_hdu = 0,
+        empty_hdu,
+        image_hdu,
+        table_hdu
+    };
 }
 
 namespace impl {
@@ -326,9 +333,6 @@ namespace impl {
 
                 if (rights == write_only || (rights == read_write && !file::exists(filename))) {
                     fits_create_file(&fptr_, ("!"+filename).c_str(), &status_);
-                    if (type == table_file) {
-                        fits_create_tbl(fptr_, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status_);
-                    }
                 } else {
                     int trights = (rights == read_only ? READONLY : READWRITE);
 
@@ -381,38 +385,46 @@ namespace impl {
                 char* hstr = nullptr;
                 int nkeys  = 0;
                 fits_hdr2str(fptr_, 0, nullptr, 0, &hstr, &nkeys, &status_);
+                fits::phypp_check_cfitsio(status_, "could not dump header to string");
                 hdr = hstr;
                 free(hstr);
                 return hdr;
             }
 
             bool has_keyword(const std::string& name) const {
-                status_ = 0;
                 char comment[80];
                 char content[80];
-                fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
-                return status_ == 0;
+                int status = 0;
+                fits_read_keyword(fptr_, name.c_str(), content, comment, &status);
+                return status == 0;
             }
 
             bool read_keyword(const std::string& name, std::string& value) const {
-                status_ = 0;
                 char comment[80];
                 char content[80];
-                fits_read_keyword(fptr_, name.c_str(), content, comment, &status_);
+                int status = 0;
+                fits_read_keyword(fptr_, name.c_str(), content, comment, &status);
                 value = content;
                 value = trim(value, " '");
-                return status_ == 0;
+                return status == 0;
             }
 
             template <typename T>
             bool read_keyword(const std::string& name, T& value) const {
                 std::string content;
                 if (!read_keyword(name, content)) return false;
+
+                // Convert FITS boolean values to something we can read
+                if (content == "T") {
+                    content = "1";
+                } else if (content == "F") {
+                    content = "0";
+                }
+
                 return from_string(content, value);
             }
 
             void write_header(const fits::header& hdr) {
-                status_ = 0;
                 std::size_t nentry = hdr.size()/80 + 1;
                 fits_set_hdrsize(fptr_, nentry, &status_);
 
@@ -432,6 +444,7 @@ namespace impl {
                     }
 
                     fits_write_record(fptr_, entry.c_str(), &status_);
+                    fits::phypp_check_cfitsio(status_, "could not write header");
                 }
             }
 
@@ -442,6 +455,7 @@ namespace impl {
                 fits_update_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
+                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             template<typename T, typename enable = typename
@@ -451,6 +465,7 @@ namespace impl {
                 fits_write_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
+                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             void write_keyword(const std::string& name, const std::string& value,
@@ -458,6 +473,7 @@ namespace impl {
                 fits_update_key(fptr_, TSTRING, name.c_str(),
                     const_cast<char*>(value.c_str()),
                     const_cast<char*>(com.c_str()), &status_);
+                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             void add_keyword(const std::string& name, const std::string& value,
@@ -465,37 +481,87 @@ namespace impl {
                 fits_write_key(fptr_, TSTRING, name.c_str(),
                     const_cast<char*>(value.c_str()),
                     const_cast<char*>(com.c_str()), &status_);
+                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             void remove_keyword(const std::string& name) {
                 fits_delete_key(fptr_, name.c_str(), &status_);
+                status_ = 0; // don't care if the keyword doesn't exist or other errors
             }
 
             uint_t hdu_count() const {
-                status_ = 0;
                 int nhdu = 0;
                 fits_get_num_hdus(fptr_, &nhdu, &status_);
+                fits::phypp_check_cfitsio(status_, "could not get the number of HDUs");
                 return nhdu;
             }
 
-            void reach_hdu(uint_t hdu) {
-                status_ = 0;
+            uint_t current_hdu() const {
+                int hdu = 1;
+                fits_get_hdu_num(fptr_, &hdu);
+                return hdu-1;
+            }
 
+            fits::hdu_type hdu_type() const {
+                bool simple = false;
+                if (read_keyword("SIMPLE", simple)) {
+                    if (axis_count() == 0) {
+                        return fits::empty_hdu;
+                    } else {
+                        return fits::image_hdu;
+                    }
+                } else {
+                    std::string xtension;
+                    if (read_keyword("XTENSION", xtension)) {
+                        if (xtension == "IMAGE") {
+                            if (axis_count() == 0) {
+                                return fits::empty_hdu;
+                            } else {
+                                return fits::image_hdu;
+                            }
+                        } else if (xtension == "BINTABLE") {
+                            return fits::table_hdu;
+                        } else {
+                            phypp_check(false, "unknown XTENSION value '", xtension, "'");
+                        }
+                    }
+                }
+
+                return fits::null_hdu;
+            }
+
+            void reach_hdu(uint_t hdu) {
+                uint_t nhdu = hdu_count();
                 if (rights_ == read_only) {
-                    uint_t nhdu = hdu_count();
                     phypp_check(hdu < nhdu, "requested HDU does not exists in this "
                         "FITS file (", hdu, " vs. ", nhdu, ")");
+                } else {
+                    if (hdu >= nhdu) {
+                        // Create missing HDUs to be able to reach the one requested
+                        long naxes = 0;
+                        for (uint_t i : range(hdu-nhdu+1)) {
+                            fits_insert_img(fptr_, impl::fits_impl::traits<float>::image_type,
+                                0, &naxes, &status_);
+                            fits::phypp_check_cfitsio(status_,
+                                "could not create new HDUs to reach HDU "+strn(hdu));
+                        }
+
+                        fits_set_hdustruc(fptr_, &status_);
+                        fits::phypp_check_cfitsio(status_,
+                            "could not create new HDUs to reach HDU "+strn(hdu));
+                    }
                 }
 
                 fits_movabs_hdu(fptr_, hdu+1, nullptr, &status_);
+                fits::phypp_check_cfitsio(status_, "could not reach HDU "+strn(hdu));
             }
 
             // Return the number of dimensions of a FITS file
             // Note: will return 0 for FITS tables
             uint_t axis_count() const {
-                status_ = 0;
                 int naxis;
                 fits_get_img_dim(fptr_, &naxis, &status_);
+                fits::phypp_check_cfitsio(status_, "could not get the number of axis in HDU");
                 return naxis;
             }
 
@@ -518,12 +584,12 @@ namespace impl {
             // Return the dimensions of a FITS image
             // Note: will return an empty array for FITS tables
             vec1u image_dims() const {
-                status_ = 0;
                 uint_t naxis = axis_count();
                 vec1u dims(naxis);
                 if (naxis != 0) {
                     std::vector<long> naxes(naxis);
                     fits_get_img_size(fptr_, naxis, naxes.data(), &status_);
+                    fits::phypp_check_cfitsio(status_, "could not get image size of HDU");
                     for (uint_t i : range(naxis)) {
                         dims.safe[i] = naxes[naxis-1-i];
                     }
@@ -542,6 +608,19 @@ namespace impl {
             const std::string filename_;
             fitsfile* fptr_ = nullptr;
             mutable int status_ = 0;
+        };
+
+        class output_file_base : virtual public file_base {
+        public :
+            output_file_base(file_type type, const std::string& filename, access_right rights) :
+                file_base(type, filename, rights) {}
+
+            output_file_base(output_file_base&& in) : file_base(std::move(in)) {}
+
+            void remove_hdu() {
+                fits_delete_hdu(fptr_, nullptr, &status_);
+                fits::phypp_check_cfitsio(status_, "could not remove the current HDU");
+            }
         };
 
         static struct readwrite_tag_t {} readwrite_tag;
@@ -564,7 +643,7 @@ namespace fits {
     template<typename T>
     bool getkey(const fits::header& hdr, const std::string& key, T& v) {
         std::size_t nentry = hdr.size()/80 + 1;
-        for (uint_t i = 0; i < nentry; ++i) {
+        for (uint_t i : range(nentry)) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
@@ -583,7 +662,7 @@ namespace fits {
 
     inline bool getkey(const fits::header& hdr, const std::string& key, std::string& v) {
         std::size_t nentry = hdr.size()/80 + 1;
-        for (uint_t i = 0; i < nentry; ++i) {
+        for (uint_t i : range(nentry)) {
             std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = entry.find_first_of("=");
             if (eqpos == entry.npos) continue;
@@ -629,7 +708,7 @@ namespace fits {
 
         // Look for existing entry in header
         std::size_t nentry = hdr.size()/80 + 1;
-        for (uint_t i = 0; i < nentry; ++i) {
+        for (uint_t i : range(nentry)) {
             // Extract entry 'i'
             std::string tentry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
             std::size_t eqpos = tentry.find_first_of("=");

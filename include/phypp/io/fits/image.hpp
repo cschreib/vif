@@ -22,16 +22,16 @@ namespace fits {
 
         template<std::size_t Dim, typename Type>
         void read(vec<Dim,Type>& v) const {
-            status_ = 0;
-
             int naxis;
             fits_get_img_dim(fptr_, &naxis, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
             phypp_check_fits(naxis == Dim, "FITS file has wrong number of dimensions "
                 "(expected "+strn(Dim)+", got "+strn(naxis)+")");
 
             int bitpix;
             std::vector<long> naxes(naxis);
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
+            fits::phypp_check_cfitsio(status_, "could not read image parameters of HDU");
 
             int type = impl::fits_impl::bitpix_to_type(bitpix);
             phypp_check_fits(impl::fits_impl::traits<Type>::is_convertible(type), "wrong image type "
@@ -48,20 +48,21 @@ namespace fits {
             Type def = impl::fits_impl::traits<Type>::def();
             int anynul;
             fits_read_img(fptr_, type, 1, v.size(), &def, v.data.data(), &anynul, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read image from HDU");
         }
 
         template<typename Type = double>
         Type read_pixel(vec1u p) const {
-            status_ = 0;
-
             int naxis;
             fits_get_img_dim(fptr_, &naxis, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
             phypp_check_fits(uint_t(naxis) == p.size(), "FITS file has wrong number of dimensions "
                 "(expected "+strn(p.size())+", got "+strn(naxis)+")");
 
             int bitpix;
             std::vector<long> naxes(naxis);
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
+            fits::phypp_check_cfitsio(status_, "could not read image parameters of HDU");
 
             uint_t ppos = 1;
             uint_t pitch = 1;
@@ -90,21 +91,24 @@ namespace fits {
             Type def = impl::fits_impl::traits<Type>::def();
             int anynul;
             fits_read_img(fptr_, type, ppos, 1, &def, &val, &anynul, &status_);
+            fits::phypp_check_cfitsio(status_, "could not pixel from HDU");
 
             return val;
         }
     };
 
     // Output FITS table (write only, overwrites existing files)
-    class output_image : public virtual impl::fits_impl::file_base {
+    class output_image : public impl::fits_impl::output_file_base {
     protected :
 
         explicit output_image(const std::string& filename, impl::fits_impl::readwrite_tag_t) :
+            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
     public :
 
         explicit output_image(const std::string& filename) :
+            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
         output_image(output_image&&) = default;
@@ -118,29 +122,60 @@ namespace fits {
         void write_impl_(const vec<Dim,Type>& v) {
             fits_write_img(fptr_, impl::fits_impl::traits<Type>::ttype, 1, v.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(v.data.data()), &status_);
+            fits::phypp_check_cfitsio(status_, "could not write image to HDU");
         }
 
     public :
 
         template<std::size_t Dim, typename Type>
         void write(const vec<Dim,Type>& v) {
-            status_ = 0;
-
             std::array<long,Dim> naxes;
             for (uint_t i : range(Dim)) {
                 naxes[i] = v.dims[Dim-1-i];
             }
 
-            fits_create_img(fptr_, impl::fits_impl::traits<meta::rtype_t<Type>>::image_type, Dim,
-                naxes.data(), &status_);
+            if (hdu_count() > 0) {
+                // Check current HDU is empty or null
+                auto type = hdu_type();
+                phypp_check(type == fits::null_hdu || type == fits::empty_hdu,
+                    "cannot write image, there is already data in this HDU");
 
+                // Then resize it
+                fits_resize_img(fptr_, impl::fits_impl::traits<meta::rtype_t<Type>>::image_type, Dim,
+                    naxes.data(), &status_);
+                fits::phypp_check_cfitsio(status_, "could not create image HDU");
+            } else {
+                // No HDU yet, just create the image in the primary array
+                fits_insert_img(fptr_, impl::fits_impl::traits<meta::rtype_t<Type>>::image_type, Dim,
+                    naxes.data(), &status_);
+                fits::phypp_check_cfitsio(status_, "could not create image HDU");
+            }
+
+            // Finally write the data
             write_impl_(v.concretise());
         }
 
         void write_empty() {
-            status_ = 0;
             long naxes = 0;
-            fits_create_img(fptr_, impl::fits_impl::traits<float>::image_type, 0, &naxes, &status_);
+
+            if (hdu_count() > 0) {
+                // Check current HDU is empty or null
+                auto type = hdu_type();
+                phypp_check(type == fits::null_hdu || type == fits::empty_hdu,
+                    "cannot write image, there is already data in this HDU");
+
+                // Then resize it
+                fits_resize_img(fptr_, impl::fits_impl::traits<float>::image_type, 0, &naxes, &status_);
+                fits::phypp_check_cfitsio(status_, "could not create image HDU");
+            } else {
+                // And create the new HDU
+                fits_insert_img(fptr_, impl::fits_impl::traits<float>::image_type, 0, &naxes, &status_);
+                fits::phypp_check_cfitsio(status_, "could not create empty image HDU");
+            }
+
+            // Update internal structures, because CFITSIO won't do that by itself
+            fits_set_hdustruc(fptr_, &status_);
+            fits::phypp_check_cfitsio(status_, "could not create empty image HDU");
         }
     };
 
@@ -164,16 +199,16 @@ namespace fits {
 
         template<std::size_t Dim, typename Type>
         void update(const vec<Dim,Type>& v) {
-            status_ = 0;
-
             int naxis;
             fits_get_img_dim(fptr_, &naxis, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
             phypp_check_fits(naxis == Dim, "FITS file has wrong number of dimensions "
                 "(expected "+strn(Dim)+", got "+strn(naxis)+")");
 
             int bitpix;
             std::vector<long> naxes(naxis);
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
+            fits::phypp_check_cfitsio(status_, "could not read image parameters of HDU");
 
             int type = impl::fits_impl::bitpix_to_type(bitpix);
             phypp_check_fits(impl::fits_impl::traits<meta::rtype_t<Type>>::is_convertible(type), "wrong image type "

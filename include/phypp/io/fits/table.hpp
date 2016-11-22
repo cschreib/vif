@@ -144,13 +144,13 @@ namespace fits {
         input_table& operator = (const input_table&&) = delete;
 
         vec<1,column_info> read_column_info() const {
-            status_ = 0;
             vec<1,column_info> cols;
 
             fits::header hdr = read_header();
 
             int ncol;
             fits_get_num_cols(fptr_, &ncol, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read number of columns in HDU");
 
             for (uint_t c : range(ncol)) {
                 column_info ci;
@@ -160,11 +160,13 @@ namespace fits {
                 long repeat = 0;
                 fits_get_bcolparms(fptr_, c+1, name, nullptr, &type, &repeat,
                     nullptr, nullptr, nullptr, nullptr, &status_);
+                fits::phypp_check_cfitsio(status_, "could not parameters of column "+strn(c+1)+" in HDU");
 
                 const uint_t max_dim = 256;
                 long axes[max_dim];
                 int naxis = 0;
                 fits_read_tdim(fptr_, c+1, max_dim, &naxis, axes, &status_);
+                fits::phypp_check_cfitsio(status_, "could not parameters of column '"+std::string(name)+"'");
 
                 if (!getkey(hdr, "TTYPE"+strn(c+1), ci.name)) {
                     continue;
@@ -183,6 +185,7 @@ namespace fits {
                     int null;
                     fits_read_col(fptr_, impl::fits_impl::traits<char>::ttype, c+1, 1, 1, repeat,
                         &def, v.data.data(), &null, &status_);
+                    fits::phypp_check_cfitsio(status_, "could not read column '"+std::string(name)+"'");
 
                     if (min(v) == 0 && max(v) <= 1) {
                         ci.type = column_info::boolean;
@@ -307,9 +310,9 @@ namespace fits {
 
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
-        void read_column_impl_(const table_read_options& opts, vec<Dim,Type>& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
-            bool colfits) const {
+        void read_column_impl_(const table_read_options& opts, vec<Dim,Type>& v,
+            const std::string& cname, int cid, long naxis, const std::array<long,max_column_dims>& naxes,
+            long repeat, long nrow, bool colfits) const {
 
             if (v.empty()) return;
 
@@ -323,15 +326,15 @@ namespace fits {
             long nelem = v.size();
             Type def = impl::fits_impl::traits<Type>::def();
             int null;
-            status_ = 0;
             fits_read_col(
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
                 v.data.data(), &null, &status_
             );
+            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
         }
 
         template<typename Type>
-        void read_column_impl_(const table_read_options&, Type& v, int cid,
+        void read_column_impl_(const table_read_options&, Type& v, const std::string& cname,  int cid,
             long naxis, const std::array<long,max_column_dims>& naxes, long, long, bool) const {
 
             Type def = impl::fits_impl::traits<Type>::def();
@@ -340,12 +343,13 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
                 reinterpret_cast<typename impl::fits_impl::traits<Type>::dtype*>(&v), &null, &status_
             );
+            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
         }
 
         template<std::size_t Dim>
-        void read_column_impl_(const table_read_options& opts, vec<Dim,std::string>& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
-            bool colfits) const {
+        void read_column_impl_(const table_read_options& opts, vec<Dim,std::string>& v,
+            const std::string& cname, int cid, long naxis, const std::array<long,max_column_dims>& naxes,
+            long repeat, long nrow, bool colfits) const {
 
             if (v.empty()) return;
 
@@ -374,6 +378,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
                 buffer, &null, &status_
             );
+            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
 
             for (uint_t i : range(v)) {
                 v.safe[i] = trim(std::string(buffer[i]));
@@ -383,8 +388,8 @@ namespace fits {
             delete[] buffer;
         }
 
-        void read_column_impl_(const table_read_options&, std::string& v, int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
+        void read_column_impl_(const table_read_options&, std::string& v, const std::string& cname,
+            int cid,long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
             bool colfits) const {
 
             // NB: cfitsio doesn't seem to like reading empty strings
@@ -406,6 +411,7 @@ namespace fits {
                 fptr_, TSTRING, cid, 1, 1, 1, &def,
                 buffer, &null, &status_
             );
+            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
 
             v = trim(std::string(buffer[0]));
             delete[] buffer[0];
@@ -550,13 +556,12 @@ namespace fits {
             static_assert(impl::fits_impl::is_readable_column_type<typename std::decay<T>::type>::value,
                 "this value cannot be read from a FITS file");
 
-            status_ = 0;
-
             // Check if column exists
             std::string colname = toupper(tcolname);
             int cid;
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
             if (status_ != 0) {
+                status_ = 0;
                 if (opts.allow_missing) {
                     return read_sentry{};
                 } else {
@@ -572,6 +577,7 @@ namespace fits {
             int type;
             long repeat, width;
             fits_get_coltype(fptr_, cid, &type, &repeat, &width, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read type of column '"+tcolname+"'");
             if (!read_column_check_type_<vtype>(opts, type)) {
                 return read_sentry{this, "wrong type for column '"+colname+"' "
                     "(expected "+pretty_type_t(vtype)+", got "+impl::fits_impl::type_to_string_(type)+")"};
@@ -581,6 +587,7 @@ namespace fits {
             std::array<long,max_column_dims> axes;
             int naxis = 0;
             fits_read_tdim(fptr_, cid, max_column_dims, &naxis, axes.data(), &status_);
+            fits::phypp_check_cfitsio(status_, "could not read dimensions of column '"+tcolname+"'");
 
             // Support loading row-oriented FITS tables
             uint_t nrow = 1;
@@ -618,13 +625,11 @@ namespace fits {
                     )+", in dimensions "+saxes+")"};
             }
 
-            status_ = 0;
-
             // Resize vector
             read_column_resize_(value, naxis, raxes);
 
             // Read
-            read_column_impl_(opts, value, cid, naxis, axes, repeat, nrow, colfits);
+            read_column_impl_(opts, value, tcolname, cid, naxis, axes, repeat, nrow, colfits);
 
             return read_sentry{};
         }
@@ -826,10 +831,11 @@ namespace impl {
 
 namespace fits {
     // Output FITS table (write only, overwrites existing files)
-    class output_table : public virtual impl::fits_impl::file_base {
+    class output_table : public impl::fits_impl::output_file_base {
     public :
 
         explicit output_table(const std::string& filename) :
+            impl::fits_impl::output_file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only),
             impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
 
         output_table(output_table&&) = default;
@@ -837,25 +843,72 @@ namespace fits {
         output_table& operator = (output_table&&) = delete;
         output_table& operator = (const output_table&&) = delete;
 
+    protected :
+
+        void create_table_() {
+            uint_t nhdu = hdu_count();
+            if (nhdu > 0) {
+                // There are HDUs in this file already
+                auto type = hdu_type();
+                if (type != fits::table_hdu) {
+                    // The current HDU is not a table
+                    phypp_check(type == fits::null_hdu || type == fits::empty_hdu,
+                        "cannot create table, there is already data in this HDU");
+
+                    // It is empty, so delete it and create a new table extension
+                    uint_t hdu = current_hdu();
+                    if (hdu == nhdu-1) {
+                        // We are at the last HDU, so just delete and create
+                        fits_delete_hdu(fptr_, nullptr, &status_);
+                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
+                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                    } else {
+                        phypp_check(hdu != 0, "cannot write tables in the primary HDU");
+
+                        // Delete current
+                        fits_delete_hdu(fptr_, nullptr, &status_);
+                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        // Move back because CFITSIO will insert *after* current HDU
+                        fits_movrel_hdu(fptr_, -1, nullptr, &status_);
+                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        // Add the new extension
+                        fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
+                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+
+                    }
+                }
+            } else {
+                // No HDU yet, just create the primary array and a table extension
+                fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
+                fits::phypp_check_cfitsio(status_, "could not create table HDU");
+            }
+        }
+
     private :
 
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
-        void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&, int cid) {
+        void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&,
+            const std::string& tcolname, int cid) {
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, value.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()), &status_);
+            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
         }
 
         template<typename Type>
-        void write_column_impl_(const Type& value, const std::array<long,0>&, int cid) {
+        void write_column_impl_(const Type& value, const std::array<long,0>&,
+            const std::string& tcolname, int cid) {
             using dtype = typename impl::fits_impl::traits<Type>::dtype;
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
+            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
         }
 
         template<std::size_t Dim>
         void write_column_impl_(const vec<Dim,std::string>& value,
-            const std::array<long,Dim+1>& dims, int cid) {
+            const std::array<long,Dim+1>& dims, const std::string& tcolname, int cid) {
+
             const uint_t nmax = dims[0];
 
             // NB: for some reason cfitsio crashes on empty string
@@ -871,6 +924,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1,
                 value.size(), buffer, &status_
             );
+            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
 
             for (uint_t i : range(value)) {
                 delete[] buffer[i];
@@ -879,7 +933,9 @@ namespace fits {
             delete[] buffer;
         }
 
-        void write_column_impl_(const std::string& value, const std::array<long,1>&, int cid) {
+        void write_column_impl_(const std::string& value, const std::array<long,1>&,
+            const std::string& tcolname, int cid) {
+
             // NB: for some reason cfitsio crashes on empty string
             if (value.empty()) return;
 
@@ -887,13 +943,15 @@ namespace fits {
             buffer[0] = const_cast<char*>(value.c_str());
             fits_write_col(fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1, 1,
                 buffer, &status_);
+            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
 
             delete[] buffer;
         }
 
         template<std::size_t Dim, typename Type>
-        void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,Dim>& dims, int cid) {
-            write_column_impl_(value.concretise(), dims, cid);
+        void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,Dim>& dims,
+            const std::string& tcolname, int cid) {
+            write_column_impl_(value.concretise(), dims, tcolname, cid);
         }
 
         template<std::size_t Dim, typename Type>
@@ -956,8 +1014,10 @@ namespace fits {
 
 
         template<std::size_t Dim>
-        void write_column_write_tdim_(const std::array<long,Dim>& dims, int cid) {
+        void write_column_write_tdim_(const std::array<long,Dim>& dims, const std::string& tcolname,
+            int cid) {
             fits_write_tdim(fptr_, cid, Dim, const_cast<long*>(dims.data()), &status_);
+            fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+"'");
         }
 
         void write_column_write_tdim_(const std::array<long,0>&, int) {
@@ -979,10 +1039,9 @@ namespace fits {
             static_assert(impl::fits_impl::is_writable_column_type<typename std::decay<T>::type>::value,
                 "this variable cannot be written into a FITS file");
 
-            status_ = 0;
-
             int cid;
             fits_get_num_cols(fptr_, &cid, &status_);
+            fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
             ++cid;
 
             // Collect data on the input type
@@ -996,12 +1055,13 @@ namespace fits {
                 fptr_, cid, const_cast<char*>(colname.c_str()),
                 const_cast<char*>(tform.c_str()), &status_
             );
+            fits::phypp_check_cfitsio(status_, "could not create column '"+tcolname+"'");
 
             // Set TDIM keyword (if needed)
-            write_column_write_tdim_(dims, cid);
+            write_column_write_tdim_(dims, tcolname, cid);
 
             // Write
-            write_column_impl_(value, dims, cid);
+            write_column_impl_(value, dims, tcolname, cid);
         }
 
         template<typename T>
@@ -1030,6 +1090,7 @@ namespace fits {
 
         template<typename T>
         void write_column(const std::string& colname, T&& value) {
+            create_table_();
             write_column_(colname, std::forward<T>(value), reflex::enabled<meta::decay_t<T>>{});
         }
 
@@ -1083,7 +1144,8 @@ namespace fits {
                 filtered_second, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
-            // Read
+            // Write
+            create_table_();
             write_columns_impl_(std::forward<Args>(args)...);
         }
 
@@ -1097,7 +1159,8 @@ namespace fits {
                 arg_list, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of writable values");
 
-            // Read
+            // Write
+            create_table_();
             write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
@@ -1105,6 +1168,7 @@ namespace fits {
 
         template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
         void write_columns(T& t) {
+            create_table_();
             reflex::foreach_member(reflex::wrap(t), do_write_struct_{this, ""});
         }
     };
@@ -1128,14 +1192,14 @@ namespace fits {
         table& operator = (const table&&) = delete;
 
         void remove_column(const std::string& tcolname) {
-            status_ = 0;
-
             int cid;
             std::string colname = toupper(tcolname);
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
             if (status_ == 0) {
                 fits_delete_col(fptr_, cid, &status_);
             }
+
+            status_ = 0; // ignore errors
         }
 
         template<typename ... Args>
@@ -1153,6 +1217,7 @@ namespace fits {
 
         template<typename T>
         void update_column(const std::string& tcolname, const T& value) {
+            create_table_();
             remove_column(tcolname);
             write_column(tcolname, value);
         }
@@ -1205,6 +1270,7 @@ namespace fits {
                 filtered_second, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
+            create_table_();
             update_columns_impl_(std::forward<Args>(args)...);
         }
 
@@ -1218,6 +1284,7 @@ namespace fits {
                 arg_list, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
+            create_table_();
             update_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
@@ -1236,6 +1303,7 @@ namespace fits {
 
         template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
         void update_columns(T& t) {
+            create_table_();
             reflex::foreach_member(reflex::wrap(t), do_update_struct_{this});
         }
     };
