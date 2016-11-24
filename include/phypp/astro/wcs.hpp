@@ -405,6 +405,7 @@ namespace impl {
 }
 
 namespace astro {
+
     template<std::size_t D = 1, typename T = double, typename U = double, typename V, typename W>
     void ad2xy(const astro::wcs& w, const vec<D,T>& ra, const vec<D,U>& dec,
         vec<D,V>& x, vec<D,W>& y) {
@@ -565,10 +566,174 @@ namespace astro {
 #endif
     }
 
+    enum class axis_unit {
+        wcslib_default,
+
+        wave_m,
+        wave_cm,
+        wave_mm,
+        wave_um,
+        wave_nm,
+        wave_Angstrom,
+
+        freq_Hz,
+        freq_kHz,
+        freq_MHz,
+        freq_GHz,
+        freq_THz,
+
+        sky_deg,
+        sky_rad
+    };
+
+}
+
+namespace impl {
+    namespace wcs_impl {
+        double conv_si2unit(astro::axis_unit unit) {
+            switch (unit) {
+                // WCSlib returns data in SI units or degrees
+                case astro::axis_unit::wcslib_default: return 1.0;
+
+                case astro::axis_unit::wave_m:         return 1.0;
+                case astro::axis_unit::wave_cm:        return 1e2;
+                case astro::axis_unit::wave_mm:        return 1e3;
+                case astro::axis_unit::wave_um:        return 1e6;
+                case astro::axis_unit::wave_nm:        return 1e9;
+                case astro::axis_unit::wave_Angstrom:  return 1e10;
+
+                case astro::axis_unit::freq_Hz:        return 1.0;
+                case astro::axis_unit::freq_kHz:       return 1e-3;
+                case astro::axis_unit::freq_MHz:       return 1e-6;
+                case astro::axis_unit::freq_GHz:       return 1e-9;
+                case astro::axis_unit::freq_THz:       return 1e-12;
+
+                case astro::axis_unit::sky_deg:
+                case astro::axis_unit::sky_rad:        return dpi/180.0;
+            }
+        }
+
+        template <std::size_t D, typename T>
+        void si2unit(vec<D,T>& data, astro::axis_unit unit) {
+            double conv = conv_si2unit(unit);
+            if (conv != 1.0) {
+                data *= conv;
+            }
+        }
+
+        template <std::size_t D, typename T>
+        void unit2si(vec<D,T>& data, astro::axis_unit unit) {
+            double conv = conv_si2unit(unit);
+            if (conv != 1.0) {
+                data /= conv;
+            }
+        }
+    }
+}
+
+namespace astro {
+
+    template<std::size_t D = 1, typename T = double, typename U>
+    void x2w(const astro::wcs& wcs, uint_t axis, const vec<D,T>& x, vec<D,U>& w,
+        axis_unit unit = axis_unit::wcslib_default) {
+
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        uint_t naxis = wcs.axis_count();
+
+        phypp_check(wcs.is_valid(), "invalid WCS data");
+        phypp_check(axis < naxis, "trying to use an axis that does not exist (",
+            axis, " vs ", naxis, ")");
+
+        uint_t npix = x.size();
+
+        vec2d pix(npix, naxis);
+        pix.safe(_,naxis-1-axis) = x;
+        for (uint_t i : range(naxis)) {
+            if (i == axis) continue;
+            pix(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+        }
+
+        vec2d world = impl::wcs_impl::pix2world(wcs, pix);
+        w = world.safe(_,naxis-1-axis);
+        impl::wcs_impl::si2unit(w, unit);
+#endif
+    }
+
+    template<std::size_t D = 1, typename T = double, typename U>
+    void w2x(const astro::wcs& wcs, uint_t axis, const vec<D,T>& w, vec<D,U>& x,
+        axis_unit unit = axis_unit::wcslib_default) {
+
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        uint_t naxis = wcs.axis_count();
+
+        phypp_check(wcs.is_valid(), "invalid WCS data");
+        phypp_check(axis < naxis, "trying to use an axis that does not exist (",
+            axis, " vs ", naxis, ")");
+
+        uint_t npix = w.size();
+
+        vec1d tw = w;
+        impl::wcs_impl::unit2si(tw, unit);
+
+        vec2d world(npix, naxis);
+        world.safe(_,naxis-1-axis) = tw;
+
+        for (uint_t i : range(naxis)) {
+            if (i == axis) continue;
+            world(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+        }
+
+        vec2d pix = impl::wcs_impl::world2pix(wcs, world);
+        x = pix.safe(_,naxis-1-axis);
+#endif
+    }
+
+    template <typename Dummy = void>
+    void x2w(const astro::wcs& wcs, uint_t axis, double x, double& w,
+        axis_unit unit = axis_unit::wcslib_default) {
+
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+
+        vec1d tx = replicate(x, 1);
+        vec1d tw;
+
+        x2w(wcs, axis, tx, tw, unit);
+
+        w = tw.safe[0];
+#endif
+    }
+
+    template <typename Dummy = void>
+    void w2x(const astro::wcs& wcs, uint_t axis, double w, double& x,
+        axis_unit unit = axis_unit::wcslib_default) {
+
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+
+        vec1d tw = replicate(w, 1);
+        vec1d tx;
+
+        w2x(wcs, axis, tw, tx, unit);
+
+        x = tw.safe[0];
+#endif
+    }
+
     // Obtain the pixel size of a given image in arsec/pixel.
     // Will fail (return false) if no WCS information is present in the image.
     template<typename Type = double>
-    vec<1,Type> build_axis(const astro::wcs& wcs, uint_t axis) {
+    vec<1,Type> build_axis(const astro::wcs& wcs, uint_t axis, axis_unit unit = axis_unit::wcslib_default) {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Type,Type>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -590,7 +755,10 @@ namespace astro {
 
         vec2d world = impl::wcs_impl::pix2world(wcs, pix);
 
-        return world(_,naxis-1-axis);
+        vec<1,Type> ret = world(_,naxis-1-axis);
+        impl::wcs_impl::si2unit(ret, unit);
+
+        return ret;
 #endif
     }
 }
