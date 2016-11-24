@@ -296,16 +296,30 @@ namespace astro {
 
         wcs(const wcs&) = delete;
         wcs& operator = (const wcs&) = delete;
+
         wcs(wcs&& tw) {
             std::swap(w, tw.w);
             std::swap(nwcs, tw.nwcs);
+            std::swap(dims, tw.dims);
+            std::swap(ra_axis, tw.ra_axis);
+            std::swap(dec_axis, tw.dec_axis);
+            std::swap(x_axis, tw.x_axis);
+            std::swap(y_axis, tw.y_axis);
         }
+
         wcs& operator = (wcs&& tw) {
             if (w) {
                 wcsvfree(&nwcs, &w);
             }
+
             w = tw.w; tw.w = nullptr;
             nwcs = tw.nwcs; tw.nwcs = 0;
+            dims = tw.dims; tw.dims.clear();
+            ra_axis = tw.ra_axis;
+            dec_axis = tw.dec_axis;
+            x_axis = tw.x_axis;
+            y_axis = tw.y_axis;
+
             return *this;
         }
 
