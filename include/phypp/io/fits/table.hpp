@@ -1017,10 +1017,11 @@ namespace fits {
         void write_column_write_tdim_(const std::array<long,Dim>& dims, const std::string& tcolname,
             int cid) {
             fits_write_tdim(fptr_, cid, Dim, const_cast<long*>(dims.data()), &status_);
-            fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+"'");
+            fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+
+                "' (dims "+strn(dims)+")");
         }
 
-        void write_column_write_tdim_(const std::array<long,0>&, int) {
+        void write_column_write_tdim_(const std::array<long,0>&, const std::string&, int) {
             // Nothing to do
         }
 
