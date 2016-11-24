@@ -244,7 +244,8 @@ namespace astro {
 
             if (w) {
                 // Get dimensions from the FITS header
-                dims.resize(axis_count());
+                uint_t naxis = axis_count();
+                dims.resize(naxis);
                 for (uint_t i : range(dims)) {
                     uint_t dim = npos;
                     if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
@@ -253,12 +254,12 @@ namespace astro {
                 }
 
                 // Identify RA and Dec axis
-                ra_axis = x_axis = w->lon;
-                dec_axis = y_axis = w->lat;
+                ra_axis = x_axis = find_axis("RA");
+                dec_axis = y_axis = find_axis("DEC");
 
-                // X is by definition the first axis, so swap them if
+                // Y is by definition the first axis, so swap them if
                 // the input file has DEC/RA instead of RA/DEC
-                if (x_axis > y_axis) std::swap(x_axis, y_axis);
+                if (x_axis < y_axis) std::swap(x_axis, y_axis);
 
                 // Try a dummy coordinate conversion to see if everything is recognized
                 vec1d map = replicate(0.0, w->naxis);
