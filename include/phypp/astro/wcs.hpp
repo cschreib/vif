@@ -82,6 +82,20 @@ namespace astro {
         }
 
         if (params.dims_x != npos && params.dims_y != npos) {
+            if (!fits::setkey(hdr, "NAXES", 2u)) {
+                error("make_wcs_header: could not set keyword 'NAXES' to '", 2u, "'");
+                return false;
+            }
+            if (!fits::setkey(hdr, "NAXIS1", params.dims_x)) {
+                error("make_wcs_header: could not set keyword 'NAXIS1' to '",
+                    params.dims_x, "'");
+                return false;
+            }
+            if (!fits::setkey(hdr, "NAXIS2", params.dims_y)) {
+                error("make_wcs_header: could not set keyword 'NAXIS2' to '",
+                    params.dims_y, "'");
+                return false;
+            }
             if (!fits::setkey(hdr, "META_0", 2u)) {
                 error("make_wcs_header: could not set keyword 'META_0' to '", 2u, "'");
                 return false;
@@ -734,6 +748,8 @@ namespace astro {
     // Will fail (return false) if no WCS information is present in the image.
     template<typename Type = double>
     vec<1,Type> build_axis(const astro::wcs& wcs, uint_t axis, axis_unit unit = axis_unit::wcslib_default) {
+        vec<1,Type> ret;
+
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Type,Type>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
@@ -755,11 +771,298 @@ namespace astro {
 
         vec2d world = impl::wcs_impl::pix2world(wcs, pix);
 
-        vec<1,Type> ret = world(_,naxis-1-axis);
+        ret = world(_,naxis-1-axis);
         impl::wcs_impl::si2unit(ret, unit);
+#endif
 
         return ret;
+    }
+}
+
+namespace impl {
+    namespace wcs_impl {
+        // Convenience functions
+        double regrid_drizzle_getmin(const vec1d& v) {
+            double tmp = floor(min(v));
+            return tmp > 0 ? uint_t(tmp) : uint_t(0);
+        };
+        double regrid_drizzle_getmax(const vec1d& v, uint_t n) {
+            double tmp = ceil(max(v));
+            return tmp > double(n) ? n : uint_t(tmp);
+        };
+
+        // Function to find if a point lies on the right side of a polygon's edge
+        // orient: orientation of the polygon
+        // cx1, cy1, cx2, cy2: X and Y coordinates of the two nodes of the edge
+        // x, y: X and Y coordinates of the point to test
+        // return: true if the point is on the right side, false otherwise
+        bool regrid_drizzle_in_poly_edge(int_t orient,
+            double cx1, double cy1, double cx2, double cy2, double x, double y) {
+            double cross = (cx2 - cx1)*(y - cy1) - (cy2 - cy1)*(x - cx1);
+            return cross*orient < 0;
+        };
+
+        // Function to find the position and existence of the intersection of two lines
+        // l1x1, l1y1, l1x2, l1y2: X and Y coordinates of two points defining the first line
+        // l2x1, l2y1, l2x2, l2y2: X and Y coordinates of two points defining the second line
+        // x, y: output X and Y coordinates of the intersection point (if any)
+        // return: true if intersection exists, false otherwise
+        bool regrid_drizzle_segment_intersect(
+            double l1x1, double l1y1, double l1x2, double l1y2,
+            double l2x1, double l2y1, double l2x2, double l2y2, double& x, double& y) {
+
+            // Find the intersection point
+            // http://stackoverflow.com/a/1968345/1565581
+            double s1x = l1x2 - l1x1;
+            double s1y = l1y2 - l1y1;
+            double s2x = l2x2 - l2x1;
+            double s2y = l2y2 - l2y1;
+
+            double det = s1x*s2y - s1y*s2x;
+            if (abs(det) < 5*std::numeric_limits<double>::epsilon()) {
+                // 'det' is zero: the lines are parallel, no intersection
+                return false;
+            }
+
+            double s12x = l1x1 - l2x1;
+            double s12y = l1y1 - l2y1;
+            double t = (s2x*s12y - s2y*s12x)/det;
+            x = l1x1 + t*s1x;
+            y = l1y1 + t*s1y;
+
+            return true;
+        };
+
+        double polyon_area(const vec1d& x, const vec1d& y) {
+            // phypp_check(x.size() == y.size(), "incompatible dimensions between X and Y arrays (",
+            //    x.size(), " vs. ", y.size(), ")");
+
+            // Note: the above check is not performed here for performance reasons
+            // and because this is an internal function. If you want to use it outside,
+            // please uncomment the check
+
+            double area = 0.0;
+
+            if (x.size() < 3) return area;
+
+            uint_t i3 = x.size()-2;
+            uint_t i2 = x.size()-1;
+            for (uint_t i1 : range(x.size()-2)) {
+                area += 0.5*abs(
+                    x.safe[i1]*(y.safe[i2]-y.safe[i3]) +
+                    x.safe[i2]*(y.safe[i3]-y.safe[i1]) +
+                    x.safe[i3]*(y.safe[i1]-y.safe[i2])
+                );
+
+                i3 = i2;
+                i2 = i1;
+            }
+
+            return area;
+        }
+
+        template <typename T, typename U>
+        bool regrid_drizzle(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            // Get bounds of this projection
+            uint_t ymin = regrid_drizzle_getmin(yps-0.5);
+            uint_t xmin = regrid_drizzle_getmin(xps-0.5);
+            int_t tymax = regrid_drizzle_getmax(yps+0.5, imgs.dims[0]-1);
+            int_t txmax = regrid_drizzle_getmax(xps+0.5, imgs.dims[1]-1);
+
+            if (tymax < 0 || txmax < 0) {
+                return false;
+            }
+
+            uint_t ymax = tymax, xmax = txmax;
+
+            // Get polygon orientation
+            int_t orient = ((xps.safe[1] - xps.safe[0])*(yps.safe[2] - yps.safe[1]) -
+                (yps.safe[1] - yps.safe[0])*(xps.safe[2] - xps.safe[1]) > 0) ? 1 : -1;
+
+            // Sum flux from original pixels that fall inside the projection
+            bool covered = false;
+            for (uint_t ipy = ymin; ipy <= ymax; ++ipy)
+            for (uint_t ipx = xmin; ipx <= xmax; ++ipx) {
+                // Construct the intersection polygon of the original pixel and the projection
+                // https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm
+                vec1d cpx = {ipx-0.5, ipx+0.5, ipx+0.5, ipx-0.5};
+                vec1d cpy = {ipy-0.5, ipy-0.5, ipy+0.5, ipy+0.5};
+
+                uint_t c2 = xps.size()-1;
+                for (uint_t c1 : range(xps)) {
+                    if (cpx.empty()) break;
+
+                    vec1d icpx = cpx, icpy = cpy;
+                    cpx.clear(); cpy.clear();
+
+                    // Find out if all the current polygon's points are "inside" the
+                    // projection's current edge
+                    vec1b in(icpx.dims);
+                    for (uint_t i : range(icpx)) {
+                        in.safe[i] = regrid_drizzle_in_poly_edge(orient,
+                            xps.safe[c1], yps.safe[c1], xps.safe[c2], yps.safe[c2],
+                            icpx.safe[i], icpy.safe[i]
+                        );
+                    }
+
+                    uint_t i2 = icpx.size()-1;
+                    for (uint_t i1 : range(icpx)) {
+                        if (in.safe[i2] != in.safe[i1]) {
+                            // This edge [i2-i1] is intersected by the projection's
+                            // current edge, find the intersection point and add it
+                            // to the polygon
+                            double tx, ty;
+                            bool intersect = regrid_drizzle_segment_intersect(
+                                xps.safe[c1], yps.safe[c1], xps.safe[c2], yps.safe[c2],
+                                icpx.safe[i1], icpy.safe[i1], icpx.safe[i2], icpy.safe[i2],
+                                tx, ty);
+
+                            if (intersect) {
+                                cpx.push_back(tx);
+                                cpy.push_back(ty);
+                            }
+                        }
+
+                        if (in.safe[i1]) {
+                            // The point i1 is "inside" the projection's current edge,
+                            // keep it for now
+                            cpx.push_back(icpx.safe[i1]);
+                            cpy.push_back(icpy.safe[i1]);
+                        }
+
+                        i2 = i1;
+                    }
+
+                    c2 = c1;
+                }
+
+                // No intersection, just discard that pixel
+                if (cpx.size() < 3) continue;
+
+                // First data entering in this pixel, initialize
+                covered = true;
+
+                // Compute the area of this intersection (1: full coverage, 0: no coverage)
+                flx += imgs.safe(ipy,ipx)*polyon_area(cpx, cpy);
+            }
+
+            return covered;
+        }
+
+        template <typename T, typename U>
+        bool regrid_nearest(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            int_t mx = round(mean(xps)), my = round(mean(yps));
+            if (mx > 0 && uint_t(mx) < imgs.dims[1] && my > 0 && uint_t(my) < imgs.dims[0]) {
+                flx = imgs.safe(uint_t(my), uint_t(mx));
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        template <typename T, typename U>
+        bool regrid_nearest_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            bool covered = regrid_nearest(imgs, xps, yps, flx);
+            if (covered) {
+                flx *= polyon_area(xps, yps);
+            }
+
+            return covered;
+        }
+    }
+}
+
+namespace astro {
+
+    enum class regrid_method {
+        drizzle, nearest
+    };
+
+    struct regrid_options {
+        bool verbose = false;
+        bool conserve_flux = false;
+        regrid_method method = regrid_method::drizzle;
+    };
+
+    template <typename T = double>
+    vec2d regrid(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
+        regrid_options opts = regrid_options{}) {
+
+        // Regridded image
+        vec2d res;
+
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        res = replicate(dnan, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
+
+        // Precompute the projection of the new pixel grid on the old
+        // Note: for the horizontal pixel 'i' of line 'j' (x_i,y_j), the grid is:
+        //   (pux,puy)[i]     (pux,puy)[i+1]    # y_(j+0.5)
+        //   (plx,ply)[i]     (plx,ply)[i+1]    # y_(j-0.5)
+        //   # x_(i-0.5)      # x_(i+0.5)
+        // To avoid re-computing stuff, pux and puy are moved into plx and ply
+        // on each 'y' iteration for reuse.
+        auto pg = progress_start(res.size());
+        vec1d plx(res.dims[1]+1);
+        vec1d ply(res.dims[1]+1);
+        for (uint_t ix : range(res.dims[1]+1)) {
+            double tra, tdec;
+            astro::xy2ad(astrod, ix+0.5, 0.5, tra, tdec);
+            astro::ad2xy(astros, tra, tdec, plx.safe[ix], ply.safe[ix]);
+            plx.safe[ix] -= 1.0; ply.safe[ix] -= 1.0;
+        }
+
+        for (uint_t iy : range(res.dims[0])) {
+            vec1d pux(res.dims[1]+1);
+            vec1d puy(res.dims[1]+1);
+            for (uint_t ix : range(res.dims[1]+1)) {
+                double tra, tdec;
+                astro::xy2ad(astrod, ix+0.5, iy+1.5, tra, tdec);
+                astro::ad2xy(astros, tra, tdec, pux.safe[ix], puy.safe[ix]);
+                pux.safe[ix] -= 1.0; puy.safe[ix] -= 1.0;
+            }
+
+            for (uint_t ix : range(res.dims[1])) {
+                // Find projection of each pixel of the new grid on the original image
+                // NB: assumes the astrometry is such that this projection is
+                // reasonably approximated by a 4-edge polygon (i.e.: varying pixel scales,
+                // pixel offsets and rotations are fine, but weird things may happen close
+                // to the poles of the projection where things become non-linear)
+
+                vec1d xps = {plx.safe[ix], plx.safe[ix+1], pux.safe[ix+1], pux.safe[ix]};
+                vec1d yps = {ply.safe[ix], ply.safe[ix+1], puy.safe[ix+1], puy.safe[ix]};
+
+                double flx = 0.0;
+                bool covered = false;
+
+                switch (opts.method) {
+                case regrid_method::drizzle:
+                    covered = impl::wcs_impl::regrid_drizzle(imgs, xps, yps, flx);
+                    break;
+                case regrid_method::nearest:
+                    if (opts.conserve_flux) {
+                        covered = impl::wcs_impl::regrid_nearest_fcon(imgs, xps, yps, flx);
+                    } else {
+                        covered = impl::wcs_impl::regrid_nearest(imgs, xps, yps, flx);
+                    }
+                    break;
+                }
+
+                if (covered) {
+                    res.safe(iy,ix) = flx;
+                }
+
+                if (opts.verbose) progress(pg, 31);
+            }
+
+            plx = std::move(pux);
+            ply = std::move(puy);
+        }
 #endif
+
+        return res;
     }
 }
 }
