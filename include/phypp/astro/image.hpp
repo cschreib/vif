@@ -255,8 +255,11 @@ namespace astro {
     }
 
     inline vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
+        double norm = 1.0/(2.0*dpi*sqr(sigma));
         return generate_img(dims, [&](int_t x, int_t y) {
-            return exp(-(sqr(x - int_t(dims[0]/2)) + sqr(y - int_t(dims[1]/2)))/(2.0*sqr(sigma)));
+            return norm*exp(
+                -(sqr(x - int_t(dims[0]/2)) + sqr(y - int_t(dims[1]/2)))/(2.0*sqr(sigma))
+            );
         });
     }
 
