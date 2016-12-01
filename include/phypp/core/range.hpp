@@ -21,12 +21,21 @@ namespace impl {
         template<typename T>
         using has_size = typename has_size_t<T>::type;
 
+        template<typename T, bool integral>
+        struct dtype_impl;
+
+        template <typename T>
+        struct dtype_impl<T,true> {
+            using type = typename std::make_signed<T>::type;
+        };
+
+        template <typename T>
+        struct dtype_impl<T,false> {
+            using type = T;
+        };
+
         template<typename T>
-        using dtype = typename std::conditional<
-            std::is_unsigned<T>::value,
-            typename std::make_signed<T>::type,
-            T
-        >::type;
+        using dtype = typename dtype_impl<T, std::is_integral<T>::value>::type;
 
         template <typename T>
         dtype<T> make_step(dtype<T> e, dtype<T> b, dtype<T> n) {
