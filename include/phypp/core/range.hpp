@@ -179,20 +179,20 @@ namespace impl {
     }
 
     // Define a range from start 'i', end 'e' (exclusive) in integer steps
-    template<typename T, typename U = T>
+    template<typename T, typename U = T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
     impl::range_impl::range_t<T> range(T i, U e) {
         return range(i, e, std::abs(impl::range_impl::dtype<T>(e)-impl::range_impl::dtype<T>(i)));
     }
 
     // Define a range from '0' to 'n' (exclusive) in integer steps
-    template<typename T, typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    template<typename T, typename enable = typename std::enable_if<std::is_integral<T>::value>::type>
     impl::range_impl::range_t<T> range(T n) {
         return range(T(0), n);
     }
 
     // Define a range from '0' to 'n.size()' (exclusive) in integer steps
     template<typename T, typename enable = typename std::enable_if<impl::range_impl::has_size<T>::value>::type>
-    impl::range_impl::range_t<uint_t> range(const T& n) {
+    auto range(const T& n) -> impl::range_impl::range_t<decltype(n.size())> {
         return range(n.size());
     }
 

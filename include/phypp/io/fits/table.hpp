@@ -562,6 +562,7 @@ namespace fits {
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
             if (status_ != 0) {
                 status_ = 0;
+                fits_clear_errmsg();
                 if (opts.allow_missing) {
                     return read_sentry{};
                 } else {
