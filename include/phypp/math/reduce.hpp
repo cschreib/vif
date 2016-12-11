@@ -7,6 +7,7 @@
 #include "phypp/core/string_conversion.hpp"
 #include "phypp/utility/generic.hpp"
 #include "phypp/math/base.hpp"
+#include "phypp/math/interpolate.hpp"
 
 namespace phypp {
     namespace meta {
@@ -616,7 +617,7 @@ namespace phypp {
     MAKE_PARTIAL(mad);
 
     #undef MAKE_PARTIAL
-    
+
     namespace impl {
         template<std::size_t Dim, typename Type>
         void data_info_(const vec<Dim,Type>& v) {
