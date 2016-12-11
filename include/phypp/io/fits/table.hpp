@@ -892,6 +892,9 @@ namespace fits {
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
         void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&,
             const std::string& tcolname, int cid) {
+            // cfitsio doesn't like writing empty columns
+            if (value.empty()) return;
+
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, value.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()), &status_);
             fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
@@ -912,7 +915,7 @@ namespace fits {
 
             const uint_t nmax = dims[0];
 
-            // NB: for some reason cfitsio crashes on empty string
+            // cfitsio doesn't like writing empty string or columns
             if (nmax == 0 || value.empty()) return;
 
             char** buffer = new char*[value.size()];
