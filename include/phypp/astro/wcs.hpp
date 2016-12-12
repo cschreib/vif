@@ -232,8 +232,8 @@ namespace astro {
 
         vec1u dims;
 
-        uint_t ra_axis = 0, dec_axis = 1;
-        uint_t x_axis = 0, y_axis = 1;
+        uint_t ra_axis = 1, dec_axis = 0;
+        uint_t x_axis = 1, y_axis = 0;
 
         explicit wcs(uint_t naxis = 2) : w(new wcsprm), nwcs(1) {
             w->flag = -1;
