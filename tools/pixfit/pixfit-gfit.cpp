@@ -813,7 +813,7 @@ int phypp_main(int argc, char* argv[]) {
                 res.chi2_tdust_y(gids[i],_) = ty;
 
                 // Estimate probability from chi2
-                sid = uniq(tx);
+                sid = unique_ids_sorted(tx);
                 tx = tx[sid]; ty = ty[sid];
                 ty = exp(-(ty - bchi2));
 

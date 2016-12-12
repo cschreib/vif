@@ -1063,7 +1063,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
             }
         }
 
-        vec1u udim = dims[uniq(dims, sort(dims))];
+        vec1u udim = unique_values(dims);
         uint_t dim;
         if (udim.size() == 1) {
             dim = udim[0];
