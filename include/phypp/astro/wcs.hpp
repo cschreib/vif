@@ -268,12 +268,16 @@ namespace astro {
                 }
 
                 // Identify RA and Dec axis
-                ra_axis = x_axis = find_axis("RA");
-                dec_axis = y_axis = find_axis("DEC");
+                uint_t tx = find_axis("RA");
+                uint_t ty = find_axis("DEC");
+                if (tx != npos && tx != npos) {
+                    ra_axis = x_axis = tx;
+                    dec_axis = y_axis = ty;
 
-                // Y is by definition the first axis, so swap them if
-                // the input file has DEC/RA instead of RA/DEC
-                if (x_axis < y_axis) std::swap(x_axis, y_axis);
+                    // Y is by definition the first axis, so swap them if
+                    // the input file has DEC/RA instead of RA/DEC
+                    if (x_axis < y_axis) std::swap(x_axis, y_axis);
+                }
 
                 // Try a dummy coordinate conversion to see if everything is recognized
                 vec1d map = replicate(0.0, w->naxis);
