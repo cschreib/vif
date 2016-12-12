@@ -299,10 +299,10 @@ namespace phypp {
     }
 
     // In a sorted vector, return the first indices of each non unique sequence, effectively returning
-    // indices to all values that are different in the vector.
+    // indices to all the unique values in the vector.
     // By construction, the returned indices point to sorted values in the original vector.
     template<std::size_t Dim, typename Type>
-    vec1u uniq(const vec<Dim,Type>& v) {
+    vec1u unique_ids_sorted(const vec<Dim,Type>& v) {
         vec1u r;
         if (v.empty()) return r;
         r.reserve(v.size()/4);
@@ -320,17 +320,42 @@ namespace phypp {
         return r;
     }
 
-    // In a vector, return indices to all values that are different. This version takes a second
-    // argument with indices that sort the input vector.
-    // The returned indices point to sorted values in the original vector.
+    // In a vector, return indices to all the unique values.
+    // The returned indices are are sorted by value.
     template<std::size_t Dim, typename Type>
-    vec1u uniq(const vec<Dim,Type>& v, const vec1u& sid) {
+    vec1u unique_ids(const vec<Dim,Type>& v) {
+        vec1u r;
+        if (v.empty()) return r;
+        r.reserve(v.size()/4);
+
+        vec1u sid = sort(v);
+        meta::rtype_t<Type> last = v.safe[sid.safe[0]];
+        r.push_back(sid[0]);
+        for (uint_t ti : range(1, sid.size())) {
+            uint_t i = sid.safe[ti];
+            if (v.safe[i] != last) {
+                r.push_back(i);
+                last = v.safe[i];
+            }
+        }
+
+        r.data.shrink_to_fit();
+        return r;
+    }
+
+    // In a vector, return indices to all the unique values. This version takes a second
+    // argument with indices that sort the input vector, so that the function does not have
+    // to compute the sort.
+    // The returned indices are positions in the original (unsorted) vector, and are sorted by
+    // value.
+    template<std::size_t Dim, typename Type>
+    vec1u unique_ids(const vec<Dim,Type>& v, const vec1u& sid) {
         vec1u r;
         if (sid.empty()) return r;
         r.reserve(v.size()/4);
 
-        meta::rtype_t<Type> last = v[sid[0]];
-        r.push_back(sid[0]);
+        meta::rtype_t<Type> last = v[sid.safe[0]];
+        r.push_back(sid.safe[0]);
         for (uint_t ti : range(1, sid.size())) {
             uint_t i = sid.safe[ti];
             if (v[i] != last) {
@@ -341,6 +366,26 @@ namespace phypp {
 
         r.data.shrink_to_fit();
         return r;
+    }
+
+    // In a sorted vector, return all the unique values.
+    template<std::size_t Dim, typename Type>
+    vec<1,meta::rtype_t<Type>> unique_valuess_sorted(const vec<Dim,Type>& v) {
+        return v.safe[unique_ids_sorted(v)];
+    }
+
+    // In a vector, return all the unique values.
+    template<std::size_t Dim, typename Type>
+    vec<1,meta::rtype_t<Type>> unique_values(const vec<Dim,Type>& v) {
+        return v.safe[unique_ids(v)];
+    }
+
+    // In a vector, return all the unique values. This version takes a second
+    // argument with indices that sort the input vector, so that the function does not have
+    // to compute the sort.
+    template<std::size_t Dim, typename Type>
+    vec<1,meta::rtype_t<Type>> unique_values(const vec<Dim,Type>& v, const vec1u& sid) {
+        return v.safe[unique_ids(v, sid)];
     }
 
     // For each value of the first vector, return 'true' if it is equal to any of the values of the

@@ -95,23 +95,53 @@ where(v == 9);
 \end{cppcode}
 \end{example}
 
-\funcitem \cppinline|vec1u uniq(vec v)| \itt{uniq}
+\funcitem \cppinline|vec1u unique_ids(vec v)| \itt{unique_ids}
 
-\cppinline|vec1u uniq(vec v, vec1u sid)|
+\cppinline|vec1u unique_ids(vec v, vec1u sid)|
 
-This function will traverse the provided vector \cppinline{v} and find all the unique values. It will store the indices of these values (if a value is present more than once inside \cppinline{v}, the index of the first one will be used) and return them inside an index vector. The first version assumes that the values in \cppinline{v} are \emph{sorted} from the smallest to the largest. In the second version, \cppinline{v} may not be sorted, but the second argument \cppinline{id} contains indices that will sort \cppinline{v} (e.g., \cppinline{id} can be the return value of \cppinline{sort(v)}).
+\cppinline|vec1u unique_ids_sorted(vec v)| \itt{unique_ids_sorted}
+
+This function will traverse the provided vector \cppinline{v} and find all the unique values. It will store the indices of these values (if a value is present more than once inside \cppinline{v}, the index of the first one will be used) and return them inside an index vector. See also \cppinline{unique_values()} which directly returns values instead of indices.
+
+Internally, the function needs to sort \cppinline{v}. To optimize things, the second version of this function takes a second argument \cppinline{id} that contains indices that will sort \cppinline{v} (e.g., \cppinline{id} can be the return value of \cppinline{sort(v)}), so that it does not need to be computed again if you already had to sort \cppinline{v} for some other reason.
+
+Lastly, the third version of this function (named \cppinline{unique_ids_sorted()}) simply assumes that \cppinline{v} is already sorted, which makes it even faster.
 
 \begin{example}
 \begin{cppcode}
-// For a sorted vector
-vec1i v = {1,1,2,5,5,6,9,9,10};
-vec1u u = uniq(v); // {0,2,3,5,6,8}
-v[u]; // {1,2,5,6,9,10} only unique values
-
 // For an non-sorted vector
 vec1i w = {5,6,7,8,6,5,4,1,2,5};
-vec1u u = uniq(w, sort(w));
-w[u]; // {1,2,4,5,6,7,8}
+vec1u u = unique_ids(w); // {7,8,6,0,1,2,3}
+w[u]; // {1,2,4,5,6,7,8} only unique values
+
+// For a sorted vector
+vec1i v = {1,1,2,5,5,6,9,9,10};
+vec1u u = unique_ids_sorted(v); // {0,2,3,5,6,8}
+v[u]; // {1,2,5,6,9,10} only unique values
+\end{cppcode}
+\end{example}
+
+\funcitem \cppinline|vec1u unique_values(vec v)| \itt{unique_values}
+
+\cppinline|vec1u unique_values(vec v, vec1u sid)|
+
+\cppinline|vec1u unique_values_sorted(vec v)| \itt{unique_values_sorted}
+
+This function will traverse the provided vector \cppinline{v} and find all the unique values. See also \cppinline{unique_ids()} which instead returns indices to the unique values, instead of the values themselves.
+
+Internally, the function needs to sort \cppinline{v}. To optimize things, the second version of this function takes a second argument \cppinline{id} that contains indices that will sort \cppinline{v} (e.g., \cppinline{id} can be the return value of \cppinline{sort(v)}), so that it does not need to be computed again if you already had to sort \cppinline{v} for some other reason.
+
+Lastly, the third version of this function (named \cppinline{unique_values_sorted()}) simply assumes that \cppinline{v} is already sorted, which makes it even faster.
+
+\begin{example}
+\begin{cppcode}
+// For an non-sorted vector
+vec1i w = {5,6,7,8,6,5,4,1,2,5};
+vec1i u = unique_values(w);  // {1,2,4,5,6,7,8} only unique values
+
+// For a sorted vector
+vec1i v = {1,1,2,5,5,6,9,9,10};
+vec1i u = unique_ids_sorted(v); // {1,2,5,6,9,10} only unique values
 \end{cppcode}
 \end{example}
 
