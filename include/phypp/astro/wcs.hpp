@@ -744,7 +744,7 @@ namespace astro {
 
         w2x(wcs, axis, tw, tx, unit);
 
-        x = tw.safe[0];
+        x = tx.safe[0];
 #endif
     }
 
