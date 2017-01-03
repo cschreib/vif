@@ -223,6 +223,154 @@ namespace astro {
 
         return collapse(nkeys);
     }
+}
+
+namespace impl {
+namespace wcs_impl {
+    struct header_keyword {
+        std::string key, value, comment;
+        bool novalue = true;
+    };
+
+    inline std::vector<header_keyword> parse_header(const fits::header& hdr) {
+        std::vector<header_keyword> keys;
+        vec1s ckeys = cut(hdr, 80);
+        keys.resize(ckeys.size());
+        for (uint_t i : range(ckeys)) {
+            if (ckeys[i].find_first_of("HISTORY ") == 0) {
+                keys[i].key = trim(ckeys[i]);
+            } else {
+                auto p = ckeys[i].find_first_of("=/");
+                if (p == std::string::npos) {
+                    keys[i].key = trim(ckeys[i]);
+                } else if (ckeys[i][p] == '/') {
+                    keys[i].key = trim(ckeys[i].substr(0, p));
+                    keys[i].comment = trim(ckeys[i].substr(p));
+                } else if (ckeys[i][p] == '=') {
+                    keys[i].novalue = false;
+                    keys[i].key = trim(ckeys[i].substr(0, p));
+
+                    std::string right = trim(ckeys[i].substr(p+1));
+                    if (!right.empty()) {
+                        if (right[0] == '\'') {
+                            auto p2 = right.find_first_of('\'', 1);
+                            if (p2 != std::string::npos) {
+                                ++p2;
+
+                                keys[i].value = trim(right.substr(0, p2));
+                                keys[i].comment = trim(right.substr(p2));
+                            } else {
+                                keys[i].value = trim(right);
+                            }
+                        } else {
+                            uint_t p2 = right.find_first_of('/');
+                            if (p2 != std::string::npos) {
+                                keys[i].value = trim(right.substr(0, p2));
+                                keys[i].comment = trim(right.substr(p2));
+                            } else {
+                                keys[i].value = trim(right);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return keys;
+    }
+
+    inline fits::header serialize_header(const std::vector<header_keyword>& keys) {
+        fits::header hdr;
+        hdr.reserve(80*keys.size());
+        for (auto& k : keys) {
+            std::string entry;
+            if (!k.novalue) {
+                if (start_with(k.key, "HIERARCH ")) {
+                    entry = k.key+" = "+k.value;
+                } else {
+                    std::string val;
+                    if (k.value[0] == '\'') {
+                        val = align_left(k.value, 20, ' ');
+                    } else {
+                        val = align_right(k.value, 20, ' ');
+                    }
+                    entry = align_left(k.key, 8, ' ')+"= "+val;
+                }
+            } else {
+                entry = align_left(k.key, 30, ' ');
+            }
+
+            if (!k.comment.empty()) {
+                entry += " "+k.comment;
+            }
+
+            if (entry.size() > 80) {
+                entry = entry.substr(0, 80);
+            } else if (entry.size() < 80) {
+                entry += std::string(80-entry.size(), ' ');
+            }
+
+            hdr += entry;
+        }
+
+        return hdr;
+    }
+
+    inline void cure_header(fits::header& hdr) {
+        auto keys = parse_header(hdr);
+
+        for (auto& k : keys) {
+            if (start_with(k.key, "CUNIT")) {
+                // Fix non-standard units
+                std::string v = trim(k.value, "' ");
+                if (v == "micron" || v == "microns") {
+                    k.value = "'um'";
+                } else if (v == "degree" || v == "degrees") {
+                    k.value = "'deg'";
+                }
+            }
+        }
+
+        hdr = serialize_header(keys);
+    }
+}
+}
+
+namespace astro {
+
+    enum class axis_unit {
+        native,
+        wcslib_default,
+
+        wave_m,
+        wave_cm,
+        wave_mm,
+        wave_um,
+        wave_nm,
+        wave_Angstrom,
+
+        freq_Hz,
+        freq_kHz,
+        freq_MHz,
+        freq_GHz,
+        freq_THz,
+
+        sky_deg,
+        sky_rad
+    };
+
+    enum class axis_type {
+        spatial, wave, freq, unknown
+    };
+
+    inline std::string axis_type_string(axis_type type) {
+        switch (type) {
+            case axis_type::spatial : return "spatial";
+            case axis_type::wave :    return "wavelength";
+            case axis_type::freq :    return "frequency";
+            case axis_type::unknown : return "unknown";
+        }
+    }
 
 #ifndef NO_WCSLIB
     // Extract astrometry from a FITS image header
@@ -231,6 +379,8 @@ namespace astro {
         int nwcs  = 0;
 
         vec1u dims;
+        vec1b has_unit;
+        vec<1,axis_type> type;
 
         uint_t ra_axis = 1, dec_axis = 0;
         uint_t x_axis = 1, y_axis = 0;
@@ -238,9 +388,16 @@ namespace astro {
         explicit wcs(uint_t naxis = 2) : w(new wcsprm), nwcs(1) {
             w->flag = -1;
             wcsini(true, naxis, w);
+
+            dims = replicate(0, naxis);
+            has_unit = replicate(false, naxis);
+            type = replicate(axis_type::unknown, naxis);
         }
 
-        explicit wcs(const fits::header& hdr) {
+        explicit wcs(fits::header hdr) {
+            // Cure header for ingestion by WCSlib
+            impl::wcs_impl::cure_header(hdr);
+
             // Enable error reporting
             wcserr_enable(1);
 
@@ -263,7 +420,28 @@ namespace astro {
                 for (uint_t i : range(dims)) {
                     uint_t dim = npos;
                     if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
-                        dims[dims.size()-1-i] = dim;
+                        dims[naxis-1-i] = dim;
+                    }
+                }
+
+                // Check if axes have units (WCSlib will be silent about that)
+                has_unit.resize(naxis);
+                for (uint_t i : range(dims)) {
+                    has_unit[naxis-1-i] = (trim(w->cunit[i]) != "");
+                }
+
+                // Get types of axis
+                type = replicate(axis_type::unknown, naxis);
+                for (uint_t i : range(dims)) {
+                    std::string tmp = split(w->ctype[i], "-")[0];
+                    if (tmp == "RA") {
+                        type[naxis-1-i] = axis_type::spatial;
+                    } else if (tmp == "DEC") {
+                        type[naxis-1-i] = axis_type::spatial;
+                    } else if (tmp == "WAVE") {
+                        type[naxis-1-i] = axis_type::wave;
+                    } else if (tmp == "FREQ") {
+                        type[naxis-1-i] = axis_type::freq;
                     }
                 }
 
@@ -312,6 +490,56 @@ namespace astro {
             return npos;
         }
 
+        bool valid_unit(uint_t axis, axis_unit unit, std::string& why) const {
+            if (axis >= axis_count()) {
+                why = "axis "+strn(axis)+" does not exist";
+                return false;
+            }
+
+            if (has_unit[axis]) {
+                if (unit == axis_unit::native) {
+                    why = "requesting native units for an axis with specified units it not implemented yet!";
+                    return false;
+                }
+            } else {
+                if (unit != axis_unit::native) {
+                    why = "axis "+strn(axis)+" has no CUNIT keyword";
+                    return false;
+                }
+            }
+
+            axis_type unit_type = axis_type::unknown;
+            switch (unit) {
+                case astro::axis_unit::native:         unit_type = axis_type::unknown; break;
+                case astro::axis_unit::wcslib_default: unit_type = axis_type::unknown; break;
+
+                case astro::axis_unit::wave_m:         unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_cm:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_mm:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_um:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_nm:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_Angstrom:  unit_type = axis_type::wave; break;
+
+                case astro::axis_unit::freq_Hz:        unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_kHz:       unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_MHz:       unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_GHz:       unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_THz:       unit_type = axis_type::freq; break;
+
+                case astro::axis_unit::sky_deg:        unit_type = axis_type::spatial; break;
+                case astro::axis_unit::sky_rad:        unit_type = axis_type::spatial; break;
+            }
+
+            if (type[axis] != axis_type::unknown && unit_type != axis_type::unknown &&
+                type[axis] != unit_type) {
+                why = "wrong type for axis "+strn(axis)+" (expected "+axis_type_string(type[axis])+
+                    ", got "+axis_type_string(unit_type);
+                return false;
+            }
+
+            return true;
+        }
+
         wcs(const wcs&) = delete;
         wcs& operator = (const wcs&) = delete;
 
@@ -319,6 +547,8 @@ namespace astro {
             std::swap(w, tw.w);
             std::swap(nwcs, tw.nwcs);
             std::swap(dims, tw.dims);
+            std::swap(has_unit, tw.has_unit);
+            std::swap(type, tw.type);
             std::swap(ra_axis, tw.ra_axis);
             std::swap(dec_axis, tw.dec_axis);
             std::swap(x_axis, tw.x_axis);
@@ -333,6 +563,8 @@ namespace astro {
             w = tw.w; tw.w = nullptr;
             nwcs = tw.nwcs; tw.nwcs = 0;
             dims = tw.dims; tw.dims.clear();
+            has_unit = tw.has_unit; tw.has_unit.clear();
+            type = tw.type; tw.type.clear();
             ra_axis = tw.ra_axis;
             dec_axis = tw.dec_axis;
             x_axis = tw.x_axis;
@@ -584,32 +816,14 @@ namespace astro {
 #endif
     }
 
-    enum class axis_unit {
-        wcslib_default,
-
-        wave_m,
-        wave_cm,
-        wave_mm,
-        wave_um,
-        wave_nm,
-        wave_Angstrom,
-
-        freq_Hz,
-        freq_kHz,
-        freq_MHz,
-        freq_GHz,
-        freq_THz,
-
-        sky_deg,
-        sky_rad
-    };
-
 }
 
 namespace impl {
     namespace wcs_impl {
-        double conv_si2unit(astro::axis_unit unit) {
+        inline double conv_si2unit(astro::axis_unit unit) {
             switch (unit) {
+                case astro::axis_unit::native:         return 1.0;
+
                 // WCSlib returns data in SI units or degrees
                 case astro::axis_unit::wcslib_default: return 1.0;
 
@@ -665,6 +879,10 @@ namespace astro {
         phypp_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
+        std::string why;
+        bool vunit = wcs.valid_unit(axis, unit, why);
+        phypp_check(vunit, why);
+
         uint_t npix = x.size();
 
         vec2d pix(npix, naxis);
@@ -693,6 +911,10 @@ namespace astro {
         phypp_check(wcs.is_valid(), "invalid WCS data");
         phypp_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
+
+        std::string why;
+        bool vunit = wcs.valid_unit(axis, unit, why);
+        phypp_check(vunit, why);
 
         uint_t npix = w.size();
 
@@ -763,6 +985,10 @@ namespace astro {
         phypp_check(wcs.is_valid(), "invalid WCS data");
         phypp_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
+
+        std::string why;
+        bool vunit = wcs.valid_unit(axis, unit, why);
+        phypp_check(vunit, why);
 
         uint_t npix = wcs.dims[axis];
 
