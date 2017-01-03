@@ -420,7 +420,7 @@ namespace phypp {
     // Compare the two provided vectors and push indices where the two match into 'id1' and 'id2'.
     // If both 'v1' and 'v2' are only composed of unique values, this function is symmetric. Else,
     // only the index of the first value of 'v2' that matches that of 'v1' is stored.
-    template<std::size_t D1, std::size_t D2, typename Type1, typename Type2>
+    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
     void match(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
         // TODO: (optimization) sort v2 and use a binary search
         // must find the right criterion on each vector's size to see
@@ -446,6 +446,78 @@ namespace phypp {
         id1.data.shrink_to_fit();
         id2.dims[0] = id2.data.size();
         id2.data.shrink_to_fit();
+    }
+
+    // Return a new vector containing only the values that are found in common in v1 and v2.
+    // Each value will be returned once. Values are returned sorted.
+    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
+    auto intersection_set(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) -> vec<1,decltype(v1[0]*v2[0])> {
+        vec<1,decltype(v1[0]*v2[0])> ret;
+
+        vec1u ids1 = unique_ids(v1);
+        vec1u ids2 = unique_ids(v2);
+        uint_t n1 = ids1.size();
+        uint_t n2 = ids2.size();
+        uint_t n = std::min(n1, n2);
+        ret.data.reserve(n);
+
+        uint_t i1 = 0, i2 = 0;
+        while (i1 < n1 && i2 < n2) {
+            auto tv1 = v1.safe[ids1.safe[i1]];
+            auto tv2 = v2.safe[ids2.safe[i2]];
+            if (tv1 < tv2) {
+                ++i1;
+            } else if (tv1 > tv2) {
+                ++i2;
+            } else {
+                ret.push_back(tv1);
+                ++i1; ++i2;
+            }
+        }
+
+        ret.data.shrink_to_fit();
+        return ret;
+    }
+
+    // Return a new vector containing the values from v1 and v2, excluding duplicates.
+    // Each value will therefore only be returned once. Values are returned sorted.
+    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
+    auto union_set(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) -> vec<1,decltype(v1[0]*v2[0])> {
+        vec<1,decltype(v1[0]*v2[0])> ret;
+
+        vec1u ids1 = unique_ids(v1);
+        vec1u ids2 = unique_ids(v2);
+        uint_t n1 = ids1.size();
+        uint_t n2 = ids2.size();
+        uint_t n = std::min(n1, n2);
+        ret.data.reserve(n);
+
+        uint_t i1 = 0, i2 = 0;
+        while (i1 < n1 || i2 < n2) {
+            if (i2 == n2) {
+                ret.push_back(v1.safe[ids1.safe[i1]]);
+                ++i1;
+            } else if (i1 == n1) {
+                ret.push_back(v2.safe[ids2.safe[i2]]);
+                ++i2;
+            } else {
+                auto tv1 = v1.safe[ids1.safe[i1]];
+                auto tv2 = v2.safe[ids2.safe[i2]];
+                if (tv1 < tv2) {
+                    ret.push_back(tv1);
+                    ++i1;
+                } else if (tv1 > tv2) {
+                    ret.push_back(tv2);
+                    ++i2;
+                } else {
+                    ret.push_back(tv1);
+                    ++i1; ++i2;
+                }
+            }
+        }
+
+        ret.data.shrink_to_fit();
+        return ret;
     }
 
     template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
