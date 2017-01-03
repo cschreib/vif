@@ -354,7 +354,7 @@ namespace astro {
     };
 #else
     struct wcs {
-        template <typename T, typename ... Args>
+        template<typename T, typename ... Args>
         wcs(Args&&...) {
             static_assert(!std::is_same<T,T>::value, "WCS support is is disabled, "
                 "please enable the WCSLib library to use this function");
@@ -376,7 +376,7 @@ namespace astro {
 
 namespace impl {
     namespace wcs_impl {
-        vec2d world2pix(const astro::wcs& w, const vec2d& world) {
+        inline vec2d world2pix(const astro::wcs& w, const vec2d& world) {
             vec2d pix(world.dims);
 
             uint_t npt = world.dims[0];
@@ -398,7 +398,7 @@ namespace impl {
             return pix;
         }
 
-        vec2d pix2world(const astro::wcs& w, vec2d pix) {
+        inline vec2d pix2world(const astro::wcs& w, const vec2d& pix) {
             vec2d world(pix.dims);
 
             uint_t npt = pix.dims[0];
@@ -626,12 +626,12 @@ namespace impl {
                 case astro::axis_unit::freq_GHz:       return 1e-9;
                 case astro::axis_unit::freq_THz:       return 1e-12;
 
-                case astro::axis_unit::sky_deg:
+                case astro::axis_unit::sky_deg:        return 1.0;
                 case astro::axis_unit::sky_rad:        return dpi/180.0;
             }
         }
 
-        template <std::size_t D, typename T>
+        template<std::size_t D, typename T>
         void si2unit(vec<D,T>& data, astro::axis_unit unit) {
             double conv = conv_si2unit(unit);
             if (conv != 1.0) {
@@ -639,7 +639,7 @@ namespace impl {
             }
         }
 
-        template <std::size_t D, typename T>
+        template<std::size_t D, typename T>
         void unit2si(vec<D,T>& data, astro::axis_unit unit) {
             double conv = conv_si2unit(unit);
             if (conv != 1.0) {
@@ -671,7 +671,7 @@ namespace astro {
         pix.safe(_,naxis-1-axis) = x;
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
-            pix(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+            pix.safe(_,naxis-1-i) = wcs.w->crpix[naxis-1-i];
         }
 
         vec2d world = impl::wcs_impl::pix2world(wcs, pix);
@@ -704,7 +704,7 @@ namespace astro {
 
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
-            world(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+            world.safe(_,naxis-1-i) = wcs.w->crval[naxis-1-i];
         }
 
         vec2d pix = impl::wcs_impl::world2pix(wcs, world);
@@ -712,7 +712,7 @@ namespace astro {
 #endif
     }
 
-    template <typename Dummy = void>
+    template<typename Dummy = void>
     void x2w(const astro::wcs& wcs, uint_t axis, double x, double& w,
         axis_unit unit = axis_unit::wcslib_default) {
 
@@ -730,7 +730,7 @@ namespace astro {
 #endif
     }
 
-    template <typename Dummy = void>
+    template<typename Dummy = void>
     void w2x(const astro::wcs& wcs, uint_t axis, double w, double& x,
         axis_unit unit = axis_unit::wcslib_default) {
 
@@ -767,15 +767,15 @@ namespace astro {
         uint_t npix = wcs.dims[axis];
 
         vec2d pix(npix, naxis);
-        pix(_,naxis-1-axis) = dindgen(npix)+1;
+        pix.safe(_,naxis-1-axis) = dindgen(npix)+1;
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
-            pix(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+            pix.safe(_,naxis-1-i) = wcs.w->crpix[naxis-1-i];
         }
 
         vec2d world = impl::wcs_impl::pix2world(wcs, pix);
 
-        ret = world(_,naxis-1-axis);
+        ret = world.safe(_,naxis-1-axis);
         impl::wcs_impl::si2unit(ret, unit);
 #endif
 
@@ -786,11 +786,11 @@ namespace astro {
 namespace impl {
     namespace wcs_impl {
         // Convenience functions
-        double regrid_drizzle_getmin(const vec1d& v) {
+        inline double regrid_drizzle_getmin(const vec1d& v) {
             double tmp = floor(min(v));
             return tmp > 0 ? uint_t(tmp) : uint_t(0);
         };
-        double regrid_drizzle_getmax(const vec1d& v, uint_t n) {
+        inline double regrid_drizzle_getmax(const vec1d& v, uint_t n) {
             double tmp = ceil(max(v));
             return tmp > double(n) ? n : uint_t(tmp);
         };
@@ -800,7 +800,7 @@ namespace impl {
         // cx1, cy1, cx2, cy2: X and Y coordinates of the two nodes of the edge
         // x, y: X and Y coordinates of the point to test
         // return: true if the point is on the right side, false otherwise
-        bool regrid_drizzle_in_poly_edge(int_t orient,
+        inline bool regrid_drizzle_in_poly_edge(int_t orient,
             double cx1, double cy1, double cx2, double cy2, double x, double y) {
             double cross = (cx2 - cx1)*(y - cy1) - (cy2 - cy1)*(x - cx1);
             return cross*orient < 0;
@@ -811,7 +811,7 @@ namespace impl {
         // l2x1, l2y1, l2x2, l2y2: X and Y coordinates of two points defining the second line
         // x, y: output X and Y coordinates of the intersection point (if any)
         // return: true if intersection exists, false otherwise
-        bool regrid_drizzle_segment_intersect(
+        inline bool regrid_drizzle_segment_intersect(
             double l1x1, double l1y1, double l1x2, double l1y2,
             double l2x1, double l2y1, double l2x2, double l2y2, double& x, double& y) {
 
@@ -837,7 +837,7 @@ namespace impl {
             return true;
         };
 
-        double polyon_area(const vec1d& x, const vec1d& y) {
+        inline double polyon_area(const vec1d& x, const vec1d& y) {
             // phypp_check(x.size() == y.size(), "incompatible dimensions between X and Y arrays (",
             //    x.size(), " vs. ", y.size(), ")");
 
@@ -865,7 +865,7 @@ namespace impl {
             return area;
         }
 
-        template <typename T, typename U>
+        template<typename T, typename U>
         bool regrid_drizzle(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
             // Get bounds of this projection
             uint_t ymin = regrid_drizzle_getmin(yps-0.5);
@@ -953,7 +953,7 @@ namespace impl {
             return covered;
         }
 
-        template <typename T, typename U>
+        template<typename T, typename U>
         bool regrid_nearest(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
             int_t mx = round(mean(xps)), my = round(mean(yps));
             if (mx > 0 && uint_t(mx) < imgs.dims[1] && my > 0 && uint_t(my) < imgs.dims[0]) {
@@ -964,7 +964,7 @@ namespace impl {
             }
         }
 
-        template <typename T, typename U>
+        template<typename T, typename U>
         bool regrid_nearest_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
             bool covered = regrid_nearest(imgs, xps, yps, flx);
             if (covered) {
@@ -988,7 +988,7 @@ namespace astro {
         regrid_method method = regrid_method::drizzle;
     };
 
-    template <typename T = double>
+    template<typename T = double>
     vec2d regrid(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
         regrid_options opts = regrid_options{}) {
 
