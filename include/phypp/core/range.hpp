@@ -92,19 +92,19 @@ namespace impl {
 
         // Left range variable v(_-last)
         struct left_range_t {
-            explicit left_range_t(uint_t l) : last(l);
+            explicit left_range_t(uint_t l) : last(l) {}
             uint_t last;
         };
 
         // Right range variable v(first-_)
         struct right_range_t {
-            explicit right_range_t(uint_t f) : first(f);
+            explicit right_range_t(uint_t f) : first(f) {}
             uint_t first;
         };
 
         // Left-right range variable v(first-_-last)
         struct left_right_range_t {
-            explicit left_right_range_t(uint_t f, uint_t l) : first(f), last(l);
+            explicit left_right_range_t(uint_t f, uint_t l) : first(f), last(l) {}
             uint_t first, last;
         };
 
