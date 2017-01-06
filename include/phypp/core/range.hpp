@@ -78,7 +78,7 @@ namespace impl {
             dtype<T> d;
             uint_t n;
 
-            range_t(T b_, T e_, uint_t n_) : b(b_), e(e_),
+            explicit range_t(T b_, T e_, uint_t n_) : b(b_), e(e_),
                 d(n_ == 0 ? 0 : make_step<T>(e_, b_, n_)), n(n_) {}
 
             using iterator = iterator_t<range_t>;
@@ -92,16 +92,19 @@ namespace impl {
 
         // Left range variable v(_-last)
         struct left_range_t {
+            explicit left_range_t(uint_t l) : last(l);
             uint_t last;
         };
 
         // Right range variable v(first-_)
         struct right_range_t {
+            explicit right_range_t(uint_t f) : first(f);
             uint_t first;
         };
 
         // Left-right range variable v(first-_-last)
         struct left_right_range_t {
+            explicit left_right_range_t(uint_t f, uint_t l) : first(f), last(l);
             uint_t first, last;
         };
 
