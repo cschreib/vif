@@ -782,10 +782,14 @@ namespace astro {
             return false;
         }
 
-        // Convert radius to number of pixels
-        vec1d r, d;
-        astro::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
-        aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
+        uint_t naxis = wcs.axis_count();
+        vec1d x, y;
+        astro::ad2xy(wcs,
+            {wcs.w->crval[naxis-1-wcs.ra_axis],  wcs.w->crval[naxis-1-wcs.ra_axis]},
+            {wcs.w->crval[naxis-1-wcs.dec_axis], wcs.w->crval[naxis-1-wcs.dec_axis] + 1/3600.0},
+            x, y
+        );
+        aspix = 1.0/sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
 
         return true;
 #endif
