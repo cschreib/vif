@@ -132,6 +132,30 @@ namespace phypp {
         return r;
     }
 
+    template<std::size_t D, typename T>
+    vec2u mult_ids(const vec<D,T>& v, vec1u i) {
+        vec2u r(D,i.size());
+
+        for (uint_t j : range(D)) {
+            r.safe(D-1-j,_) = i % v.dims[D-1-j];
+            i /= v.dims[D-1-j];
+        }
+
+        return r;
+    }
+
+    template<std::size_t D>
+    vec2u mult_ids(const std::array<uint_t,D>& dims, vec1u i) {
+        vec2u r(D,i.size());
+
+        for (uint_t j : range(D)) {
+            r.safe(D-1-j,_) = i % dims[D-1-j];
+            i /= dims[D-1-j];
+        }
+
+        return r;
+    }
+
     // Get flat ID from multi-dim IDs
     namespace impl {
         template<std::size_t D, typename T>
