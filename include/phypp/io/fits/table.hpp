@@ -889,7 +889,8 @@ namespace fits {
     private :
 
         template<std::size_t Dim, typename Type,
-            typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
+            typename enable = typename std::enable_if<
+                !std::is_same<Type,std::string>::value && !std::is_pointer<Type>::value>::type>
         void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&,
             const std::string& tcolname, int cid) {
             // cfitsio doesn't like writing empty columns
@@ -952,8 +953,8 @@ namespace fits {
             delete[] buffer;
         }
 
-        template<std::size_t Dim, typename Type>
-        void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,Dim>& dims,
+        template<std::size_t Dim, typename Type, std::size_t DD>
+        void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,DD>& dims,
             const std::string& tcolname, int cid) {
             write_column_impl_(value.concretise(), dims, tcolname, cid);
         }
@@ -973,8 +974,8 @@ namespace fits {
             return {};
         }
 
-        template<std::size_t Dim>
-        std::array<long,Dim+1> write_column_get_dims_(const vec<Dim,std::string>& value) {
+        template<std::size_t Dim, typename T>
+        std::array<long,Dim+1> write_column_get_dims_stringv_(const vec<Dim,T>& value) {
             std::array<long,Dim+1> dims;
 
             std::size_t nmax = 0;
@@ -990,6 +991,16 @@ namespace fits {
             }
 
             return dims;
+        }
+
+        template<std::size_t Dim>
+        std::array<long,Dim+1> write_column_get_dims_(const vec<Dim,std::string>& value) {
+            return write_column_get_dims_stringv_(value);
+        }
+
+        template<std::size_t Dim>
+        std::array<long,Dim+1> write_column_get_dims_(const vec<Dim,std::string*>& value) {
+            return write_column_get_dims_stringv_(value);
         }
 
         std::array<long,1> write_column_get_dims_(const std::string& value) {
@@ -1147,7 +1158,7 @@ namespace fits {
                 filtered_first, std::is_convertible, std::string>>::value &&
                 meta::are_all_true<meta::unary_apply_type_to_bool_list<
                 filtered_second, impl::fits_impl::is_writable_column_type>>::value,
-                "arguments must be a sequence of 'column name', 'readable value'");
+                "arguments must be a sequence of 'column name', 'writable value'");
 
             // Write
             create_table_();
