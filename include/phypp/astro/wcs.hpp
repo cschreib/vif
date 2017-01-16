@@ -4,6 +4,8 @@
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcserr.h>
+#include <wcslib/dis.h>
+#include <wcslib/tab.h>
 #endif
 
 #include "phypp/core/error.hpp"
@@ -227,100 +229,17 @@ namespace astro {
 
 namespace impl {
 namespace wcs_impl {
-    struct header_keyword {
-        std::string key, value, comment;
-        bool novalue = true;
-    };
-
-    inline std::vector<header_keyword> parse_header(const fits::header& hdr) {
-        std::vector<header_keyword> keys;
-        vec1s ckeys = cut(hdr, 80);
-        keys.resize(ckeys.size());
-        for (uint_t i : range(ckeys)) {
-            if (ckeys[i].find_first_of("HISTORY ") == 0) {
-                keys[i].key = trim(ckeys[i]);
-            } else {
-                auto p = ckeys[i].find_first_of("=/");
-                if (p == std::string::npos) {
-                    keys[i].key = trim(ckeys[i]);
-                } else if (ckeys[i][p] == '/') {
-                    keys[i].key = trim(ckeys[i].substr(0, p));
-                    keys[i].comment = trim(ckeys[i].substr(p));
-                } else if (ckeys[i][p] == '=') {
-                    keys[i].novalue = false;
-                    keys[i].key = trim(ckeys[i].substr(0, p));
-
-                    std::string right = trim(ckeys[i].substr(p+1));
-                    if (!right.empty()) {
-                        if (right[0] == '\'') {
-                            auto p2 = right.find_first_of('\'', 1);
-                            if (p2 != std::string::npos) {
-                                ++p2;
-
-                                keys[i].value = trim(right.substr(0, p2));
-                                keys[i].comment = trim(right.substr(p2));
-                            } else {
-                                keys[i].value = trim(right);
-                            }
-                        } else {
-                            uint_t p2 = right.find_first_of('/');
-                            if (p2 != std::string::npos) {
-                                keys[i].value = trim(right.substr(0, p2));
-                                keys[i].comment = trim(right.substr(p2));
-                            } else {
-                                keys[i].value = trim(right);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return keys;
-    }
-
-    inline fits::header serialize_header(const std::vector<header_keyword>& keys) {
-        fits::header hdr;
-        hdr.reserve(80*keys.size());
-        for (auto& k : keys) {
-            std::string entry;
-            if (!k.novalue) {
-                if (start_with(k.key, "HIERARCH ")) {
-                    entry = k.key+" = "+k.value;
-                } else {
-                    std::string val;
-                    if (k.value[0] == '\'') {
-                        val = align_left(k.value, 20, ' ');
-                    } else {
-                        val = align_right(k.value, 20, ' ');
-                    }
-                    entry = align_left(k.key, 8, ' ')+"= "+val;
-                }
-            } else {
-                entry = align_left(k.key, 30, ' ');
-            }
-
-            if (!k.comment.empty()) {
-                entry += " "+k.comment;
-            }
-
-            if (entry.size() > 80) {
-                entry = entry.substr(0, 80);
-            } else if (entry.size() < 80) {
-                entry += std::string(80-entry.size(), ' ');
-            }
-
-            hdr += entry;
-        }
-
-        return hdr;
-    }
-
     inline void cure_header(fits::header& hdr) {
-        auto keys = parse_header(hdr);
+        auto keys = fits::parse_header(hdr);
 
-        for (auto& k : keys) {
-            if (start_with(k.key, "CUNIT")) {
+        bool cpdis_err = false;
+        bool sipdis_err = false;
+
+        vec1b keep = replicate(true, keys.size());
+        for (uint_t i : range(keys)) {
+            auto& k = keys[i];
+
+            if (regex_match(k.key, "^CUNIT[0-9]+$")) {
                 // Fix non-standard units
                 std::string v = trim(k.value, "' ");
                 if (v == "micron" || v == "microns") {
@@ -328,10 +247,46 @@ namespace wcs_impl {
                 } else if (v == "degree" || v == "degrees") {
                     k.value = "'deg'";
                 }
+            } else if (regex_match(k.key, "^C[PQ]DIS[0-9]+$") && regex_match(k.value, "Lookup")) {
+                // Identify use of lookup distortion which is not supported by WCSLIB right now
+                if (!cpdis_err) {
+                    warning("this header contains one or more CPDIS keyword with value "
+                        "unsupported by WCSlib (", k.value, ")");
+                    warning("the keywords will be removed and distortion will be ignored");
+                    cpdis_err = true;
+                }
+            } else if (regex_match(k.key, "^[AB]_([0-9]+_[0-9]+|ORDER)$")) {
+                // Identify use of SIP distortion with A and B matrices which gives incorrect results
+                if (!sipdis_err) {
+                    warning("this header contains one or more SIP distortion keyword "
+                        "which are not properly handled (A_*_* and B_*_* matrices)");
+                    warning("the keywords will be removed and distortion will be ignored");
+                    sipdis_err = true;
+                }
             }
         }
 
-        hdr = serialize_header(keys);
+        if (cpdis_err) {
+            for (uint_t i : range(keys)) {
+                auto& k = keys[i];
+
+                if (regex_match(k.key, "^(D[PQ]|D2IM|(C[PQ]|D2IM)(ERR|DIS|EXT))[0-9]+$")) {
+                    keep[i] = false;
+                }
+            }
+        }
+
+        if (sipdis_err) {
+            for (uint_t i : range(keys)) {
+                auto& k = keys[i];
+
+                if (regex_match(k.key, "^[AB]_([0-9]+_[0-9]+|ORDER)$")) {
+                    keep[i] = false;
+                }
+            }
+        }
+
+        hdr = fits::serialize_header(keys[where(keep)]);
     }
 }
 }
@@ -409,69 +364,88 @@ namespace astro {
             );
 
             if ((success != 0 || nwcs == 0) && w) {
+                error("could not parse WCS data from header");
+                report_errors();
                 wcsvfree(&nwcs, &w);
                 w = nullptr;
+                return;
             }
 
-            if (w) {
-                // Get dimensions from the FITS header
-                uint_t naxis = axis_count();
-                dims.resize(naxis);
-                for (uint_t i : range(dims)) {
-                    uint_t dim = npos;
-                    if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
-                        dims[naxis-1-i] = dim;
-                    }
+            if (!w) {
+                if (nwcs == 0) {
+                    return;
                 }
 
-                // Check if axes have units (WCSlib will be silent about that)
-                has_unit.resize(naxis);
-                for (uint_t i : range(dims)) {
-                    has_unit[naxis-1-i] = (trim(w->cunit[i]) != "");
+                error("could not parse WCS data from header");
+                switch (success) {
+                    case 2: error("memory allocation failure"); break;
+                    case 4: error("fatal error in the Flex parser"); break;
+                    default: error("unknown error"); break;
                 }
 
-                // Get types of axis
-                type = replicate(axis_type::unknown, naxis);
-                for (uint_t i : range(dims)) {
-                    std::string tmp = split(w->ctype[i], "-")[0];
-                    if (tmp == "RA") {
-                        type[naxis-1-i] = axis_type::spatial;
-                    } else if (tmp == "DEC") {
-                        type[naxis-1-i] = axis_type::spatial;
-                    } else if (tmp == "WAVE") {
-                        type[naxis-1-i] = axis_type::wave;
-                    } else if (tmp == "FREQ") {
-                        type[naxis-1-i] = axis_type::freq;
-                    }
+                phypp_check(success != 0, "WCSlib failed to read this header");
+
+                return;
+            }
+
+            // Get dimensions from the FITS header
+            uint_t naxis = axis_count();
+            dims.resize(naxis);
+            for (uint_t i : range(dims)) {
+                uint_t dim = npos;
+                if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
+                    dims[naxis-1-i] = dim;
                 }
+            }
 
-                // Identify RA and Dec axis
-                uint_t tx = find_axis("RA");
-                uint_t ty = find_axis("DEC");
-                if (tx != npos && tx != npos) {
-                    ra_axis = x_axis = tx;
-                    dec_axis = y_axis = ty;
+            // Check if axes have units (WCSlib will be silent about that)
+            has_unit.resize(naxis);
+            for (uint_t i : range(dims)) {
+                has_unit[naxis-1-i] = (trim(w->cunit[i]) != "");
+            }
 
-                    // Y is by definition the first axis, so swap them if
-                    // the input file has DEC/RA instead of RA/DEC
-                    if (x_axis < y_axis) std::swap(x_axis, y_axis);
+            // Get types of axis
+            type = replicate(axis_type::unknown, naxis);
+            for (uint_t i : range(dims)) {
+                std::string tmp = split(w->ctype[i], "-")[0];
+                if (tmp == "RA") {
+                    type[naxis-1-i] = axis_type::spatial;
+                } else if (tmp == "DEC") {
+                    type[naxis-1-i] = axis_type::spatial;
+                } else if (tmp == "WAVE") {
+                    type[naxis-1-i] = axis_type::wave;
+                } else if (tmp == "FREQ") {
+                    type[naxis-1-i] = axis_type::freq;
                 }
+            }
 
-                // Try a dummy coordinate conversion to see if everything is recognized
-                vec1d map = replicate(0.0, w->naxis);
-                vec1d world(w->naxis);
-                vec1d itmp(w->naxis);
-                double phi, theta;
-                int status = 0;
+            // Identify RA and Dec axis
+            uint_t tx = find_axis("RA");
+            uint_t ty = find_axis("DEC");
+            if (tx != npos && tx != npos) {
+                ra_axis = x_axis = tx;
+                dec_axis = y_axis = ty;
 
-                int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
-                    world.data.data(), &status);
+                // Y is by definition the first axis, so swap them if
+                // the input file has DEC/RA instead of RA/DEC
+                if (x_axis < y_axis) std::swap(x_axis, y_axis);
+            }
 
-                if (ret != 0) {
-                    wcserr_prt(w->err, "error: ");
-                    wcsvfree(&nwcs, &w);
-                    w = nullptr;
-                }
+            // Try a dummy coordinate conversion to see if everything is recognized
+            vec1d map = replicate(0.0, w->naxis);
+            vec1d world(w->naxis);
+            vec1d itmp(w->naxis);
+            double phi, theta;
+            int status = 0;
+
+            int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
+                world.data.data(), &status);
+
+            if (ret != 0) {
+                error("WCS data in header is invalid");
+                report_errors();
+                wcsvfree(&nwcs, &w);
+                w = nullptr;
             }
         }
 
@@ -577,6 +551,30 @@ namespace astro {
             return w != nullptr;
         }
 
+        void report_errors() const {
+            if (!w || !w->err) return;
+
+            wcserr_prt(w->err, "error: ");
+
+            if (w->tab) {
+                wcserr_prt(w->tab->err, "error: ");
+            }
+
+            wcserr_prt(w->lin.err, "error: ");
+            if (w->lin.dispre) {
+                wcserr_prt(w->lin.dispre->err, "error: ");
+            }
+            if (w->lin.disseq) {
+                wcserr_prt(w->lin.disseq->err, "error: ");
+            }
+
+            wcserr_prt(w->cel.err, "error: ");
+            wcserr_prt(w->cel.prj.err, "error: ");
+            wcserr_prt(w->spc.err, "error: ");
+
+            phypp_check(w->err == nullptr, "error from WCSlib");
+        }
+
         ~wcs() {
             if (w) {
                 wcsvfree(&nwcs, &w);
@@ -622,10 +620,9 @@ namespace impl {
                 itmp.data(), pix.data.data(), stat.data());
 
             if (status != 0) {
-                wcserr_prt(w.w->err, "error: ");
+                error("could not perform WCS conversion");
+                w.report_errors();
             }
-
-            phypp_check(status == 0, "error in WCS conversion");
 
             return pix;
         }
@@ -644,10 +641,9 @@ namespace impl {
                 phi.data(), theta.data(), world.data.data(), stat.data());
 
             if (status != 0) {
-                wcserr_prt(w.w->err, "error: ");
+                error("could not perform WCS conversion");
+                w.report_errors();
             }
-
-            phypp_check(status == 0, "error in WCS conversion");
 
             return world;
         }
