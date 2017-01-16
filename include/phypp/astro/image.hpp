@@ -419,6 +419,73 @@ namespace astro {
 
         return m;
     }
+
+    // Function to segment a binary or integer map into multiple components.
+    // Does no de-blending. The returned map contains IDs between 'first_id' and
+    // 'first_id + nsrc' (where 'nsrc' is the number of identified segments, which is
+    // provided in output). Values of 0 in the input binary map are also 0 in the
+    // segmentation map.
+    template <typename T, typename enable = typename std::enable_if<!std::is_pointer<T>::value>::type>
+    vec2u segment(vec<2,T> map, uint_t& nsrc, uint_t first_id = 1u) {
+        vec2u smap(map.dims);
+
+        phypp_check(first_id > 0, "first ID must be > 0");
+
+        nsrc = 0;
+        uint_t id = first_id;
+
+        std::vector<uint_t> oy, ox;
+        for (uint_t y : range(map.dims[0]))
+        for (uint_t x : range(map.dims[1])) {
+            if (map.safe(y,x) == 0) continue;
+
+            // Found a guy
+            // Use an A* - like algorithm to navigate around and
+            // figure out its extents
+            oy.clear(); ox.clear();
+
+            // This function sets a point as belonging to the current segment
+            // and adds the neighboring points to a search list for inspection
+            auto process_point = [&ox,&oy,&map,&smap,id](uint_t ty, uint_t tx) {
+                map.safe(ty,tx) = 0;
+                smap.safe(ty,tx) = id;
+
+                auto check_add = [&ox,&oy,&map](uint_t tty, uint_t ttx) {
+                    if (map.safe(tty,ttx) != 0) {
+                        oy.push_back(tty);
+                        ox.push_back(ttx);
+                    }
+                };
+
+                if (ty != 0)             check_add(ty-1,tx);
+                if (ty != map.dims[0]-1) check_add(ty+1,tx);
+                if (tx != 0)             check_add(ty,tx-1);
+                if (tx != map.dims[1]-1) check_add(ty,tx+1);
+            };
+
+            // Add the first point to the segment
+            process_point(y, x);
+
+            // While there are points to inspect, process them as well
+            while (!ox.empty()) {
+                uint_t ty = oy.back(); oy.pop_back();
+                uint_t tx = ox.back(); ox.pop_back();
+                process_point(ty, tx);
+            }
+
+            ++id;
+        }
+
+        nsrc = id - first_id;
+
+        return smap;
+    }
+
+    template <typename T, typename enable = typename std::enable_if<!std::is_pointer<T>::value>::type>
+    vec2u segment(vec<2,T> map) {
+        uint_t nsrc = 0;
+        return segment(std::move(map), nsrc);
+    }
 }
 }
 
