@@ -1014,11 +1014,11 @@ namespace impl {
         // Convenience functions
         inline double regrid_drizzle_getmin(const vec1d& v) {
             double tmp = floor(min(v));
-            return tmp > 0 ? uint_t(tmp) : uint_t(0);
+            return tmp > 0.0 ? tmp : 0.0;
         };
-        inline double regrid_drizzle_getmax(const vec1d& v, uint_t n) {
+        inline double regrid_drizzle_getmax(const vec1d& v, double n) {
             double tmp = ceil(max(v));
-            return tmp > double(n) ? n : uint_t(tmp);
+            return tmp > n ? n : tmp;
         };
 
         // Function to find if a point lies on the right side of a polygon's edge
