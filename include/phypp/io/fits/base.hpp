@@ -752,6 +752,95 @@ namespace fits {
 
         return true;
     }
+
+    struct header_keyword {
+        std::string key, value, comment;
+        bool novalue = true;
+    };
+
+    inline vec<1,header_keyword> parse_header(const fits::header& hdr) {
+        vec<1,header_keyword> keys;
+        vec1s ckeys = cut(hdr, 80);
+        keys.resize(ckeys.size());
+        for (uint_t i : range(ckeys)) {
+            if (ckeys[i].find_first_of("HISTORY ") == 0) {
+                keys[i].key = trim(ckeys[i]);
+            } else {
+                auto p = ckeys[i].find_first_of("=/");
+                if (p == std::string::npos) {
+                    keys[i].key = trim(ckeys[i]);
+                } else if (ckeys[i][p] == '/') {
+                    keys[i].key = trim(ckeys[i].substr(0, p));
+                    keys[i].comment = trim(ckeys[i].substr(p));
+                } else if (ckeys[i][p] == '=') {
+                    keys[i].novalue = false;
+                    keys[i].key = trim(ckeys[i].substr(0, p));
+
+                    std::string right = trim(ckeys[i].substr(p+1));
+                    if (!right.empty()) {
+                        if (right[0] == '\'') {
+                            auto p2 = right.find_first_of('\'', 1);
+                            if (p2 != std::string::npos) {
+                                ++p2;
+
+                                keys[i].value = trim(right.substr(0, p2));
+                                keys[i].comment = trim(right.substr(p2));
+                            } else {
+                                keys[i].value = trim(right);
+                            }
+                        } else {
+                            uint_t p2 = right.find_first_of('/');
+                            if (p2 != std::string::npos) {
+                                keys[i].value = trim(right.substr(0, p2));
+                                keys[i].comment = trim(right.substr(p2));
+                            } else {
+                                keys[i].value = trim(right);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return keys;
+    }
+
+    inline fits::header serialize_header(const vec<1,header_keyword>& keys) {
+        fits::header hdr;
+        hdr.reserve(80*keys.size());
+        for (auto& k : keys) {
+            std::string entry;
+            if (!k.novalue) {
+                if (start_with(k.key, "HIERARCH ")) {
+                    entry = k.key+" = "+k.value;
+                } else {
+                    std::string val;
+                    if (k.value[0] == '\'') {
+                        val = align_left(k.value, 20, ' ');
+                    } else {
+                        val = align_right(k.value, 20, ' ');
+                    }
+                    entry = align_left(k.key, 8, ' ')+"= "+val;
+                }
+            } else {
+                entry = align_left(k.key, 30, ' ');
+            }
+
+            if (!k.comment.empty()) {
+                entry += " "+k.comment;
+            }
+
+            if (entry.size() > 80) {
+                entry = entry.substr(0, 80);
+            } else if (entry.size() < 80) {
+                entry += std::string(80-entry.size(), ' ');
+            }
+
+            hdr += entry;
+        }
+
+        return hdr;
+    }
 }
 }
 
