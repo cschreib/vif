@@ -1208,7 +1208,7 @@ namespace astro {
         drizzle, nearest
     };
 
-    struct regrid_options {
+    struct regrid_params {
         bool verbose = false;
         bool conserve_flux = false;
         regrid_method method = regrid_method::drizzle;
@@ -1216,7 +1216,7 @@ namespace astro {
 
     template<typename T = double>
     vec2d regrid(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
-        regrid_options opts = regrid_options{}) {
+        regrid_params opts = regrid_params{}) {
 
         // Regridded image
         vec2d res;
