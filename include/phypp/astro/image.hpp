@@ -204,20 +204,22 @@ namespace astro {
         phypp_check(radius >= 0, "radius must be a positive number");
 
         // Identify the needed region
-        uint_t x0 = x - radius > 0 ? floor(x - radius) : 0;
-        uint_t y0 = y - radius > 0 ? floor(y - radius) : 0;
-        uint_t x1 = x + radius < dims[0]-1 ? ceil(x + radius) : dims[0]-1;
-        uint_t y1 = y + radius < dims[1]-1 ? ceil(y + radius) : dims[0]+1;
+        if (x+radius > 0 && y+radius > 0) {
+            uint_t x0 = floor(x - radius) > 0         ? floor(x - radius) : 0;
+            uint_t y0 = floor(y - radius) > 0         ? floor(y - radius) : 0;
+            uint_t x1 = ceil(x + radius)  < dims[0]-1 ? ceil(x + radius)  : dims[0]-1;
+            uint_t y1 = ceil(y + radius)  < dims[1]-1 ? ceil(y + radius)  : dims[1]-1;
 
-        radius *= radius;
-        for (uint_t ix = x0; ix <= x1; ++ix)
-        for (uint_t iy = y0; iy <= y1; ++iy) {
-            m.safe(ix,iy) = 0.25*(
-                (sqr(ix-0.5 - x) + sqr(iy-0.5 - y) <= radius) +
-                (sqr(ix+0.5 - x) + sqr(iy-0.5 - y) <= radius) +
-                (sqr(ix+0.5 - x) + sqr(iy+0.5 - y) <= radius) +
-                (sqr(ix-0.5 - x) + sqr(iy+0.5 - y) <= radius)
-            );
+            radius *= radius;
+            for (uint_t ix = x0; ix <= x1; ++ix)
+            for (uint_t iy = y0; iy <= y1; ++iy) {
+                m.safe(ix,iy) = 0.25*(
+                    (sqr(ix-0.5 - x) + sqr(iy-0.5 - y) <= radius) +
+                    (sqr(ix+0.5 - x) + sqr(iy-0.5 - y) <= radius) +
+                    (sqr(ix+0.5 - x) + sqr(iy+0.5 - y) <= radius) +
+                    (sqr(ix-0.5 - x) + sqr(iy+0.5 - y) <= radius)
+                );
+            }
         }
 
         return m;
