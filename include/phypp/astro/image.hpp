@@ -198,6 +198,31 @@ namespace astro {
         return r;
     }
 
+    template<typename T>
+    vec<2,T> shift(vec<2,T> v, int_t tsx, int_t tsy) {
+        tsx = (-tsx) % int_t(v.dims[0]);
+        tsy = (-tsy) % int_t(v.dims[1]);
+        if (tsx < 0) tsx = int_t(v.dims[0])+tsx;
+        if (tsy < 0) tsy = int_t(v.dims[1])+tsy;
+        uint_t sx = tsx, sy = tsy;
+
+        if (sy != 0) {
+            for (uint_t ix : range(v.dims[0])) {
+                auto st = v.stride(ix,_);
+                std::rotate(st.begin(), st.begin() + sy, st.end());
+            }
+        }
+
+        if (sx != 0) {
+            for (uint_t iy : range(v.dims[1])) {
+                auto st = v.stride(_,iy);
+                std::rotate(st.begin(), st.begin() + sx, st.end());
+            }
+        }
+
+        return v;
+    }
+
     inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
         vec2d m(dims);
 
