@@ -43,7 +43,7 @@ function(handle_clang_options CVERSION USAGE)
         handle_options(-Wno-old-style-cast ${USAGE})
     endif()
     if(NOT (CVERSION VERSION_LESS 3.8))
-        handle_options(-Wno-double-promote ${USAGE})
+        handle_options(-Wno-double-promotion ${USAGE})
     endif()
 
     handle_options(-std=c++11 ${USAGE})
