@@ -758,8 +758,10 @@ namespace fits {
         bool novalue = true;
     };
 
-    inline vec<1,header_keyword> parse_header(const fits::header& hdr) {
-        vec<1,header_keyword> keys;
+    using parsed_header = vec<1,header_keyword>;
+
+    inline fits::parsed_header parse_header(const fits::header& hdr) {
+        fits::parsed_header keys;
         vec1s ckeys = cut(hdr, 80);
         keys.resize(ckeys.size());
         for (uint_t i : range(ckeys)) {
@@ -805,7 +807,7 @@ namespace fits {
         return keys;
     }
 
-    inline fits::header serialize_header(const vec<1,header_keyword>& keys) {
+    inline fits::header serialize_header(const fits::parsed_header& keys) {
         fits::header hdr;
         hdr.reserve(80*keys.size());
         for (auto& k : keys) {
