@@ -363,6 +363,21 @@ namespace astro {
     #endif
     }
 
+    // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
+    // Note: If the FFTW library is not used, falls back to convolve2d_naive().
+    template<typename T = void>
+    vec2d make_transition_kernel(const vec2d& from, const vec2d& to) {
+    #ifdef NO_FFTW
+        static_assert(!std::is_same<T,T>::value, "this function needs the FFTW library to work");
+        return vec2d();
+    #else
+        vec2cd cfrom = fft(from);
+        vec2cd cto = fft(to);
+        cto(_-(cfrom.dims[1]/2),_) /= cfrom(_-(cfrom.dims[1]/2),_);
+        return shift(ifft(cto), cfrom.dims[0]/2, cfrom.dims[1]/2);
+    #endif
+    }
+
     template<typename T, typename F>
     auto boxcar(const vec<2,T>& img, uint_t hsize, F&& func) ->
         vec<2,decltype(func(flatten(img)))> {
