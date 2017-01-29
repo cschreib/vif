@@ -1,397 +1,385 @@
-#ifndef PHYPP_CORE_ITERATOR_BASE_HPP
-#define PHYPP_CORE_ITERATOR_BASE_HPP
+#ifndef PHYPP_CORE_ITERATOR_ADAPTOR_HPP
+#define PHYPP_CORE_ITERATOR_ADAPTOR_HPP
 
 namespace phypp {
 namespace impl {
     template<typename T, typename C, typename P>
-    class iterator_base;
+    struct iterator_adaptor;
 
     template<typename T, typename C, typename P>
-    class const_iterator_base {
-        friend C;
-        template<typename N, typename K, typename V>
-        friend class const_reverse_iterator_base;
-
+    struct const_iterator_adaptor {
+        P policy;
         T i;
 
         T stdbase() {
             return i;
         }
 
-        const_iterator_base(const T& j) : i(j) {}
+        const_iterator_adaptor() = default;
+        const_iterator_adaptor(const T& j, P p = P()) : policy(std::move(p)), i(j) {
+            policy.initialize(i);
+        }
+        const_iterator_adaptor(const iterator_adaptor<T,C,P>& iter) : policy(iter.policy), i(iter.i) {}
 
-    public :
-        const_iterator_base() {}
-        const_iterator_base(const iterator_base<T,C,P>& iter) : i(iter.i) {}
-
-        const_iterator_base operator ++ (int) {
-            const_iterator_base iter = *this;
-            ++i;
+        const_iterator_adaptor operator ++ (int) {
+            const_iterator_adaptor iter = *this;
+            policy.increment(i);
             return iter;
         }
 
-        const_iterator_base& operator ++ () {
-            ++i; return *this;
+        const_iterator_adaptor& operator ++ () {
+            policy.increment(i); return *this;
         }
 
-        const_iterator_base operator -- (int) {
-            const_iterator_base iter = *this;
-            --i;
+        const_iterator_adaptor operator -- (int) {
+            const_iterator_adaptor iter = *this;
+            policy.decrement(i);
             return iter;
         }
 
-        const_iterator_base& operator -- () {
-            --i; return *this;
+        const_iterator_adaptor& operator -- () {
+            policy.decrement(i); return *this;
         }
 
         void operator += (int_t n) {
-            i += n;
+            policy.advance(i, n);
         }
 
         void operator -= (int_t n) {
-            i -= n;
+            policy.advance(i, -n);
         }
 
-        const_iterator_base operator + (int_t n) const {
-            const_iterator_base iter = *this;
-            iter.i += n;
+        const_iterator_adaptor operator + (int_t n) const {
+            const_iterator_adaptor iter = *this;
+            iter += n;
             return iter;
         }
 
-        const_iterator_base operator - (int_t n) const {
-            const_iterator_base iter = *this;
-            iter.i -= n;
+        const_iterator_adaptor operator - (int_t n) const {
+            const_iterator_adaptor iter = *this;
+            iter -= n;
             return iter;
         }
 
-        std::ptrdiff_t operator - (const const_iterator_base& iter) const {
-            return i - iter.i;
+        std::ptrdiff_t operator - (const const_iterator_adaptor& iter) const {
+            return policy.difference(i, iter.i);
         }
 
-        bool operator == (const const_iterator_base& iter) const {
+        bool operator == (const const_iterator_adaptor& iter) const {
             return i == iter.i;
         }
 
-        bool operator != (const const_iterator_base& iter) const {
+        bool operator != (const const_iterator_adaptor& iter) const {
             return i != iter.i;
         }
 
-        bool operator < (const const_iterator_base& iter) const {
+        bool operator < (const const_iterator_adaptor& iter) const {
             return i < iter.i;
         }
 
-        bool operator <= (const const_iterator_base& iter) const {
+        bool operator <= (const const_iterator_adaptor& iter) const {
             return i <= iter.i;
         }
 
-        bool operator > (const const_iterator_base& iter) const {
+        bool operator > (const const_iterator_adaptor& iter) const {
             return i > iter.i;
         }
 
-        bool operator >= (const const_iterator_base& iter) const {
+        bool operator >= (const const_iterator_adaptor& iter) const {
             return i >= iter.i;
         }
 
-        auto operator * () -> decltype(P::get_obj(i)) {
-            return P::get_obj(i);
+        auto operator * () -> decltype(policy.get_obj(i)) {
+            return policy.get_obj(i);
         }
 
-        auto operator -> () -> decltype(P::get_ptr(i)) {
-            return P::get_ptr(i);
+        auto operator -> () -> decltype(policy.get_ptr(i)) {
+            return policy.get_ptr(i);
         }
     };
 
     template<typename T, typename C, typename P>
-    class iterator_base {
-        friend C;
-        template<typename N, typename K, typename V>
-        friend class const_iterator_base;
-        template<typename N, typename K, typename V>
-        friend class reverse_iterator_base;
-
+    struct iterator_adaptor {
+        P policy;
         T i;
 
         T stdbase() {
             return i;
         }
 
-        iterator_base(const T& j) : i(j) {}
+        iterator_adaptor() = default;
+        iterator_adaptor(const T& j, P p = P()) : policy(std::move(p)), i(j) {
+            policy.initialize(i);
+        }
 
-    public :
-        iterator_base() {}
-
-        iterator_base operator ++ (int) {
-            iterator_base iter = *this;
-            ++i;
+        iterator_adaptor operator ++ (int) {
+            iterator_adaptor iter = *this;
+            policy.increment(i);
             return iter;
         }
 
-        iterator_base& operator ++ () {
-            ++i; return *this;
+        iterator_adaptor& operator ++ () {
+            policy.increment(i); return *this;
         }
 
-        iterator_base operator -- (int) {
-            iterator_base iter = *this;
-            --i;
+        iterator_adaptor operator -- (int) {
+            iterator_adaptor iter = *this;
+            policy.decrement(i);
             return iter;
         }
 
-        iterator_base& operator -- () {
-            --i; return *this;
+        iterator_adaptor& operator -- () {
+            policy.decrement(i); return *this;
         }
 
         void operator += (int_t n) {
-            i += n;
+            policy.advance(i, n);
         }
 
         void operator -= (int_t n) {
-            i -= n;
+            policy.advance(i, -n);
         }
 
-        iterator_base operator + (int_t n) const {
-            iterator_base iter = *this;
-            iter.i += n;
+        iterator_adaptor operator + (int_t n) const {
+            iterator_adaptor iter = *this;
+            iter += n;
             return iter;
         }
 
-        iterator_base operator - (int_t n) const {
-            iterator_base iter = *this;
-            iter.i -= n;
+        iterator_adaptor operator - (int_t n) const {
+            iterator_adaptor iter = *this;
+            iter -= n;
             return iter;
         }
 
-        std::ptrdiff_t operator - (const iterator_base& iter) const {
-            return i - iter.i;
+        std::ptrdiff_t operator - (const iterator_adaptor& iter) const {
+            return policy.difference(i, iter.i);
         }
 
-        bool operator == (const iterator_base& iter) const {
+        bool operator == (const iterator_adaptor& iter) const {
             return i == iter.i;
         }
 
-        bool operator != (const iterator_base& iter) const {
+        bool operator != (const iterator_adaptor& iter) const {
             return i != iter.i;
         }
 
-        bool operator < (const iterator_base& iter) const {
+        bool operator < (const iterator_adaptor& iter) const {
             return i < iter.i;
         }
 
-        bool operator <= (const iterator_base& iter) const {
+        bool operator <= (const iterator_adaptor& iter) const {
             return i <= iter.i;
         }
 
-        bool operator > (const iterator_base& iter) const {
+        bool operator > (const iterator_adaptor& iter) const {
             return i > iter.i;
         }
 
-        bool operator >= (const iterator_base& iter) const {
+        bool operator >= (const iterator_adaptor& iter) const {
             return i >= iter.i;
         }
 
-        auto operator * () -> decltype(P::get_obj(i)) {
-            return P::get_obj(i);
+        auto operator * () -> decltype(policy.get_obj(i)) {
+            return policy.get_obj(i);
         }
 
-        auto operator -> () -> decltype(P::get_ptr(i)) {
-            return P::get_ptr(i);
+        auto operator -> () -> decltype(policy.get_ptr(i)) {
+            return policy.get_ptr(i);
         }
     };
 
     template<typename T, typename C, typename P>
-    class reverse_iterator_base;
+    struct reverse_iterator_adaptor;
 
     template<typename T, typename C, typename P>
-    class const_reverse_iterator_base {
-        friend C;
-
+    struct const_reverse_iterator_adaptor {
+        P policy;
         T i;
 
         T stdbase() {
             return i;
         }
 
-        const_reverse_iterator_base(const T& j) : i(j) {}
+        const_reverse_iterator_adaptor() = default;
+        const_reverse_iterator_adaptor(const T& j, P p = P()) : policy(std::move(p)), i(j) {
+            policy.initialize(i);
+        }
+        const_reverse_iterator_adaptor(const reverse_iterator_adaptor<T,C,P>& iter) : policy(iter.policy), i(iter.i) {}
 
-    public :
-        const_reverse_iterator_base() {}
-        const_reverse_iterator_base(const reverse_iterator_base<T,C,P>& iter) : i(iter.i) {}
-
-        const_reverse_iterator_base operator ++ (int) {
-            const_reverse_iterator_base iter = *this;
-            ++i;
+        const_reverse_iterator_adaptor operator ++ (int) {
+            const_reverse_iterator_adaptor iter = *this;
+            policy.increment(i);
             return iter;
         }
 
-        const_reverse_iterator_base& operator ++ () {
-            ++i; return *this;
+        const_reverse_iterator_adaptor& operator ++ () {
+            policy.increment(i); return *this;
         }
 
-        const_reverse_iterator_base operator -- (int) {
-            const_reverse_iterator_base iter = *this;
-            --i;
+        const_reverse_iterator_adaptor operator -- (int) {
+            const_reverse_iterator_adaptor iter = *this;
+            policy.decrement(i);
             return iter;
         }
 
-        const_reverse_iterator_base& operator -- () {
-            --i; return *this;
+        const_reverse_iterator_adaptor& operator -- () {
+            policy.decrement(i); return *this;
         }
 
         void operator += (int_t n) {
-            i += n;
+            policy.advance(i, n);
         }
 
         void operator -= (int_t n) {
-            i -= n;
+            policy.advance(i, -n);
         }
 
-        const_reverse_iterator_base operator + (int_t n) const {
-            const_reverse_iterator_base iter = *this;
-            iter.i += n;
+        const_reverse_iterator_adaptor operator + (int_t n) const {
+            const_reverse_iterator_adaptor iter = *this;
+            iter += n;
             return iter;
         }
 
-        const_reverse_iterator_base operator - (int_t n) const {
-            const_reverse_iterator_base iter = *this;
-            iter.i -= n;
+        const_reverse_iterator_adaptor operator - (int_t n) const {
+            const_reverse_iterator_adaptor iter = *this;
+            iter -= n;
             return iter;
         }
 
-        std::ptrdiff_t operator - (const const_reverse_iterator_base& iter) const {
-            return i - iter.i;
+        std::ptrdiff_t operator - (const const_reverse_iterator_adaptor& iter) const {
+            return policy.difference(i, iter.i);
         }
 
-        bool operator == (const const_reverse_iterator_base& iter) const {
+        bool operator == (const const_reverse_iterator_adaptor& iter) const {
             return i == iter.i;
         }
 
-        bool operator != (const const_reverse_iterator_base& iter) const {
+        bool operator != (const const_reverse_iterator_adaptor& iter) const {
             return i != iter.i;
         }
 
-        bool operator < (const const_reverse_iterator_base& iter) const {
+        bool operator < (const const_reverse_iterator_adaptor& iter) const {
             return i < iter.i;
         }
 
-        bool operator <= (const const_reverse_iterator_base& iter) const {
+        bool operator <= (const const_reverse_iterator_adaptor& iter) const {
             return i <= iter.i;
         }
 
-        bool operator > (const const_reverse_iterator_base& iter) const {
+        bool operator > (const const_reverse_iterator_adaptor& iter) const {
             return i > iter.i;
         }
 
-        bool operator >= (const const_reverse_iterator_base& iter) const {
+        bool operator >= (const const_reverse_iterator_adaptor& iter) const {
             return i >= iter.i;
         }
 
-        auto operator * () -> decltype(P::get_obj(i)) {
-            return P::get_obj(i);
+        auto operator * () -> decltype(policy.get_obj(i)) {
+            return policy.get_obj(i);
         }
 
-        auto operator -> () -> decltype(P::get_ptr(i)) {
-            return P::get_ptr(i);
+        auto operator -> () -> decltype(policy.get_ptr(i)) {
+            return policy.get_ptr(i);
         }
 
-        const_iterator_base<T,C,P> base() {
-            return const_iterator_base<T,C,P>(i.base());
+        const_iterator_adaptor<T,C,P> base() {
+            return const_iterator_adaptor<T,C,P>(i.base());
         }
     };
 
     template<typename T, typename C, typename P>
-    class reverse_iterator_base {
-        friend C;
-        template<typename N, typename K, typename V>
-        friend class const_reverse_iterator_base;
-
+    struct reverse_iterator_adaptor {
+        P policy;
         T i;
 
         T stdbase() {
             return i;
         }
 
-        reverse_iterator_base(const T& j) : i(j) {}
+        reverse_iterator_adaptor() = default;
+        reverse_iterator_adaptor(const T& j, P p = P()) : policy(std::move(p)), i(j) {
+            policy.initialize(i);
+        }
 
-    public :
-        reverse_iterator_base() {}
-
-        reverse_iterator_base operator ++ (int) {
-            reverse_iterator_base iter = *this;
-            ++i;
+        reverse_iterator_adaptor operator ++ (int) {
+            reverse_iterator_adaptor iter = *this;
+            policy.increment(i);
             return iter;
         }
 
-        reverse_iterator_base& operator ++ () {
-            ++i; return *this;
+        reverse_iterator_adaptor& operator ++ () {
+            policy.increment(i); return *this;
         }
 
-        reverse_iterator_base operator -- (int) {
-            reverse_iterator_base iter = *this;
-            --i;
+        reverse_iterator_adaptor operator -- (int) {
+            reverse_iterator_adaptor iter = *this;
+            policy.decrement(i);
             return iter;
         }
 
-        reverse_iterator_base& operator -- () {
-            --i; return *this;
+        reverse_iterator_adaptor& operator -- () {
+            policy.decrement(i); return *this;
         }
 
         void operator += (int_t n) {
-            i += n;
+            policy.advance(i, n);
         }
 
         void operator -= (int_t n) {
-            i -= n;
+            policy.advance(i, -n);
         }
 
-        reverse_iterator_base operator + (int_t n) const {
-            reverse_iterator_base iter = *this;
-            iter.i += n;
+        reverse_iterator_adaptor operator + (int_t n) const {
+            reverse_iterator_adaptor iter = *this;
+            iter += n;
             return iter;
         }
 
-        reverse_iterator_base operator - (int_t n) const {
-            reverse_iterator_base iter = *this;
-            iter.i -= n;
+        reverse_iterator_adaptor operator - (int_t n) const {
+            reverse_iterator_adaptor iter = *this;
+            iter -= n;
             return iter;
         }
 
-        std::ptrdiff_t operator - (const reverse_iterator_base& iter) const {
-            return i - iter.i;
+        std::ptrdiff_t operator - (const reverse_iterator_adaptor& iter) const {
+            return policy.difference(i, iter.i);
         }
 
-        bool operator == (const reverse_iterator_base& iter) const {
+        bool operator == (const reverse_iterator_adaptor& iter) const {
             return i == iter.i;
         }
 
-        bool operator != (const reverse_iterator_base& iter) const {
+        bool operator != (const reverse_iterator_adaptor& iter) const {
             return i != iter.i;
         }
 
-        bool operator < (const reverse_iterator_base& iter) const {
+        bool operator < (const reverse_iterator_adaptor& iter) const {
             return i < iter.i;
         }
 
-        bool operator <= (const reverse_iterator_base& iter) const {
+        bool operator <= (const reverse_iterator_adaptor& iter) const {
             return i <= iter.i;
         }
 
-        bool operator > (const reverse_iterator_base& iter) const {
+        bool operator > (const reverse_iterator_adaptor& iter) const {
             return i > iter.i;
         }
 
-        bool operator >= (const reverse_iterator_base& iter) const {
+        bool operator >= (const reverse_iterator_adaptor& iter) const {
             return i >= iter.i;
         }
 
-        auto operator * () -> decltype(P::get_obj(i)) {
-            return P::get_obj(i);
+        auto operator * () -> decltype(policy.get_obj(i)) {
+            return policy.get_obj(i);
         }
 
-        auto operator -> () -> decltype(P::get_ptr(i)) {
-            return P::get_ptr(i);
+        auto operator -> () -> decltype(policy.get_ptr(i)) {
+            return policy.get_ptr(i);
         }
 
-        iterator_base<T,C,P> base() {
-            return iterator_base<T,C,P>(i.base());
+        iterator_adaptor<T,C,P> base() {
+            return iterator_adaptor<T,C,P>(i.base());
         }
     };
 }

@@ -28,7 +28,9 @@ namespace meta {
 
     // Class holding an integer value.
     template<std::size_t I>
-    struct cte_t {};
+    struct cte_t {
+        static const std::size_t value = I;
+    };
 }
 
 namespace impl {
@@ -50,7 +52,7 @@ namespace impl {
 namespace meta {
     // Return the element N of a parameter list
     template<std::size_t N, typename ... Args>
-    auto get(Args&& ... args) -> 
+    auto get(Args&& ... args) ->
         decltype(impl::meta_impl::get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...)) {
         return impl::meta_impl::get_(cte_t<0>(), cte_t<N>(), std::forward<Args>(args)...);
     }
@@ -262,7 +264,7 @@ namespace impl {
 
 namespace meta {
     template<typename Filter, typename List>
-    using filter_type_list = 
+    using filter_type_list =
         typename impl::meta_impl::filter_type_list_t<Filter, Filter, List>::type;
 
     //////////////////////////////////////
@@ -356,6 +358,31 @@ namespace meta {
 
     template<typename List>
     struct are_any_true : bool_constant<!are_all_false<List>::value> {};
+
+    //////////////////////////////////////
+    //
+    // count<List>
+    //
+    // Return an integer constant holding the number of 'true' values in a boolean list
+    //
+    // Examples:
+    // count<bool_list<true, true, true>>
+    // -> cte_t<3>
+    //
+    // count<bool_list<true, false, true>>
+    // -> cte_t<2>
+    //
+    //////////////////////////////////////
+
+    template<typename T>
+    struct count;
+
+    template<>
+    struct count<bool_list<>> : cte_t<0> {};
+
+    template<bool B1, bool ... B>
+    struct count<bool_list<B1, B...>> :
+        cte_t<(B1 ? 1 : 0) + count<bool_list<B...>>::value> {};
 }
 
     //////////////////////////////////////
@@ -385,7 +412,7 @@ namespace impl {
 
 namespace meta {
     template<typename List, template<typename> class Function>
-    using unary_apply_type_to_type_list = 
+    using unary_apply_type_to_type_list =
         typename impl::meta_impl::unary_apply_type_to_type_list_t<List, Function>::type;
 }
 
@@ -416,11 +443,11 @@ namespace impl {
 
 namespace meta {
     template<typename List, typename T, template<typename> class Function>
-    using unary_apply_type_to_value_list = 
+    using unary_apply_type_to_value_list =
         typename impl::meta_impl::unary_apply_type_to_value_list_t<List, T, Function>::type;
 
     template<typename List, template<typename> class Function>
-    using unary_apply_type_to_bool_list = 
+    using unary_apply_type_to_bool_list =
         typename impl::meta_impl::unary_apply_type_to_value_list_t<List, bool, Function>::type;
 }
 
@@ -453,7 +480,7 @@ namespace impl {
 
 namespace meta {
     template<typename List, template<typename,typename> class Function, typename A1>
-    using binary_second_apply_type_to_type_list = 
+    using binary_second_apply_type_to_type_list =
         typename impl::meta_impl::binary_second_apply_type_to_type_list_t<List, Function, A1>::type;
 }
 
@@ -484,11 +511,11 @@ namespace impl {
 
 namespace meta {
     template<typename List, typename T, template<typename,typename> class Function, typename A1>
-    using binary_second_apply_type_to_value_list = 
+    using binary_second_apply_type_to_value_list =
         typename impl::meta_impl::binary_second_apply_type_to_value_list_t<List, T, Function, A1>::type;
 
     template<typename List, template<typename,typename> class Function, typename A1>
-    using binary_second_apply_type_to_bool_list = 
+    using binary_second_apply_type_to_bool_list =
         binary_second_apply_type_to_value_list<List, bool, Function, A1>;
 }
 
@@ -521,7 +548,7 @@ namespace impl {
 
 namespace meta {
     template<typename List, template<typename,typename> class Function, typename A2>
-    using binary_first_apply_type_to_type_list = 
+    using binary_first_apply_type_to_type_list =
         typename impl::meta_impl::binary_first_apply_type_to_type_list_t<List, Function, A2>::type;
 }
 
@@ -552,11 +579,11 @@ namespace impl {
 
 namespace meta {
     template<typename List, typename T, template<typename,typename> class Function, typename A2>
-    using binary_first_apply_type_to_value_list = 
+    using binary_first_apply_type_to_value_list =
         typename impl::meta_impl::binary_first_apply_type_to_value_list_t<List, T, Function, A2>::type;
 
     template<typename List, template<typename,typename> class Function, typename A2>
-    using binary_first_apply_type_to_bool_list = 
+    using binary_first_apply_type_to_bool_list =
         binary_first_apply_type_to_value_list<List, bool, Function, A2>;
 
     //////////////////////////////////////

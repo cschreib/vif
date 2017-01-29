@@ -615,8 +615,9 @@ namespace phypp {
 
         #undef OPERATOR
 
-        using iterator = typename impl::vec_iterator_type<vec>::iterator;
-        using const_iterator = typename impl::vec_iterator_type<vec>::const_iterator;
+        using iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::iterator;
+        using const_iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::const_iterator;
+
 
         iterator begin() {
             return data.begin();
@@ -632,6 +633,85 @@ namespace phypp {
 
         const_iterator end() const {
             return data.end();
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::iterator begin(Property p = Property()) {
+            return typename impl::vec_iterator_type<vec,Property>::iterator(
+                data.begin(), p
+            );
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::iterator end(Property p = Property()) {
+            return typename impl::vec_iterator_type<vec,Property>::iterator(
+                data.end(), p
+            );
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::const_iterator begin(Property p = Property()) const {
+            return typename impl::vec_iterator_type<vec,Property>::const_iterator(
+                data.begin(), p
+            );
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::const_iterator end(Property p = Property()) const {
+            return typename impl::vec_iterator_type<vec,Property>::const_iterator(
+                data.end(), p
+            );
+        }
+
+        template<typename T>
+        struct strided_range {
+            using iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::iterator;
+            using const_iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::const_iterator;
+
+            T& parent;
+            impl::strided_iterator_policy<typename std::decay<T>::type> begin_policy;
+            impl::strided_iterator_policy<typename std::decay<T>::type> end_policy;
+
+            template<typename ... Args>
+            strided_range(T& v, const Args& ... i) : parent(v) {
+                static_assert(impl::vec_access::accessed_dim<Args...>::value == Dim,
+                    "wrong number of indices for this vector");
+                static_assert(impl::vec_access::count_placeholder<Args...>::value <= 1,
+                    "strides can only iterate over one dimension at a time");
+                static_assert(impl::vec_access::count_placeholder<Args...>::value >= 1,
+                    "stride(...) must contain at least one placeholder '_'");
+                impl::vec_access::get_stride_offset(parent, begin_policy, end_policy, i...);
+            }
+
+            template<typename ... Args>
+            iterator begin() {
+                return parent.begin(begin_policy);
+            }
+
+            template<typename ... Args>
+            const_iterator begin() const {
+                return parent.begin(begin_policy);
+            }
+
+            template<typename ... Args>
+            iterator end() {
+                return parent.begin(end_policy);
+            }
+
+            template<typename ... Args>
+            const_iterator end() const {
+                return parent.begin(end_policy);
+            }
+        };
+
+        template<typename ... Args>
+        strided_range<vec> stride(const Args& ... i) {
+            return strided_range<vec>(*this, i...);
+        }
+
+        template<typename ... Args>
+        strided_range<const vec> stride(const Args& ... i) const {
+            return strided_range<const vec>(*this, i...);
         }
     };
 
@@ -1143,11 +1223,8 @@ namespace phypp {
 
         #undef OPERATOR
 
-        using base_iterator = typename vtype::iterator;
-        using base_const_iterator = typename vtype::const_iterator;
-
-        using iterator = impl::ptr_iterator_base<base_iterator, vec>;
-        using const_iterator = impl::const_ptr_iterator_base<base_const_iterator, vec>;
+        using iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::iterator;
+        using const_iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::const_iterator;
 
         iterator begin() {
             return data.begin();
@@ -1165,6 +1242,84 @@ namespace phypp {
             return data.end();
         }
 
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::iterator begin(Property p = Property()) {
+            return typename impl::vec_iterator_type<vec,Property>::iterator(
+                data.begin(), p
+            );
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::iterator end(Property p = Property()) {
+            return typename impl::vec_iterator_type<vec,Property>::iterator(
+                data.end(), p
+            );
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::const_iterator begin(Property p = Property()) const {
+            return typename impl::vec_iterator_type<vec,Property>::const_iterator(
+                data.begin(), p
+            );
+        }
+
+        template<typename Property>
+        typename impl::vec_iterator_type<vec,Property>::const_iterator end(Property p = Property()) const {
+            return typename impl::vec_iterator_type<vec,Property>::const_iterator(
+                data.end(), p
+            );
+        }
+
+        template<typename T>
+        struct strided_range {
+            using iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::iterator;
+            using const_iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::const_iterator;
+
+            T& parent;
+            impl::strided_iterator_policy<typename std::decay<T>::type> begin_policy;
+            impl::strided_iterator_policy<typename std::decay<T>::type> end_policy;
+
+            template<typename ... Args>
+            strided_range(T& v, const Args& ... i) : parent(v) {
+                static_assert(impl::vec_access::accessed_dim<Args...>::value == Dim,
+                    "wrong number of indices for this vector");
+                static_assert(impl::vec_access::count_placeholder<Args...>::value <= 1,
+                    "strides can only iterate over one dimension at a time");
+                static_assert(impl::vec_access::count_placeholder<Args...>::value >= 1,
+                    "stride(...) must contain at least one placeholder '_'");
+                impl::vec_access::get_stride_offset(parent, begin_policy, end_policy, i...);
+            }
+
+            template<typename ... Args>
+            iterator begin() {
+                return parent.begin(begin_policy);
+            }
+
+            template<typename ... Args>
+            const_iterator begin() const {
+                return parent.begin(begin_policy);
+            }
+
+            template<typename ... Args>
+            iterator end() {
+                return parent.begin(end_policy);
+            }
+
+            template<typename ... Args>
+            const_iterator end() const {
+                return parent.begin(end_policy);
+            }
+        };
+
+        template<typename ... Args>
+        strided_range<vec> stride(const Args& ... i) {
+            return strided_range<vec>(*this, i...);
+        }
+
+        template<typename ... Args>
+        strided_range<const vec> stride(const Args& ... i) const {
+            return strided_range<const vec>(*this, i...);
+        }
     };
 
 
