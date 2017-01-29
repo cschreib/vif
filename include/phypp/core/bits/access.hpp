@@ -604,6 +604,50 @@ namespace vec_access {
 
         return v;
     }
+
+    template<typename ... Args>
+    using count_placeholder = meta::count<meta::binary_second_apply_type_to_value_list<
+        meta::type_list<typename std::decay<Args>::type...>, bool, std::is_same, placeholder_t>>;
+
+    template<typename V, typename P, typename ... Args>
+    void get_stride_offset_(V&, P&, P&, bool, uint_t) {}
+
+    template<typename V, typename P, typename T, typename ... Args>
+    void get_stride_offset_(V& parent, P& bp, P& ep, bool found, uint_t d,
+        const T& id, const Args& ... i);
+
+    template<typename V, typename P, typename ... Args>
+    void get_stride_offset_(V& parent, P& bp, P& ep, bool, uint_t d,
+        const placeholder_t&, const Args& ... i) {
+        uint_t pitch = 1;
+        for (uint_t k = d+1; k < parent.dims.size(); ++k) {
+            pitch *= parent.dims[k];
+        }
+
+        bp.stride = pitch;
+        ep.stride = pitch;
+        ep.offset += parent.dims[d]*pitch;
+
+        get_stride_offset_(parent, bp, ep, true, d+1, i...);
+    }
+
+    template<typename V, typename P, typename T, typename ... Args>
+    void get_stride_offset_(V& parent, P& bp, P& ep, bool found, uint_t d,
+        const T& id, const Args& ... i) {
+        uint_t pitch = 1;
+        for (uint_t k = d+1; k < parent.dims.size(); ++k) {
+            pitch *= parent.dims[k];
+        }
+
+        bp.offset += id*pitch;
+        ep.offset += id*pitch;
+        get_stride_offset_(parent, bp, ep, found, d+1, i...);
+    }
+
+    template<typename V, typename P, typename ... Args>
+    void get_stride_offset(V& parent, P& bp, P& ep, const Args& ... i) {
+        get_stride_offset_(parent, bp, ep, false, 0, i...);
+    }
 }
 }
 }
