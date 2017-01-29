@@ -19,7 +19,7 @@ int phypp_main(int argc, char* argv[]) {
     ));
 
     // Forward options
-    astro::regrid_options opts;
+    astro::regrid_params opts;
     opts.verbose = verbose;
     opts.conserve_flux = conserve_flux;
 

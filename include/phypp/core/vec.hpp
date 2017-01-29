@@ -345,49 +345,55 @@ namespace phypp {
             return reinterpret_cast<const Type&>(data[to_idx(i)]);
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T>& i) {
             vec<1,Type*> v(impl::vec_ref_tag, *this);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = impl::ptr<Type>(data[to_idx(i.safe[j])]);
             }
             return v;
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T*>& i) {
             vec<1,Type*> v(impl::vec_ref_tag, *this);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = impl::ptr<Type>(data[to_idx(i.safe[j])]);
             }
             return v;
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
+            typename std::enable_if<std::is_integral<T>::value>::type>
+        vec<1,Type*> operator [] (std::initializer_list<T> l) {
+            return operator[](vec<1,T>{l});
+        }
+
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T>& i) const {
             vec<1,const Type*> v(impl::vec_ref_tag, *this);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = impl::ptr<Type>(data[to_idx(i.safe[j])]);
             }
             return v;
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
             vec<1,const Type*> v(impl::vec_ref_tag, *this);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = impl::ptr<Type>(data[to_idx(i.safe[j])]);
             }
             return v;
@@ -458,49 +464,55 @@ namespace phypp {
                 return reinterpret_cast<const Type&>(parent.data[i]);
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,Type*> operator [] (const vec<1,T>& i) {
                 vec<1,Type*> v(impl::vec_ref_tag, parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = impl::ptr<Type>(parent.data[i.safe[j]]);
                 }
                 return v;
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
+                typename std::enable_if<std::is_integral<T>::value>::type>
+            vec<1,Type*> operator [] (std::initializer_list<T> l) {
+                return operator[](vec<1,T>{l});
+            }
+
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,Type*> operator [] (const vec<1,T*>& i) {
                 vec<1,Type*> v(impl::vec_ref_tag, parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = impl::ptr<Type>(parent.data[i.safe[j]]);
                 }
                 return v;
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,const Type*> operator [] (const vec<1,T>& i) const {
                 vec<1,const Type*> v(impl::vec_ref_tag, parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = impl::ptr<Type>(parent.data[i.safe[j]]);
                 }
                 return v;
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
                 vec<1,const Type*> v(impl::vec_ref_tag, parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = impl::ptr<Type>(parent.data[i.safe[j]]);
                 }
                 return v;
@@ -939,49 +951,55 @@ namespace phypp {
             return *data[to_idx(i)];
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T>& i) {
             vec<1,Type*> v(impl::vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = data[to_idx(i.safe[j])];
             }
             return v;
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
+            typename std::enable_if<std::is_integral<T>::value>::type>
+        vec<1,Type*> operator [] (std::initializer_list<T> l) {
+            return operator[](vec<1,T>{l});
+        }
+
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,Type*> operator [] (const vec<1,T*>& i) {
             vec<1,Type*> v(impl::vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = data[to_idx(i.safe[j])];
             }
             return v;
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T>& i) const {
             vec<1,const Type*> v(impl::vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = data[to_idx(i.safe[j])];
             }
             return v;
         }
 
-        template<typename T, typename enable =
+        template<typename T = uint_t, typename enable =
             typename std::enable_if<std::is_integral<T>::value>::type>
         vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
             vec<1,const Type*> v(impl::vec_ref_tag, parent);
             v.data.resize(i.data.size());
             v.dims[0] = i.data.size();
-            for (uint_t j = 0; j < i.data.size(); ++j) {
+            for (uint_t j : range(i)) {
                 v.data[j] = data[to_idx(i.safe[j])];
             }
             return v;
@@ -1052,49 +1070,55 @@ namespace phypp {
                 return *parent.data[i];
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,Type*> operator [] (const vec<1,T>& i) {
                 vec<1,Type*> v(impl::vec_ref_tag, parent.parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = parent.data[i.safe[j]];
                 }
                 return v;
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
+                typename std::enable_if<std::is_integral<T>::value>::type>
+            vec<1,Type*> operator [] (std::initializer_list<T> l) {
+                return operator[](vec<1,T>{l});
+            }
+
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,Type*> operator [] (const vec<1,T*>& i) {
                 vec<1,Type*> v(impl::vec_ref_tag, parent.parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = parent.data[i.safe[j]];
                 }
                 return v;
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,const Type*> operator [] (const vec<1,T>& i) const {
                 vec<1,const Type*> v(impl::vec_ref_tag, parent.parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = parent.data[i.safe[j]];
                 }
                 return v;
             }
 
-            template<typename T, typename enable =
+            template<typename T = uint_t, typename enable =
                 typename std::enable_if<std::is_unsigned<T>::value>::type>
             vec<1,const Type*> operator [] (const vec<1,T*>& i) const {
                 vec<1,const Type*> v(impl::vec_ref_tag, parent.parent);
                 v.data.resize(i.data.size());
                 v.dims[0] = i.data.size();
-                for (uint_t j = 0; j < i.data.size(); ++j) {
+                for (uint_t j : range(i)) {
                     v.data[j] = parent.data[i.safe[j]];
                 }
                 return v;

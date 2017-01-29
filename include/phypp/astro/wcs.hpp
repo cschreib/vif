@@ -4,6 +4,8 @@
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcserr.h>
+#include <wcslib/dis.h>
+#include <wcslib/tab.h>
 #endif
 
 #include "phypp/core/error.hpp"
@@ -223,6 +225,107 @@ namespace astro {
 
         return collapse(nkeys);
     }
+}
+
+namespace impl {
+namespace wcs_impl {
+    inline void cure_header(fits::header& hdr) {
+        auto keys = fits::parse_header(hdr);
+
+        bool cpdis_err = false;
+        bool sipdis_err = false;
+
+        vec1b keep = replicate(true, keys.size());
+        for (uint_t i : range(keys)) {
+            auto& k = keys[i];
+
+            if (regex_match(k.key, "^CUNIT[0-9]+$")) {
+                // Fix non-standard units
+                std::string v = trim(k.value, "' ");
+                if (v == "micron" || v == "microns") {
+                    k.value = "'um'";
+                } else if (v == "degree" || v == "degrees") {
+                    k.value = "'deg'";
+                }
+            } else if (regex_match(k.key, "^C[PQ]DIS[0-9]+$") && regex_match(k.value, "Lookup")) {
+                // Identify use of lookup distortion which is not supported by WCSLIB right now
+                if (!cpdis_err) {
+                    warning("this header contains one or more CPDIS keyword with value "
+                        "unsupported by WCSlib (", k.value, ")");
+                    warning("the keywords will be removed and distortion will be ignored");
+                    cpdis_err = true;
+                }
+            } else if (regex_match(k.key, "^[AB]_([0-9]+_[0-9]+|ORDER)$")) {
+                // Identify use of SIP distortion with A and B matrices which gives incorrect results
+                if (!sipdis_err) {
+                    warning("this header contains one or more SIP distortion keyword "
+                        "which are not properly handled (A_*_* and B_*_* matrices)");
+                    warning("the keywords will be removed and distortion will be ignored");
+                    sipdis_err = true;
+                }
+            }
+        }
+
+        if (cpdis_err) {
+            for (uint_t i : range(keys)) {
+                auto& k = keys[i];
+
+                if (regex_match(k.key, "^(D[PQ]|D2IM|(C[PQ]|D2IM)(ERR|DIS|EXT))[0-9]+$")) {
+                    keep[i] = false;
+                }
+            }
+        }
+
+        if (sipdis_err) {
+            for (uint_t i : range(keys)) {
+                auto& k = keys[i];
+
+                if (regex_match(k.key, "^[AB]_([0-9]+_[0-9]+|ORDER)$")) {
+                    keep[i] = false;
+                }
+            }
+        }
+
+        hdr = fits::serialize_header(keys[where(keep)]);
+    }
+}
+}
+
+namespace astro {
+
+    enum class axis_unit {
+        native,
+        wcslib_default,
+
+        wave_m,
+        wave_cm,
+        wave_mm,
+        wave_um,
+        wave_nm,
+        wave_Angstrom,
+
+        freq_Hz,
+        freq_kHz,
+        freq_MHz,
+        freq_GHz,
+        freq_THz,
+
+        sky_deg,
+        sky_rad
+    };
+
+    enum class axis_type {
+        spatial, wave, freq, unknown
+    };
+
+    inline std::string axis_type_string(axis_type type) {
+        switch (type) {
+            case axis_type::spatial : return "spatial";
+            case axis_type::wave :    return "wavelength";
+            case axis_type::freq :    return "frequency";
+            case axis_type::unknown : return "unknown";
+        }
+    }
 
 #ifndef NO_WCSLIB
     // Extract astrometry from a FITS image header
@@ -231,16 +334,25 @@ namespace astro {
         int nwcs  = 0;
 
         vec1u dims;
+        vec1b has_unit;
+        vec<1,axis_type> type;
 
-        uint_t ra_axis = 0, dec_axis = 1;
-        uint_t x_axis = 0, y_axis = 1;
+        uint_t ra_axis = 1, dec_axis = 0;
+        uint_t x_axis = 1, y_axis = 0;
 
         explicit wcs(uint_t naxis = 2) : w(new wcsprm), nwcs(1) {
             w->flag = -1;
             wcsini(true, naxis, w);
+
+            dims = replicate(0, naxis);
+            has_unit = replicate(false, naxis);
+            type = replicate(axis_type::unknown, naxis);
         }
 
-        explicit wcs(const fits::header& hdr) {
+        explicit wcs(fits::header hdr) {
+            // Cure header for ingestion by WCSlib
+            impl::wcs_impl::cure_header(hdr);
+
             // Enable error reporting
             wcserr_enable(1);
 
@@ -252,44 +364,88 @@ namespace astro {
             );
 
             if ((success != 0 || nwcs == 0) && w) {
+                error("could not parse WCS data from header");
+                report_errors();
                 wcsvfree(&nwcs, &w);
                 w = nullptr;
+                return;
             }
 
-            if (w) {
-                // Get dimensions from the FITS header
-                uint_t naxis = axis_count();
-                dims.resize(naxis);
-                for (uint_t i : range(dims)) {
-                    uint_t dim = npos;
-                    if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
-                        dims[dims.size()-1-i] = dim;
-                    }
+            if (!w) {
+                if (nwcs == 0) {
+                    return;
                 }
 
-                // Identify RA and Dec axis
-                ra_axis = x_axis = find_axis("RA");
-                dec_axis = y_axis = find_axis("DEC");
+                error("could not parse WCS data from header");
+                switch (success) {
+                    case 2: error("memory allocation failure"); break;
+                    case 4: error("fatal error in the Flex parser"); break;
+                    default: error("unknown error"); break;
+                }
+
+                phypp_check(success != 0, "WCSlib failed to read this header");
+
+                return;
+            }
+
+            // Get dimensions from the FITS header
+            uint_t naxis = axis_count();
+            dims.resize(naxis);
+            for (uint_t i : range(dims)) {
+                uint_t dim = npos;
+                if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
+                    dims[naxis-1-i] = dim;
+                }
+            }
+
+            // Check if axes have units (WCSlib will be silent about that)
+            has_unit.resize(naxis);
+            for (uint_t i : range(dims)) {
+                has_unit[naxis-1-i] = (trim(w->cunit[i]) != "");
+            }
+
+            // Get types of axis
+            type = replicate(axis_type::unknown, naxis);
+            for (uint_t i : range(dims)) {
+                std::string tmp = split(w->ctype[i], "-")[0];
+                if (tmp == "RA") {
+                    type[naxis-1-i] = axis_type::spatial;
+                } else if (tmp == "DEC") {
+                    type[naxis-1-i] = axis_type::spatial;
+                } else if (tmp == "WAVE") {
+                    type[naxis-1-i] = axis_type::wave;
+                } else if (tmp == "FREQ") {
+                    type[naxis-1-i] = axis_type::freq;
+                }
+            }
+
+            // Identify RA and Dec axis
+            uint_t tx = find_axis("RA");
+            uint_t ty = find_axis("DEC");
+            if (tx != npos && tx != npos) {
+                ra_axis = x_axis = tx;
+                dec_axis = y_axis = ty;
 
                 // Y is by definition the first axis, so swap them if
                 // the input file has DEC/RA instead of RA/DEC
                 if (x_axis < y_axis) std::swap(x_axis, y_axis);
+            }
 
-                // Try a dummy coordinate conversion to see if everything is recognized
-                vec1d map = replicate(0.0, w->naxis);
-                vec1d world(w->naxis);
-                vec1d itmp(w->naxis);
-                double phi, theta;
-                int status = 0;
+            // Try a dummy coordinate conversion to see if everything is recognized
+            vec1d map = replicate(0.0, w->naxis);
+            vec1d world(w->naxis);
+            vec1d itmp(w->naxis);
+            double phi, theta;
+            int status = 0;
 
-                int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
-                    world.data.data(), &status);
+            int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
+                world.data.data(), &status);
 
-                if (ret != 0) {
-                    wcserr_prt(w->err, "error: ");
-                    wcsvfree(&nwcs, &w);
-                    w = nullptr;
-                }
+            if (ret != 0) {
+                error("WCS data in header is invalid");
+                report_errors();
+                wcsvfree(&nwcs, &w);
+                w = nullptr;
             }
         }
 
@@ -308,6 +464,56 @@ namespace astro {
             return npos;
         }
 
+        bool valid_unit(uint_t axis, axis_unit unit, std::string& why) const {
+            if (axis >= axis_count()) {
+                why = "axis "+strn(axis)+" does not exist";
+                return false;
+            }
+
+            if (has_unit[axis]) {
+                if (unit == axis_unit::native) {
+                    why = "requesting native units for an axis with specified units it not implemented yet!";
+                    return false;
+                }
+            } else {
+                if (unit != axis_unit::native) {
+                    why = "axis "+strn(axis)+" has no CUNIT keyword";
+                    return false;
+                }
+            }
+
+            axis_type unit_type = axis_type::unknown;
+            switch (unit) {
+                case astro::axis_unit::native:         unit_type = axis_type::unknown; break;
+                case astro::axis_unit::wcslib_default: unit_type = axis_type::unknown; break;
+
+                case astro::axis_unit::wave_m:         unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_cm:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_mm:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_um:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_nm:        unit_type = axis_type::wave; break;
+                case astro::axis_unit::wave_Angstrom:  unit_type = axis_type::wave; break;
+
+                case astro::axis_unit::freq_Hz:        unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_kHz:       unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_MHz:       unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_GHz:       unit_type = axis_type::freq; break;
+                case astro::axis_unit::freq_THz:       unit_type = axis_type::freq; break;
+
+                case astro::axis_unit::sky_deg:        unit_type = axis_type::spatial; break;
+                case astro::axis_unit::sky_rad:        unit_type = axis_type::spatial; break;
+            }
+
+            if (type[axis] != axis_type::unknown && unit_type != axis_type::unknown &&
+                type[axis] != unit_type) {
+                why = "wrong type for axis "+strn(axis)+" (expected "+axis_type_string(type[axis])+
+                    ", got "+axis_type_string(unit_type);
+                return false;
+            }
+
+            return true;
+        }
+
         wcs(const wcs&) = delete;
         wcs& operator = (const wcs&) = delete;
 
@@ -315,6 +521,8 @@ namespace astro {
             std::swap(w, tw.w);
             std::swap(nwcs, tw.nwcs);
             std::swap(dims, tw.dims);
+            std::swap(has_unit, tw.has_unit);
+            std::swap(type, tw.type);
             std::swap(ra_axis, tw.ra_axis);
             std::swap(dec_axis, tw.dec_axis);
             std::swap(x_axis, tw.x_axis);
@@ -329,6 +537,8 @@ namespace astro {
             w = tw.w; tw.w = nullptr;
             nwcs = tw.nwcs; tw.nwcs = 0;
             dims = tw.dims; tw.dims.clear();
+            has_unit = tw.has_unit; tw.has_unit.clear();
+            type = tw.type; tw.type.clear();
             ra_axis = tw.ra_axis;
             dec_axis = tw.dec_axis;
             x_axis = tw.x_axis;
@@ -341,6 +551,30 @@ namespace astro {
             return w != nullptr;
         }
 
+        void report_errors() const {
+            if (!w || !w->err) return;
+
+            wcserr_prt(w->err, "error: ");
+
+            if (w->tab) {
+                wcserr_prt(w->tab->err, "error: ");
+            }
+
+            wcserr_prt(w->lin.err, "error: ");
+            if (w->lin.dispre) {
+                wcserr_prt(w->lin.dispre->err, "error: ");
+            }
+            if (w->lin.disseq) {
+                wcserr_prt(w->lin.disseq->err, "error: ");
+            }
+
+            wcserr_prt(w->cel.err, "error: ");
+            wcserr_prt(w->cel.prj.err, "error: ");
+            wcserr_prt(w->spc.err, "error: ");
+
+            phypp_check(w->err == nullptr, "error from WCSlib");
+        }
+
         ~wcs() {
             if (w) {
                 wcsvfree(&nwcs, &w);
@@ -350,7 +584,7 @@ namespace astro {
     };
 #else
     struct wcs {
-        template <typename T, typename ... Args>
+        template<typename T, typename ... Args>
         wcs(Args&&...) {
             static_assert(!std::is_same<T,T>::value, "WCS support is is disabled, "
                 "please enable the WCSLib library to use this function");
@@ -372,7 +606,7 @@ namespace astro {
 
 namespace impl {
     namespace wcs_impl {
-        vec2d world2pix(const astro::wcs& w, const vec2d& world) {
+        inline vec2d world2pix(const astro::wcs& w, const vec2d& world) {
             vec2d pix(world.dims);
 
             uint_t npt = world.dims[0];
@@ -386,15 +620,14 @@ namespace impl {
                 itmp.data(), pix.data.data(), stat.data());
 
             if (status != 0) {
-                wcserr_prt(w.w->err, "error: ");
+                error("could not perform WCS conversion");
+                w.report_errors();
             }
-
-            phypp_check(status == 0, "error in WCS conversion");
 
             return pix;
         }
 
-        vec2d pix2world(const astro::wcs& w, vec2d pix) {
+        inline vec2d pix2world(const astro::wcs& w, const vec2d& pix) {
             vec2d world(pix.dims);
 
             uint_t npt = pix.dims[0];
@@ -408,10 +641,9 @@ namespace impl {
                 phi.data(), theta.data(), world.data.data(), stat.data());
 
             if (status != 0) {
-                wcserr_prt(w.w->err, "error: ");
+                error("could not perform WCS conversion");
+                w.report_errors();
             }
-
-            phypp_check(status == 0, "error in WCS conversion");
 
             return world;
         }
@@ -546,10 +778,14 @@ namespace astro {
             return false;
         }
 
-        // Convert radius to number of pixels
-        vec1d r, d;
-        astro::xy2ad(wcs, {0, 1}, {0, 0}, r, d);
-        aspix = angdist(r.safe[0], d.safe[0], r.safe[1], d.safe[1]);
+        uint_t naxis = wcs.axis_count();
+        vec1d x, y;
+        astro::ad2xy(wcs,
+            {wcs.w->crval[naxis-1-wcs.ra_axis],  wcs.w->crval[naxis-1-wcs.ra_axis]},
+            {wcs.w->crval[naxis-1-wcs.dec_axis], wcs.w->crval[naxis-1-wcs.dec_axis] + 1/3600.0},
+            x, y
+        );
+        aspix = 1.0/sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
 
         return true;
 #endif
@@ -580,32 +816,14 @@ namespace astro {
 #endif
     }
 
-    enum class axis_unit {
-        wcslib_default,
-
-        wave_m,
-        wave_cm,
-        wave_mm,
-        wave_um,
-        wave_nm,
-        wave_Angstrom,
-
-        freq_Hz,
-        freq_kHz,
-        freq_MHz,
-        freq_GHz,
-        freq_THz,
-
-        sky_deg,
-        sky_rad
-    };
-
 }
 
 namespace impl {
     namespace wcs_impl {
-        double conv_si2unit(astro::axis_unit unit) {
+        inline double conv_si2unit(astro::axis_unit unit) {
             switch (unit) {
+                case astro::axis_unit::native:         return 1.0;
+
                 // WCSlib returns data in SI units or degrees
                 case astro::axis_unit::wcslib_default: return 1.0;
 
@@ -622,12 +840,12 @@ namespace impl {
                 case astro::axis_unit::freq_GHz:       return 1e-9;
                 case astro::axis_unit::freq_THz:       return 1e-12;
 
-                case astro::axis_unit::sky_deg:
+                case astro::axis_unit::sky_deg:        return 1.0;
                 case astro::axis_unit::sky_rad:        return dpi/180.0;
             }
         }
 
-        template <std::size_t D, typename T>
+        template<std::size_t D, typename T>
         void si2unit(vec<D,T>& data, astro::axis_unit unit) {
             double conv = conv_si2unit(unit);
             if (conv != 1.0) {
@@ -635,7 +853,7 @@ namespace impl {
             }
         }
 
-        template <std::size_t D, typename T>
+        template<std::size_t D, typename T>
         void unit2si(vec<D,T>& data, astro::axis_unit unit) {
             double conv = conv_si2unit(unit);
             if (conv != 1.0) {
@@ -661,13 +879,17 @@ namespace astro {
         phypp_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
+        std::string why;
+        bool vunit = wcs.valid_unit(axis, unit, why);
+        phypp_check(vunit, why);
+
         uint_t npix = x.size();
 
         vec2d pix(npix, naxis);
         pix.safe(_,naxis-1-axis) = x;
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
-            pix(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+            pix.safe(_,naxis-1-i) = wcs.w->crpix[naxis-1-i];
         }
 
         vec2d world = impl::wcs_impl::pix2world(wcs, pix);
@@ -690,6 +912,10 @@ namespace astro {
         phypp_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
+        std::string why;
+        bool vunit = wcs.valid_unit(axis, unit, why);
+        phypp_check(vunit, why);
+
         uint_t npix = w.size();
 
         vec1d tw = w;
@@ -700,7 +926,7 @@ namespace astro {
 
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
-            world(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+            world.safe(_,naxis-1-i) = wcs.w->crval[naxis-1-i];
         }
 
         vec2d pix = impl::wcs_impl::world2pix(wcs, world);
@@ -708,7 +934,7 @@ namespace astro {
 #endif
     }
 
-    template <typename Dummy = void>
+    template<typename Dummy = void>
     void x2w(const astro::wcs& wcs, uint_t axis, double x, double& w,
         axis_unit unit = axis_unit::wcslib_default) {
 
@@ -726,7 +952,7 @@ namespace astro {
 #endif
     }
 
-    template <typename Dummy = void>
+    template<typename Dummy = void>
     void w2x(const astro::wcs& wcs, uint_t axis, double w, double& x,
         axis_unit unit = axis_unit::wcslib_default) {
 
@@ -740,7 +966,7 @@ namespace astro {
 
         w2x(wcs, axis, tw, tx, unit);
 
-        x = tw.safe[0];
+        x = tx.safe[0];
 #endif
     }
 
@@ -760,18 +986,22 @@ namespace astro {
         phypp_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
+        std::string why;
+        bool vunit = wcs.valid_unit(axis, unit, why);
+        phypp_check(vunit, why);
+
         uint_t npix = wcs.dims[axis];
 
         vec2d pix(npix, naxis);
-        pix(_,naxis-1-axis) = dindgen(npix)+1;
+        pix.safe(_,naxis-1-axis) = dindgen(npix)+1;
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
-            pix(_,naxis-1-i) = wcs.dims[i]/2.0 + 1.0;
+            pix.safe(_,naxis-1-i) = wcs.w->crpix[naxis-1-i];
         }
 
         vec2d world = impl::wcs_impl::pix2world(wcs, pix);
 
-        ret = world(_,naxis-1-axis);
+        ret = world.safe(_,naxis-1-axis);
         impl::wcs_impl::si2unit(ret, unit);
 #endif
 
@@ -782,13 +1012,13 @@ namespace astro {
 namespace impl {
     namespace wcs_impl {
         // Convenience functions
-        double regrid_drizzle_getmin(const vec1d& v) {
+        inline double regrid_drizzle_getmin(const vec1d& v) {
             double tmp = floor(min(v));
-            return tmp > 0 ? uint_t(tmp) : uint_t(0);
+            return tmp > 0.0 ? tmp : 0.0;
         };
-        double regrid_drizzle_getmax(const vec1d& v, uint_t n) {
+        inline double regrid_drizzle_getmax(const vec1d& v, double n) {
             double tmp = ceil(max(v));
-            return tmp > double(n) ? n : uint_t(tmp);
+            return tmp > n ? n : tmp;
         };
 
         // Function to find if a point lies on the right side of a polygon's edge
@@ -796,7 +1026,7 @@ namespace impl {
         // cx1, cy1, cx2, cy2: X and Y coordinates of the two nodes of the edge
         // x, y: X and Y coordinates of the point to test
         // return: true if the point is on the right side, false otherwise
-        bool regrid_drizzle_in_poly_edge(int_t orient,
+        inline bool regrid_drizzle_in_poly_edge(int_t orient,
             double cx1, double cy1, double cx2, double cy2, double x, double y) {
             double cross = (cx2 - cx1)*(y - cy1) - (cy2 - cy1)*(x - cx1);
             return cross*orient < 0;
@@ -807,7 +1037,7 @@ namespace impl {
         // l2x1, l2y1, l2x2, l2y2: X and Y coordinates of two points defining the second line
         // x, y: output X and Y coordinates of the intersection point (if any)
         // return: true if intersection exists, false otherwise
-        bool regrid_drizzle_segment_intersect(
+        inline bool regrid_drizzle_segment_intersect(
             double l1x1, double l1y1, double l1x2, double l1y2,
             double l2x1, double l2y1, double l2x2, double l2y2, double& x, double& y) {
 
@@ -833,7 +1063,7 @@ namespace impl {
             return true;
         };
 
-        double polyon_area(const vec1d& x, const vec1d& y) {
+        inline double polyon_area(const vec1d& x, const vec1d& y) {
             // phypp_check(x.size() == y.size(), "incompatible dimensions between X and Y arrays (",
             //    x.size(), " vs. ", y.size(), ")");
 
@@ -861,7 +1091,7 @@ namespace impl {
             return area;
         }
 
-        template <typename T, typename U>
+        template<typename T, typename U>
         bool regrid_drizzle(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
             // Get bounds of this projection
             uint_t ymin = regrid_drizzle_getmin(yps-0.5);
@@ -949,7 +1179,7 @@ namespace impl {
             return covered;
         }
 
-        template <typename T, typename U>
+        template<typename T, typename U>
         bool regrid_nearest(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
             int_t mx = round(mean(xps)), my = round(mean(yps));
             if (mx > 0 && uint_t(mx) < imgs.dims[1] && my > 0 && uint_t(my) < imgs.dims[0]) {
@@ -960,7 +1190,7 @@ namespace impl {
             }
         }
 
-        template <typename T, typename U>
+        template<typename T, typename U>
         bool regrid_nearest_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
             bool covered = regrid_nearest(imgs, xps, yps, flx);
             if (covered) {
@@ -978,15 +1208,15 @@ namespace astro {
         drizzle, nearest
     };
 
-    struct regrid_options {
+    struct regrid_params {
         bool verbose = false;
         bool conserve_flux = false;
         regrid_method method = regrid_method::drizzle;
     };
 
-    template <typename T = double>
+    template<typename T = double>
     vec2d regrid(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
-        regrid_options opts = regrid_options{}) {
+        regrid_params opts = regrid_params{}) {
 
         // Regridded image
         vec2d res;

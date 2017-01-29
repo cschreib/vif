@@ -264,6 +264,57 @@ namespace phypp {
 
         return v;
     }
+
+    template <std::size_t D, typename TN, typename TX, typename TY>
+    vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x, const vec<D,TN>& xn) {
+        vec<D,meta::rtype_t<TY>> yn(xn.dims);
+
+        phypp_check(y.size() == x.size(),
+            "'x' and 'y' arrays must contain the same number of elements");
+        phypp_check(y.size() >= 2,
+            "'x' and 'y' arrays must contain at least 2 elements");
+
+        const uint_t n = y.size()-1;
+        vec1d b(n+1), d(n+1);
+        vec1d h(n);
+        for (uint_t i : range(h)) h[i] = x[i+1]-x[i];
+        vec1d al(n);
+        for (uint_t i : range(1, n)) al[i] = 3.0*(y[i+1] - y[i])/h[i] - 3.0*(y[i] - y[i-1])/h[i];
+
+        vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
+        l[0] = 1;
+        for (uint_t i : range(1, n)) {
+            l[i] = 2.0*(x[i+1] - x[i-1]) - h[i-1]*mu[i-1];
+            mu[i] = h[i]/l[i];
+            z[i] = (al[i] - h[i-1]*z[i-1])/l[i];
+        }
+
+        l[n] = 1; {
+            uint_t i = n;
+            do {
+                --i;
+                c[i] = z[i] - mu[i]*c[i+1];
+                b[i] = (y[i+1]-y[i])/h[i] - (1.0/3.0)*h[i]*(c[i+1] + 2*c[i]);
+                d[i] = (1.0/3.0)*(c[i+1] - c[i])/h[i];
+            } while (i != 0);
+        }
+
+        b[n] = b[n-1] + 2*c[n-1]*(x[n]-x[n-1]) + 3*d[n-1]*sqr(x[n]-x[n-1]);
+
+        for (uint_t i : range(xn)) {
+            uint_t k = lower_bound(xn.safe[i], x);
+            if (k == npos) {
+                k = 0;
+                double th = xn[i] - x[k];
+                yn[i] = y[k] + b[0]*th;
+            } else {
+                double th = xn[i] - x[k];
+                yn[i] = y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
+            }
+        }
+
+        return yn;
+    }
 }
 
 #endif
