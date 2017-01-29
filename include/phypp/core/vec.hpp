@@ -603,8 +603,9 @@ namespace phypp {
 
         #undef OPERATOR
 
-        using iterator = typename impl::vec_iterator_type<vec>::iterator;
-        using const_iterator = typename impl::vec_iterator_type<vec>::const_iterator;
+        using iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::iterator;
+        using const_iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::const_iterator;
+
 
         iterator begin() {
             return data.begin();
@@ -1119,11 +1120,8 @@ namespace phypp {
 
         #undef OPERATOR
 
-        using base_iterator = typename vtype::iterator;
-        using base_const_iterator = typename vtype::const_iterator;
-
-        using iterator = impl::ptr_iterator_base<base_iterator, vec>;
-        using const_iterator = impl::const_ptr_iterator_base<base_const_iterator, vec>;
+        using iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::iterator;
+        using const_iterator = typename impl::vec_iterator_type<vec,impl::default_iterator_policy<vec>>::const_iterator;
 
         iterator begin() {
             return data.begin();
