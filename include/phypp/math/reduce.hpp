@@ -788,6 +788,24 @@ namespace phypp {
 
         return buffer.back();
     }
+
+    // Integral of a Gaussian profile between x0 and x1
+    template <typename TX0, typename TX1>
+    auto integrate_gauss(TX0&& x0, TX1&& x1, double xc, double xw, double amp = 1.0) -> decltype(sqrt(x0)+sqrt(x1)) {
+        // Average this from t = x-0.5 to x+0.5
+        // exp(-sqr(t - xc)/(2.0*sqr(xw)))/(sqrt(2*dpi)*xw)
+
+        return 0.5*(amp/(x1 - x0))*(
+            erf((x1 - xc)/(sqrt(2.0)*xw)) -
+            erf((x0 - xc)/(sqrt(2.0)*xw))
+        );
+    };
+
+    // Integral of a 2D Gaussian profile between [x0,x1] and [y0,y1]
+    template <typename TX0, typename TX1>
+    auto integrate_gauss_2d(TX0&& x0, TX1&& x1, TX0&& y0, TX1&& y1, double xc, double yc, double w, double amp = 1.0) -> decltype(sqrt(x0)+sqrt(x1)) {
+        return amp*integrate_gauss(x0,x1,xc,w,1.0)*integrate_gauss(y0,y1,yc,w,1.0);
+    };
 }
 
 #endif

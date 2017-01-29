@@ -281,13 +281,16 @@ namespace astro {
         return img;
     }
 
-    inline vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
-        double norm = 1.0/(2.0*dpi*sqr(sigma));
-        return generate_img(dims, [&](int_t x, int_t y) {
-            return norm*exp(
-                -(sqr(x - int_t(dims[0]/2)) + sqr(y - int_t(dims[1]/2)))/(2.0*sqr(sigma))
-            );
+    inline vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma,
+        double x0, double y0) {
+
+        return generate_img(dims, [&](double x, double y) {
+            return integrate_gauss_2d(x-0.5, x+0.5, y-0.5, y+0.5, x0, y0, sigma);
         });
+    }
+
+    inline vec2d gaussian_profile(const std::array<uint_t,2>& dims, double sigma) {
+        return gaussian_profile(dims, sigma, dims[0]/2, dims[1]/2);
     }
 
     // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
