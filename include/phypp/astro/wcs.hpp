@@ -4,7 +4,9 @@
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcserr.h>
+#ifndef WCSLIB_NO_DIS
 #include <wcslib/dis.h>
+#endif
 #include <wcslib/tab.h>
 #endif
 
@@ -561,12 +563,15 @@ namespace astro {
             }
 
             wcserr_prt(w->lin.err, "error: ");
+
+#ifndef WCSLIB_NO_DIS
             if (w->lin.dispre) {
                 wcserr_prt(w->lin.dispre->err, "error: ");
             }
             if (w->lin.disseq) {
                 wcserr_prt(w->lin.disseq->err, "error: ");
             }
+#endif
 
             wcserr_prt(w->cel.err, "error: ");
             wcserr_prt(w->cel.prj.err, "error: ");
