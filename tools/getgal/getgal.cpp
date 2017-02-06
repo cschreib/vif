@@ -3,6 +3,77 @@
 
 void print_help();
 
+struct image_t {
+    // Read from parameter file
+    std::string filename;
+    std::string short_name;
+    std::string band;
+    std::string psffile;
+    double seeing = dnan;
+    double zero_point = 23.9;
+
+    // Work variables
+    bool used = false;
+};
+
+bool read_image_list(const std::string& filename, vec<1,image_t>& imgs) {
+    std::string idir = file::get_directory(filename);
+
+    std::string line;
+    std::ifstream file(filename);
+    uint_t l = 0;
+
+    while (std::getline(file, line)) {
+        ++l;
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+
+        auto eqpos = line.find('=');
+        if (eqpos == line.npos) {
+            image_t img;
+            if (line[0] == '/') {
+                img.filename = line;
+            } else {
+                img.filename = idir+line;
+            }
+            imgs.push_back(std::move(img));
+        } else {
+            std::string key = trim(line.substr(0, eqpos));
+            std::string val = trim(line.substr(eqpos+1));
+            if (key == "band") {
+                imgs.back().band = val;
+            } else if (key == "seeing") {
+                if (!from_string(val, imgs.back().seeing)) {
+                    error("could not read seeing value from '", val, "'");
+                    error("at ", filename, ":", l);
+                    return false;
+                }
+            } else if (key == "zero_point") {
+                if (!from_string(val, imgs.back().zero_point)) {
+                    error("could not read zero point value from '", val, "'");
+                    error("at ", filename, ":", l);
+                    return false;
+                }
+            } else if (key == "short_name") {
+                imgs.back().short_name = val;
+            } else if (key == "psf") {
+                if (!val.empty()) {
+                    if (val[0] == '/') {
+                        imgs.back().psffile = val;
+                    } else {
+                        imgs.back().psffile = idir+val;
+                    }
+                }
+            } else {
+                warning("unknown parameter '", key, "', ignored");
+                warning("at ", filename, ":", l);
+            }
+        }
+    }
+
+    return true;
+}
+
 int phypp_main(int argc, char* argv[]) {
     vec1s tsrc;
     std::string out = "";
@@ -10,10 +81,9 @@ int phypp_main(int argc, char* argv[]) {
     std::string dir = "";
     double radius = dnan;
     vec1u thsize;
-    vec1s show;
     vec1s bands;
     bool no_zero_point = false;
-    bool show_rgb = false;
+    bool make_list = false;
     bool verbose = false;
 
     if (argc < 3) {
@@ -24,8 +94,8 @@ int phypp_main(int argc, char* argv[]) {
     std::string clist = argv[1];
 
     read_args(argc-1, argv+1, arg_list(
-        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, show, show_rgb, radius,
-        name(thsize, "hsize"), bands, no_zero_point
+        name(tsrc, "src"), out, name(nbase, "name"), dir, verbose, radius,
+        name(thsize, "hsize"), bands, no_zero_point, make_list
     ));
 
     if (!dir.empty()) {
@@ -102,93 +172,58 @@ int phypp_main(int argc, char* argv[]) {
         return 1;
     }
 
-    vec1s mname;
-    vec1f zero_point;
-    vec1s mfile;
+    vec<1,image_t> imgs;
 
     if (end_with(clist, ".fits")) {
         // Single FITS file
-        mname.push_back(split(erase_end(clist, ".fits"), "/").back());
-        mfile.push_back(clist);
+        image_t img;
+        img.filename = clist;
+        img.short_name = split(erase_end(clist, ".fits"), "/").back();
+        imgs.push_back(std::move(img));
     } else {
         // Map list
-        std::ifstream mlist(clist);
-        uint_t l = 0;
-        while (!mlist.eof()) {
-            std::string line;
-            std::getline(mlist, line);
-            ++l;
-
-            if (line.find_first_not_of(" \t") == line.npos) continue;
-            line = trim(line);
-            if (line[0] == '#') continue;
-            vec1s spl = trim(split(line, "="));
-            if (spl.size() != 2) {
-                error("wrong format for l."+strn(l)+": '"+line+"'");
-                note("expected: map_code_name = map_file[, ...]");
-                return 1;
-            }
-
-            vec1s spl2 = trim(split(spl[1], ","));
-            if (spl2.size() > 2) {
-                error("wrong format for l."+strn(l)+": '"+line+"'");
-                note("expected: map_code_name = map_file[, zero_point]");
-                return 1;
-            }
-
-            spl[1] = spl2[0];
-
-            float zp = 23.9;
-            if (spl2.size() >= 2) {
-                if (!from_string(spl2[1], zp)) {
-                    error("wrong format for l."+strn(l)+": '"+line+"'");
-                    note("coult not read zero point from '", spl2[1], "'");
-                    return 1;
-                }
-            }
-
-            spl[1] = dir+spl[1];
-            if (!file::exists(spl[1])) {
-                warning("could not find '"+spl[1]+"'");
-                continue;
-            }
-
-            zero_point.push_back(zp);
-            mname.push_back(spl[0]);
-            mfile.push_back(spl[1]);
+        if (!read_image_list(clist, imgs)) {
+            return 1;
         }
 
         if (verbose) print("map list loaded successfully");
     }
 
-    if (thsize.size() > 1 && bands.size() > 1 && thsize.size() != bands.size()) {
+    if (thsize.size() > 1 && imgs.size() > 1 && thsize.size() != imgs.size()) {
         error("mismatch between number of bands and cutout sizes (",
             bands.size(), " vs. ", thsize.size(), ")");
         return 1;
     }
 
-    vec1u idnm = where(!is_any_of(bands, mname));
-    if (!idnm.empty()) {
-        for (auto i : idnm) {
-            warning("no band named '", bands[i], "', skipping");
+    // vec1u idnm = where(!is_any_of(bands, mname));
+    // if (!idnm.empty()) {
+    //     for (auto i : idnm) {
+    //         warning("no band named '", bands[i], "', skipping");
+    //     }
+
+    //     bands = bands[where(is_any_of(bands, mname))];
+    // }
+
+    vec1b covered(bands.size());
+    uint_t ib = 0;
+    for (auto& img : imgs) {
+        if (!bands.empty()) {
+            uint_t ibb = where_first(bands == img.short_name);
+            if (ibb == npos) continue;
+            covered[ibb] = true;
         }
 
-        bands = bands[where(is_any_of(bands, mname))];
-    }
-
-    uint_t ib = 0;
-    for (uint_t b : range(mname)) {
-        if (!bands.empty() && !is_any_of(mname[b], bands)) continue;
+        img.used = true;
 
         ++ib;
 
-        if (verbose) print(mname[b]);
+        if (verbose) print(img.short_name);
 
         int_t hsize;
         if (is_finite(radius)) {
             // Convert radius to number of pixels
             double aspix;
-            if (astro::get_pixel_size(mfile[b], aspix)) {
+            if (astro::get_pixel_size(img.filename, aspix)) {
                 hsize = ceil(radius/aspix);
                 if (hsize < 10) hsize = 10;
             } else {
@@ -212,35 +247,39 @@ int phypp_main(int argc, char* argv[]) {
         vec3d cube;
         vec1u ids;
 
-        qstack_output qout = qstack(ra, dec, mfile[b], hsize, cube, ids, p);
+        qstack_output qout = qstack(ra, dec, img.filename, hsize, cube, ids, p);
 
-        if (!no_zero_point) {
+        if (!no_zero_point && is_finite(img.zero_point)) {
             // Apply zero point to convert map to uJy
-            cube *= e10(0.4*(23.9 - zero_point[b]));
+            cube *= e10(0.4*(23.9 - img.zero_point));
+            img.zero_point = 23.9;
         }
 
         for (uint_t i : range(ids)) {
-            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(mfile[b], qout.sect[i]));
+            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(
+                img.filename, qout.sect[i]
+            ));
+
             if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[i]) ||
                 !fits::setkey(nhdr, "CRPIX2", hsize+1+qout.dy[i]) ||
                 !fits::setkey(nhdr, "CRVAL1", ra[ids[i]]) ||
                 !fits::setkey(nhdr, "CRVAL2", dec[ids[i]])) {
                 warning("could not set WCS information (CRPIX1, CRPIX2, CRVAL1, CRVAL2)");
                 note("WCS for the cutout will be wrong");
-                note("parsing '"+mname[b]+"'");
+                note("parsing '"+img.short_name+"'");
             }
 
-            std::string file_name = out+name[ids[i]]+mname[b]+".fits";
+            std::string filename = out+name[ids[i]]+img.short_name+".fits";
 
             // Make sure that we are not going to overwrite one of the images
-            if (is_any_of(file_name, mfile)) {
-                error("this operation would overwrite the image '", file_name, "'");
+            if (filename == img.filename) {
+                error("this operation would overwrite the image '", filename, "'");
                 note("aborting");
                 return 1;
             }
 
-            if (verbose) print("writing ", file_name);
-            fits::write(file_name, cube(i,_,_), nhdr);
+            if (verbose) print("writing ", filename);
+            fits::write(filename, cube(i,_,_), nhdr);
         }
 
         // Create empty cutouts for non covered sources
@@ -248,67 +287,50 @@ int phypp_main(int argc, char* argv[]) {
         vec2d empty(2*hsize + 1, 2*hsize + 1);
         empty[_] = dnan;
         for (uint_t i : range(nids)) {
-            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(mfile[b], 0));
+            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(
+                img.filename, 0
+            ));
+
             if (!fits::setkey(nhdr, "CRPIX1", hsize+1) ||
                 !fits::setkey(nhdr, "CRPIX2", hsize+1) ||
                 !fits::setkey(nhdr, "CRVAL1", ra[nids[i]]) ||
                 !fits::setkey(nhdr, "CRVAL2", dec[nids[i]])) {
                 warning("could not set WCS information (CRPIX1, CRPIX2, CRVAL1, CRVAL2)");
                 note("WCS for the cutout will be wrong");
-                note("parsing '"+mname[b]+"'");
+                note("parsing '"+img.short_name+"'");
             }
 
-            std::string file_name = out+name[nids[i]]+mname[b]+".fits";
+            std::string filename = out+name[nids[i]]+img.short_name+".fits";
 
             // Make sure that we are not going to overwrite one of the images
-            if (is_any_of(file_name, mfile)) {
-                error("this operation would overwrite the image '", file_name, "'");
+            if (filename == img.filename) {
+                error("this operation would overwrite the image '", filename, "'");
                 note("aborting");
                 return 1;
             }
 
-            if (verbose) print("writing ", file_name);
-            fits::write(file_name, empty, nhdr);
+            if (verbose) print("writing ", filename);
+            fits::write(filename, empty, nhdr);
         }
     }
 
-    if (show.size() == 1 && show[0] == "1") {
-        // No name specified: show all
-        if (bands.empty()) {
-            show = mname;
-        } else {
-            show = bands;
-        }
-    } else if (show.size() >= 1) {
-        if (bands.empty()) {
-            show = show[where(is_any_of(show, mname))];
-        } else {
-            show = show[where(is_any_of(show, bands))];
+    if (count(!covered) > 0) {
+        for (auto i : where(!covered)) {
+            warning("no band named '", bands[i], "', skipping");
         }
     }
 
-    if (show.size() > 0) {
-        if (ra.size() != 1) {
-            if (show.size() > 1) {
-                warning("cannot display multiple bands for multiple sources with DS9");
-                note("either ask for only one band to be shown, or extract sources one at a time");
-            } else {
-                spawn("ds9 -tile "+collapse(out+name[0]+show+".fits "));
-            }
-        } else {
-            if (show_rgb) {
-                if (show.size() > 3 && show_rgb) {
-                    warning("cannot display more than 3 images at the same time in RGB mode, only "
-                        "displaying the first 3");
-                    show.resize(3);
-                }
+    if (make_list) {
+        for (uint_t i : range(name)) {
+            std::ofstream olist(out+name[i]+"images.param");
+            for (auto& img : imgs) {
+                if (!img.used) continue;
 
-                vec1s chanels = {"red", "green", "blue"};
-                chanels = chanels[uindgen(show.size())];
-
-                spawn("ds9 -rgb "+collapse("-"+chanels+" "+out+name[0]+show+".fits "));
-            } else {
-                spawn("ds9 -tile "+collapse(out+name[0]+show+".fits "));
+                olist << name[i]+img.short_name+".fits\n";
+                if (!img.band.empty())         olist << "band=" << img.band << "\n";
+                if (is_finite(img.seeing))     olist << "seeing=" << img.seeing << "\n";
+                if (is_finite(img.zero_point)) olist << "zero_point=" << img.zero_point << "\n";
+                olist << "\n";
             }
         }
     }
@@ -325,8 +347,8 @@ void print_help() {
     bullet("name", "[string] base name to give to individual cutouts (defalt: none)");
     bullet("dir", "[string] directory in which to look for maps (default: current)");
     bullet("verbose", "[flag] print some information about the process");
-    bullet("show", "[string array] name of bands to show in DS9 (default: none)");
-    bullet("show_rgb", "[flag] show then bands as RGB instead of tiles");
+    bullet("make_list", "[flag] output a file containing the list of images, the "
+        "corresponding band and other information to be used for flux extraction");
     bullet("radius", "[float] cutout radius in arcsec (if not provided, use the default cutout "
         "size from the parameter file)");
     print("");
