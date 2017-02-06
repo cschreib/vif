@@ -199,28 +199,80 @@ namespace astro {
     }
 
     template<typename T>
-    vec<2,T> shift(vec<2,T> v, int_t tsx, int_t tsy) {
+    void inplace_shift(vec<2,T>& v, int_t tsx, int_t tsy) {
         tsx = (-tsx) % int_t(v.dims[0]);
         tsy = (-tsy) % int_t(v.dims[1]);
         if (tsx < 0) tsx = int_t(v.dims[0])+tsx;
         if (tsy < 0) tsy = int_t(v.dims[1])+tsy;
-        uint_t sx = tsx, sy = tsy;
 
-        if (sy != 0) {
+        if (tsy != 0) {
             for (uint_t ix : range(v.dims[0])) {
-                auto st = v.stride(ix,_);
-                std::rotate(st.begin(), st.begin() + sy, st.end());
+                auto st = v.raw_stride(ix,_);
+                std::rotate(st.begin(), st.begin() + tsy, st.end());
             }
         }
 
-        if (sx != 0) {
+        if (tsx != 0) {
             for (uint_t iy : range(v.dims[1])) {
-                auto st = v.stride(_,iy);
-                std::rotate(st.begin(), st.begin() + sx, st.end());
+                auto st = v.raw_stride(_,iy);
+                std::rotate(st.begin(), st.begin() + tsx, st.end());
+            }
+        }
+    }
+
+    template<typename T>
+    vec<2,T> shift(vec<2,T> v, int_t tsx, int_t tsy) {
+        inplace_shift(v, tsx, tsy);
+        return v;
+    }
+
+    template<typename T>
+    void inplace_translate_integer(vec<2,T>& v, int_t tsx, int_t tsy, T def = 0) {
+        static_assert(!std::is_pointer<T>::value, "this algorithm cannot work with views");
+
+        tsx = (-tsx) % int_t(v.dims[0]);
+        tsy = (-tsy) % int_t(v.dims[1]);
+
+        if (tsy > 0) {
+            for (uint_t ix : range(v.dims[0])) {
+                auto st = v.raw_stride(ix,_);
+                auto it = std::copy(st.begin() + tsy, st.end(), st.begin());
+                std::fill(it, st.end(), def);
+            }
+        } else if (tsy < 0) {
+            for (uint_t ix : range(v.dims[0])) {
+                auto st = v.raw_stride(ix,_);
+                auto it = std::copy_backward(st.begin(), st.end() + tsy, st.end());
+                std::fill(st.begin(), it, def);
             }
         }
 
+        if (tsx > 0) {
+            for (uint_t iy : range(v.dims[1])) {
+                auto st = v.raw_stride(_,iy);
+                auto it = std::copy(st.begin() + tsx, st.end(), st.begin());
+                std::fill(it, st.end(), def);
+            }
+        } else if (tsx < 0) {
+            for (uint_t iy : range(v.dims[1])) {
+                auto st = v.raw_stride(_,iy);
+                auto it = std::copy_backward(st.begin(), st.end() + tsx, st.end());
+                std::fill(st.begin(), it, def);
+            }
+        }
+    }
+
+    template<typename T>
+    vec<2,T> translate_integer(vec<2,T> v, int_t tsx, int_t tsy, T def = 0) {
+        inplace_translate_integer(v, tsx, tsy, def);
         return v;
+    }
+
+    template<typename T>
+    vec<2,meta::rtype_t<T*>> translate_integer(vec<2,T*> v, int_t tsx, int_t tsy, T def = 0) {
+        vec<2,meta::rtype_t<T*>> tv = v.concretise();
+        inplace_translate_integer(tv, tsx, tsy, def);
+        return tv;
     }
 
     inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
