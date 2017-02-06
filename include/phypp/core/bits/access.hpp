@@ -648,6 +648,41 @@ namespace vec_access {
     void get_stride_offset(V& parent, P& bp, P& ep, const Args& ... i) {
         get_stride_offset_(parent, bp, ep, false, 0, i...);
     }
+
+    // Utility to allow range-based loops on strides
+    template<typename T, typename P>
+    struct strided_range {
+        using policy = P;
+        using vec = meta::decay_t<T>;
+        using iterator = typename std::conditional<std::is_const<T>::value,
+            typename impl::vec_iterator_type<vec,policy>::const_iterator,
+            typename impl::vec_iterator_type<vec,policy>::iterator>::type;
+
+        T& parent;
+        policy begin_policy;
+        policy end_policy;
+
+        template<typename ... Args>
+        strided_range(T& v, const Args& ... i) : parent(v) {
+            static_assert(impl::vec_access::accessed_dim<Args...>::value == meta::vec_dim<vec>::value,
+                "wrong number of indices for this vector");
+            static_assert(impl::vec_access::count_placeholder<Args...>::value <= 1,
+                "strides can only iterate over one dimension at a time");
+            static_assert(impl::vec_access::count_placeholder<Args...>::value >= 1,
+                "stride(...) must contain at least one placeholder '_'");
+            impl::vec_access::get_stride_offset(parent, begin_policy, end_policy, i...);
+        }
+
+        template<typename ... Args>
+        iterator begin() {
+            return parent.begin(begin_policy);
+        }
+
+        template<typename ... Args>
+        iterator end() {
+            return parent.begin(end_policy);
+        }
+    };
 }
 }
 }

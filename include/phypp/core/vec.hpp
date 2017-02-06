@@ -663,55 +663,24 @@ namespace phypp {
             );
         }
 
-        template<typename T>
-        struct strided_range {
-            using iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::iterator;
-            using const_iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::const_iterator;
-
-            T& parent;
-            impl::strided_iterator_policy<typename std::decay<T>::type> begin_policy;
-            impl::strided_iterator_policy<typename std::decay<T>::type> end_policy;
-
-            template<typename ... Args>
-            strided_range(T& v, const Args& ... i) : parent(v) {
-                static_assert(impl::vec_access::accessed_dim<Args...>::value == Dim,
-                    "wrong number of indices for this vector");
-                static_assert(impl::vec_access::count_placeholder<Args...>::value <= 1,
-                    "strides can only iterate over one dimension at a time");
-                static_assert(impl::vec_access::count_placeholder<Args...>::value >= 1,
-                    "stride(...) must contain at least one placeholder '_'");
-                impl::vec_access::get_stride_offset(parent, begin_policy, end_policy, i...);
-            }
-
-            template<typename ... Args>
-            iterator begin() {
-                return parent.begin(begin_policy);
-            }
-
-            template<typename ... Args>
-            const_iterator begin() const {
-                return parent.begin(begin_policy);
-            }
-
-            template<typename ... Args>
-            iterator end() {
-                return parent.begin(end_policy);
-            }
-
-            template<typename ... Args>
-            const_iterator end() const {
-                return parent.begin(end_policy);
-            }
-        };
-
         template<typename ... Args>
-        strided_range<vec> stride(const Args& ... i) {
-            return strided_range<vec>(*this, i...);
+        impl::vec_access::strided_range<vec,impl::strided_iterator_policy<vec>> stride(const Args& ... i) {
+            return impl::vec_access::strided_range<vec,impl::strided_iterator_policy<vec>>(*this, i...);
         }
 
         template<typename ... Args>
-        strided_range<const vec> stride(const Args& ... i) const {
-            return strided_range<const vec>(*this, i...);
+        impl::vec_access::strided_range<const vec,impl::strided_iterator_policy<vec>> stride(const Args& ... i) const {
+            return impl::vec_access::strided_range<const vec,impl::strided_iterator_policy<vec>>(*this, i...);
+        }
+
+        template<typename ... Args>
+        impl::vec_access::strided_range<vec,impl::raw_strided_iterator_policy<vec>> raw_stride(const Args& ... i) {
+            return impl::vec_access::strided_range<vec,impl::raw_strided_iterator_policy<vec>>(*this, i...);
+        }
+
+        template<typename ... Args>
+        impl::vec_access::strided_range<const vec,impl::raw_strided_iterator_policy<vec>> raw_stride(const Args& ... i) const {
+            return impl::vec_access::strided_range<const vec,impl::raw_strided_iterator_policy<vec>>(*this, i...);
         }
     };
 
@@ -1270,55 +1239,24 @@ namespace phypp {
             );
         }
 
-        template<typename T>
-        struct strided_range {
-            using iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::iterator;
-            using const_iterator = typename impl::vec_iterator_type<vec,impl::strided_iterator_policy<vec>>::const_iterator;
-
-            T& parent;
-            impl::strided_iterator_policy<typename std::decay<T>::type> begin_policy;
-            impl::strided_iterator_policy<typename std::decay<T>::type> end_policy;
-
-            template<typename ... Args>
-            strided_range(T& v, const Args& ... i) : parent(v) {
-                static_assert(impl::vec_access::accessed_dim<Args...>::value == Dim,
-                    "wrong number of indices for this vector");
-                static_assert(impl::vec_access::count_placeholder<Args...>::value <= 1,
-                    "strides can only iterate over one dimension at a time");
-                static_assert(impl::vec_access::count_placeholder<Args...>::value >= 1,
-                    "stride(...) must contain at least one placeholder '_'");
-                impl::vec_access::get_stride_offset(parent, begin_policy, end_policy, i...);
-            }
-
-            template<typename ... Args>
-            iterator begin() {
-                return parent.begin(begin_policy);
-            }
-
-            template<typename ... Args>
-            const_iterator begin() const {
-                return parent.begin(begin_policy);
-            }
-
-            template<typename ... Args>
-            iterator end() {
-                return parent.begin(end_policy);
-            }
-
-            template<typename ... Args>
-            const_iterator end() const {
-                return parent.begin(end_policy);
-            }
-        };
-
         template<typename ... Args>
-        strided_range<vec> stride(const Args& ... i) {
-            return strided_range<vec>(*this, i...);
+        impl::vec_access::strided_range<vec,impl::strided_iterator_policy<vec>> stride(const Args& ... i) {
+            return impl::vec_access::strided_range<vec,impl::strided_iterator_policy<vec>>(*this, i...);
         }
 
         template<typename ... Args>
-        strided_range<const vec> stride(const Args& ... i) const {
-            return strided_range<const vec>(*this, i...);
+        impl::vec_access::strided_range<const vec,impl::strided_iterator_policy<vec>> stride(const Args& ... i) const {
+            return impl::vec_access::strided_range<const vec,impl::strided_iterator_policy<vec>>(*this, i...);
+        }
+
+        template<typename ... Args>
+        impl::vec_access::strided_range<vec,impl::raw_strided_iterator_policy<vec>> raw_stride(const Args& ... i) {
+            return impl::vec_access::strided_range<vec,impl::raw_strided_iterator_policy<vec>>(*this, i...);
+        }
+
+        template<typename ... Args>
+        impl::vec_access::strided_range<const vec,impl::raw_strided_iterator_policy<vec>> raw_stride(const Args& ... i) const {
+            return impl::vec_access::strided_range<const vec,impl::raw_strided_iterator_policy<vec>>(*this, i...);
         }
     };
 

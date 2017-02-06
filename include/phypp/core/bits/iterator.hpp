@@ -112,6 +112,37 @@ namespace impl {
         }
     };
 
+    // Iterators for strided traversal to iterate on one dimension (raw data)
+    template<typename T>
+    struct raw_strided_iterator_policy : native_iterator_policy {
+        int_t stride = 1;
+        int_t offset = 0;
+
+        raw_strided_iterator_policy() = default;
+        raw_strided_iterator_policy(int_t s, int_t o) : stride(s), offset(o) {}
+
+        template<typename I>
+        void initialize(I& i) const {
+            i += offset;
+        }
+        template<typename I, typename U>
+        void advance(I& i, U n) const {
+            i += n*stride;
+        }
+        template<typename I>
+        void increment(I& i) const {
+            advance(i, 1);
+        }
+        template<typename I>
+        void decrement(I& i) const {
+            advance(i, -1);
+        }
+        template<typename I>
+        auto difference(const I& i, const I& j) const -> decltype(i-j) {
+            return (i - j)/stride;
+        }
+    };
+
     // Helper to define the vector iterator types.
     template<typename T, typename P>
     struct vec_iterator_type {
