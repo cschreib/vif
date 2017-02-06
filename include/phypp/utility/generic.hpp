@@ -947,25 +947,19 @@ namespace phypp {
     }
 
     template<typename Type>
-    vec<1,meta::rtype_t<Type>> shift(const vec<1,Type>& v, int_t n, meta::rtype_t<Type> def = 0) {
-        vec<1,meta::rtype_t<Type>> tmp;
+    void inplace_shift(vec<1,Type>& v, int_t n) {
+        n = (-n) % int_t(v.size());
+        if (n < 0) n = int_t(v.size())+n;
 
-        if (uint_t(std::abs(n)) > v.dims[0]) {
-            tmp = replicate(def, v.dims[0]);
-            return tmp;
+        if (n != 0) {
+            std::rotate(v.data.begin(), v.data.begin() + n, v.end());
         }
+    }
 
-        tmp = v.concretise();
-
-        if (n < 0) {
-            tmp.data.erase(tmp.data.begin(), tmp.data.begin()-n);
-            tmp.data.insert(tmp.data.end(), -n, def);
-        } else if (n > 0) {
-            tmp.data.erase(tmp.data.end()-n, tmp.data.end());
-            tmp.data.insert(tmp.data.begin(), n, def);
-        }
-
-        return tmp;
+    template<typename Type>
+    vec<1,Type> shift(vec<1,Type> v, int_t n) {
+        inplace_shift(v, n);
+        return v;
     }
 
     // Find the closest point in a 2D array that satisfies a given criterium
