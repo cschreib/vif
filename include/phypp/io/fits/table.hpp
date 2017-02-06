@@ -590,7 +590,16 @@ namespace fits {
             fits_read_tdim(fptr_, cid, max_column_dims, &naxis, axes.data(), &status_);
             fits::phypp_check_cfitsio(status_, "could not read dimensions of column '"+tcolname+"'");
 
-            // Support loading row-oriented FITS tables
+            // Support ASCII tables with string columns
+            std::string extension;
+            if (read_keyword("XTENSION", extension) && extension == "TABLE") {
+                std::string tform;
+                if (read_keyword("TFORM"+strn(cid), tform) && tform[0] == 'A') {
+                    from_string(erase_begin(tform, "A"), axes[0]);
+                }
+            }
+
+            // Support loading row-oriented FITS tables (and ASCII)
             uint_t nrow = 1;
             bool colfits = true;
             if (read_keyword("NAXIS2", nrow) && nrow > 1) {
