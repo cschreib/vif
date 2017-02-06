@@ -27,6 +27,8 @@ int phypp_main(int argc, char* argv[]) {
         opts.method = astro::regrid_method::drizzle;
     } else if (method == "nearest") {
         opts.method = astro::regrid_method::nearest;
+    } else if (method == "linear") {
+        opts.method = astro::regrid_method::linear;
     } else {
         error("unknown regridding method '", method, "'");
         return 1;
@@ -100,7 +102,8 @@ int phypp_main(int argc, char* argv[]) {
                 return 1;
             }
 
-            astrod = astro::wcs(fimgd.read_header());
+            hdrd = fimgd.read_header();
+            astrod = astro::wcs(hdrd);
             if (!astrod.is_valid()) {
                 error("invalid WCS data in template image");
                 return 1;

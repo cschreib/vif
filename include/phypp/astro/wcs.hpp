@@ -1204,13 +1204,43 @@ namespace impl {
 
             return covered;
         }
+
+        template<typename T, typename U>
+        bool regrid_linear(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            uint_t ncovered = 0;
+            flx = 0;
+            for (uint_t i : range(xps)) {
+                double tflx = bilinear_strict(imgs, yps.safe[i], xps.safe[i], dnan);
+                if (is_finite(tflx)) {
+                    ++ncovered;
+                    flx += tflx;
+                }
+            }
+
+            if (ncovered == 0) {
+                return false;
+            } else {
+                flx /= ncovered;
+                return true;
+            }
+        }
+
+        template<typename T, typename U>
+        bool regrid_linear_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            bool covered = regrid_linear(imgs, xps, yps, flx);
+            if (covered) {
+                flx *= polyon_area(xps, yps);
+            }
+
+            return covered;
+        }
     }
 }
 
 namespace astro {
 
     enum class regrid_method {
-        drizzle, nearest
+        drizzle, nearest, linear
     };
 
     struct regrid_params {
@@ -1281,6 +1311,13 @@ namespace astro {
                         covered = impl::wcs_impl::regrid_nearest_fcon(imgs, xps, yps, flx);
                     } else {
                         covered = impl::wcs_impl::regrid_nearest(imgs, xps, yps, flx);
+                    }
+                    break;
+                case regrid_method::linear:
+                    if (opts.conserve_flux) {
+                        covered = impl::wcs_impl::regrid_linear_fcon(imgs, xps, yps, flx);
+                    } else {
+                        covered = impl::wcs_impl::regrid_linear(imgs, xps, yps, flx);
                     }
                     break;
                 }
