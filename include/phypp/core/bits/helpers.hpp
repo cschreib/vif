@@ -64,6 +64,13 @@ namespace meta {
     template<typename T>
     using data_type_t = typename data_type<T>::type;
 
+    // Return the dimension of a vector
+    template<typename T>
+    struct vec_dim;
+
+    template<std::size_t Dim, typename T>
+    struct vec_dim<vec<Dim,T>> : std::integral_constant<std::size_t,Dim> {};
+
     // Helper to match a type to the corresponding vector internal type.
     template<typename T>
     struct vtype {
@@ -210,7 +217,7 @@ namespace impl {
     // Supports scalars and other arrays.
     template<std::size_t N, typename T, std::size_t I>
     void set_array_(std::array<T,N>& v, meta::cte_t<I>) {}
-    
+
     template<std::size_t N, typename T, std::size_t I, typename U, std::size_t M, typename ... Args>
     void set_array_(std::array<T,N>& v, meta::cte_t<I>, const std::array<U,M>& t, Args&& ... args);
 
