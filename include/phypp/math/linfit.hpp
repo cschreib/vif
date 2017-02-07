@@ -273,7 +273,7 @@ namespace phypp {
         }
 
         template<typename TypeY>
-        void fit(const TypeY& y) {
+        void fit_nochi2(const TypeY& y) {
             phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
                 "YE arrays (", dim(y), " vs. ", dim(ye), ")");
 
@@ -292,6 +292,18 @@ namespace phypp {
             }
 
             fr.params = matrix::product(fr.cov, beta);
+        }
+
+        template<typename TypeY>
+        void fit(const TypeY& y) {
+            fit_nochi2(y);
+            update_chi2(y);
+        }
+
+        template<typename TypeY>
+        void update_chi2(const TypeY& y) {
+            uint_t np = cache.dims[0];
+            uint_t nm = cache.dims[1];
 
             vec1d model(nm);
             for (uint_t m : range(nm)) {
@@ -301,7 +313,7 @@ namespace phypp {
                 }
             }
 
-            fr.chi2 = total(sqr(model - tmp));
+            fr.chi2 = total(sqr(model - flatten(y/ye)));
         }
     };
 
