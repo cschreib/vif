@@ -1,38 +1,36 @@
 #! /bin/bash
 
 # Source local phy++ configuration if running from root ("sudo" only)
-if [ -z "$PHYPP_COMPILER" ]; then
+if [ -z "${PHYPP_COMPILER}" ]; then
     if [ "$(id -u)" -eq "0" ]; then
-        if [ ! -z "$SUDO_USER" ]; then
-            eval source "~$SUDO_USER/.phypprc"
+        if [ ! -z "${SUDO_USER}" ]; then
+            eval source "~${SUDO_USER}/.phypprc"
         fi
     fi
 fi
 
-if [ -z "$PHYPP_COMPILER" ]; then
-    echo error: the phy++ library is not installed for this user
+if [ -z "${PHYPP_COMPILER}" ]; then
+    echo "error: the phy++ library is not installed for this user"
     exit
 fi
 
 if [ -f $1 ]; then
     if [ $1 -ot $1.cpp ]; then
-        echo phy++: re-compiling \'$1\'...
+        echo "phy++: re-compiling '$1'..."
         RECOMPILE=1
     else
         RECOMPILE=0
-        for f in ${PHYPP_PATH}/include/*
-        do
+        for f in ${PHYPP_PATH}/include/*; do
             if [ -f $f ] && [ "$f" -nt $1 ]; then
-                echo $f is more recent than program, re-compiling \'$1\'...
+                echo "$f is more recent than program, re-compiling '$1'..."
                 RECOMPILE=1
                 break
             fi
         done
-        if [ $RECOMPILE -eq 0 ]; then
-            for f in ${PHYPP_PATH}/lib/*
-            do
+        if [ ${RECOMPILE} -eq 0 ]; then
+            for f in ${PHYPP_PATH}/lib/*; do
                 if [ -f $f ] && [ "$f" -nt $1 ]; then
-                    echo $f is more recent than program, re-compiling \'$1\'...
+                    echo "$f is more recent than program, re-compiling '$1'..."
                     RECOMPILE=1
                     break
                 fi
@@ -40,11 +38,11 @@ if [ -f $1 ]; then
         fi
     fi
 else
-    echo phy++: compiling \'$1\'...
+    echo "phy++: compiling '$1'..."
     RECOMPILE=1
 fi
 
-if [ $RECOMPILE -eq 1 ]; then
+if [ ${RECOMPILE} -eq 1 ]; then
     cphy++ time $1.cpp
     if [ $? -ne 0 ]; then
         exit
