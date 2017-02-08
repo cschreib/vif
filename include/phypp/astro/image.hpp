@@ -581,6 +581,376 @@ namespace astro {
         uint_t nsrc = 0;
         return segment(std::move(map), nsrc);
     }
+
+    struct segment_deblend_params {
+        // Threshold value below which pixels will not be segmented
+        double detect_threshold = 2.5;
+        // Threshold distance to match a pixel to an existing segment (in pixels)
+        double deblend_threshold = 5.0;
+        // Minimum number of pixels per segment
+        uint_t min_area = 30;
+    };
+
+    struct segment_deblend_output {
+        // ID of the segment as given on the segmentation map
+        vec1u id;
+        // Size of a segment in number of pixels
+        vec1u area;
+        // Barycenter
+        vec1d bx, by;
+        // Peak
+        vec1i px, py;
+        // Flat index of the peak value of a segment
+        vec1u origin;
+        // Total "flux" inside a segment
+        vec1f flux;
+    };
+
+    vec2u segment_deblend(const vec2d& img, segment_deblend_output& out,
+        const segment_deblend_params& params = segment_deblend_params()) {
+
+        vec2u seg(img.dims);
+
+        vec2u visited(img.dims);
+        vec1u ox, oy;
+
+        vec1u sid = sort(img);
+        uint_t ipos = sid.size()-1;
+        uint_t mid = sid[ipos];
+
+        auto explore_neighbors = [&](uint_t ty, uint_t tx) {
+            auto check_add = [&](uint_t tty, uint_t ttx) {
+                if (visited(tty,ttx) != ipos) {
+                    visited(tty,ttx) = ipos;
+                    ox.push_back(ttx);
+                    oy.push_back(tty);
+                }
+            };
+
+            if (ty != 0)             check_add(ty-1,tx);
+            if (ty != img.dims[0]-1) check_add(ty+1,tx);
+            if (tx != 0)             check_add(ty,tx-1);
+            if (tx != img.dims[1]-1) check_add(ty,tx+1);
+        };
+
+        out.area.clear();
+        out.origin.clear();
+        out.id.data.reserve(0.1*sqrt(img.size()));
+        out.area.data.reserve(0.1*sqrt(img.size()));
+        out.origin.data.reserve(0.1*sqrt(img.size()));
+        out.bx.data.reserve(0.1*sqrt(img.size()));
+        out.by.data.reserve(0.1*sqrt(img.size()));
+        out.px.data.reserve(0.1*sqrt(img.size()));
+        out.py.data.reserve(0.1*sqrt(img.size()));
+
+        uint_t nseg = 0;
+
+        while (img[mid] >= params.detect_threshold && ipos > 0) {
+            // Check neighboring pixels within the deblend threshold if one of them
+            // already has been segmented, and if so give this pixel to that segment
+            vec1u tmid = mult_ids(img, mid);
+            ox.clear(); oy.clear();
+            oy.push_back(tmid[0]);
+            ox.push_back(tmid[1]);
+            visited[mid] = ipos;
+
+            uint_t neib_seg = 0;
+            double closest = dinf;
+            uint_t iter = 0;
+            while (!ox.empty() && neib_seg == 0 && iter < params.deblend_threshold) {
+                vec1u tox = std::move(ox), toy = std::move(oy);
+                ox.clear(); oy.clear();
+                for (uint_t i : range(tox)) {
+                    uint_t tseg = seg(toy[i],tox[i]);
+                    if (tseg > 0) {
+                        // Favour the closest peak
+                        vec1d ttid = mult_ids(img, out.origin[tseg-1]);
+                        double d = sqr(toy[i] - ttid[0]) + sqr(tox[i] - ttid[1]);
+                        if (d < closest) {
+                            neib_seg = tseg;
+                            closest = d;
+                        }
+                    }
+
+                    if (neib_seg == 0) {
+                        explore_neighbors(toy[i], tox[i]);
+                    }
+                }
+
+                ++iter;
+            }
+
+            if (neib_seg > 0) {
+                seg[mid] = neib_seg;
+                out.area[neib_seg-1] += 1;
+                out.by[neib_seg-1] += tmid[0]*img[mid];
+                out.bx[neib_seg-1] += tmid[1]*img[mid];
+                out.flux[neib_seg-1] += img[mid];
+            } else {
+                ++nseg;
+                seg[mid] = nseg;
+                out.id.push_back(nseg);
+                out.area.push_back(1);
+                out.origin.push_back(mid);
+                out.py.push_back(tmid[0]);
+                out.px.push_back(tmid[1]);
+                out.by.push_back(tmid[0]*img[mid]);
+                out.bx.push_back(tmid[1]*img[mid]);
+                out.flux.push_back(img[mid]);
+            }
+
+            --ipos;
+            mid = sid[ipos];
+        }
+
+        // Erase too small regions
+        if (count(out.area < params.min_area) != 0) {
+            visited[_] = 0;
+
+            uint_t curseg = 0;
+
+            auto fetch_neighbors = [&](uint_t ty, uint_t tx) {
+                auto check_add = [&](uint_t tty, uint_t ttx) {
+                    if (visited(tty,ttx) != curseg) {
+                        visited(tty,ttx) = curseg;
+                        ox.push_back(ttx);
+                        oy.push_back(tty);
+                    }
+                };
+
+                if (ty != 0)             check_add(ty-1,tx);
+                if (ty != img.dims[0]-1) check_add(ty+1,tx);
+                if (tx != 0)             check_add(ty,tx-1);
+                if (tx != img.dims[1]-1) check_add(ty,tx+1);
+            };
+
+            vec1u eids;
+            for (uint_t s : range(out.area)) {
+                curseg = s+1;
+
+                if (out.area[s] >= params.min_area) continue;
+
+                eids.push_back(s);
+
+                vec1u tmid = mult_ids(img, out.origin[s]);
+                ox.clear(); oy.clear();
+                oy.push_back(tmid[0]);
+                ox.push_back(tmid[1]);
+
+                vec1u sids;
+                sids.reserve(out.area[s]);
+
+                uint_t neib_seg = 0;
+                double closest = dinf;
+                while (!ox.empty()) {
+                    vec1u tox = std::move(ox), toy = std::move(oy);
+                    ox.clear(); oy.clear();
+                    for (uint_t i : range(tox)) {
+                        uint_t tseg = seg(toy[i],tox[i]);
+                        if (tseg > 0) {
+                            if (tseg != curseg) {
+                                // Favour the closest peak
+                                vec1d ttid = mult_ids(img, out.origin[tseg-1]);
+                                double d = sqr(toy[i] - ttid[0]) + sqr(tox[i] - ttid[1]);
+                                if (d < closest) {
+                                    neib_seg = tseg;
+                                    closest = d;
+                                }
+                            } else {
+                                sids.push_back(flat_id(img, toy[i], tox[i]));
+                                fetch_neighbors(toy[i], tox[i]);
+                            }
+                        }
+                    }
+                }
+
+                seg[sids] = neib_seg;
+                if (neib_seg != 0) {
+                    out.area[neib_seg-1] += out.area[s];
+                    out.flux[neib_seg-1] += out.flux[s];
+                    out.by[neib_seg-1] += out.by[s];
+                    out.bx[neib_seg-1] += out.bx[s];
+                }
+
+                --nseg;
+            }
+
+            inplace_remove(out.id, eids);
+            inplace_remove(out.area, eids);
+            inplace_remove(out.origin, eids);
+            inplace_remove(out.flux, eids);
+            inplace_remove(out.by, eids);
+            inplace_remove(out.bx, eids);
+            inplace_remove(out.py, eids);
+            inplace_remove(out.px, eids);
+        }
+
+        // Flux weighted barycenter
+        out.by /= out.flux;
+        out.bx /= out.flux;
+
+        return seg;
+    }
+
+    template <typename F>
+    void foreach_segment(const vec2u& seg, const vec1u& mids, F&& func) {
+        vec2u visited(seg.dims);
+
+        vec1u sids;
+        vec1u ox, oy;
+        uint_t curseg = 0;
+
+        auto fetch_neighbors = [&](uint_t ty, uint_t tx) {
+            auto check_add = [&](uint_t tty, uint_t ttx) {
+                if (visited(tty,ttx) != curseg) {
+                    visited(tty,ttx) = curseg;
+                    ox.push_back(ttx);
+                    oy.push_back(tty);
+                }
+            };
+
+            if (ty != 0)             check_add(ty-1,tx);
+            if (ty != seg.dims[0]-1) check_add(ty+1,tx);
+            if (tx != 0)             check_add(ty,tx-1);
+            if (tx != seg.dims[1]-1) check_add(ty,tx+1);
+        };
+
+        for (uint_t s : range(mids)) {
+            sids.clear();
+            oy.clear(); ox.clear();
+
+            curseg = seg[mids[s]];
+
+            vec1u tmid = mult_ids(seg, mids[s]);
+            oy.push_back(tmid[0]);
+            ox.push_back(tmid[1]);
+
+            while (!ox.empty()) {
+                vec1u tox = std::move(ox), toy = std::move(oy);
+                ox.clear(); oy.clear();
+                for (uint_t i : range(tox)) {
+                    if (seg(toy[i],tox[i]) == curseg) {
+                        sids.push_back(flat_id(seg, toy[i], tox[i]));
+                        fetch_neighbors(toy[i], tox[i]);
+                    }
+                }
+            }
+
+            func(sids);
+        }
+    }
+
+    void segment_distance(vec2u& map, vec2d& dmap, vec2u& imap) {
+        dmap = replicate(dinf, map.dims);
+
+        struct obj_state {
+            uint_t id;
+            uint_t npix = 0;
+            std::vector<uint_t> oy, ox;
+        };
+
+        std::vector<obj_state> states;
+
+        // Initialize states: identify segments and their boundaries where growth is allowed
+        std::vector<uint_t> toy, tox;
+        imap = replicate(npos, map.dims);
+        vec2u omap = map;
+
+        for (uint_t y : range(map.dims[0]))
+        for (uint_t x : range(map.dims[1])) {
+            if (omap.safe(y,x) == 0) {
+                continue;
+            }
+
+            // Found a guy
+            states.push_back(obj_state());
+            auto& state = states.back();
+            state.id = map.safe(y,x);
+
+            toy.clear(); tox.clear();
+
+            auto process_point = [&toy,&tox,&state,&map,&omap,&dmap,&imap](uint_t ty, uint_t tx) {
+                omap.safe(ty,tx) = 0; // set to zero to avoid coming back to it
+                dmap.safe(ty,tx) = 0;
+                imap.safe(ty,tx) = flat_id(map, ty, tx);
+                ++state.npix;
+
+                auto check_add = [&toy,&tox,&state,&map,&omap,&dmap,&imap,ty,tx](uint_t tty, uint_t ttx) {
+                    if (omap.safe(tty,ttx) == state.id) {
+                        toy.push_back(tty);
+                        tox.push_back(ttx);
+                    } else if (map.safe(tty,ttx) == 0) {
+                        state.oy.push_back(tty);
+                        state.ox.push_back(ttx);
+                        map.safe(tty,ttx) = state.id;
+                        dmap.safe(tty,ttx) = 1.0;
+                        imap.safe(tty,ttx) = flat_id(map, ty, tx);
+                    }
+                };
+
+                if (ty != 0)             check_add(ty-1,tx);
+                if (ty != map.dims[0]-1) check_add(ty+1,tx);
+                if (tx != 0)             check_add(ty,tx-1);
+                if (tx != map.dims[1]-1) check_add(ty,tx+1);
+            };
+
+            process_point(y, x);
+
+            while (!tox.empty()) {
+                uint_t ty = toy.back(); toy.pop_back();
+                uint_t tx = tox.back(); tox.pop_back();
+                process_point(ty, tx);
+            }
+        }
+
+        // Now grow each segment one pixel at a time, and only keep the nearest in case of overlap
+        bool starved = false;
+        while (!starved) {
+            starved = true;
+            for (uint_t i : range(states)) {
+                auto& state = states[i];
+
+                if (state.ox.empty()) continue;
+                starved = false;
+
+                auto process_point = [&state,&map,&dmap,&imap](uint_t ty, uint_t tx) {
+                    ++state.npix;
+
+                    auto check_add = [&state,&map,&dmap,&imap,tx,ty](uint_t tty, uint_t ttx) {
+                        double ox = imap.safe(ty,tx) % imap.dims[1];
+                        double oy = imap.safe(ty,tx) / imap.dims[1];
+                        double nd = sqr(double(tty) - oy) + sqr(double(ttx) - ox);
+
+                        if (dmap.safe(tty,ttx) > nd) {
+                            map.safe(tty,ttx) = state.id;
+                            imap.safe(tty,ttx) = imap.safe(ty,tx);
+                            dmap.safe(tty,ttx) = nd;
+                            state.oy.push_back(tty);
+                            state.ox.push_back(ttx);
+                        }
+                    };
+
+                    if (ty != 0)             check_add(ty-1,tx);
+                    if (ty != map.dims[0]-1) check_add(ty+1,tx);
+                    if (tx != 0)             check_add(ty,tx-1);
+                    if (tx != map.dims[1]-1) check_add(ty,tx+1);
+                };
+
+                toy = state.oy;   tox = state.ox;
+                state.oy.clear(); state.ox.clear();
+
+                while (!tox.empty()) {
+                    uint_t ty = toy.back(); toy.pop_back();
+                    uint_t tx = tox.back(); tox.pop_back();
+                    process_point(ty, tx);
+                }
+            }
+        }
+
+        // map now contains the expanded segmentation map
+        // imap now contains the pixel ID of the nearest neighbor
+        // dmap now contains the squared distance to the nearest segment
+    }
 }
 }
 
