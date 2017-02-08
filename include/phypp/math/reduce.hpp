@@ -802,8 +802,8 @@ namespace phypp {
     };
 
     // Integral of a 2D Gaussian profile between [x0,x1] and [y0,y1]
-    template <typename TX0, typename TX1>
-    auto integrate_gauss_2d(TX0&& x0, TX1&& x1, TX0&& y0, TX1&& y1, double xc, double yc, double w, double amp = 1.0) -> decltype(sqrt(x0)+sqrt(x1)) {
+    template <typename TX0, typename TX1, typename TY0, typename TY1>
+    auto integrate_gauss_2d(TX0&& x0, TX1&& x1, TY0&& y0, TY1&& y1, double xc, double yc, double w, double amp = 1.0) -> decltype(sqrt(x0)+sqrt(x1)) {
         return amp*integrate_gauss(x0,x1,xc,w,1.0)*integrate_gauss(y0,y1,yc,w,1.0);
     };
 }
