@@ -1080,17 +1080,15 @@ namespace impl {
 
             if (x.size() < 3) return area;
 
-            uint_t i3 = x.size()-2;
-            uint_t i2 = x.size()-1;
-            for (uint_t i1 : range(x.size()-2)) {
+            uint_t i1 = 0;
+            for (uint_t i2 : range(1, x.size()-1)) {
+                uint_t i3 = i2+1;
+
                 area += 0.5*abs(
                     x.safe[i1]*(y.safe[i2]-y.safe[i3]) +
                     x.safe[i2]*(y.safe[i3]-y.safe[i1]) +
                     x.safe[i3]*(y.safe[i1]-y.safe[i2])
                 );
-
-                i3 = i2;
-                i2 = i1;
             }
 
             return area;
