@@ -15,7 +15,7 @@ namespace ascii {
         exception(const std::string& w) : std::runtime_error(w) {}
     };
 
-    inline uint_t find_skip(const std::string& name) {
+    inline uint_t find_skip(const std::string& name, char pattern = '#') {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
 
         std::string line;
@@ -24,7 +24,7 @@ namespace ascii {
         std::ifstream file(name.c_str());
         while (std::getline(file, line)) {
             auto p = line.find_first_not_of(" \t");
-            if (p != line.npos && line[p] != '#') {
+            if (p != line.npos && line[p] != pattern) {
                 break;
             }
 
@@ -430,7 +430,7 @@ namespace impl {
             uint_t m = std::get<0>(v); // number of column groups
             uint_t o = sizeof...(VArgs); // number of columns in a group
             for (uint_t k : range(m)) {
-                write_table_do_tuple_(file, cwidth, sep, i, k, j+k*o, v, 
+                write_table_do_tuple_(file, cwidth, sep, i, k, j+k*o, v,
                     typename meta::gen_seq<1, sizeof...(VArgs)>::type()
                 );
             }
