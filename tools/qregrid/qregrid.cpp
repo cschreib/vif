@@ -12,23 +12,32 @@ int phypp_main(int argc, char* argv[]) {
     bool verbose = false;
     double aspix = dnan;
     double ratio = dnan;
+    double pixfrac = 1.0;
+    bool approx = false;
+    std::string weight;
     std::string method = "drizzle";
     bool conserve_flux = false;
     read_args(argc-2, argv+2, arg_list(
-        verbose, name(tpl, "template"), aspix, ratio, method, conserve_flux
+        verbose, name(tpl, "template"), aspix, ratio, method, conserve_flux, weight, pixfrac, approx
     ));
 
     // Forward options
-    astro::regrid_params opts;
-    opts.verbose = verbose;
-    opts.conserve_flux = conserve_flux;
+    astro::regrid_interpolate_params iopts;
+    astro::regrid_drizzle_params     dopts;
+    iopts.verbose = verbose;
+    dopts.verbose = verbose;
 
     if (method == "drizzle") {
-        opts.method = astro::regrid_method::drizzle;
+        dopts.pixfrac = pixfrac;
+        if (approx) {
+            dopts.dest_pixfrac = true;
+        }
     } else if (method == "nearest") {
-        opts.method = astro::regrid_method::nearest;
+        iopts.conserve_flux = conserve_flux;
+        iopts.method = astro::interpolation_method::nearest;
     } else if (method == "linear") {
-        opts.method = astro::regrid_method::linear;
+        iopts.conserve_flux = conserve_flux;
+        iopts.method = astro::interpolation_method::linear;
     } else {
         error("unknown regridding method '", method, "'");
         return 1;
@@ -136,11 +145,22 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     // Regrid
-    vec2d res = astro::regrid(imgs, astros, astrod, opts);
+    vec2d wei, res;
+    if (method == "drizzle") {
+        res = astro::regrid_drizzle(imgs, astros, astrod, wei, dopts);
+    } else {
+        res = astro::regrid_interpolate(imgs, astros, astrod, iopts);
+    }
 
     // Save regridded image
     file::mkdir(file::get_directory(out_file));
     fits::write(out_file, res, hdrd);
+
+    if (!weight.empty()) {
+        // Save weights
+        file::mkdir(file::get_directory(weight));
+        fits::write(weight, wei, hdrd);
+    }
 
     return 0;
 }

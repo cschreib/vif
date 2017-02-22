@@ -1080,32 +1080,29 @@ namespace impl {
 
             if (x.size() < 3) return area;
 
-            uint_t i3 = x.size()-2;
-            uint_t i2 = x.size()-1;
-            for (uint_t i1 : range(x.size()-2)) {
+            uint_t i1 = 0;
+            for (uint_t i2 : range(1, x.size()-1)) {
+                uint_t i3 = i2+1;
+
                 area += 0.5*abs(
                     x.safe[i1]*(y.safe[i2]-y.safe[i3]) +
                     x.safe[i2]*(y.safe[i3]-y.safe[i1]) +
                     x.safe[i3]*(y.safe[i1]-y.safe[i2])
                 );
-
-                i3 = i2;
-                i2 = i1;
             }
 
             return area;
         }
 
-        template<typename T, typename U>
-        bool regrid_drizzle(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+        void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps, vec2d& res, vec2d& wei) {
             // Get bounds of this projection
             uint_t ymin = regrid_drizzle_getmin(yps-0.5);
             uint_t xmin = regrid_drizzle_getmin(xps-0.5);
-            int_t tymax = regrid_drizzle_getmax(yps+0.5, imgs.dims[0]-1);
-            int_t txmax = regrid_drizzle_getmax(xps+0.5, imgs.dims[1]-1);
+            int_t tymax = regrid_drizzle_getmax(yps+0.5, res.dims[0]-1);
+            int_t txmax = regrid_drizzle_getmax(xps+0.5, res.dims[1]-1);
 
             if (tymax < 0 || txmax < 0) {
-                return false;
+                return;
             }
 
             uint_t ymax = tymax, xmax = txmax;
@@ -1114,8 +1111,10 @@ namespace impl {
             int_t orient = ((xps.safe[1] - xps.safe[0])*(yps.safe[2] - yps.safe[1]) -
                 (yps.safe[1] - yps.safe[0])*(xps.safe[2] - xps.safe[1]) > 0) ? 1 : -1;
 
-            // Sum flux from original pixels that fall inside the projection
-            bool covered = false;
+            // Normalize input flux to pixel area
+            flx /= polyon_area(xps, yps);
+
+            // Sum flux from original pixel that fall inside the projection
             for (uint_t ipy = ymin; ipy <= ymax; ++ipy)
             for (uint_t ipx = xmin; ipx <= xmax; ++ipx) {
                 // Construct the intersection polygon of the original pixel and the projection
@@ -1174,15 +1173,13 @@ namespace impl {
                 // No intersection, just discard that pixel
                 if (cpx.size() < 3) continue;
 
-                // First data entering in this pixel, initialize
-                covered = true;
-
                 // Compute the area of this intersection (1: full coverage, 0: no coverage)
-                flx += imgs.safe(ipy,ipx)*polyon_area(cpx, cpy);
+                double w = polyon_area(cpx, cpy);
+                res.safe(ipy,ipx) += flx*w;
+                wei.safe(ipy,ipx) += w;
             }
-
-            return covered;
         }
+
 
         template<typename T, typename U>
         bool regrid_nearest(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
@@ -1239,19 +1236,19 @@ namespace impl {
 
 namespace astro {
 
-    enum class regrid_method {
-        drizzle, nearest, linear
+    enum class interpolation_method {
+        nearest, linear
     };
 
-    struct regrid_params {
+    struct regrid_interpolate_params {
         bool verbose = false;
         bool conserve_flux = false;
-        regrid_method method = regrid_method::drizzle;
+        interpolation_method method = interpolation_method::linear;
     };
 
     template<typename T = double>
-    vec2d regrid(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
-        regrid_params opts = regrid_params{}) {
+    vec2d regrid_interpolate(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
+        regrid_interpolate_params opts = regrid_interpolate_params{}) {
 
         // Regridded image
         vec2d res;
@@ -1303,17 +1300,14 @@ namespace astro {
                 bool covered = false;
 
                 switch (opts.method) {
-                case regrid_method::drizzle:
-                    covered = impl::wcs_impl::regrid_drizzle(imgs, xps, yps, flx);
-                    break;
-                case regrid_method::nearest:
+                case interpolation_method::nearest:
                     if (opts.conserve_flux) {
                         covered = impl::wcs_impl::regrid_nearest_fcon(imgs, xps, yps, flx);
                     } else {
                         covered = impl::wcs_impl::regrid_nearest(imgs, xps, yps, flx);
                     }
                     break;
-                case regrid_method::linear:
+                case interpolation_method::linear:
                     if (opts.conserve_flux) {
                         covered = impl::wcs_impl::regrid_linear_fcon(imgs, xps, yps, flx);
                     } else {
@@ -1335,6 +1329,136 @@ namespace astro {
 #endif
 
         return res;
+    }
+
+    struct regrid_drizzle_params {
+        bool verbose = false;
+        double pixfrac = 1.0;
+        bool dest_pixfrac = false;
+    };
+
+    template<typename T = double>
+    vec2d regrid_drizzle(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
+        vec2d& wei, regrid_drizzle_params opts = regrid_drizzle_params{}) {
+
+        // Regridded image
+        vec2d res;
+
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        res = replicate(0, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
+        wei = replicate(0, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
+
+        // Precompute the projection of the new pixel grid on the old
+        // In case pixfrac=1:
+        // For the horizontal pixel 'i' of line 'j' (x_i,y_j), the grid is:
+        //   (pux,puy)[i]     (pux,puy)[i+1]    # y_(j+0.5)
+        //   (plx,ply)[i]     (plx,ply)[i+1]    # y_(j-0.5)
+        //   # x_(i-0.5)      # x_(i+0.5)
+        // To avoid re-computing stuff, pux and puy are swapped into plx and ply
+        // on each 'y' iteration for reuse. Total of (Nx+1)*(Ny+1) WCS transforms.
+        //
+        // In case pixfrac!=1:
+        // If dest_pixfrac=true, then the projection's coordinates are
+        // computed by linearly interpolating the above.
+        // If dest_pixfrac=false:
+        // For the horizontal pixel 'i' of line 'j' (x_i,y_j), the grid is:
+        //   (plux,pluy)[i]   (prux,pruy)[i]    # y_(j+0.5*pf)
+        //   (pllx,plly)[i]   (prlx,prly)[i]    # y_(j-0.5*pf)
+        //   # x_(i-0.5*pf)   # x_(i+0.5*pf)
+        // Total of 4*Nx*Ny WCS transforms.
+
+        auto s2d = [&](double sx, double sy, double& dx, double& dy) {
+            double tra, tdec;
+            astro::xy2ad(astros, sx+1, sy+1, tra, tdec);
+            astro::ad2xy(astrod, tra, tdec, dx, dy);
+            dx -= 1.0; dy -= 1.0;
+        };
+
+        auto pg = progress_start(imgs.size());
+        vec1d plx, ply;
+        vec1d pux, puy;
+        vec1d pllx, prlx, plux, prux;
+        vec1d plly, prly, pluy, pruy;
+        if (opts.pixfrac == 1 || opts.dest_pixfrac) {
+            plx.resize(imgs.dims[1]+1);
+            ply.resize(imgs.dims[1]+1);
+            for (uint_t ix : range(imgs.dims[1]+1)) {
+                s2d(ix-0.5, -0.5, plx.safe[ix], ply.safe[ix]);
+            }
+
+            pux.resize(imgs.dims[1]+1);
+            puy.resize(imgs.dims[1]+1);
+        } else {
+            pllx.resize(imgs.dims[1]); prlx.resize(imgs.dims[1]);
+            plux.resize(imgs.dims[1]); prux.resize(imgs.dims[1]);
+            plly.resize(imgs.dims[1]); prly.resize(imgs.dims[1]);
+            pluy.resize(imgs.dims[1]); pruy.resize(imgs.dims[1]);
+        }
+
+        for (uint_t iy : range(imgs.dims[0])) {
+            if (opts.pixfrac == 1 || opts.dest_pixfrac) {
+                for (uint_t ix : range(imgs.dims[1]+1)) {
+                    s2d(ix-0.5, iy+0.5, pux.safe[ix], puy.safe[ix]);
+                }
+            } else {
+                const double dp = 0.5*opts.pixfrac;
+                for (uint_t ix : range(imgs.dims[1])) {
+                    s2d(ix-dp, iy-dp, pllx.safe[ix], plly.safe[ix]);
+                    s2d(ix+dp, iy-dp, prlx.safe[ix], prly.safe[ix]);
+                    s2d(ix-dp, iy+dp, plux.safe[ix], pluy.safe[ix]);
+                    s2d(ix+dp, iy+dp, prux.safe[ix], pruy.safe[ix]);
+                }
+            }
+
+            for (uint_t ix : range(imgs.dims[1])) {
+                // Find projection of each pixel of the original image on the new grid
+                // NB: assumes the astrometry is such that this projection is
+                // reasonably approximated by a 4-edge polygon (i.e.: varying pixel scales,
+                // pixel offsets and rotations are fine, but weird things may happen close
+                // to the poles of the projection where things become non-linear)
+
+                vec1d xps, yps;
+                if (opts.pixfrac == 1 || opts.dest_pixfrac) {
+                    xps = {plx.safe[ix], plx.safe[ix+1], pux.safe[ix+1], pux.safe[ix]};
+                    yps = {ply.safe[ix], ply.safe[ix+1], puy.safe[ix+1], puy.safe[ix]};
+
+                    if (opts.dest_pixfrac) {
+                        double mx = mean(xps);
+                        xps = mx + opts.pixfrac*(xps - mx);
+                        double my = mean(yps);
+                        yps = my + opts.pixfrac*(yps - my);
+                    }
+                } else {
+                    xps = {pllx.safe[ix], prlx.safe[ix], prux.safe[ix], plux.safe[ix]};
+                    yps = {plly.safe[ix], prly.safe[ix], pruy.safe[ix], pluy.safe[ix]};
+                }
+
+                double flx = imgs.safe(iy,ix)*sqr(opts.pixfrac);
+                impl::wcs_impl::regrid_drizzle(flx, xps, yps, res, wei);
+
+                if (opts.verbose) progress(pg, 31);
+            }
+
+            if (opts.pixfrac == 1 || opts.dest_pixfrac) {
+                std::swap(plx, pux);
+                std::swap(ply, puy);
+            }
+        }
+#endif
+
+        res /= wei;
+
+        return res;
+    }
+
+    template<typename T = double>
+    vec2d regrid_drizzle(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
+        regrid_drizzle_params opts = regrid_drizzle_params{}) {
+        vec2d wei;
+        return regrid_drizzle(imgs, astros, astrod, wei, opts);
     }
 }
 }
