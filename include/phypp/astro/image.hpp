@@ -275,6 +275,26 @@ namespace astro {
         return tv;
     }
 
+    template<typename T>
+    vec<2,meta::rtype_t<T>> recenter(const vec<2,T>& img, int_t cy, int_t cx, std::array<uint_t,2> dims,
+        meta::rtype_t<T> def = 0) {
+
+        vec<2,meta::rtype_t<T>> nimg = replicate(def, dims);
+        vec1u ip, it;
+        int_t ty0 = cy - int_t(dims[0])/2;
+        int_t tx0 = cx - int_t(dims[1])/2;
+        int_t ty1 = ty0 + dims[0]-1;
+        int_t tx1 = tx0 + dims[1]-1;
+        subregion(img, {ty0, tx0, ty1, tx1}, ip, it);
+        nimg[it] = img[ip];
+        return nimg;
+    }
+
+    template<typename T>
+    vec<2,meta::rtype_t<T>> recenter(const vec<2,T>& img, int_t cy, int_t cx, meta::rtype_t<T> def = 0) {
+        return translate_integer(img, int_t(img.dims[0])/2 - cy, int_t(img.dims[1])/2 - cx, def);
+    }
+
     inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
         vec2d m(dims);
 
