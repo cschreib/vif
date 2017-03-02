@@ -54,20 +54,27 @@ namespace phypp {
         using drtype = meta::dtype_t<Type>;
         using vtype = std::vector<dtype>;
         using dim_type = std::array<std::size_t, Dim>;
-        struct comparator {
+
+        // Comparators
+        template<typename Comp>
+        struct comparator_base {
             constexpr bool operator() (const dtype& t1, const dtype& t2) const {
-                return t1 < t2;
+                return Comp()(t1, t2);
             }
             template<typename U>
             constexpr bool operator() (const dtype& t1, const U& t2) const {
-                return t1 < t2;
+                return Comp()(t1, t2);
             }
             template<typename U>
             constexpr bool operator() (const U& t1, const dtype& t2) const {
-                return t1 < t2;
+                return Comp()(t1, t2);
             }
         };
 
+        using comparator_less = comparator_base<meta::strict_comparator_less<Type>>;
+        using comparator_greater = comparator_base<meta::strict_comparator_greater<Type>>;
+
+        // Data
         vtype    data;
         dim_type dims = {{0}};
 
@@ -697,36 +704,44 @@ namespace phypp {
         using drtype = rtype;
         using vtype = std::vector<dtype*>;
         using dim_type = std::array<std::size_t, Dim>;
-        struct comparator {
+
+        // Comparators
+        template<typename Comp>
+        struct comparator_base {
             bool operator() (const dtype* t1, const dtype* t2) {
-                return *t1 < *t2;
+                return Comp()(*t1, *t2);
             }
             template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
             bool operator() (const dtype* t1, const U& t2) {
-                return *t1 < t2;
+                return Comp()(*t1, t2);
             }
             template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
             bool operator() (const U& t1, const dtype* t2) {
-                return t1 < *t2;
+                return Comp()(t1, *t2);
             }
 
             constexpr bool operator() (const dtype& t1, const dtype& t2) const {
-                return t1 < t2;
+                return Comp()(t1, t2);
             }
             template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
             constexpr bool operator() (const dtype& t1, const U& t2) const {
-                return t1 < t2;
+                return Comp()(t1, t2);
             }
             template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
             constexpr bool operator() (const U& t1, const dtype& t2) const {
-                return t1 < t2;
+                return Comp()(t1, t2);
             }
         };
 
+        using comparator_less = comparator_base<meta::strict_comparator_less<Type>>;
+        using comparator_greater = comparator_base<meta::strict_comparator_greater<Type>>;
+
+        // Data
         void*    parent = nullptr;
         vtype    data;
         dim_type dims = {{0}};
 
+        // Constructors
         vec() = delete;
         vec(const vec& v) : parent(v.parent), data(v.data), dims(v.dims), safe(*this) {}
         vec(impl::vec_nocopy_tag_t, const vec& v) : parent(v.parent), dims(v.dims), safe(*this) {}

@@ -706,7 +706,7 @@ namespace phypp {
     vec1u sort(const vec<Dim,Type>& v) {
         vec1u r = uindgen(v.size());
         std::stable_sort(r.data.begin(), r.data.end(), [&v](uint_t i, uint_t j) {
-            return typename vec<Dim,Type>::comparator()(v.data[i], v.data[j]);
+            return typename vec<Dim,Type>::comparator_less()(v.data[i], v.data[j]);
         });
 
         return r;
@@ -724,7 +724,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type>
     void inplace_sort(vec<Dim,Type>& v) {
-        std::stable_sort(v.data.begin(), v.data.end(), typename vec<Dim,Type>::comparator());
+        std::stable_sort(v.data.begin(), v.data.end(), typename vec<Dim,Type>::comparator_less());
     }
 
     template<std::size_t Dim, typename Type, typename F>
@@ -736,9 +736,7 @@ namespace phypp {
     template<std::size_t Dim, typename Type>
     bool is_sorted(const vec<Dim,Type>& v) {
         for (uint_t i : range(1, v.size())) {
-            // Note: watch out for NaN values!
-            // Make sure to use a test that returns 'false' if NaN is involved
-            if (v.safe[i-1] >= v.safe[i]) return false;
+            if (!typename vec<Dim,Type>::comparator_less()(v.safe[i-1], v.safe[i])) return false;
         }
 
         return true;
@@ -752,7 +750,7 @@ namespace phypp {
         if (v.empty()) return npos;
 
         auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
-            typename vec<Dim,Type>::comparator());
+            typename vec<Dim,Type>::comparator_less());
 
         if (iter == v.data.begin()) {
             return npos;
@@ -769,7 +767,7 @@ namespace phypp {
         if (v.empty()) return npos;
 
         auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
-            typename vec<Dim,Type>::comparator());
+            typename vec<Dim,Type>::comparator_less());
 
         if (iter == v.data.end()) {
             return npos;
@@ -790,7 +788,7 @@ namespace phypp {
             res[1] = npos;
         } else {
             auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
-                typename vec<Dim,Type>::comparator());
+                typename vec<Dim,Type>::comparator_less());
 
             if (iter == v.data.end()) {
                 res[0] = v.size() - 1;
@@ -821,7 +819,7 @@ namespace phypp {
             res[1] = npos;
         } else {
             auto iter = std::upper_bound(v.data.begin(), v.data.end(), x1,
-                typename vec<Dim,Type>::comparator());
+                typename vec<Dim,Type>::comparator_less());
 
             if (iter == v.data.begin()) {
                 res[0] = npos;
@@ -830,7 +828,7 @@ namespace phypp {
             }
 
             iter = std::upper_bound(iter, v.data.end(), x2,
-                typename vec<1,Type>::comparator());
+                typename vec<1,Type>::comparator_less());
 
             if (iter == v.data.end()) {
                 res[1] = npos;
@@ -847,7 +845,7 @@ namespace phypp {
     template<typename T, std::size_t Dim, typename Type>
     vec1u equal_range(T x, const vec<Dim,Type>& v) {
         auto res = std::equal_range(v.data.begin(), v.data.end(), x,
-            typename vec<Dim,Type>::comparator());
+            typename vec<Dim,Type>::comparator_less());
 
         return uindgen(1 + (res.second - res.first)) + (res.first - v.data.begin());
     }

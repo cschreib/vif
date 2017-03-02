@@ -109,30 +109,49 @@ namespace phypp {
         return strn(round(100.0*fraction_of(std::forward<Args>(args)...)))+"%";
     }
 
-    template<std::size_t Dim, typename Type>
-    meta::rtype_t<Type> inplace_median(vec<Dim,Type>& v) {
-        phypp_check(!v.empty(), "cannot find the median of an empty vector");
-
-        using vtype = typename vec<Dim,Type>::vtype;
-        using dtype = typename vtype::value_type;
-
-        uint_t nwrong = 0;
-        for (auto& t : v) {
-            nwrong += is_nan(t);
+    namespace impl {
+        // Inplace median for non-floating point types (no NaN value)
+        template<std::size_t Dim, typename Type>
+        meta::rtype_t<Type> nth_element_(vec<Dim,Type>& v, uint_t n) {
+            std::nth_element(v.begin(), v.begin() + n, v.end(),
+                typename vec<Dim,Type>::comparator_less());
+            return *(v.begin() + n);
         }
 
-        if (nwrong == v.size()) return dnan;
+        // Inplace median for non-floating point types (no NaN value)
+        template<std::size_t Dim, typename Type>
+        meta::rtype_t<Type> inplace_median_(vec<Dim,Type>& v, std::false_type) {
+            phypp_check(!v.empty(), "cannot find the median of an empty vector");
 
-        std::ptrdiff_t offset = (v.size()-nwrong)/2;
-        std::nth_element(v.data.begin(), v.data.begin() + offset, v.data.end(),
-            [](dtype i, dtype j) {
-                if (is_nan(impl::dref<Type>(i))) return false;
-                if (is_nan(impl::dref<Type>(j))) return true;
-                return impl::dref<Type>(i) < impl::dref<Type>(j);
+            return nth_element_(v, v.size()/2);
+        }
+
+
+        // Inplace median for floating point types (can have NaN values)
+        template<std::size_t Dim, typename Type>
+        uint_t count_nans_(const vec<Dim,Type>& v) {
+            uint_t nwrong = 0;
+            for (auto& t : v) {
+                nwrong += is_nan(t);
             }
-        );
 
-        return *(v.begin() + offset);
+            return nwrong;
+        }
+
+        // Inplace median for floating point types (can have NaN values)
+        template<std::size_t Dim, typename Type>
+        meta::rtype_t<Type> inplace_median_(vec<Dim,Type>& v, std::true_type) {
+            phypp_check(!v.empty(), "cannot find the median of an empty vector");
+
+            uint_t nwrong = count_nans_(v);
+            if (nwrong == v.size()) return dnan;
+            return nth_element_(v, (v.size()-nwrong)/2);
+        }
+    }
+
+    template<std::size_t Dim, typename Type>
+    meta::rtype_t<Type> inplace_median(vec<Dim,Type>& v) {
+        return impl::inplace_median_(v, std::is_floating_point<meta::rtype_t<Type>>{});
     }
 
     template<std::size_t Dim, typename Type>
@@ -151,6 +170,8 @@ namespace phypp {
             if (!is_nan(v.safe[i]) && !is_nan(w.safe[i])) totw += w.safe[i];
         }
 
+        if (totw == 0) return dnan;
+
         vec1u ids = sort(v);
 
         double tot = 0;
@@ -158,9 +179,8 @@ namespace phypp {
             uint_t j = ids.safe[i];
             if (!is_nan(v.safe[j]) && !is_nan(w.safe[j])) {
                 tot += w.safe[j];
-                if (tot > totw/2.0) {
-                    if (i == 0) return v.safe[j];
-                    else        return v.safe[ids.safe[i-1]];
+                if (tot >= totw/2.0) {
+                    return v.safe[j];
                 }
             }
         }
@@ -169,47 +189,47 @@ namespace phypp {
     }
 
     template<std::size_t Dim, typename Type, typename U>
-    meta::rtype_t<Type> percentile(const vec<Dim,Type>& v, const U& u) {
+    meta::rtype_t<Type> inplace_percentile(vec<Dim,Type>& v, const U& u) {
         phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
-        vec1u ok = where(is_finite(v));
-        if (ok.empty()) return 0;
+        uint_t nwrong = impl::count_nans_(v);
+        if (nwrong == v.size()) return dnan;
+        return impl::nth_element_(v, clamp((v.size()-nwrong)*u, 0u, v.size()-1));
+    }
 
-        // TODO: (fixme) use same algorithm than median
-        typename vec<1,Type>::effective_type t = v.safe[ok];
-        std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
-        std::nth_element(t.begin(), t.begin() + offset, t.end());
-        return *(t.begin() + offset);
+    template<std::size_t Dim, typename Type, typename U>
+    meta::rtype_t<Type> percentile(vec<Dim,Type> v, const U& u) {
+        return inplace_percentile(v, u);
     }
 
     namespace impl {
         template<std::size_t Dim, typename Type>
-        void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t) {}
+        void percentiles_(vec<1,meta::rtype_t<Type>>& r, uint_t i, vec<Dim,Type>& v, uint_t nwrong) {}
 
         template<std::size_t Dim, typename Type, typename U, typename ... Args>
-        void percentiles_(vec<1,Type>& r, uint_t i, vec<Dim,Type>& t, const U& u, const Args& ... args) {
-            std::ptrdiff_t offset = clamp(t.size()*u, 0u, t.size()-1);
-            std::nth_element(t.begin(), t.begin() + offset, t.end());
-            r.safe[i] = *(t.begin() + offset);
+        void percentiles_(vec<1,meta::rtype_t<Type>>& r, uint_t i, vec<Dim,Type>& v, uint_t nwrong,
+            const U& u, const Args& ... args) {
+
+            r.safe[i] = nth_element_(v, clamp((v.size()-nwrong)*u, 0u, v.size()-1));
             ++i;
 
-            percentiles_(r, i, t, args...);
+            percentiles_(r, i, v, nwrong, args...);
         }
     }
 
     template<std::size_t Dim, typename Type, typename ... Args>
-    typename vec<1,Type>::effective_type percentiles(const vec<Dim,Type>& v, const Args& ... args) {
+    vec<1,meta::rtype_t<Type>> inplace_percentiles(vec<Dim,Type>& v, const Args& ... args) {
         phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
-        vec1u ok = where(is_finite(v));
-        typename vec<1,Type>::effective_type t;
-        if (ok.empty()) return t;
-        t = v.safe[ok];
-
-        typename vec<1,Type>::effective_type r = arr<meta::rtype_t<Type>>(sizeof...(Args));
-        impl::percentiles_(r, 0, t, args...);
-
+        vec<1,meta::rtype_t<Type>> r(sizeof...(Args));
+        uint_t nwrong = impl::count_nans_(v);
+        impl::percentiles_(r, 0, v, nwrong, args...);
         return r;
+    }
+
+    template<std::size_t Dim, typename Type, typename ... Args>
+    typename vec<1,Type>::effective_type percentiles(vec<Dim,Type> v, const Args& ... args) {
+        return inplace_percentiles(v, args...);
     }
 
     template<std::size_t Dim, typename Type>
@@ -226,11 +246,8 @@ namespace phypp {
         typename vec<Dim,Type>::const_iterator min_(const vec<Dim,Type>& v) {
             phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
 
-            auto iter = std::min_element(v.begin(), v.end(), [](meta::rtype_t<Type> t1, meta::rtype_t<Type> t2){
-                if (is_nan(t1)) return false;
-                if (is_nan(t2)) return true;
-                return t1 < t2;
-            });
+            auto iter = std::min_element(v.begin(), v.end(),
+                typename vec<Dim,Type>::comparator_less());
 
             if (iter == v.end()) iter = v.begin();
             return iter;
@@ -240,11 +257,8 @@ namespace phypp {
         typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
             phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
 
-            auto iter = std::max_element(v.begin(), v.end(), [](meta::rtype_t<Type> t1, meta::rtype_t<Type> t2){
-                if (is_nan(t1)) return true;
-                if (is_nan(t2)) return false;
-                return t1 < t2;
-            });
+            auto iter = std::min_element(v.begin(), v.end(),
+                typename vec<Dim,Type>::comparator_greater());
 
             if (iter == v.end()) iter = v.begin();
             return iter;

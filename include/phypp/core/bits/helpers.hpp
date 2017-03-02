@@ -242,4 +242,57 @@ namespace impl {
         set_array_(v, meta::cte_t<0>{}, std::forward<Args>(args)...);
     }
 } // end namespace impl
+
+namespace impl {
+namespace meta_impl {
+    template<typename T, bool hasNaN>
+    struct strict_comparator_less_;
+
+    template<typename T>
+    struct strict_comparator_less_<T, false> {
+        bool operator() (const T& t1, const T& t2) {
+            return t1 < t2;
+        }
+    };
+
+    template<typename T>
+    struct strict_comparator_less_<T, true> {
+        bool operator() (const T& t1, const T& t2) {
+            if (std::isnan(t1)) return false;
+            if (std::isnan(t2)) return true;
+            return t1 < t2;
+        }
+    };
+
+    template<typename T, bool hasNaN>
+    struct strict_comparator_greater_;
+
+    template<typename T>
+    struct strict_comparator_greater_<T, false> {
+        bool operator() (const T& t1, const T& t2) {
+            return t1 > t2;
+        }
+    };
+
+    template<typename T>
+    struct strict_comparator_greater_<T, true> {
+        bool operator() (const T& t1, const T& t2) {
+            if (std::isnan(t1)) return false;
+            if (std::isnan(t2)) return true;
+            return t1 > t2;
+        }
+    };
+} // end namespace meta_impl
+} // end namespace impl
+
+namespace meta {
+    template<typename T>
+    using strict_comparator_less = impl::meta_impl::strict_comparator_less_<T,
+        std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN
+    >;
+    template<typename T>
+    using strict_comparator_greater = impl::meta_impl::strict_comparator_greater_<T,
+        std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN
+    >;
+} // end namespace meta
 } // end namespace phypp
