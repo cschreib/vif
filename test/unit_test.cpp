@@ -118,29 +118,27 @@ int phypp_main(int argc, char* argv[]) {
         print("'rgen' function");
         vec1d v1 = rgen(0, 5, 11);
         check(v1, "{0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5}");
-        vec1u v2 = rgen(0, 5);
-        check(v2, "{0, 1, 2, 3, 4, 5}");
-        vec1u i = rgen(5, 2);
-        check(i, "{5, 4, 3, 2}");
 
         print("Index array");
+        vec1u i = {5, 4, 3, 2};
         check((2*v)[i], "{10, 8, 6, 4}");
         check(2*v[i], "{10, 8, 6, 4}");
         v[i] = dindgen(4);
         check(v, "{0, 1, 3, 2, 1, 0, 6}");
-        v[rgen(4,6)] = v[rgen(2,0)];
+        v[vec1u{4,5,6}] = v[vec1u{2,1,0}];
         check(v, "{0, 1, 3, 2, 3, 1, 0}");
         v[i] *= 2;
         check(v, "{0, 1, 6, 4, 6, 2, 0}");
         v[i] += indgen(4);
         check(v, "{0, 1, 9, 6, 7, 2, 0}");
-        v[rgen(0,6)] = v[rgen(6,0)];
+        v[vec1u{0,1,2,3,4,5,6}] = v[vec1u{6,5,4,3,2,1,0}];
         check(v, "{0, 2, 7, 6, 9, 1, 0}");
-        check(v[rgen(1,4)][rgen(1,2)], "{7, 6}");
+        vec1d tv = v[vec1u{1,2,3,4}][vec1u{1,2}];
+        check(tv, "{7, 6}");
         v(1) = 3;
         check(v, "{0, 3, 7, 6, 9, 1, 0}");
         check(v(3), "6");
-        v[rgen(0,6)](0) = 1;
+        v[vec1u{0,1,2,3,4,5,6}](0) = 1;
         check(v, "{1, 3, 7, 6, 9, 1, 0}");
 
         print("Negative indices");
@@ -245,19 +243,19 @@ int phypp_main(int argc, char* argv[]) {
         check(v(_,0).dims, "{5}");
         check(v(0,_).dims, "{4}");
         check(v(1-_-2,1-_-3).dims, "{2, 3}");
-        check(v(rgen(1,2),rgen(1,3)).dims, "{2, 3}");
-        check(v(rgen(1,2),0).dims, "{2}");
-        check(v(0,rgen(1,3)).dims, "{3}");
+        check(v(vec1u{1,2},vec1u{1,2,3}).dims, "{2, 3}");
+        check(v(vec1u{1,2},0).dims, "{2}");
+        check(v(0,vec1u{1,2,3}).dims, "{3}");
 
         check(v(_,_).dims, "{5, 4}");
         check(v(_,0).dims, "{5}");
         check(v(0,_).dims, "{4}");
-        check(v(rgen(1,2),rgen(1,3)).dims, "{2, 3}");
-        check(v(rgen(1,2),0).dims, "{2}");
-        check(v(0,rgen(1,3)).dims, "{3}");
+        check(v(vec1u{1,2},vec1u{1,2,3}).dims, "{2, 3}");
+        check(v(vec1u{1,2},0).dims, "{2}");
+        check(v(0,vec1u{1,2,3}).dims, "{3}");
 
         check(v(1,_), "{8, 9, 5, 2}");
-        check(v(2,rgen(1,2)), "{8, 2}");
+        check(v(2,vec1u{1,2}), "{8, 2}");
         check(v(_,1), "{5, 9, 8, -5, 1}");
 
         v(2,_) = indgen(4);
@@ -416,26 +414,26 @@ int phypp_main(int argc, char* argv[]) {
     {
         print("ASCII table loading");
         vec1i i1, i2;
-        file::read_table("data/table.txt", 2, i1, i2);
+        ascii::read_table("data/table.txt", 2, i1, i2);
         check(i1, "{0, 1, 2, 3, 4}");
         check(i2, "{0, 1, 3, 5, 9}");
 
         vec1i i2b;
-        file::read_table("data/table.txt", 2, _, i2b);
+        ascii::read_table("data/table.txt", 2, _, i2b);
         check(where(i2 != i2b).empty(), "1");
 
         vec2i ids;
-        file::read_table("data/table.txt", 2, file::columns(2, ids));
+        ascii::read_table("data/table.txt", 2, ascii::columns(2, ids));
         check(where(i1 != ids(_,0)).empty(), "1");
         check(where(i2 != ids(_,1)).empty(), "1");
 
         vec2i i1c, i2c;
-        file::read_table("data/table.txt", 2, file::columns(1, i1c, i2c));
+        ascii::read_table("data/table.txt", 2, ascii::columns(1, i1c, i2c));
         check(where(i1 != i1c(_,0)).empty(), "1");
         check(where(i2 != i2c(_,0)).empty(), "1");
 
         vec2i i2d;
-        file::read_table("data/table.txt", 2, file::columns(1, _, i2d));
+        ascii::read_table("data/table.txt", 2, ascii::columns(1, _, i2d));
         check(where(i2 != i2d(_,0)).empty(), "1");
     }
 
@@ -482,6 +480,9 @@ int phypp_main(int argc, char* argv[]) {
         print(med);
         check(abs(med) < 1.0/sqrt(ntry), "1");
 
+        vec1d vv = {dnan, dnan, 2.0, dnan, dnan, 1.0, dnan, 3.0};
+        check(median(vv), "2");
+
         double p1 = percentile(r, 0.158);
         double p2 = percentile(r, 0.842);
         vec1d pi = {p1, p2};
@@ -489,6 +490,9 @@ int phypp_main(int argc, char* argv[]) {
         check(abs(p1 + 1.0) < 1.0/sqrt(ntry), "1");
         check(abs(p2 - 1.0) < 1.0/sqrt(ntry), "1");
         check(percentiles(r, 0.158, 0.842) == pi, "{1, 1}");
+        check(percentile(vv, 0.16), "1");
+        check(percentile(vv, 0.84), "3");
+        check(percentiles(vv, 0.16, 0.5, 0.84), "{1, 2, 3}");
     }
 
     {
@@ -526,8 +530,8 @@ int phypp_main(int argc, char* argv[]) {
     {
         print("'partial_median' for 3-d array");
         vec3d v = dblarr(21,21,11);
-        v(_,_,rgen(0,4)) = 0;
-        v(_,_,rgen(6,10)) = 1;
+        v(_,_,0-_-4) = 0;
+        v(_,_,6-_-10) = 1;
         v(_,_,5) = 0.5;
 
         vec2d m = partial_median(2,v);
@@ -655,18 +659,14 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     {
-        print("'shift' function");
+        print("' ' function");
         vec1i v = indgen(6);
-        check(shift(v, -2), "{2, 3, 4, 5, 0, 0}");
-        check(shift(v, +2), "{0, 0, 0, 1, 2, 3}");
-        check(shift(v, 100), "{0, 0, 0, 0, 0, 0}");
+        check(shift(v, -2), "{2, 3, 4, 5, 0, 1}");
+        check(shift(v, +2), "{4, 5, 0, 1, 2, 3}");
     }
 
     {
         print("Calculus functions");
-        check(float(derivate1_func([](double x) { return cos(x); }, 1.0, 0.001)), "-0.841471");
-        check(float(derivate2_func([](double x) { return cos(x); }, 1.0, 0.001)), "-0.540302");
-
         vec1d x = {0,1,2};
         vec1d y = {0,1,0};
         check(integrate(x, y), "1");
@@ -878,26 +878,28 @@ int phypp_main(int argc, char* argv[]) {
 #endif
 
     {
-        print("'affinefit' function");
-        vec1d x = dindgen(5);
-        vec1d y = 5*x + 3;
-        vec1d ye = y*0 + 1;
-
-        auto fr = affinefit(y, ye, x);
-        check(fr.slope, "5");
-        check(fr.offset, "3");
-    }
-
-    {
         print("'sort' function");
-        vec1i v = {6,2,4,3,1,5};
+        vec1d v = {6,2,4,3,1,5};
         vec1i sid = sort(v);
         check(sid, "{4, 1, 3, 2, 5, 0}");
         check(v[sid], "{1, 2, 3, 4, 5, 6}");
+
+        v = {dnan,2,4,3,1,5};
+        sid = sort(v);
+        vec1d tv = v[sid];
+        check(tv[where(is_finite(tv))], "{1, 2, 3, 4, 5}");
+
+        v = {2,4,3,1,5,dnan};
+        sid = sort(v);
+        tv = v[sid];
+        check(tv[where(is_finite(tv))], "{1, 2, 3, 4, 5}");
+
+        v = {6,6,4,6,4,1,5};
+        sid = sort(v);
+        check(v[sid], "{1, 4, 4, 5, 6, 6, 6}");
     }
 
     {
-        print("'sort' function again");
         vec2i v = {{5,0}, {4,1}, {1,2}, {2,3}};
         vec1i sid = sort(v(_,0));
         v(_,_) = v(sid,_);
@@ -905,16 +907,15 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     {
-        print("'uniq' function");
+        print("'unique_*' functions");
         vec1i v = {0,1,1,1,2,2,3,5,5,6};
-        vec1i id = uniq(v);
+        vec1u id = unique_ids_sorted(v);
         check(id, "{0, 1, 4, 6, 7, 9}");
 
         auto seed = make_seed(42);
         inplace_shuffle(seed, v);
-        vec1i sid = sort(v);
-        vec1i id2 = uniq(v, sid);
-        check(v[id2], "{0, 1, 2, 3, 5, 6}");
+        vec1i id2 = unique_values(v);
+        check(id2, "{0, 1, 2, 3, 5, 6}");
     }
 
     {
@@ -975,8 +976,8 @@ int phypp_main(int argc, char* argv[]) {
 
         vec1d v = rgen(0.0, 12.0, 1500);
         vec1d r = lumdist(v, cosmo);
-        vec1d r1 = lumdist(v[rgen(0,750)], cosmo);
-        append(r1, lumdist(v[rgen(751,1499)], cosmo));
+        vec1d r1 = lumdist(v[0-_-750], cosmo);
+        append(r1, lumdist(v[751-_-1499], cosmo));
         check(max(abs(r - r1)/r1) < 1e-5, "1");
     }
 
