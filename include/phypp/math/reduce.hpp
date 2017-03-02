@@ -113,7 +113,7 @@ namespace phypp {
         // Inplace median for non-floating point types (no NaN value)
         template<std::size_t Dim, typename Type>
         meta::rtype_t<Type> nth_element_(vec<Dim,Type>& v, uint_t n) {
-            std::nth_element(v.begin(), v.begin() + n, v.end(),
+            std::nth_element(v.data.begin(), v.data.begin() + n, v.data.end(),
                 typename vec<Dim,Type>::comparator_less());
             return *(v.begin() + n);
         }
