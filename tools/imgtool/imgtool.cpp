@@ -4,9 +4,11 @@ void print_help();
 
 bool convolve(int argc, char* argv[]);
 bool multiply(int argc, char* argv[]);
+bool rotate(int argc, char* argv[]);
 
 void print_convolve_help();
 void print_multiply_help();
+void print_rotate_help();
 
 int phypp_main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -22,6 +24,8 @@ int phypp_main(int argc, char* argv[]) {
             print_convolve_help();
         } else if (op == "multiply") {
             print_multiply_help();
+        } else if (op == "rotate") {
+            print_rotate_help();
         } else {
             error("unknown operation '", op, "'");
         }
@@ -30,6 +34,8 @@ int phypp_main(int argc, char* argv[]) {
             convolve(argc-1, argv+1);
         } else if (op == "multiply") {
             multiply(argc-1, argv+1);
+        } else if (op == "rotate") {
+            rotate(argc-1, argv+1);
         } else {
             error("unknown operation '", op, "'");
         }
@@ -117,6 +123,45 @@ bool multiply(int argc, char* argv[]) {
     return true;
 }
 
+void print_rotate_help() {
+    using namespace format;
+
+    paragraph("The program will rotate the image by the provided angle (in degrees, counter clock-wise).");
+
+    header("List of available command line options:");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool rotate(int argc, char* argv[]) {
+    if (argc < 4) {
+        error("usage: imgtool rotate [img.fits] [ccw angle in degree] [output.fits]");
+        return false;
+    }
+
+    bool help = false;
+    read_args(argc-3, argv+3, arg_list(help));
+
+    if (help) {
+        print_rotate_help();
+        return true;
+    }
+
+    vec2d map = fits::read(argv[1]);
+    double angle;
+    if (!from_string(argv[2], angle)) {
+        error("could not parse rotation angle '", argv[2], "'");
+        return false;
+    }
+
+    map = rotate(map, angle, dnan);
+
+    file::mkdir(file::get_directory(argv[3]));
+    fits::write(argv[3], map);
+
+    return true;
+}
+
 void print_help() {
     using namespace format;
 
@@ -124,6 +169,8 @@ void print_help() {
     header("Usage: imgtool operation [options]");
     header("Available operations:");
     bullet("convolve", "convolve a 2D kernel to a map");
+    bullet("multiply", "multiply a map by a constant value");
+    bullet("rotate", "rotate a map by a given angle");
     print("");
     header("To learn more about each operations and see the list of avilable options, run "
         "'fitstool operation help'.");
