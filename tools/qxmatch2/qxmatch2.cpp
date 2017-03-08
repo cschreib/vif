@@ -40,6 +40,10 @@ void print_help() {
         "(default: 1).");
     bullet("pos", "[string(array)]: defines the suffix of the RA and Dec variables inside the two "
         "catalogs (default: \"\")");
+    bullet("radec1", "[string(array)]: defines the name of the RA and Dec variables in the first "
+        "catalog (default: [ra,dec])");
+    bullet("radec2", "[string(array)]: defines the name of the RA and Dec variables in the first "
+        "catalog (default: [ra,dec])");
     bullet("thread", "[number]: set this value to the number of concurrent threads you want to run "
         "(default: 1).");
     print("");
@@ -69,13 +73,17 @@ int phypp_main(int argc, char* argv[]) {
     std::string output;
     vec1s pos;
 
+    vec1s radec1 = {"ra","dec"};
+    vec1s radec2 = {"ra","dec"};
     uint_t nth = 1;
     uint_t thread = 1;
     bool   verbose = false;
     bool   quiet = false;
     bool   brute = false;
 
-    read_args(argc, argv, arg_list(cats, output, nth, thread, verbose, quiet, pos, brute));
+    read_args(argc, argv, arg_list(
+        cats, output, nth, thread, verbose, quiet, pos, radec1, radec2, brute
+    ));
 
     if (quiet) verbose = false;
 
@@ -97,8 +105,8 @@ int phypp_main(int argc, char* argv[]) {
         pos[idne] += ".";
 
         coord_t cat1, cat2;
-        fits::read_table(cats[0], pos[0]+"ra", cat1.ra, pos[0]+"dec", cat1.dec);
-        fits::read_table(cats[1], pos[1]+"ra", cat2.ra, pos[1]+"dec", cat2.dec);
+        fits::read_table(cats[0], pos[0]+radec1[0], cat1.ra, pos[0]+radec1[1], cat1.dec);
+        fits::read_table(cats[1], pos[1]+radec2[0], cat2.ra, pos[1]+radec2[1], cat2.dec);
 
         if (cat1.ra.size() == 0 || cat1.dec.size() == 0) {
             error("qxmatch: first catalog is empty");
@@ -121,7 +129,7 @@ int phypp_main(int argc, char* argv[]) {
         if (!pos[0].empty()) pos += ".";
 
         coord_t cat;
-        fits::read_table(cats[0], pos[0]+"ra", cat.ra, pos[0]+"dec", cat.dec);
+        fits::read_table(cats[0], pos[0]+radec1[0], cat.ra, pos[0]+radec1[1], cat.dec);
 
         if (cat.ra.size() == 0 || cat.dec.size() == 0) {
             error("qxmatch: catalog is empty");
