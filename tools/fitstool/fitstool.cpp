@@ -14,6 +14,7 @@ bool read_keyword(int argc, char* argv[], const std::string& file);
 bool remove_keyword(int argc, char* argv[], const std::string& file);
 bool make_2d(int argc, char* argv[], const std::string& file);
 bool move_meta_columns(int argc, char* argv[], const std::string& file);
+bool extract_extension(int argc, char* argv[], const std::string& file);
 
 void print_remove_help();
 void print_transpose_help();
@@ -25,6 +26,7 @@ void print_rmkwd_help();
 void print_readkwd_help();
 void print_make2d_help();
 void print_meta_help();
+void print_extract_help();
 
 int phypp_main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -57,6 +59,8 @@ int phypp_main(int argc, char* argv[]) {
             print_make2d_help();
         } else if (op == "meta") {
             print_meta_help();
+        } else if (op == "extract") {
+            print_extract_help();
         } else {
             error("unknown operation '", op, "'");
         }
@@ -86,6 +90,8 @@ int phypp_main(int argc, char* argv[]) {
             make_2d(argc-2, argv+2, file);
         } else if (op == "meta") {
             move_meta_columns(argc-2, argv+2, file);
+        } else if (op == "extract") {
+            extract_extension(argc-2, argv+2, file);
         } else {
             error("unknown operation '", op, "'");
         }
@@ -1219,6 +1225,71 @@ bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force) {
     return true;
 }
 
+void print_extract_help() {
+    using namespace format;
+
+    paragraph("The program will extract one extension from the provided FITS file and save it "
+        "(with its header and content) in a new FITS file.");
+
+    header("List of available command line options:");
+    bullet("out", "[string] path to the output file, must be provided");
+    bullet("hdu", "[integer] HDU ID of the extension to copy (default: 0, the primary)");
+    bullet("help", "[flag] print this text");
+    print("");
+}
+
+bool extract_extension(int argc, char* argv[], const std::string& file) {
+    std::string out;
+    bool help = false;
+    uint_t hdu = 0;
+    read_args(argc, argv, arg_list(out, hdu, help));
+
+    if (help) {
+        print_extract_help();
+        return true;
+    }
+
+    if (out.empty()) {
+        error("missing output file name (out=...)");
+        print_extract_help();
+        return false;
+    }
+
+    file::mkdir(file::get_directory(out));
+
+    if (!start_with(out, "!")) {
+        out = "!"+out;
+    }
+
+    fitsfile* ifptr = nullptr;
+    fitsfile* ofptr = nullptr;
+    int status = 0;
+
+    try {
+        fits_open_file(&ifptr, file.c_str(), READONLY, &status);
+        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+
+        int hdut = 0;
+        fits_movabs_hdu(ifptr, hdu+1, &hdut, &status);
+        fits::phypp_check_cfitsio(status, "cannot reach HDU "+strn(hdu));
+
+        fits_create_file(&ofptr, out.c_str(), &status);
+        fits::phypp_check_cfitsio(status, "cannot create file '"+out+"'");
+
+        fits_copy_hdu(ifptr, ofptr, 0, &status);
+
+        fits_close_file(ifptr, &status);
+        fits_close_file(ofptr, &status);
+    } catch (fits::exception& e) {
+        print(e.msg);
+        if (ofptr) fits_close_file(ofptr, &status);
+        if (ifptr) fits_close_file(ifptr, &status);
+        return false;
+    }
+
+    return true;
+}
+
 void print_help() {
     using namespace format;
 
@@ -1236,6 +1307,7 @@ void print_help() {
     bullet("make2d", "remove extra dimensions from FITS image");
     bullet("meta", "shift all 'meta' columns into a new extension so that the file can be read in "
         "programs like TOPCAT that expect a single invariant dimension for all columns");
+    bullet("extract", "extracts one extension (or HDU) from a FITS file and save it in another");
     print("");
     header("To learn more about each operations and see the list of avilable options, run "
         "'fitstool operation help'.");
