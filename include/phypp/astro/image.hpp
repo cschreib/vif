@@ -399,6 +399,51 @@ namespace astro {
     // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
     // Note: If the FFTW library is not used, falls back to convolve2d_naive().
     template<typename TypeY1, typename TypeY2>
+    vec2cd convolve2d_prepare_kernel(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel,
+        uint_t& hsx, uint_t& hsy) {
+    #ifdef NO_FFTW
+        static_assert(!std::is_same<TypeY1,TypeY1>::value, "this function requires the FFTW "
+            "library");
+        return vec2cd();
+    #else
+        phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+            "kernel must have odd dimensions (", kernel.dims, ")");
+
+        hsx = kernel.dims[0]/2; hsy = kernel.dims[1]/2;
+
+        // Resize kernel to map size, with kernel center at (0,0), and some padding
+        // to avoid cyclic borders (assume image is 0 outside)
+        vec2d tkernel = enlarge(kernel, {{0, 0, map.dims[0]-1, map.dims[1]-1}});
+        inplace_shift(tkernel, -hsx, -hsy);
+
+        // Put the kernel in Fourier space
+        return fft(tkernel);
+    #endif
+    }
+
+    // Perform the convolution of a 2D array with a kernel (given in Fourier space)
+    template<typename TypeY1>
+    auto convolve2d(const vec<2,TypeY1>& map, const vec2cd& kernel, uint_t hsx, uint_t hsy) ->
+        vec<2,meta::rtype_t<TypeY1>> {
+    #ifdef NO_FFTW
+        static_assert(!std::is_same<TypeY1,TypeY1>::value, "this function requires the FFTW "
+            "library");
+        return map;
+    #else
+        // Pad image to prevent issues with cyclic borders
+        vec2d tmap = enlarge(map, {{hsx, hsy, hsx, hsy}});
+
+        // Perform the convolution in Fourier space
+        auto cimg = fft(tmap)*kernel;
+
+        // Go back to real space and shrink map back to original dimensions
+        return shrink(ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
+    #endif
+    }
+
+    // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
+    // Note: If the FFTW library is not used, falls back to convolve2d_naive().
+    template<typename TypeY1, typename TypeY2>
     auto convolve2d(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel) ->
         vec<2,decltype(map[0]*kernel[0])> {
     #ifdef NO_FFTW
@@ -430,12 +475,32 @@ namespace astro {
         tkernel(ix1,iy2) = kernel(px1, py2);
         tkernel(ix2,iy2) = kernel(px2, py2);
 
-        // Perform the convolution in Fourrier space
+        // Perform the convolution in Fourier space
         auto cimg = fft(tmap)*fft(tkernel);
 
         // Go back to real space and shrink map back to original dimensions
         return shrink(ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
     #endif
+    }
+
+    struct convolver2d {
+        const vec2d& kernel_normal;
+        vec2cd kernel_fourier;
+        uint_t hsx, hsy;
+
+        explicit convolver2d(const vec2d& k) : kernel_normal(k) {}
+
+        vec2d convolve(const vec2d& map) {
+            if (kernel_fourier.empty()) {
+                kernel_fourier = convolve2d_prepare_kernel(map, kernel_normal, hsx, hsy);
+            }
+
+            return convolve2d(map, kernel_fourier, hsx, hsy);
+        }
+    };
+
+    convolver2d batch_convolve2d(const vec2d& k) {
+        return convolver2d(k);
     }
 
     // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
