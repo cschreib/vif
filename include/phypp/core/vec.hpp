@@ -87,7 +87,7 @@ namespace phypp {
         vec(impl::vec_nocopy_tag_t, const vec& v) : dims(v.dims), safe(*this) {}
 
         // Move constructor
-        vec(vec&& v) : data(std::move(v.data)), dims(v.dims), safe(*this) {
+        vec(vec&& v) noexcept : data(std::move(v.data)), dims(v.dims), safe(*this) {
             for (uint_t i : range(Dim)) {
                 v.dims[i] = 0;
             }
@@ -745,7 +745,7 @@ namespace phypp {
         vec() = delete;
         vec(const vec& v) : parent(v.parent), data(v.data), dims(v.dims), safe(*this) {}
         vec(impl::vec_nocopy_tag_t, const vec& v) : parent(v.parent), dims(v.dims), safe(*this) {}
-        vec(vec&& v) : parent(v.parent), data(std::move(v.data)), dims(std::move(v.dims)), safe(*this) {}
+        vec(vec&& v) noexcept : parent(v.parent), data(std::move(v.data)), dims(std::move(v.dims)), safe(*this) {}
 
         template<std::size_t D, typename T, typename enable =
             typename std::enable_if<std::is_same<meta::rtype_t<T>, rtype>::value>::type>
