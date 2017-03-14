@@ -131,13 +131,13 @@ namespace impl {
         template<typename T>
         void check_lower_bounds(const T& right, uint_t size) {
             phypp_check(right.first < size, "lower bound of range goes past the "
-                "size of this vector (", right.first, " vs. ", size, ")");
+                "size of the data (", right.first, " vs. ", size, ")");
         }
 
         template<typename T>
         void check_upper_bounds(const T& left, uint_t size) {
             phypp_check(left.last < size, "upper bound of range goes past the "
-                "size of this vector (", left.last, " vs. ", size, ")");
+                "size of the data (", left.last, " vs. ", size, ")");
         }
 
         inline void check_bounds(full_range_t, uint_t size) {}
