@@ -20,24 +20,87 @@ namespace fits {
         input_image& operator = (input_image&&) = delete;
         input_image& operator = (const input_image&&) = delete;
 
-        template<std::size_t Dim, typename Type>
-        void read(vec<Dim,Type>& v) const {
-            int naxis;
+    protected:
+        template<typename Type>
+        void read_prep_(uint_t rdims, int& naxis, std::vector<long>& naxes, int& type) const {
             fits_get_img_dim(fptr_, &naxis, &status_);
             fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
-            phypp_check_fits(naxis == Dim, "FITS file has wrong number of dimensions "
-                "(expected "+strn(Dim)+", got "+strn(naxis)+")");
+            phypp_check_fits(naxis == rdims, "FITS file has wrong number of dimensions "
+                "(expected "+strn(rdims)+", got "+strn(naxis)+")");
 
             int bitpix;
-            std::vector<long> naxes(naxis);
+            naxes.resize(naxis);
             fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
             fits::phypp_check_cfitsio(status_, "could not read image parameters of HDU");
 
-            int type = impl::fits_impl::bitpix_to_type(bitpix);
+            type = impl::fits_impl::bitpix_to_type(bitpix);
             phypp_check_fits(impl::fits_impl::traits<Type>::is_convertible(type), "wrong image type "
                 "(expected "+pretty_type_t(Type)+", got "+impl::fits_impl::type_to_string_(type)+")");
 
             type = impl::fits_impl::traits<Type>::ttype;
+        }
+
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel) const {}
+
+        template <typename ... Args>
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel,
+            impl::range_impl::full_range_t, const Args& ... args) const {
+
+            fpixel[naxes.size()-1-idim] = 1;
+            lpixel[naxes.size()-1-idim] = naxes[naxes.size()-1-idim];
+
+            make_indices_(idim+1, naxes, fpixel, lpixel, args...);
+        }
+
+        template <typename ... Args>
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel,
+            impl::range_impl::left_range_t r, const Args& ... args) const {
+
+            phypp_check_fits(r.last < naxes[naxes.size()-1-idim], "image subset goes outside of "
+                "the image boundaries (axis "+strn(idim)+": "+strn(r.last)+" vs. "+
+                strn(naxes[naxes.size()-1-idim]));
+
+            fpixel[naxes.size()-1-idim] = 1;
+            lpixel[naxes.size()-1-idim] = r.last+1;
+
+            make_indices_(idim+1, naxes, fpixel, lpixel, args...);
+        }
+
+        template <typename ... Args>
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel,
+            impl::range_impl::right_range_t r, const Args& ... args) const {
+
+            fpixel[naxes.size()-1-idim] = r.first+1;
+            lpixel[naxes.size()-1-idim] = naxes[naxes.size()-1-idim];
+
+            make_indices_(idim+1, naxes, fpixel, lpixel, args...);
+        }
+
+        template <typename ... Args>
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel,
+            impl::range_impl::left_right_range_t r, const Args& ... args) const {
+
+            phypp_check_fits(r.last < naxes[naxes.size()-1-idim], "image subset goes outside of "
+                "the image boundaries (axis "+strn(idim)+": "+strn(r.last)+" vs. "+
+                strn(naxes[naxes.size()-1-idim]));
+
+            fpixel[naxes.size()-1-idim] = r.first+1;
+            lpixel[naxes.size()-1-idim] = r.last+1;
+
+            make_indices_(idim+1, naxes, fpixel, lpixel, args...);
+        }
+
+    public:
+        template<std::size_t Dim, typename Type>
+        void read(vec<Dim,Type>& v) const {
+            int naxis, type;
+            std::vector<long> naxes;
+            read_prep_<Type>(Dim, naxis, naxes, type);
 
             for (uint_t i : range(naxis)) {
                 v.dims[i] = naxes[naxis-1-i];
@@ -51,18 +114,36 @@ namespace fits {
             fits::phypp_check_cfitsio(status_, "could not read image from HDU");
         }
 
+        template<std::size_t Dim, typename Type, typename ... Args>
+        void read_subset(vec<Dim,Type>& v, const Args& ... args) const {
+            static_assert(Dim == sizeof...(Args), "incompatible subset and vector dimensions");
+
+            int naxis, type;
+            std::vector<long> naxes;
+            read_prep_<Type>(Dim, naxis, naxes, type);
+
+            std::vector<long> fpixel(Dim), lpixel(Dim);
+            make_indices_(0, naxes, fpixel, lpixel, args...);
+
+            for (uint_t i : range(naxis)) {
+                v.dims[i] = (lpixel[naxis-1-i]-fpixel[naxis-1-i])+1;
+            }
+
+            v.resize();
+
+            Type def = impl::fits_impl::traits<Type>::def();
+            int anynul;
+            std::vector<long> inc(Dim, 1);
+            fits_read_subset(fptr_, type, fpixel.data(), lpixel.data(), inc.data(),
+                nullptr, v.data.data(), &anynul, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read subset image from HDU");
+        }
+
         template<typename Type = double>
         Type read_pixel(vec1u p) const {
-            int naxis;
-            fits_get_img_dim(fptr_, &naxis, &status_);
-            fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
-            phypp_check_fits(uint_t(naxis) == p.size(), "FITS file has wrong number of dimensions "
-                "(expected "+strn(p.size())+", got "+strn(naxis)+")");
-
-            int bitpix;
-            std::vector<long> naxes(naxis);
-            fits_get_img_param(fptr_, naxis, &bitpix, &naxis, naxes.data(), &status_);
-            fits::phypp_check_cfitsio(status_, "could not read image parameters of HDU");
+            int naxis, type;
+            std::vector<long> naxes;
+            read_prep_<Type>(p.size(), naxis, naxes, type);
 
             uint_t ppos = 1;
             uint_t pitch = 1;
@@ -80,10 +161,6 @@ namespace fits {
                     "FITS file has too small dimensions (reading pixel "+strn(p)+
                     " in dims "+strn(nn)+")");
             }
-
-            int type = impl::fits_impl::bitpix_to_type(bitpix);
-            phypp_check_fits(impl::fits_impl::traits<Type>::is_convertible(type), "wrong image type "
-                "(expected "+pretty_type_t(Type)+", got "+impl::fits_impl::type_to_string_(type)+")");
 
             type = impl::fits_impl::traits<Type>::ttype;
 
