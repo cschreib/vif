@@ -11,6 +11,7 @@
 #endif
 
 #include "phypp/core/error.hpp"
+#include "phypp/utility/thread.hpp"
 #include "phypp/io/fits.hpp"
 #include "phypp/astro/astro.hpp"
 
@@ -355,15 +356,17 @@ namespace astro {
             // Cure header for ingestion by WCSlib
             impl::wcs_impl::cure_header(hdr);
 
-            // Enable error reporting
-            wcserr_enable(1);
-
             // Feed the header to WCSLib to extract the astrometric parameters
-            int nreject = 0;
-            int success = wcspih(
-                const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
-                WCSHDR_all, 0, &nreject, &nwcs, &w
-            );
+            int nreject = 0, success = 0;
+            {
+                // Need to use a mutex since WCSlib uses non-thread safe header parsing...
+                static std::mutex wcs_parser_mutex;
+                std::lock_guard<std::mutex> lock(wcs_parser_mutex);
+                success = wcspih(
+                    const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
+                    WCSHDR_all, 0, &nreject, &nwcs, &w
+                );
+            }
 
             if ((success != 0 || nwcs == 0) && w) {
                 error("could not parse WCS data from header");
@@ -576,8 +579,12 @@ namespace astro {
             wcserr_prt(w->cel.err, "error: ");
             wcserr_prt(w->cel.prj.err, "error: ");
             wcserr_prt(w->spc.err, "error: ");
+        }
 
-            phypp_check(w->err == nullptr, "error from WCSlib");
+        static enable_errors() {
+            // Enable error reporting
+            // Call this once in the main thread, not thread safe
+            wcserr_enable(1);
         }
 
         ~wcs() {
