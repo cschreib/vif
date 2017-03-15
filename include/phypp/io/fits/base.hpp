@@ -333,6 +333,7 @@ namespace impl {
 
                 if (rights == write_only || (rights == read_write && !file::exists(filename))) {
                     fits_create_file(&fptr_, ("!"+filename).c_str(), &status_);
+                    fits::phypp_check_cfitsio(status_, "cannot create file '"+filename+"'");
                 } else {
                     int trights = (rights == read_only ? READONLY : READWRITE);
 
@@ -347,9 +348,9 @@ namespace impl {
                             fits_open_table(&fptr_, filename.c_str(), trights, &status_);
                             break;
                     }
-                }
 
-                fits::phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
+                    fits::phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
+                }
             }
 
             file_base(file_base&& in) : type_(in.type_), rights_(in.rights_),
