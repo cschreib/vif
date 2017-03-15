@@ -388,7 +388,7 @@ namespace impl {
                 fits_hdr2str(fptr_, 0, nullptr, 0, &hstr, &nkeys, &status_);
                 fits::phypp_check_cfitsio(status_, "could not dump header to string");
                 hdr = hstr;
-                free(hstr);
+                fits_free_memory(hstr, &status_);
                 return hdr;
             }
 
