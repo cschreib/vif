@@ -330,6 +330,19 @@ namespace astro {
         }
     }
 
+}
+
+namespace impl {
+namespace wcs_impl {
+    std::mutex& wcs_parser_mutex() {
+        static std::mutex m;
+        return m;
+    }
+}
+}
+
+namespace astro {
+
 #ifndef NO_WCSLIB
     // Extract astrometry from a FITS image header
     struct wcs {
@@ -360,8 +373,7 @@ namespace astro {
             int nreject = 0, success = 0;
             {
                 // Need to use a mutex since WCSlib uses non-thread safe header parsing...
-                static std::mutex wcs_parser_mutex;
-                std::lock_guard<std::mutex> lock(wcs_parser_mutex);
+                std::lock_guard<std::mutex> lock(impl::wcs_impl::wcs_parser_mutex());
                 success = wcspih(
                     const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
                     WCSHDR_all, 0, &nreject, &nwcs, &w
