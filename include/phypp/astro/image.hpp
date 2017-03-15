@@ -486,16 +486,88 @@ namespace astro {
     struct convolver2d {
         const vec2d& kernel_normal;
         vec2cd kernel_fourier;
-        uint_t hsx, hsy;
+        uint_t hsx = 0, hsy = 0;
+        fftw_plan pf, pi;
+        bool pf_built = false, pi_built = false;
 
-        explicit convolver2d(const vec2d& k) : kernel_normal(k) {}
+        explicit convolver2d(const vec2d& k) : kernel_normal(k) {
+            phypp_check(k.dims[0]%2 == 1 && k.dims[1]%2 == 1,
+                "kernel must have odd dimensions (", k.dims, ")");
+        }
 
+        ~convolver2d() {
+            fftw_destroy_plan(pf);
+            fftw_destroy_plan(pi);
+        }
+
+    private :
+        void make_plan(const vec2d& v, vec2cd& r) {
+            if (!pf_built) {
+                std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+                pf = fftw_plan_dft_r2c_2d(v.dims[0], v.dims[1],
+                    const_cast<double*>(v.data.data()),
+                    reinterpret_cast<fftw_complex*>(r.data.data()), FFTW_ESTIMATE);
+                pf_built = true;
+            }
+        }
+
+        void make_plan(vec2cd& v, vec2d& r) {
+            if (!pi_built) {
+                std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+                pi = fftw_plan_dft_c2r_2d(v.dims[0], v.dims[1],
+                    reinterpret_cast<fftw_complex*>(v.data.data()),
+                    r.data.data(), FFTW_ESTIMATE);
+                pi_built = true;
+            }
+        }
+
+        vec2cd fft(const vec2d& v) {
+            vec2cd r(v.dims);
+            make_plan(v, r);
+
+            fftw_execute_dft_r2c(pf,
+                const_cast<double*>(v.data.data()),
+                reinterpret_cast<fftw_complex*>(r.data.data())
+            );
+
+            return r;
+        }
+
+        // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+        vec2d ifft(vec2cd& v) {
+            vec2d r(v.dims);
+            make_plan(v, r);
+
+            fftw_execute_dft_c2r(pi,
+                reinterpret_cast<fftw_complex*>(v.data.data()),
+                r.data.data()
+            );
+
+            return r;
+        }
+
+    public :
         vec2d convolve(const vec2d& map) {
             if (kernel_fourier.empty()) {
-                kernel_fourier = convolve2d_prepare_kernel(map, kernel_normal, hsx, hsy);
+                hsx = kernel_normal.dims[0]/2; hsy = kernel_normal.dims[1]/2;
+
+                // Resize kernel to map size, with kernel center at (0,0), and some padding
+                // to avoid cyclic borders (assume image is 0 outside)
+                vec2d tkernel = enlarge(kernel_normal, {{0, 0, map.dims[0]-1, map.dims[1]-1}});
+                inplace_shift(tkernel, -hsx, -hsy);
+
+                // Put the kernel in Fourier space
+                kernel_fourier = this->fft(tkernel);
             }
 
-            return convolve2d(map, kernel_fourier, hsx, hsy);
+            // Pad image to prevent issues with cyclic borders
+            vec2d tmap = enlarge(map, {{hsx, hsy, hsx, hsy}});
+
+            // Perform the convolution in Fourier space
+            auto cimg = this->fft(tmap)*kernel_fourier;
+
+            // Go back to real space and shrink map back to original dimensions
+            return shrink(this->ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
         }
     };
 
