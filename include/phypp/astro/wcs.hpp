@@ -348,6 +348,7 @@ namespace astro {
     struct wcs {
         wcsprm* w = nullptr;
         int nwcs  = 0;
+        bool isset = false;
 
         vec1u dims;
         vec1b has_unit;
@@ -370,17 +371,22 @@ namespace astro {
             impl::wcs_impl::cure_header(hdr);
 
             // Feed the header to WCSLib to extract the astrometric parameters
-            int nreject = 0, success = 0;
+            int nreject = 0, status = 0;
             {
                 // Need to use a mutex since WCSlib uses non-thread safe header parsing...
                 std::lock_guard<std::mutex> lock(impl::wcs_impl::wcs_parser_mutex());
-                success = wcspih(
+                status = wcspih(
                     const_cast<char*>(hdr.c_str()), hdr.size()/80 + 1,
                     WCSHDR_all, 0, &nreject, &nwcs, &w
                 );
+
+                if (status == 0 && nwcs != 0) {
+                    status = wcsset(w);
+                    isset = true;
+                }
             }
 
-            if ((success != 0 || nwcs == 0) && w) {
+            if ((status != 0 || nwcs == 0) && w) {
                 error("could not parse WCS data from header");
                 report_errors();
                 wcsvfree(&nwcs, &w);
@@ -394,13 +400,13 @@ namespace astro {
                 }
 
                 error("could not parse WCS data from header");
-                switch (success) {
+                switch (status) {
                     case 2: error("memory allocation failure"); break;
                     case 4: error("fatal error in the Flex parser"); break;
                     default: error("unknown error"); break;
                 }
 
-                phypp_check(success != 0, "WCSlib failed to read this header");
+                phypp_check(status != 0, "WCSlib failed to read this header");
 
                 return;
             }
@@ -453,7 +459,6 @@ namespace astro {
             vec1d world(w->naxis);
             vec1d itmp(w->naxis);
             double phi, theta;
-            int status = 0;
 
             int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
                 world.data.data(), &status);
@@ -566,6 +571,19 @@ namespace astro {
 
         bool is_valid() const {
             return w != nullptr;
+        }
+
+        void update() {
+            if (!isset) {
+                std::lock_guard<std::mutex> lock(impl::wcs_impl::wcs_parser_mutex());
+                int status = wcsset(w);
+                phypp_check(status == 0, "error updating WCS structure");
+                isset = true;
+            }
+        }
+
+        void flag_dirty() {
+            isset = false;
         }
 
         void report_errors() const {
