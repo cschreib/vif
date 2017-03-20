@@ -611,7 +611,7 @@ namespace astro {
             wcserr_prt(w->spc.err, "error: ");
         }
 
-        static enable_errors() {
+        static void enable_errors() {
             // Enable error reporting
             // Call this once in the main thread, not thread safe
             wcserr_enable(1);
