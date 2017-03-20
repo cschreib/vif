@@ -496,6 +496,7 @@ namespace astro {
         }
 
         ~convolver2d() {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
             fftw_destroy_plan(pf);
             fftw_destroy_plan(pi);
         }
