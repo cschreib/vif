@@ -30,7 +30,11 @@ namespace phypp {
         }
 
         fftw_execute(p);
-        fftw_destroy_plan(p);
+
+        {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+            fftw_destroy_plan(p);
+        }
 
         return r;
     }
@@ -48,8 +52,13 @@ namespace phypp {
                 reinterpret_cast<fftw_complex*>(v.data.data()),
                 r.data.data(), FFTW_ESTIMATE);
         }
+
         fftw_execute(p);
-        fftw_destroy_plan(p);
+
+        {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+            fftw_destroy_plan(p);
+        }
 
         return r;
     }
