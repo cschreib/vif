@@ -446,30 +446,54 @@ namespace phypp {
     // only the index of the first value of 'v2' that matches that of 'v1' is stored.
     template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
     void match(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2, vec1u& id1, vec1u& id2) {
-        // TODO: (optimization) sort v2 and use a binary search
-        // must find the right criterion on each vector's size to see
-        // when this is profitable
-
         uint_t n1 = v1.size();
         uint_t n2 = v2.size();
         uint_t n = std::min(n1, n2);
 
-        id1.data.reserve(n/2 + id1.size());
-        id2.data.reserve(n/2 + id2.size());
+        id1.clear();
+        id2.clear();
+        id1.data.reserve(n/2);
+        id2.data.reserve(n/2);
 
-        for (uint_t i : range(n1))
-        for (uint_t j : range(n2)) {
-            if (v2.safe[j] == v1.safe[i]) {
-                id1.data.push_back(i);
-                id2.data.push_back(j);
-                break;
+        // Choose algorithm based on data size (value chosen by profiling)
+        if (n < 64) {
+            // Brute force
+            for (uint_t i : range(n1))
+            for (uint_t j : range(n2)) {
+                if (v2.safe[j] == v1.safe[i]) {
+                    id1.data.push_back(i);
+                    id2.data.push_back(j);
+                    break;
+                }
             }
-        }
 
-        id1.dims[0] = id1.data.size();
-        id1.data.shrink_to_fit();
-        id2.dims[0] = id2.data.size();
-        id2.data.shrink_to_fit();
+            id1.dims[0] = id1.data.size();
+            id2.dims[0] = id2.data.size();
+        } else {
+            // Sort the two vectors and traverse
+            vec1u ids1 = sort(v1);
+            vec1u ids2 = sort(v2);
+
+            uint_t i1 = 0, i2 = 0;
+            while (i1 < n1 && i2 < n2) {
+                auto tv1 = v1.safe[ids1.safe[i1]];
+                auto tv2 = v2.safe[ids2.safe[i2]];
+                if (tv1 < tv2) {
+                    ++i1;
+                } else if (tv1 > tv2) {
+                    ++i2;
+                } else {
+                    id1.data.push_back(ids1.safe[i1]);
+                    id2.data.push_back(ids2.safe[i2]);
+                    ++i1; ++i2;
+                }
+            }
+
+            id1.dims[0] = id1.data.size();
+            id1.data.shrink_to_fit();
+            id2.dims[0] = id2.data.size();
+            id2.data.shrink_to_fit();
+        }
     }
 
     // Return a new vector containing only the values that are found in common in v1 and v2.
