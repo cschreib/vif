@@ -199,6 +199,38 @@ namespace impl {
         return range(n.size());
     }
 
+    inline uint_t range_begin(impl::range_impl::full_range_t, uint_t size) {
+        return 0u;
+    }
+
+    inline uint_t range_begin(impl::range_impl::left_range_t, uint_t size) {
+        return 0u;
+    }
+
+    inline uint_t range_begin(impl::range_impl::right_range_t r, uint_t size) {
+        return r.first;
+    }
+
+    inline uint_t range_begin(impl::range_impl::left_right_range_t r, uint_t size) {
+        return r.first;
+    }
+
+    inline uint_t range_end(impl::range_impl::full_range_t, uint_t size) {
+        return size;
+    }
+
+    inline uint_t range_end(impl::range_impl::left_range_t r, uint_t size) {
+        return r.last+1;
+    }
+
+    inline uint_t range_end(impl::range_impl::right_range_t, uint_t size) {
+        return size;
+    }
+
+    inline uint_t range_end(impl::range_impl::left_right_range_t r, uint_t size) {
+        return r.last+1;
+    }
+
 namespace meta {
     template<typename T>
     struct is_range : std::integral_constant<bool,
