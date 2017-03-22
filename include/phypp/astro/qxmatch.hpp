@@ -385,7 +385,7 @@ namespace astro {
                 }
 
                 // When using a single thread, all the work is done in the main thread
-                auto p = progress_start(n1+(params.self ? 0 : n2));
+                auto p = progress_start(n1+(!params.self && !params.no_mirror ? n2 : 0));
                 for (uint_t i : range(ra1)) {
                     work1(i, depths, res);
                     if (params.verbose) progress(p, 31);
@@ -459,7 +459,7 @@ namespace astro {
                 // Wait for the computation to finish.
                 // Here the main thread does nothing except sleeping, occasionally waking
                 // up once in a while to update the progress bar if any.
-                uint_t niter = n1+(params.self ? 0 : n2);
+                uint_t niter = n1+(!params.self && !params.no_mirror ? n2 : 0);
                 auto p = progress_start(niter);
                 while (iter < niter) {
                     thread::sleep_for(0.2);
