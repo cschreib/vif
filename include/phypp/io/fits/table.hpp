@@ -138,10 +138,10 @@ namespace fits {
             reach_hdu(hdu);
         }
 
-        input_table(input_table&&) = default;
-        input_table(const input_table&) = delete;
-        input_table& operator = (input_table&&) = delete;
-        input_table& operator = (const input_table&&) = delete;
+        input_table(input_table&&) noexcept = default;
+        input_table(const input_table&) noexcept = delete;
+        input_table& operator = (input_table&&) noexcept = delete;
+        input_table& operator = (const input_table&&) noexcept = delete;
 
         vec<1,column_info> read_column_info() const {
             vec<1,column_info> cols;
@@ -276,12 +276,12 @@ namespace fits {
                 }
             }
 
-            read_sentry(read_sentry&& s) :
+            read_sentry(read_sentry&& s) noexcept :
                 checked(s.checked), good(s.good), errmsg(std::move(s.errmsg)) {
                 s.checked = true;
             }
 
-            read_sentry& operator=(read_sentry&& s) {
+            read_sentry& operator=(read_sentry&& s) noexcept {
                 checked = s.checked;
                 good = s.good;
                 errmsg = std::move(s.errmsg);
@@ -848,9 +848,9 @@ namespace fits {
             impl::fits_impl::output_file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only),
             impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
 
-        output_table(output_table&&) = default;
+        output_table(output_table&&) noexcept = default;
         output_table(const output_table&) = delete;
-        output_table& operator = (output_table&&) = delete;
+        output_table& operator = (output_table&&) noexcept = delete;
         output_table& operator = (const output_table&&) = delete;
 
     protected :
@@ -1211,9 +1211,9 @@ namespace fits {
             reach_hdu(hdu);
         }
 
-        table(table&&) = default;
+        table(table&&) noexcept = default;
         table(const table&) = delete;
-        table& operator = (table&&) = delete;
+        table& operator = (table&&) noexcept = delete;
         table& operator = (const table&&) = delete;
 
         void remove_column(const std::string& tcolname) {

@@ -353,7 +353,7 @@ namespace impl {
                 }
             }
 
-            file_base(file_base&& in) : type_(in.type_), rights_(in.rights_),
+            file_base(file_base&& in) noexcept : type_(in.type_), rights_(in.rights_),
                 filename_(in.filename_), fptr_(in.fptr_), status_(in.status_) {
                 in.fptr_ = nullptr;
             }
@@ -616,7 +616,7 @@ namespace impl {
             output_file_base(file_type type, const std::string& filename, access_right rights) :
                 file_base(type, filename, rights) {}
 
-            output_file_base(output_file_base&& in) : file_base(std::move(in)) {}
+            output_file_base(output_file_base&& in) noexcept : file_base(std::move(in)) {}
 
             void remove_hdu() {
                 fits_delete_hdu(fptr_, nullptr, &status_);
@@ -638,6 +638,8 @@ namespace fits {
             impl::fits_impl::file_base(impl::fits_impl::generic_file, filename, impl::fits_impl::read_only) {
             reach_hdu(hdu);
         }
+
+        generic_file(generic_file&&) noexcept = default;
     };
 
     // Header keyword manipulation

@@ -539,7 +539,7 @@ namespace astro {
         wcs(const wcs&) = delete;
         wcs& operator = (const wcs&) = delete;
 
-        wcs(wcs&& tw) {
+        wcs(wcs&& tw) noexcept {
             std::swap(w, tw.w);
             std::swap(nwcs, tw.nwcs);
             std::swap(dims, tw.dims);
@@ -551,7 +551,7 @@ namespace astro {
             std::swap(y_axis, tw.y_axis);
         }
 
-        wcs& operator = (wcs&& tw) {
+        wcs& operator = (wcs&& tw) noexcept {
             if (w) {
                 wcsvfree(&nwcs, &w);
             }

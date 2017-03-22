@@ -15,10 +15,10 @@ namespace fits {
             reach_hdu(hdu);
         }
 
-        input_image(input_image&&) = default;
-        input_image(const input_image&) = delete;
-        input_image& operator = (input_image&&) = delete;
-        input_image& operator = (const input_image&&) = delete;
+        input_image(input_image&&) noexcept = default;
+        input_image(const input_image&) noexcept = delete;
+        input_image& operator = (input_image&&) noexcept = delete;
+        input_image& operator = (const input_image&&) noexcept = delete;
 
     protected:
         template<typename Type>
@@ -188,9 +188,9 @@ namespace fits {
             impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
-        output_image(output_image&&) = default;
+        output_image(output_image&&) noexcept = default;
         output_image(const output_image&) = delete;
-        output_image& operator = (output_image&&) = delete;
+        output_image& operator = (output_image&&) noexcept = delete;
         output_image& operator = (const output_image&&) = delete;
 
     protected :
@@ -269,9 +269,9 @@ namespace fits {
             reach_hdu(hdu);
         }
 
-        image(image&&) = default;
+        image(image&&) noexcept = default;
         image(const image&) = delete;
-        image& operator = (image&&) = delete;
+        image& operator = (image&&) noexcept = delete;
         image& operator = (const image&&) = delete;
 
         template<std::size_t Dim, typename Type>
