@@ -1111,6 +1111,195 @@ namespace astro {
         // dmap now contains the squared distance to the nearest segment
     }
 }
+
+namespace impl {
+    namespace astro_impl {
+        template<typename T>
+        struct extract_default_value {
+            static constexpr const T value = 0;
+        };
+
+        template<>
+        struct extract_default_value<float> {
+            static constexpr const float value = fnan;
+        };
+
+        template<>
+        struct extract_default_value<double> {
+            static constexpr const double value = dnan;
+        };
+
+        template<>
+        struct extract_default_value<std::string> {
+            static constexpr const char* value = "";
+        };
+    }
+}
+
+namespace astro {
+    struct cutout_extractor {
+        struct image_t {
+            explicit image_t(const std::string& filename) :
+                img(filename), hdr(img.read_header()), w(hdr), dims(img.image_dims()) {}
+
+            image_t(image_t&& i) noexcept :
+                img(std::move(i.img)), hdr(std::move(i.hdr)), w(std::move(i.w)),
+                dims(std::move(i.dims)) {}
+
+            fits::input_image img;
+            fits::header      hdr;
+            astro::wcs        w;
+            vec1u             dims;
+        };
+
+        vec<1,image_t> imgs;
+        double aspix = dnan;
+        std::unique_ptr<image_t> dist;
+
+        cutout_extractor() = default;
+
+        void setup_image(const std::string& filename) {
+            vec1s files;
+            if (end_with(filename, ".fits")) {
+                files.push_back(filename);
+            } else {
+                files = fits::read_sectfits(filename);
+            }
+
+            imgs.data.reserve(files.size());
+            imgs.dims[0] = files.size();
+            for (auto& f : files) {
+                imgs.data.emplace_back(f);
+                if (!is_finite(aspix)) {
+                    get_pixel_size(imgs.data.back().w, aspix);
+                }
+            }
+        }
+
+        void setup_distortion(const std::string& filename) {
+            dist = std::unique_ptr<image_t>(new image_t(filename));
+        }
+
+    private:
+        template<typename Type>
+        bool get_cutout_(vec<2,Type>& cut, fits::header& hdr, bool gethdr,
+            double ra, double dec, double size, Type def) const {
+
+            cut.clear();
+
+            double ira = ra, idec = dec;
+            if (dist) {
+                double dx, dy;
+                astro::ad2xy(dist->w, ra, dec, dx, dy);
+                dx -= 1.0; dy -= 1.0;
+                if (dx > -0.5 && dy > -0.5 && dx < dist->dims[1]-0.5 && dy < dist->dims[0]-0.5) {
+                    uint_t ix = round(dx), iy = round(dy);
+                    dist->img.reach_hdu(1);
+                    ira  -= dist->img.read_pixel({iy, ix});
+                    dist->img.reach_hdu(2);
+                    idec -= dist->img.read_pixel({iy, ix});
+                }
+            }
+
+            int_t hs = max(1, ceil(0.5*size/aspix));
+            double px = hs+1.0, py = hs+1.0;
+
+            for (uint_t i : range(imgs)) {
+                auto& iimg = imgs[i].img;
+                auto& w = imgs[i].w;
+                auto& dims = imgs[i].dims;
+
+                double dxc, dyc;
+                astro::ad2xy(w, ira, idec, dxc, dyc);
+                dxc -= 1.0; dyc -= 1.0;
+                int_t xc = round(dxc);
+                int_t yc = round(dyc);
+                int_t iy0 = yc-hs, iy1 = yc+hs, ix0 = xc-hs, ix1 = xc+hs;
+
+                if (ix1 < 0 || ix0 >= int_t(dims[1]) || iy1 < 0 || iy0 >= int_t(dims[0])) {
+                    // Source not covered
+                    continue;
+                }
+
+                vec<2,Type> data;
+                if (ix0 < 0 || ix1 >= int_t(dims[1]) || iy0 < 0 || iy1 >= int_t(dims[0])) {
+                    // Source partially covered
+                    data = replicate(def, 2*hs+1, 2*hs+1);
+
+                    uint_t tx0 = max(0, ix0);
+                    uint_t ty0 = max(0, iy0);
+                    uint_t tx1 = min(dims[1]-1, ix1);
+                    uint_t ty1 = min(dims[0]-1, iy1);
+
+                    vec<2,Type> subcut;
+                    iimg.read_subset(subcut, ty0-_-ty1, tx0-_-tx1);
+
+                    uint_t x0 = int_t(tx0)-ix0, x1 = int_t(tx1)-ix0, y0 = int_t(ty0)-iy0, y1 = int_t(ty1)-iy0;
+                    data(y0-_-y1,x0-_-x1) = std::move(subcut);
+                } else {
+                    // Source fully covered
+                    int_t y0 = iy0, y1 = iy1, x0 = ix0, x1 = ix1;
+                    iimg.read_subset(data, y0-_-y1, x0-_-x1);
+                }
+
+                if (cut.empty()) {
+                    // First image on which this source is found
+                    cut = std::move(data);
+
+                    // Initialize WCS
+                    if (gethdr) {
+                        hdr = astro::filter_wcs(imgs[i].hdr);
+                    }
+
+                    // Save precise center
+                    px = hs+1+(dxc-xc);
+                    py = hs+1+(dyc-yc);
+                } else {
+                    // This source was found on another image, combine the two
+                    vec1u idb = where(!is_finite(cut));
+                    cut[idb] = data[idb];
+                }
+            }
+
+            if (gethdr) {
+                if (hdr.empty() && gethdr) {
+                    // Source not covered, just use the first WCS header
+                    hdr = astro::filter_wcs(imgs[0].hdr);
+                }
+
+                // Set cutout WCS
+                if (!fits::setkey(hdr, "NAXIS1", cut.dims[1]) ||
+                    !fits::setkey(hdr, "NAXIS2", cut.dims[0]) ||
+                    !fits::setkey(hdr, "CRPIX1", px) || !fits::setkey(hdr, "CRPIX2", py) ||
+                    !fits::setkey(hdr, "CRVAL1", ra) || !fits::setkey(hdr, "CRVAL2", dec)) {
+                    return false;
+                }
+            }
+
+            if (cut.empty()) {
+                // Source not covered, just use placeholder data
+                cut = replicate(def, 2*hs+1, 2*hs+1);
+                return false;
+            }
+
+            return true;
+        }
+
+    public:
+        template<typename Type, typename TypeD = Type>
+        bool get_cutout(vec<2,Type>& cut, double ra, double dec, double size,
+            TypeD def = impl::astro_impl::extract_default_value<Type>::value) const {
+            fits::header hdr;
+            return get_cutout_(cut, hdr, false, ra, dec, size, def);
+        }
+
+        template<typename Type, typename TypeD = Type>
+        bool get_cutout(vec<2,Type>& cut, fits::header& hdr, double ra, double dec, double size,
+            TypeD def = impl::astro_impl::extract_default_value<Type>::value) const {
+            return get_cutout_(cut, hdr, true, ra, dec, size, def);
+        }
+    };
+}
 }
 
 #endif
