@@ -674,12 +674,60 @@ namespace astro {
         return m;
     }
 
+    template <typename F>
+    void foreach_segment(const vec2u& seg, const vec1u& mids, F&& func) {
+        vec2u visited(seg.dims);
+
+        vec1u sids;
+        vec1u ox, oy;
+        uint_t curseg = 0;
+
+        auto fetch_neighbors = [&](uint_t ty, uint_t tx) {
+            auto check_add = [&](uint_t tty, uint_t ttx) {
+                if (visited(tty,ttx) != curseg) {
+                    visited(tty,ttx) = curseg;
+                    ox.push_back(ttx);
+                    oy.push_back(tty);
+                }
+            };
+
+            if (ty != 0)             check_add(ty-1,tx);
+            if (ty != seg.dims[0]-1) check_add(ty+1,tx);
+            if (tx != 0)             check_add(ty,tx-1);
+            if (tx != seg.dims[1]-1) check_add(ty,tx+1);
+        };
+
+        for (uint_t s : range(mids)) {
+            sids.clear();
+            oy.clear(); ox.clear();
+
+            curseg = seg[mids[s]];
+
+            vec1u tmid = mult_ids(seg, mids[s]);
+            oy.push_back(tmid[0]);
+            ox.push_back(tmid[1]);
+
+            while (!ox.empty()) {
+                vec1u tox = std::move(ox), toy = std::move(oy);
+                ox.clear(); oy.clear();
+                for (uint_t i : range(tox)) {
+                    if (seg(toy[i],tox[i]) == curseg) {
+                        sids.push_back(flat_id(seg, toy[i], tox[i]));
+                        fetch_neighbors(toy[i], tox[i]);
+                    }
+                }
+            }
+
+            func(s, sids);
+        }
+    }
+
     struct segment_params {
         // Minimum number of pixels per segment
         uint_t min_area = 0u;
         // First ID used to place segments on the map
         uint_t first_id = 1u;
-    }
+    };
 
     struct segment_output {
         // ID of the segment as given on the segmentation map
@@ -692,19 +740,16 @@ namespace astro {
         vec1u origin;
     };
 
-    // Function to segment a binary or integer map into multiple components.
-    // Does no de-blending. The returned map contains IDs between 'first_id' and
-    // 'first_id + nsrc' (where 'nsrc' is the number of identified segments, which is
-    // provided in output). Values of 0 in the input binary map are also 0 in the
-    // segmentation map.
+    // Function to segment a binary or integer map into multiple contiguous components.
+    // Does no de-blending, use segment_deblend if you need it. Values of 0 in the
+    // input binary map are also 0 in the segmentation map.
     template <typename T, typename enable = typename std::enable_if<!std::is_pointer<T>::value>::type>
-    vec2u segment(vec<2,T> map, segment_output& sdo, const segment_params& sdp = segment_params{}) {
+    vec2u segment(vec<2,T> map, segment_output& out, const segment_params& params = segment_params()) {
         vec2u smap(map.dims);
 
-        phypp_check(sdp.first_id > 0, "first ID must be > 0");
+        phypp_check(params.first_id > 0, "first ID must be > 0");
 
-        nsrc = 0;
-        uint_t id = sdp.first_id;
+        uint_t id = params.first_id;
 
         std::vector<uint_t> oy, ox;
         for (uint_t y : range(map.dims[0]))
@@ -712,11 +757,11 @@ namespace astro {
             if (map.safe(y,x) == 0) continue;
 
             // Found a guy, create entry in the output
-            sdo.id.push_back(id);
-            sdo.area.push_back(1u);
-            sdo.px.push_back(x);
-            sdo.py.push_back(y);
-            sdo.origin.push_back(flat_id(map, y, x));
+            out.id.push_back(id);
+            out.area.push_back(1u);
+            out.px.push_back(x);
+            out.py.push_back(y);
+            out.origin.push_back(flat_id(map, y, x));
 
             // Use an A* - like algorithm to navigate around and
             // figure out its extents
@@ -724,15 +769,15 @@ namespace astro {
 
             // This function sets a point as belonging to the current segment
             // and adds the neighboring points to a search list for inspection
-            auto process_point = [&ox,&oy,&map,&smap,id](uint_t ty, uint_t tx) {
+            auto process_point = [&ox,&oy,&map,&smap,&out,id](uint_t ty, uint_t tx) {
                 map.safe(ty,tx) = 0;
                 smap.safe(ty,tx) = id;
 
-                auto check_add = [&ox,&oy,&map](uint_t tty, uint_t ttx) {
+                auto check_add = [&ox,&oy,&map,&out](uint_t tty, uint_t ttx) {
                     if (map.safe(tty,ttx) != 0) {
-                        sdo.area.back() += 1u;
-                        sdo.px.back() += ttx;
-                        sdo.py.back() += tty;
+                        out.area.back() += 1u;
+                        out.px.back() += ttx;
+                        out.py.back() += tty;
 
                         oy.push_back(tty);
                         ox.push_back(ttx);
@@ -756,8 +801,8 @@ namespace astro {
             }
 
             // Average position
-            sdo.px.back() /= sdo.area.back();
-            sdo.py.back() /= sdo.area.back();
+            out.px.back() /= out.area.back();
+            out.py.back() /= out.area.back();
 
             ++id;
         }
@@ -819,6 +864,8 @@ namespace astro {
 
         vec2u seg(img.dims);
 
+        phypp_check(params.first_id > 0, "first ID must be > 0");
+
         vec2u visited(img.dims);
         vec1u ox, oy;
 
@@ -857,7 +904,7 @@ namespace astro {
         out.px.data.reserve(0.1*sqrt(img.size()));
         out.py.data.reserve(0.1*sqrt(img.size()));
 
-        uint_t id = sdp.first_id;
+        uint_t id = params.first_id;
 
         while (img[mid] >= params.detect_threshold && ipos > 0) {
             // Check neighboring pixels within the deblend threshold if one of them
@@ -1003,54 +1050,6 @@ namespace astro {
         out.bx /= out.flux;
 
         return seg;
-    }
-
-    template <typename F>
-    void foreach_segment(const vec2u& seg, const vec1u& mids, F&& func) {
-        vec2u visited(seg.dims);
-
-        vec1u sids;
-        vec1u ox, oy;
-        uint_t curseg = 0;
-
-        auto fetch_neighbors = [&](uint_t ty, uint_t tx) {
-            auto check_add = [&](uint_t tty, uint_t ttx) {
-                if (visited(tty,ttx) != curseg) {
-                    visited(tty,ttx) = curseg;
-                    ox.push_back(ttx);
-                    oy.push_back(tty);
-                }
-            };
-
-            if (ty != 0)             check_add(ty-1,tx);
-            if (ty != seg.dims[0]-1) check_add(ty+1,tx);
-            if (tx != 0)             check_add(ty,tx-1);
-            if (tx != seg.dims[1]-1) check_add(ty,tx+1);
-        };
-
-        for (uint_t s : range(mids)) {
-            sids.clear();
-            oy.clear(); ox.clear();
-
-            curseg = seg[mids[s]];
-
-            vec1u tmid = mult_ids(seg, mids[s]);
-            oy.push_back(tmid[0]);
-            ox.push_back(tmid[1]);
-
-            while (!ox.empty()) {
-                vec1u tox = std::move(ox), toy = std::move(oy);
-                ox.clear(); oy.clear();
-                for (uint_t i : range(tox)) {
-                    if (seg(toy[i],tox[i]) == curseg) {
-                        sids.push_back(flat_id(seg, toy[i], tox[i]));
-                        fetch_neighbors(toy[i], tox[i]);
-                    }
-                }
-            }
-
-            func(sids);
-        }
     }
 
     void segment_distance(vec2u& map, vec2d& dmap, vec2u& imap) {
