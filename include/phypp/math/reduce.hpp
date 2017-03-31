@@ -236,9 +236,9 @@ namespace phypp {
     vec<Dim,bool> sigma_clip(const vec<Dim,Type>& tv, double sigma) {
         auto v = tv.concretise();
         auto med = inplace_median(v);
-        auto mad = median(abs(v - med));
+        auto mad = 1.48*median(abs(v - med));
         // Note: cannot use 'v' below, since the order of the values has changed!
-        return abs(tv - med) < sigma*mad;
+        return abs(tv - med) <= sigma*mad;
     }
 
     namespace impl {
