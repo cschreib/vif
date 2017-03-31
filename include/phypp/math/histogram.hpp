@@ -337,6 +337,16 @@ namespace phypp {
             }
         );
     }
+
+    template<typename TypeY>
+    auto cumul(const vec<1,TypeY>& y) -> vec<1,meta::rtype_t<TypeY>> {
+        vec<1,meta::rtype_t<TypeY>> dr(y.dims);
+        for (uint_t i : range(1, y.size())) {
+            dr.safe[i] = dr.safe[i-1] + y.safe[i];
+        }
+
+        return dr;
+    }
 }
 
 #endif
