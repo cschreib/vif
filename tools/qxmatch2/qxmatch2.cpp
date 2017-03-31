@@ -80,9 +80,10 @@ int phypp_main(int argc, char* argv[]) {
     bool   verbose = false;
     bool   quiet = false;
     bool   brute = false;
+    bool   no_mirror = false;
 
     read_args(argc, argv, arg_list(
-        cats, output, nth, thread, verbose, quiet, pos, radec1, radec2, brute
+        cats, output, nth, thread, verbose, quiet, pos, radec1, radec2, brute, no_mirror
     ));
 
     if (quiet) verbose = false;
@@ -121,7 +122,7 @@ int phypp_main(int argc, char* argv[]) {
                 "' with ", n_elements(cat2.ra), " sources from '", cats[1], "'...");
         }
 
-        qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose;
+        qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose; p.no_mirror = no_mirror;
         p.brute_force = brute;
         res = qxmatch(cat1, cat2, p);
     } else if (cats.size() == 1) {
@@ -139,7 +140,7 @@ int phypp_main(int argc, char* argv[]) {
             print("qxmatch: self matching ", n_elements(cat.ra), " sources from '", cats[0], "'...");
         }
 
-        qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose;
+        qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose; p.no_mirror = no_mirror;
         p.brute_force = brute;
         res = qxmatch(cat, p);
     } else {
