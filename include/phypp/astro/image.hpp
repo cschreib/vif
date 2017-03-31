@@ -674,26 +674,50 @@ namespace astro {
         return m;
     }
 
+    struct segment_params {
+        // Minimum number of pixels per segment
+        uint_t min_area = 0u;
+        // First ID used to place segments on the map
+        uint_t first_id = 1u;
+    }
+
+    struct segment_output {
+        // ID of the segment as given on the segmentation map
+        vec1u id;
+        // Size of a segment in number of pixels
+        vec1u area;
+        // Center
+        vec1d px, py;
+        // Flat index of the first value of a segment
+        vec1u origin;
+    };
+
     // Function to segment a binary or integer map into multiple components.
     // Does no de-blending. The returned map contains IDs between 'first_id' and
     // 'first_id + nsrc' (where 'nsrc' is the number of identified segments, which is
     // provided in output). Values of 0 in the input binary map are also 0 in the
     // segmentation map.
     template <typename T, typename enable = typename std::enable_if<!std::is_pointer<T>::value>::type>
-    vec2u segment(vec<2,T> map, uint_t& nsrc, uint_t first_id = 1u) {
+    vec2u segment(vec<2,T> map, segment_output& sdo, const segment_params& sdp = segment_params{}) {
         vec2u smap(map.dims);
 
-        phypp_check(first_id > 0, "first ID must be > 0");
+        phypp_check(sdp.first_id > 0, "first ID must be > 0");
 
         nsrc = 0;
-        uint_t id = first_id;
+        uint_t id = sdp.first_id;
 
         std::vector<uint_t> oy, ox;
         for (uint_t y : range(map.dims[0]))
         for (uint_t x : range(map.dims[1])) {
             if (map.safe(y,x) == 0) continue;
 
-            // Found a guy
+            // Found a guy, create entry in the output
+            sdo.id.push_back(id);
+            sdo.area.push_back(1u);
+            sdo.px.push_back(x);
+            sdo.py.push_back(y);
+            sdo.origin.push_back(flat_id(map, y, x));
+
             // Use an A* - like algorithm to navigate around and
             // figure out its extents
             oy.clear(); ox.clear();
@@ -706,6 +730,10 @@ namespace astro {
 
                 auto check_add = [&ox,&oy,&map](uint_t tty, uint_t ttx) {
                     if (map.safe(tty,ttx) != 0) {
+                        sdo.area.back() += 1u;
+                        sdo.px.back() += ttx;
+                        sdo.py.back() += tty;
+
                         oy.push_back(tty);
                         ox.push_back(ttx);
                     }
@@ -727,18 +755,37 @@ namespace astro {
                 process_point(ty, tx);
             }
 
+            // Average position
+            sdo.px.back() /= sdo.area.back();
+            sdo.py.back() /= sdo.area.back();
+
             ++id;
         }
 
-        nsrc = id - first_id;
+        // Erase too small regions
+        if (count(out.area < params.min_area) != 0) {
+            vec1u eids;
+            foreach_segment(smap, out.origin, [&](uint_t i, vec1u ids) {
+                if (ids.size() < params.min_area) {
+                    smap[ids] = 0;
+                    eids.push_back(i);
+                }
+            });
+
+            inplace_remove(out.id, eids);
+            inplace_remove(out.origin, eids);
+            inplace_remove(out.px, eids);
+            inplace_remove(out.py, eids);
+            inplace_remove(out.area, eids);
+        }
 
         return smap;
     }
 
     template <typename T, typename enable = typename std::enable_if<!std::is_pointer<T>::value>::type>
     vec2u segment(vec<2,T> map) {
-        uint_t nsrc = 0;
-        return segment(std::move(map), nsrc);
+        segment_output sdo; segment_params sdp;
+        return segment(std::move(map), sdo, sdp);
     }
 
     struct segment_deblend_params {
