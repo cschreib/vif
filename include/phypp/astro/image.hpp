@@ -775,6 +775,12 @@ namespace astro {
 
         vec1u sid = sort(img);
         uint_t ipos = sid.size()-1;
+        while (!is_finite(img[sid[ipos]])) {
+            if (ipos == 0) break;
+
+            --ipos;
+        }
+
         uint_t mid = sid[ipos];
 
         auto explore_neighbors = [&](uint_t ty, uint_t tx) {
