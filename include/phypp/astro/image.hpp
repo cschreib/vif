@@ -7,6 +7,7 @@
 #include "phypp/utility/generic.hpp"
 #include "phypp/math/base.hpp"
 #include "phypp/math/fourier.hpp"
+#include "phypp/astro/wcs.hpp"
 
 namespace phypp {
 namespace astro {

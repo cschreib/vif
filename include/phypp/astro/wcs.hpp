@@ -13,7 +13,6 @@
 #include "phypp/core/error.hpp"
 #include "phypp/utility/thread.hpp"
 #include "phypp/io/fits.hpp"
-#include "phypp/astro/astro.hpp"
 
 namespace phypp {
 namespace astro {
