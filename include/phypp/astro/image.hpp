@@ -747,7 +747,9 @@ namespace astro {
         // Threshold distance to match a pixel to an existing segment (in pixels)
         double deblend_threshold = 5.0;
         // Minimum number of pixels per segment
-        uint_t min_area = 30;
+        uint_t min_area = 0u;
+        // First ID used to place segments on the map
+        uint_t first_id = 1u;
     };
 
     struct segment_deblend_output {
@@ -808,7 +810,7 @@ namespace astro {
         out.px.data.reserve(0.1*sqrt(img.size()));
         out.py.data.reserve(0.1*sqrt(img.size()));
 
-        uint_t nseg = 0;
+        uint_t id = sdp.first_id;
 
         while (img[mid] >= params.detect_threshold && ipos > 0) {
             // Check neighboring pixels within the deblend threshold if one of them
@@ -852,9 +854,8 @@ namespace astro {
                 out.bx[neib_seg-1] += tmid[1]*img[mid];
                 out.flux[neib_seg-1] += img[mid];
             } else {
-                ++nseg;
-                seg[mid] = nseg;
-                out.id.push_back(nseg);
+                seg[mid] = id;
+                out.id.push_back(id);
                 out.area.push_back(1);
                 out.origin.push_back(mid);
                 out.py.push_back(tmid[0]);
@@ -862,6 +863,8 @@ namespace astro {
                 out.by.push_back(tmid[0]*img[mid]);
                 out.bx.push_back(tmid[1]*img[mid]);
                 out.flux.push_back(img[mid]);
+
+                ++id;
             }
 
             --ipos;
@@ -891,7 +894,7 @@ namespace astro {
 
             vec1u eids;
             for (uint_t s : range(out.area)) {
-                curseg = s+1;
+                curseg = out.id[s];
 
                 if (out.area[s] >= params.min_area) continue;
 
@@ -936,8 +939,6 @@ namespace astro {
                     out.by[neib_seg-1] += out.by[s];
                     out.bx[neib_seg-1] += out.bx[s];
                 }
-
-                --nseg;
             }
 
             inplace_remove(out.id, eids);
