@@ -135,7 +135,7 @@ namespace fits {
             int anynul;
             std::vector<long> inc(Dim, 1);
             fits_read_subset(fptr_, type, fpixel.data(), lpixel.data(), inc.data(),
-                nullptr, v.data.data(), &anynul, &status_);
+                &def, v.data.data(), &anynul, &status_);
             fits::phypp_check_cfitsio(status_, "could not read subset image from HDU");
         }
 
