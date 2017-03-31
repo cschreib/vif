@@ -31,6 +31,7 @@ namespace fits {
             char tdetails[FLEN_ERRMSG];
             std::string details;
             while (fits_read_errmsg(tdetails)) {
+                if (!details.empty()) details += "\ncfitsio: ";
                 details += std::string(tdetails);
             }
 
