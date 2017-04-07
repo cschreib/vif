@@ -276,11 +276,12 @@ namespace impl {
 
         inline int bitpix_to_type(int bitpix) {
             switch(bitpix) {
-                case BYTE_IMG   : return TBYTE;
-                case SHORT_IMG  : return TSHORT;
-                case LONG_IMG   : return TLONG;
-                case FLOAT_IMG  : return TFLOAT;
-                case DOUBLE_IMG : return TDOUBLE;
+                case BYTE_IMG     : return TBYTE;
+                case SHORT_IMG    : return TSHORT;
+                case LONG_IMG     : return TLONG;
+                case LONGLONG_IMG : return TLONGLONG;
+                case FLOAT_IMG    : return TFLOAT;
+                case DOUBLE_IMG   : return TDOUBLE;
                 default : throw fits::exception("unknown image type '"+strn(bitpix)+"'");
             }
         }
