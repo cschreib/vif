@@ -126,13 +126,26 @@ namespace phypp {
     template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
         std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
     vec<Dim,bool> regex_match(const vec<Dim,Type>& v, const std::string& regex) {
+        vec<Dim,bool> r(v.dims);
         regex_t re;
         build_regex_(regex, re, REG_EXTENDED | REG_NOSUB);
-        vec<Dim,bool> r(v.dims);
-        for (uint_t i = 0; i < v.size(); ++i) {
+        for (uint_t i : range(v)) {
             r.safe[i] = regex_match_(v.safe[i], re);
         }
         regfree(&re);
+        return r;
+    }
+
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type>
+    vec<Dim,bool> regex_match(const std::string& v, const vec<Dim,Type>& regex) {
+        vec<Dim,bool> r(regex.dims);
+        for (uint_t i : range(regex)) {
+            regex_t re;
+            build_regex_(regex.safe[i], re, REG_EXTENDED | REG_NOSUB);
+            r.safe[i] = regex_match_(v, re);
+            regfree(&re);
+        }
         return r;
     }
 
