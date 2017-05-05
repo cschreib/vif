@@ -333,7 +333,7 @@ namespace astro {
 
 namespace impl {
 namespace wcs_impl {
-    std::mutex& wcs_parser_mutex() {
+    inline std::mutex& wcs_parser_mutex() {
         static std::mutex m;
         return m;
     }
@@ -1130,7 +1130,7 @@ namespace impl {
             return area;
         }
 
-        void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps, vec2d& res, vec2d& wei) {
+        inline void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps, vec2d& res, vec2d& wei) {
             // Get bounds of this projection
             uint_t ymin = regrid_drizzle_getmin(yps-0.5);
             uint_t xmin = regrid_drizzle_getmin(xps-0.5);

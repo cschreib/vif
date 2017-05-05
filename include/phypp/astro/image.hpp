@@ -573,7 +573,7 @@ namespace astro {
         }
     };
 
-    convolver2d batch_convolve2d(const vec2d& k) {
+    inline convolver2d batch_convolve2d(const vec2d& k) {
         return convolver2d(k);
     }
 
@@ -859,7 +859,7 @@ namespace astro {
         vec1f flux;
     };
 
-    vec2u segment_deblend(const vec2d& img, segment_deblend_output& out,
+    inline vec2u segment_deblend(const vec2d& img, segment_deblend_output& out,
         const segment_deblend_params& params = segment_deblend_params()) {
 
         vec2u seg(img.dims);
@@ -1052,7 +1052,7 @@ namespace astro {
         return seg;
     }
 
-    void segment_distance(vec2u& map, vec2d& dmap, vec2u& imap) {
+    inline void segment_distance(vec2u& map, vec2d& dmap, vec2u& imap) {
         dmap = replicate(dinf, map.dims);
 
         struct obj_state {
