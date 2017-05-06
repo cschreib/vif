@@ -1200,7 +1200,7 @@ namespace astro {
         vec1s notes = impl::astro_impl::get_band_get_notes_(
             cat, impl::astro_impl::get_band_has_notes_<Cat>{}
         );
-        
+
         vec1u id = where(regex_match(cat.bands, band));
         if (id.empty()) {
             error("no band matching '"+band+"'");
@@ -1270,7 +1270,7 @@ namespace astro {
     }
 
     struct filter_t {
-        double rlam = dnan; // central wavelenght (micron, integrated)
+        double rlam = dnan; // central wavelength (micron, integrated)
         vec1d lam;          // array of wavelength positions (micron)
         vec1d res;          // array of response for each wavelength (normalized to unit area)
     };
@@ -1280,11 +1280,13 @@ namespace astro {
     // In other words, it must be converted to an "energy counter" filter (also called RSR), and
     // normalized to unit integral (i.e. integrate(lam, res) == 1).
 
-    template<typename TypeL, typename TypeS>
-    double sed2flux(const filter_t& filter, const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
-        uint_t nflam = filter.lam.size();
+    template<typename TypeFL, typename TypeFR, typename TypeL, typename TypeS>
+    double sed2flux(const vec<1,TypeFL>& flam, const vec<1,TypeFR>& fres,
+        const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
 
-        auto bnd = bounds(filter.lam.safe[0], filter.lam.safe[nflam-1], lam);
+        uint_t nflam = flam.size();
+
+        auto bnd = bounds(flam.safe[0], flam.safe[nflam-1], lam);
         if (bnd[0] == npos || bnd[1] == npos) {
             return dnan;
         }
@@ -1293,17 +1295,17 @@ namespace astro {
         vec1d nrs;  nrs.reserve( nflam + bnd[1] - bnd[0] + 1);
 
         uint_t j = bnd[0];
-        for (uint_t i : range(filter.lam)) {
-            nlam.push_back(filter.lam.safe[i]);
-            nrs.push_back(filter.res.safe[i]*interpolate(
-                sed.safe[j-1], sed.safe[j], lam.safe[j-1], lam.safe[j], filter.lam.safe[i]));
+        for (uint_t i : range(flam)) {
+            nlam.push_back(flam.safe[i]);
+            nrs.push_back(fres.safe[i]*interpolate(
+                sed.safe[j-1], sed.safe[j], lam.safe[j-1], lam.safe[j], flam.safe[i]));
 
             if (i != nflam - 1) {
-                while (lam[j] < filter.lam.safe[i+1]) {
+                while (lam[j] < flam.safe[i+1]) {
                     nlam.push_back(lam.safe[j]);
                     nrs.push_back(sed.safe[j]*interpolate(
-                        filter.res.safe[i], filter.res.safe[i+1],
-                        filter.lam.safe[i], filter.lam.safe[i+1], lam.safe[j]
+                        fres.safe[i], fres.safe[i+1],
+                        flam.safe[i], flam.safe[i+1], lam.safe[j]
                     ));
                     ++j;
                 }
@@ -1311,6 +1313,11 @@ namespace astro {
         }
 
         return integrate(nlam, nrs);
+    }
+
+    template<typename TypeL, typename TypeS>
+    double sed2flux(const filter_t& filter, const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
+        return sed2flux(filter.lam, filter.res, lam, sed);
     }
 
     template<typename TypeL, typename TypeS>
