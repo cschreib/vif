@@ -285,59 +285,17 @@ namespace phypp {
         }
 
         template<typename T>
-        uint_t to_idx_(T ui, meta::cte_t<false>) const {
-            phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
-                data.size(), ")");
-            return ui;
-        }
-
-        template<typename T>
-        uint_t to_idx_(T i, meta::cte_t<true>) const {
-            if (i < 0) i += data.size();
-            phypp_check(i >= 0, "operator[]: index out of bounds (", i+data.size(), " vs. ",
-                data.size(), ")");
-            uint_t ui(i);
-            phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
-                data.size(), ")");
-            return ui;
+        uint_t to_idx(T ix) const {
+            return impl::vec_access::to_idx(data.size(), ix);
         }
 
         template<std::size_t D, typename T>
-        uint_t to_idx_(T ui, meta::cte_t<false>) const {
-            phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
-                dims[D], ")");
-            return ui;
-        }
-
-        template<std::size_t D, typename T>
-        uint_t to_idx_(T i, meta::cte_t<true>) const {
-            if (i < 0) i += dims[D];
-            phypp_check(i >= 0, "operator(): index out of bounds (", i+data.size(), " vs. ",
-                dims[D], ")");
-            uint_t ui(i);
-            phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
-                dims[D], ")");
-            return ui;
-        }
-
-        template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value>::type>
         uint_t to_idx(T ix) const {
-            return to_idx_(ix, meta::cte_t<std::is_signed<T>::value>());
-        }
-
-        template<std::size_t D, typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value>::type>
-        uint_t to_idx(T ix) const {
-            return to_idx_<D>(ix, meta::cte_t<std::is_signed<T>::value>());
+            return impl::vec_access::to_idx<D>(dims, ix);
         }
 
         uint_t pitch(uint_t i) const {
-            uint_t p = 1;
-            for (uint_t j = i+1; j < Dim; ++j) {
-                p *= dims[j];
-            }
-            return p;
+            return impl::vec_access::pitch(dims, i);
         }
 
         template<typename T, typename enable =
@@ -868,59 +826,17 @@ namespace phypp {
         }
 
         template<typename T>
-        T to_idx_(T ui, meta::cte_t<false>) const {
-            phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
-                data.size(), ")");
-            return ui;
-        }
-
-        template<typename T>
-        uint_t to_idx_(T i, meta::cte_t<true>) const {
-            if (i < 0) i += data.size();
-            phypp_check(i >= 0, "operator[]: index out of bounds (", i+data.size(), " vs. ",
-                data.size(), ")");
-            uint_t ui(i);
-            phypp_check(ui < data.size(), "operator[]: index out of bounds (", ui, " vs. ",
-                data.size(), ")");
-            return ui;
+        uint_t to_idx(T ix) const {
+            return impl::vec_access::to_idx(data.size(), ix);
         }
 
         template<std::size_t D, typename T>
-        T to_idx_(T ui, meta::cte_t<false>) const {
-            phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
-                dims[D], ")");
-            return ui;
-        }
-
-        template<std::size_t D, typename T>
-        uint_t to_idx_(T i, meta::cte_t<true>) const {
-            if (i < 0) i += dims[D];
-            phypp_check(i >= 0, "operator(): index out of bounds (", i+data.size(), " vs. ",
-                dims[D], ")");
-            uint_t ui(i);
-            phypp_check(ui < dims[D], "operator(): index out of bounds (", ui, " vs. ",
-                dims[D], ")");
-            return ui;
-        }
-
-        template<typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value>::type>
-        typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
-            return to_idx_(ix, meta::cte_t<std::is_signed<T>::value>());
-        }
-
-        template<std::size_t D, typename T, typename enable =
-            typename std::enable_if<std::is_integral<T>::value>::type>
-        typename std::conditional<std::is_signed<T>::value, uint_t, T>::type to_idx(T ix) const {
-            return to_idx_<D>(ix, meta::cte_t<std::is_signed<T>::value>());
+        uint_t to_idx(T ix) const {
+            return impl::vec_access::to_idx<D>(dims, ix);
         }
 
         uint_t pitch(uint_t i) const {
-            uint_t p = 1;
-            for (uint_t j = i+1; j < Dim; ++j) {
-                p *= dims[j];
-            }
-            return p;
+            return impl::vec_access::pitch(dims, i);
         }
 
         template<typename T, typename enable =

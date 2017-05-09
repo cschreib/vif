@@ -281,6 +281,55 @@ namespace vec_access {
         return phypp::range(rng.first, rng.last+1);
     }
 
+    template<typename T>
+    uint_t to_idx_(uint_t size, T ui, meta::cte_t<false>) {
+        phypp_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
+        return ui;
+    }
+
+    template<typename T>
+    uint_t to_idx_(uint_t size, T i, meta::cte_t<true>) {
+        while (i < 0) i += size;
+        uint_t ui(i);
+        phypp_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
+        return ui;
+    }
+
+    template<std::size_t I, std::size_t D, typename T>
+    uint_t to_idx_(std::array<uint_t,D> dims, T ui, meta::cte_t<false>) {
+        phypp_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[D], ")");
+        return ui;
+    }
+
+    template<std::size_t I, std::size_t D, typename T>
+    uint_t to_idx_(std::array<uint_t,D> dims, T i, meta::cte_t<true>) {
+        while (i < 0) i += dims[I];
+        uint_t ui(i);
+        phypp_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[I], ")");
+        return ui;
+    }
+
+    template<typename T, typename enable =
+        typename std::enable_if<std::is_integral<T>::value>::type>
+    uint_t to_idx(uint_t size, T ix) {
+        return to_idx_(size, ix, meta::cte_t<std::is_signed<T>::value>());
+    }
+
+    template<std::size_t I, std::size_t D, typename T, typename enable =
+        typename std::enable_if<std::is_integral<T>::value>::type>
+    uint_t to_idx(std::array<uint_t,D> dims, T ix) {
+        return to_idx_<I>(dims, ix, meta::cte_t<std::is_signed<T>::value>());
+    }
+
+    template<std::size_t D>
+    uint_t pitch(std::array<uint_t,D> dims, uint_t i) {
+        uint_t p = 1;
+        for (uint_t j = i+1; j < D; ++j) {
+            p *= dims[j];
+        }
+        return p;
+    }
+
     // Helper to build the result of v(_, ids, 5), i.e. when at least one index is not scalar.
     // The result is another array.
     template<bool IsSafe, bool IsConst, std::size_t Dim, std::size_t ODim, typename Type,
