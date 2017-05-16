@@ -845,8 +845,8 @@ namespace fits {
     public :
 
         explicit output_table(const std::string& filename) :
-            impl::fits_impl::output_file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only),
-            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only),
+            impl::fits_impl::output_file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
 
         output_table(output_table&&) noexcept = default;
         output_table(const output_table&) = delete;
