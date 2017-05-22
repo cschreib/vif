@@ -125,6 +125,11 @@ namespace fits {
     inline vec<1,column_info> read_table_columns(const std::string& filename) {
         return fits::input_table(filename).read_column_info();
     }
+    inline vec<1,column_info> read_table_columns(const std::string& filename, uint_t hdu) {
+        fits::input_table itbl(filename);
+        itbl.reach_hdu(hdu);
+        return itbl.read_column_info();
+    }
 
     // Read several columns in a FITS file.
     template<typename ... Args>
