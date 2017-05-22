@@ -1320,13 +1320,43 @@ namespace impl {
 
             return covered;
         }
+
+        template<typename T, typename U>
+        bool regrid_cubic(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            uint_t ncovered = 0;
+            flx = 0;
+            for (uint_t i : range(xps)) {
+                double tflx = bicubic_strict(imgs, yps.safe[i], xps.safe[i], dnan);
+                if (is_finite(tflx)) {
+                    ++ncovered;
+                    flx += tflx;
+                }
+            }
+
+            if (ncovered == 0) {
+                return false;
+            } else {
+                flx /= ncovered;
+                return true;
+            }
+        }
+
+        template<typename T, typename U>
+        bool regrid_cubic_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            bool covered = regrid_cubic(imgs, xps, yps, flx);
+            if (covered) {
+                flx *= polyon_area(xps, yps);
+            }
+
+            return covered;
+        }
     }
 }
 
 namespace astro {
 
     enum class interpolation_method {
-        nearest, linear
+        nearest, linear, cubic
     };
 
     struct regrid_interpolate_params {
@@ -1401,6 +1431,13 @@ namespace astro {
                         covered = impl::wcs_impl::regrid_linear_fcon(imgs, xps, yps, flx);
                     } else {
                         covered = impl::wcs_impl::regrid_linear(imgs, xps, yps, flx);
+                    }
+                    break;
+                case interpolation_method::cubic:
+                    if (opts.conserve_flux) {
+                        covered = impl::wcs_impl::regrid_cubic_fcon(imgs, xps, yps, flx);
+                    } else {
+                        covered = impl::wcs_impl::regrid_cubic(imgs, xps, yps, flx);
                     }
                     break;
                 }
