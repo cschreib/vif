@@ -857,6 +857,59 @@ namespace astro {
 #endif
     }
 
+    // Obtain the pixel rotation of a given image in degrees (CCW).
+    // An angle of zero means that the RA axis maps to -X and DEC to +Y.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
+    bool get_image_rotation(const astro::wcs& wcs, double& angle) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        if (!wcs.is_valid()) {
+            return false;
+        }
+
+        uint_t naxis = wcs.axis_count();
+        vec1d x, y;
+        astro::ad2xy(wcs,
+            {wcs.w->crval[naxis-1-wcs.ra_axis],  wcs.w->crval[naxis-1-wcs.ra_axis]},
+            {wcs.w->crval[naxis-1-wcs.dec_axis], wcs.w->crval[naxis-1-wcs.dec_axis] + 1/3600.0},
+            x, y
+        );
+
+        angle = -(180.0/dpi)*atan2(x[1]-x[0], y[1]-y[0]);
+
+        return true;
+#endif
+    }
+
+    // Obtain the pixel rotation of a given image in degrees (CCW).
+    // An angle of zero means that the RA axis maps to -X and DEC to +Y.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
+    bool get_image_rotation(const std::string& file, double& angle) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        if (end_with(file, ".sectfits")) {
+            vec1s sects = fits::read_sectfits(file);
+            return get_image_rotation(sects[0], angle);
+        } else {
+            fits::header hdr = fits::read_header(file);
+            auto wcs = astro::wcs(hdr);
+            if (!get_image_rotation(wcs, angle)) {
+                warning("could not extract WCS information");
+                note("parsing '", file, "'");
+                return false;
+            }
+
+            return true;
+        }
+#endif
+    }
+
 }
 
 namespace impl {
