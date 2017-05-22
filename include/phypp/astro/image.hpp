@@ -137,6 +137,24 @@ namespace astro {
     }
 
     template<typename TypeV>
+    typename vec<2,TypeV>::effective_type translate_bicubic(const vec<2,TypeV>& v, double dx, double dy,
+        typename vec<2,TypeV>::rtype def = 0.0) {
+
+        vec<2,meta::rtype_t<TypeV>> trs = v;
+        vec1d t = dindgen(v.dims[1]) - dy;
+        for (uint_t x : range(v.dims[0])) {
+            trs.safe(x,_) = interpolate_3spline(trs.safe(x,_), t);
+        }
+
+        t = dindgen(v.dims[0]) - dx;
+        for (uint_t y : range(v.dims[1])) {
+            trs.safe(_,y) = interpolate_3spline(trs.safe(_,y), t);
+        }
+
+        return trs;
+    }
+
+    template<typename TypeV>
     typename vec<2,TypeV>::effective_type flip_x(const vec<2,TypeV>& v) {
         auto r = v.concretise();
         for (uint_t y : range(v.dims[0]))
@@ -177,6 +195,24 @@ namespace astro {
     }
 
     template<typename TypeV, typename TypeD = double>
+    typename vec<2,TypeV>::effective_type scale_bicubic(const vec<2,TypeV>& v, double factor,
+        typename vec<2,TypeV>::rtype def = 0.0) {
+
+        auto r = v.concretise();
+
+        for (int_t y : range(v.dims[0]))
+        for (int_t x : range(v.dims[1])) {
+            r.safe(uint_t(y),uint_t(x)) = bicubic_strict(v,
+                (y-int_t(v.dims[0]/2))/factor + v.dims[0]/2,
+                (x-int_t(v.dims[1]/2))/factor + v.dims[1]/2,
+                def
+            );
+        }
+
+        return r;
+    }
+
+    template<typename TypeV, typename TypeD = double>
     typename vec<2,TypeV>::effective_type rotate(const vec<2,TypeV>& v, double angle,
         TypeD def = 0.0) {
 
@@ -190,6 +226,29 @@ namespace astro {
             double dy = (y-int_t(v.dims[0]/2));
             double dx = (x-int_t(v.dims[1]/2));
             r.safe(uint_t(y),uint_t(x)) = bilinear_strict(v,
+                dy*ca - dx*sa + v.dims[0]/2,
+                dx*ca + dy*sa + v.dims[1]/2,
+                def
+            );
+        }
+
+        return r;
+    }
+
+    template<typename TypeV, typename TypeD = double>
+    typename vec<2,TypeV>::effective_type rotate_bicubic(const vec<2,TypeV>& v, double angle,
+        TypeD def = 0.0) {
+
+        auto r = v.concretise();
+
+        double ca = cos(angle*dpi/180.0);
+        double sa = sin(angle*dpi/180.0);
+
+        for (int_t y : range(v.dims[0]))
+        for (int_t x : range(v.dims[1])) {
+            double dy = (y-int_t(v.dims[0]/2));
+            double dx = (x-int_t(v.dims[1]/2));
+            r.safe(uint_t(y),uint_t(x)) = bicubic_strict(v,
                 dy*ca - dx*sa + v.dims[0]/2,
                 dx*ca + dy*sa + v.dims[1]/2,
                 def
