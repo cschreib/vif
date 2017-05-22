@@ -826,6 +826,7 @@ namespace astro {
             {wcs.w->crval[naxis-1-wcs.dec_axis], wcs.w->crval[naxis-1-wcs.dec_axis] + 1/3600.0},
             x, y
         );
+
         aspix = 1.0/sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
 
         return true;
