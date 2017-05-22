@@ -520,7 +520,7 @@ namespace astro {
                             model += amp[k1]*convflux[k1](ilib[k1],_);
                         }
 
-                        chi2 = total(sqr(flux - model));
+                        chi2 = total(sqr(rflux(s,_) - model));
                         if (chi2 < rchi2[s]) {
                             rchi2[s] = chi2;
                             res.sed_sim(s,_) = ilib;
