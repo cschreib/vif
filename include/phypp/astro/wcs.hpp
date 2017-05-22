@@ -638,17 +638,22 @@ namespace astro {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
-#else
-        return astro::wcs(hdr);
 #endif
+        return astro::wcs(hdr);
     }
 
 }
 
 namespace impl {
     namespace wcs_impl {
-        inline vec2d world2pix(const astro::wcs& w, const vec2d& world) {
+        template<typename Dummy = void>
+        vec2d world2pix(const astro::wcs& w, const vec2d& world) {
             vec2d pix(world.dims);
+
+#ifdef NO_WCSLIB
+            static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+#else
 
             uint_t npt = world.dims[0];
             uint_t naxis = world.dims[1];
@@ -664,12 +669,18 @@ namespace impl {
                 error("could not perform WCS conversion");
                 w.report_errors();
             }
+#endif
 
             return pix;
         }
 
-        inline vec2d pix2world(const astro::wcs& w, const vec2d& pix) {
+        template<typename Dummy = void>
+        vec2d pix2world(const astro::wcs& w, const vec2d& pix) {
             vec2d world(pix.dims);
+#ifdef NO_WCSLIB
+            static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+#else
 
             uint_t npt = pix.dims[0];
             uint_t naxis = pix.dims[1];
@@ -685,6 +696,7 @@ namespace impl {
                 error("could not perform WCS conversion");
                 w.report_errors();
             }
+#endif
 
             return world;
         }
@@ -828,9 +840,9 @@ namespace astro {
         );
 
         aspix = 1.0/sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
+#endif
 
         return true;
-#endif
     }
 
     // Obtain the pixel size of a given image in arsec/pixel.
@@ -852,10 +864,10 @@ namespace astro {
                 note("parsing '", file, "'");
                 return false;
             }
-
-            return true;
         }
 #endif
+
+        return true;
     }
 
     // Obtain the pixel rotation of a given image in degrees (CCW).
