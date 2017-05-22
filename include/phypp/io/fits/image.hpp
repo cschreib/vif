@@ -95,6 +95,21 @@ namespace fits {
             make_indices_(idim+1, naxes, fpixel, lpixel, args...);
         }
 
+        template <typename ... Args>
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel,
+            uint_t i, const Args& ... args) const {
+
+            phypp_check_fits(i < naxes[naxes.size()-1-idim], "image subset goes outside of "
+                "the image boundaries (axis "+strn(idim)+": "+strn(i)+" vs. "+
+                strn(naxes[naxes.size()-1-idim]));
+
+            fpixel[naxes.size()-1-idim] = i+1;
+            lpixel[naxes.size()-1-idim] = i+1;
+
+            make_indices_(idim+1, naxes, fpixel, lpixel, args...);
+        }
+
     public:
         template<std::size_t Dim, typename Type>
         void read(vec<Dim,Type>& v) const {
