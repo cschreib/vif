@@ -18,9 +18,7 @@ namespace phypp {
 
     #ifndef NO_FFTW
     // Compute the Fast Fourier Transform (FFT) of the provided 2d array
-    inline vec2cd fft(const vec2d& v) {
-        vec2cd r(v.dims);
-
+    inline void fft(const vec2d& v, vec2cd& r) {
         fftw_plan p;
         {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
@@ -35,16 +33,19 @@ namespace phypp {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
             fftw_destroy_plan(p);
         }
+    }
 
+    // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+    inline vec2cd fft(const vec2d& v) {
+        vec2cd r(v.dims);
+        fft(v, r);
         return r;
     }
 
     // Compute the Fast Fourier Transform (FFT) of the provided 2d array
     // NB: the FFTW routine does not preserve the data in input, so the
     // input array has to be copied
-    inline vec2d ifft(vec2cd v) {
-        vec2d r(v.dims);
-
+    inline void ifft(vec2cd v, vec2d& r) {
         fftw_plan p;
         {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
@@ -59,7 +60,14 @@ namespace phypp {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
             fftw_destroy_plan(p);
         }
+    }
 
+    // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+    // NB: the FFTW routine does not preserve the data in input, so the
+    // input array has to be copied
+    inline vec2d ifft(vec2cd v) {
+        vec2d r(v.dims);
+        ifft(v, r);
         return r;
     }
     #endif
