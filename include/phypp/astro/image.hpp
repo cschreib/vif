@@ -490,6 +490,8 @@ namespace astro {
         uint_t hsx = 0, hsy = 0;
         fftw_plan pf, pi;
         bool pf_built = false, pi_built = false;
+        vec2d tmap;
+        vec2cd cimg;
 
         explicit convolver2d(const vec2d& k) : kernel_normal(k) {
             phypp_check(k.dims[0]%2 == 1 && k.dims[1]%2 == 1,
@@ -523,33 +525,40 @@ namespace astro {
             }
         }
 
-        vec2cd fft(const vec2d& v) {
-            vec2cd r(v.dims);
+        void fft(const vec2d& v, vec2cd& r) {
             make_plan(v, r);
 
             fftw_execute_dft_r2c(pf,
                 const_cast<double*>(v.data.data()),
                 reinterpret_cast<fftw_complex*>(r.data.data())
             );
+        }
 
+        vec2cd fft(const vec2d& v) {
+            vec2cd r(v.dims);
+            fft(v, r);
             return r;
         }
 
         // Compute the Fast Fourier Transform (FFT) of the provided 2d array
-        vec2d ifft(vec2cd& v) {
-            vec2d r(v.dims);
+        void ifft(vec2cd& v, vec2d& r) {
             make_plan(v, r);
 
             fftw_execute_dft_c2r(pi,
                 reinterpret_cast<fftw_complex*>(v.data.data()),
                 r.data.data()
             );
+        }
 
+        // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+        vec2d ifft(vec2cd& v) {
+            vec2d r(v.dims);
+            ifft(v, r);
             return r;
         }
 
     public :
-        vec2d convolve(const vec2d& map) {
+        void inplace_convolve(vec2d& map) {
             if (kernel_fourier.empty()) {
                 hsx = kernel_normal.dims[0]/2; hsy = kernel_normal.dims[1]/2;
 
@@ -560,16 +569,49 @@ namespace astro {
 
                 // Put the kernel in Fourier space
                 kernel_fourier = this->fft(tkernel);
+
+                tmap.resize(kernel_fourier.dims);
+                cimg.resize(kernel_fourier.dims);
             }
 
             // Pad image to prevent issues with cyclic borders
-            vec2d tmap = enlarge(map, {{hsx, hsy, hsx, hsy}});
+            for (uint_t ix : range(map.dims[0]))
+            for (uint_t iy : range(map.dims[1])) {
+                tmap.safe(hsx+ix,hsy+iy) = map.safe(ix,iy);
+            }
+            for (uint_t ix : range(hsx)) {
+                for (uint_t iy : range(tmap.dims[0])) {
+                    tmap.safe(ix,iy) = 0;
+                }
+                for (uint_t iy : range(tmap.dims[0])) {
+                    tmap.safe(tmap.dims[0]-hsx+ix,iy) = 0;
+                }
+            }
+            for (uint_t ix : range(map.dims[0])) {
+                for (uint_t iy : range(hsy)) {
+                    tmap.safe(hsx+ix,iy) = 0;
+                }
+                for (uint_t iy : range(hsy)) {
+                    tmap.safe(hsx+ix,tmap.dims[1]-hsy+iy) = 0;
+                }
+            }
 
             // Perform the convolution in Fourier space
-            auto cimg = this->fft(tmap)*kernel_fourier;
+            this->fft(tmap, cimg);
+            cimg *= kernel_fourier;
 
             // Go back to real space and shrink map back to original dimensions
-            return shrink(this->ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
+            this->ifft(cimg, tmap);
+
+            for (uint_t ix : range(map.dims[0]))
+            for (uint_t iy : range(map.dims[1])) {
+                map.safe(ix,iy) = tmap.safe(hsx+ix,hsy+iy)/cimg.size();
+            }
+        }
+
+        vec2d convolve(vec2d map) {
+            inplace_convolve(map);
+            return map;
         }
     };
 
