@@ -10,7 +10,7 @@
 
 namespace phypp {
     namespace impl {
-        std::mutex& fftw_planner_mutex() {
+        inline std::mutex& fftw_planner_mutex() {
             static std::mutex m;
             return m;
         }

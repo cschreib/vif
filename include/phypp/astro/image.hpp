@@ -137,6 +137,24 @@ namespace astro {
     }
 
     template<typename TypeV>
+    typename vec<2,TypeV>::effective_type translate_bicubic(const vec<2,TypeV>& v, double dx, double dy,
+        typename vec<2,TypeV>::rtype def = 0.0) {
+
+        vec<2,meta::rtype_t<TypeV>> trs = v;
+        vec1d t = dindgen(v.dims[1]) - dy;
+        for (uint_t x : range(v.dims[0])) {
+            trs.safe(x,_) = interpolate_3spline(trs.safe(x,_), t);
+        }
+
+        t = dindgen(v.dims[0]) - dx;
+        for (uint_t y : range(v.dims[1])) {
+            trs.safe(_,y) = interpolate_3spline(trs.safe(_,y), t);
+        }
+
+        return trs;
+    }
+
+    template<typename TypeV>
     typename vec<2,TypeV>::effective_type flip_x(const vec<2,TypeV>& v) {
         auto r = v.concretise();
         for (uint_t y : range(v.dims[0]))
@@ -177,6 +195,24 @@ namespace astro {
     }
 
     template<typename TypeV, typename TypeD = double>
+    typename vec<2,TypeV>::effective_type scale_bicubic(const vec<2,TypeV>& v, double factor,
+        typename vec<2,TypeV>::rtype def = 0.0) {
+
+        auto r = v.concretise();
+
+        for (int_t y : range(v.dims[0]))
+        for (int_t x : range(v.dims[1])) {
+            r.safe(uint_t(y),uint_t(x)) = bicubic_strict(v,
+                (y-int_t(v.dims[0]/2))/factor + v.dims[0]/2,
+                (x-int_t(v.dims[1]/2))/factor + v.dims[1]/2,
+                def
+            );
+        }
+
+        return r;
+    }
+
+    template<typename TypeV, typename TypeD = double>
     typename vec<2,TypeV>::effective_type rotate(const vec<2,TypeV>& v, double angle,
         TypeD def = 0.0) {
 
@@ -190,6 +226,29 @@ namespace astro {
             double dy = (y-int_t(v.dims[0]/2));
             double dx = (x-int_t(v.dims[1]/2));
             r.safe(uint_t(y),uint_t(x)) = bilinear_strict(v,
+                dy*ca - dx*sa + v.dims[0]/2,
+                dx*ca + dy*sa + v.dims[1]/2,
+                def
+            );
+        }
+
+        return r;
+    }
+
+    template<typename TypeV, typename TypeD = double>
+    typename vec<2,TypeV>::effective_type rotate_bicubic(const vec<2,TypeV>& v, double angle,
+        TypeD def = 0.0) {
+
+        auto r = v.concretise();
+
+        double ca = cos(angle*dpi/180.0);
+        double sa = sin(angle*dpi/180.0);
+
+        for (int_t y : range(v.dims[0]))
+        for (int_t x : range(v.dims[1])) {
+            double dy = (y-int_t(v.dims[0]/2));
+            double dx = (x-int_t(v.dims[1]/2));
+            r.safe(uint_t(y),uint_t(x)) = bicubic_strict(v,
                 dy*ca - dx*sa + v.dims[0]/2,
                 dx*ca + dy*sa + v.dims[1]/2,
                 def
@@ -402,11 +461,11 @@ namespace astro {
     template<typename TypeY1, typename TypeY2>
     vec2cd convolve2d_prepare_kernel(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel,
         uint_t& hsx, uint_t& hsy) {
-    #ifdef NO_FFTW
+#ifdef NO_FFTW
         static_assert(!std::is_same<TypeY1,TypeY1>::value, "this function requires the FFTW "
             "library");
         return vec2cd();
-    #else
+#else
         phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
             "kernel must have odd dimensions (", kernel.dims, ")");
 
@@ -419,18 +478,18 @@ namespace astro {
 
         // Put the kernel in Fourier space
         return fft(tkernel);
-    #endif
+#endif
     }
 
     // Perform the convolution of a 2D array with a kernel (given in Fourier space)
     template<typename TypeY1>
     auto convolve2d(const vec<2,TypeY1>& map, const vec2cd& kernel, uint_t hsx, uint_t hsy) ->
         vec<2,meta::rtype_t<TypeY1>> {
-    #ifdef NO_FFTW
+#ifdef NO_FFTW
         static_assert(!std::is_same<TypeY1,TypeY1>::value, "this function requires the FFTW "
             "library");
         return map;
-    #else
+#else
         // Pad image to prevent issues with cyclic borders
         vec2d tmap = enlarge(map, {{hsx, hsy, hsx, hsy}});
 
@@ -439,7 +498,7 @@ namespace astro {
 
         // Go back to real space and shrink map back to original dimensions
         return shrink(ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
-    #endif
+#endif
     }
 
     // Perform the convolution of two 2D arrays, assuming the second one is the kernel.
@@ -447,9 +506,9 @@ namespace astro {
     template<typename TypeY1, typename TypeY2>
     auto convolve2d(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel) ->
         vec<2,decltype(map[0]*kernel[0])> {
-    #ifdef NO_FFTW
+#ifdef NO_FFTW
         return convolve2d_naive(map, kernel);
-    #else
+#else
         phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
             "kernel must have odd dimensions (", kernel.dims, ")");
 
@@ -481,9 +540,10 @@ namespace astro {
 
         // Go back to real space and shrink map back to original dimensions
         return shrink(ifft(cimg), {{hsx, hsy, hsx, hsy}})/cimg.size();
-    #endif
+#endif
     }
 
+#ifndef NO_FFTW
     struct convolver2d {
         const vec2d& kernel_normal;
         vec2cd kernel_fourier;
@@ -614,8 +674,21 @@ namespace astro {
             return map;
         }
     };
+#else
+    struct convolver2d {
+        explicit convolver2d(const vec2d&) {}
 
-    convolver2d batch_convolve2d(const vec2d& k) {
+        template<typename Dummy>
+        vec2d convolve(const vec2d& r) {
+            static_assert(!std::is_same<Dummy,Dummy>::value, "this function requires the FFTW "
+                "library");
+
+            return r;
+        }
+    };
+#endif
+
+    inline convolver2d batch_convolve2d(const vec2d& k) {
         return convolver2d(k);
     }
 
@@ -623,15 +696,15 @@ namespace astro {
     // Note: If the FFTW library is not used, falls back to convolve2d_naive().
     template<typename T = void>
     vec2d make_transition_kernel(const vec2d& from, const vec2d& to) {
-    #ifdef NO_FFTW
+#ifdef NO_FFTW
         static_assert(!std::is_same<T,T>::value, "this function needs the FFTW library to work");
         return vec2d();
-    #else
+#else
         vec2cd cfrom = fft(from);
         vec2cd cto = fft(to);
         cto(_-(cfrom.dims[1]/2),_) /= cfrom(_-(cfrom.dims[1]/2),_);
         return shift(ifft(cto), cfrom.dims[0]/2, cfrom.dims[1]/2);
-    #endif
+#endif
     }
 
     template<typename T, typename F>
@@ -901,7 +974,7 @@ namespace astro {
         vec1f flux;
     };
 
-    vec2u segment_deblend(const vec2d& img, segment_deblend_output& out,
+    inline vec2u segment_deblend(const vec2d& img, segment_deblend_output& out,
         const segment_deblend_params& params = segment_deblend_params()) {
 
         vec2u seg(img.dims);
@@ -1094,7 +1167,7 @@ namespace astro {
         return seg;
     }
 
-    void segment_distance(vec2u& map, vec2d& dmap, vec2u& imap) {
+    inline void segment_distance(vec2u& map, vec2d& dmap, vec2u& imap) {
         dmap = replicate(dinf, map.dims);
 
         struct obj_state {
@@ -1232,6 +1305,7 @@ namespace impl {
 }
 
 namespace astro {
+#ifndef NO_WCSLIB
     struct cutout_extractor {
         struct image_t {
             explicit image_t(const std::string& filename) :
@@ -1394,6 +1468,39 @@ namespace astro {
             return get_cutout_(cut, hdr, true, ra, dec, size, def);
         }
     };
+#else
+    struct cutout_extractor {
+        template<typename Dummy>
+        void setup_image(const std::string&) {
+            static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+        }
+
+        template<typename Dummy>
+        void setup_distortion(const std::string&) {
+            static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+        }
+
+        template<typename Type, typename TypeD = Type>
+        bool get_cutout(vec<2,Type>&, double, double, double,
+            TypeD def = impl::astro_impl::extract_default_value<Type>::value) const {
+            static_assert(!std::is_same<Type,Type>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+
+            return false;
+        }
+
+        template<typename Type, typename TypeD = Type>
+        bool get_cutout(vec<2,Type>&, fits::header&, double, double, double,
+            TypeD def = impl::astro_impl::extract_default_value<Type>::value) const {
+            static_assert(!std::is_same<Type,Type>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+
+            return false;
+        }
+    };
+#endif
 }
 }
 

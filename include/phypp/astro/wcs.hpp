@@ -333,7 +333,7 @@ namespace astro {
 
 namespace impl {
 namespace wcs_impl {
-    std::mutex& wcs_parser_mutex() {
+    inline std::mutex& wcs_parser_mutex() {
         static std::mutex m;
         return m;
     }
@@ -638,17 +638,22 @@ namespace astro {
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
-#else
-        return astro::wcs(hdr);
 #endif
+        return astro::wcs(hdr);
     }
 
 }
 
 namespace impl {
     namespace wcs_impl {
-        inline vec2d world2pix(const astro::wcs& w, const vec2d& world) {
+        template<typename Dummy = void>
+        vec2d world2pix(const astro::wcs& w, const vec2d& world) {
             vec2d pix(world.dims);
+
+#ifdef NO_WCSLIB
+            static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+#else
 
             uint_t npt = world.dims[0];
             uint_t naxis = world.dims[1];
@@ -664,12 +669,18 @@ namespace impl {
                 error("could not perform WCS conversion");
                 w.report_errors();
             }
+#endif
 
             return pix;
         }
 
-        inline vec2d pix2world(const astro::wcs& w, const vec2d& pix) {
+        template<typename Dummy = void>
+        vec2d pix2world(const astro::wcs& w, const vec2d& pix) {
             vec2d world(pix.dims);
+#ifdef NO_WCSLIB
+            static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+                "please enable the WCSLib library to use this function");
+#else
 
             uint_t npt = pix.dims[0];
             uint_t naxis = pix.dims[1];
@@ -685,6 +696,7 @@ namespace impl {
                 error("could not perform WCS conversion");
                 w.report_errors();
             }
+#endif
 
             return world;
         }
@@ -826,10 +838,11 @@ namespace astro {
             {wcs.w->crval[naxis-1-wcs.dec_axis], wcs.w->crval[naxis-1-wcs.dec_axis] + 1/3600.0},
             x, y
         );
+
         aspix = 1.0/sqrt(sqr(x[1] - x[0]) + sqr(y[1] - y[0]));
+#endif
 
         return true;
-#endif
     }
 
     // Obtain the pixel size of a given image in arsec/pixel.
@@ -847,6 +860,59 @@ namespace astro {
             fits::header hdr = fits::read_header(file);
             auto wcs = astro::wcs(hdr);
             if (!get_pixel_size(wcs, aspix)) {
+                warning("could not extract WCS information");
+                note("parsing '", file, "'");
+                return false;
+            }
+        }
+#endif
+
+        return true;
+    }
+
+    // Obtain the pixel rotation of a given image in degrees (CCW).
+    // An angle of zero means that the RA axis maps to -X and DEC to +Y.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
+    bool get_image_rotation(const astro::wcs& wcs, double& angle) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        if (!wcs.is_valid()) {
+            return false;
+        }
+
+        uint_t naxis = wcs.axis_count();
+        vec1d x, y;
+        astro::ad2xy(wcs,
+            {wcs.w->crval[naxis-1-wcs.ra_axis],  wcs.w->crval[naxis-1-wcs.ra_axis]},
+            {wcs.w->crval[naxis-1-wcs.dec_axis], wcs.w->crval[naxis-1-wcs.dec_axis] + 1/3600.0},
+            x, y
+        );
+
+        angle = -(180.0/dpi)*atan2(x[1]-x[0], y[1]-y[0]);
+
+        return true;
+#endif
+    }
+
+    // Obtain the pixel rotation of a given image in degrees (CCW).
+    // An angle of zero means that the RA axis maps to -X and DEC to +Y.
+    // Will fail (return false) if no WCS information is present in the image.
+    template<typename Dummy = void>
+    bool get_image_rotation(const std::string& file, double& angle) {
+#ifdef NO_WCSLIB
+        static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
+            "please enable the WCSLib library to use this function");
+#else
+        if (end_with(file, ".sectfits")) {
+            vec1s sects = fits::read_sectfits(file);
+            return get_image_rotation(sects[0], angle);
+        } else {
+            fits::header hdr = fits::read_header(file);
+            auto wcs = astro::wcs(hdr);
+            if (!get_image_rotation(wcs, angle)) {
                 warning("could not extract WCS information");
                 note("parsing '", file, "'");
                 return false;
@@ -1130,7 +1196,7 @@ namespace impl {
             return area;
         }
 
-        void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps, vec2d& res, vec2d& wei) {
+        inline void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps, vec2d& res, vec2d& wei) {
             // Get bounds of this projection
             uint_t ymin = regrid_drizzle_getmin(yps-0.5);
             uint_t xmin = regrid_drizzle_getmin(xps-0.5);
@@ -1267,13 +1333,43 @@ namespace impl {
 
             return covered;
         }
+
+        template<typename T, typename U>
+        bool regrid_cubic(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            uint_t ncovered = 0;
+            flx = 0;
+            for (uint_t i : range(xps)) {
+                double tflx = bicubic_strict(imgs, yps.safe[i], xps.safe[i], dnan);
+                if (is_finite(tflx)) {
+                    ++ncovered;
+                    flx += tflx;
+                }
+            }
+
+            if (ncovered == 0) {
+                return false;
+            } else {
+                flx /= ncovered;
+                return true;
+            }
+        }
+
+        template<typename T, typename U>
+        bool regrid_cubic_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
+            bool covered = regrid_cubic(imgs, xps, yps, flx);
+            if (covered) {
+                flx *= polyon_area(xps, yps);
+            }
+
+            return covered;
+        }
     }
 }
 
 namespace astro {
 
     enum class interpolation_method {
-        nearest, linear
+        nearest, linear, cubic
     };
 
     struct regrid_interpolate_params {
@@ -1348,6 +1444,13 @@ namespace astro {
                         covered = impl::wcs_impl::regrid_linear_fcon(imgs, xps, yps, flx);
                     } else {
                         covered = impl::wcs_impl::regrid_linear(imgs, xps, yps, flx);
+                    }
+                    break;
+                case interpolation_method::cubic:
+                    if (opts.conserve_flux) {
+                        covered = impl::wcs_impl::regrid_cubic_fcon(imgs, xps, yps, flx);
+                    } else {
+                        covered = impl::wcs_impl::regrid_cubic(imgs, xps, yps, flx);
                     }
                     break;
                 }

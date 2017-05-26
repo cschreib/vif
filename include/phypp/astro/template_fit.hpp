@@ -289,11 +289,16 @@ namespace astro {
             }
 
             res.amp = tmp1/tmp2;
+
+            res.chi2.resize(nsed);
             if (params.renorm) {
-                tmp1 *= res.amp;
-                res.chi2 = total(weight*flux*flux) - tmp1;
+                for (uint_t i = 0; i < nsed; ++i) {
+                    res.chi2.safe[i] = total(weight*sqr(flux - res.amp[i]*res.flux(i,_)));
+                }
             } else {
-                res.chi2 = total(weight*flux*flux) - 2.0*tmp1 + tmp2;
+                for (uint_t i = 0; i < nsed; ++i) {
+                    res.chi2.safe[i] = total(weight*sqr(flux - res.flux(i,_)));
+                }
             }
 
             // Find the best chi2 among all the SEDs
@@ -312,12 +317,16 @@ namespace astro {
                 }
 
                 auto amp = tmp1/tmp2;
-                vec<1,ttype> chi2;
+
+                vec<1,ttype> chi2(nsed);
                 if (params.renorm) {
-                    tmp1 *= amp;
-                    chi2 = total(weight*fsim*fsim) - tmp1;
+                    for (uint_t t = 0; t < nsed; ++t) {
+                        chi2.safe[t] = total(weight*sqr(fsim - amp[t]*res.flux(t,_)));
+                    }
                 } else {
-                    chi2 = total(weight*fsim*fsim) - 2.0*tmp1 + tmp2;
+                    for (uint_t t = 0; t < nsed; ++t) {
+                        chi2.safe[t] = total(weight*sqr(fsim - res.flux(t,_)));
+                    }
                 }
 
                 auto ised = min_id(chi2);
@@ -511,7 +520,7 @@ namespace astro {
                             model += amp[k1]*convflux[k1](ilib[k1],_);
                         }
 
-                        chi2 = total(sqr(flux - model));
+                        chi2 = total(sqr(rflux(s,_) - model));
                         if (chi2 < rchi2[s]) {
                             rchi2[s] = chi2;
                             res.sed_sim(s,_) = ilib;

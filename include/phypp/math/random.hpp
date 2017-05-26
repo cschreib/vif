@@ -63,24 +63,39 @@ namespace phypp {
         return vec<meta::dim_total<Args...>::value,rtype>(v*(ma + 1 - mi) + mi);
     }
 
-    template<typename T, typename TypeX, typename TypeY, typename ... Args>
+    template<typename T, typename TypeX = double, typename TypeY = double, typename ... Args>
     meta::rtype_t<TypeX> random_pdf(T& seed, const vec<1,TypeX>& px, const vec<1,TypeY>& py) {
-        // TODO: (feature) make an alternative version for integers using std::discrete_distribution.
-
         using rtype = meta::rtype_t<TypeX>;
         std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
         return distribution(seed);
     }
 
-    template<typename T, typename TypeX, typename TypeY, typename ... Args>
+    template<typename T, typename TypeX = double, typename TypeY = double, typename ... Args>
     vec<meta::dim_total<Args...>::value,meta::rtype_t<TypeX>> random_pdf(T& seed, const vec<1,TypeX>& px,
         const vec<1,TypeY>& py, Args&& ... args) {
-
-        // TODO: (feature) make an alternative version for integers using std::discrete_distribution.
 
         using rtype = meta::rtype_t<TypeX>;
         vec<meta::dim_total<Args...>::value,rtype> v(std::forward<Args>(args)...);
         std::piecewise_linear_distribution<rtype> distribution(px.begin(), px.end(), py.begin());
+        for (uint_t i : range(v)) {
+            v.safe[i] = distribution(seed);
+        }
+
+        return v;
+    }
+
+    template<typename T, typename TypeX = double, typename ... Args>
+    uint_t random_pdf_discrete(T& seed, const vec<1,TypeX>& w) {
+        std::discrete_distribution<uint_t> distribution(w.begin(), w.end());
+        return distribution(seed);
+    }
+
+    template<typename T, typename TypeX = double, typename ... Args>
+    vec<meta::dim_total<Args...>::value,uint_t> random_pdf_discrete(T& seed,
+        const vec<1,TypeX>& w, Args&& ... args) {
+
+        vec<meta::dim_total<Args...>::value,uint_t> v(std::forward<Args>(args)...);
+        std::discrete_distribution<uint_t> distribution(w.begin(), w.end());
         for (uint_t i : range(v)) {
             v.safe[i] = distribution(seed);
         }

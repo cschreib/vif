@@ -347,6 +347,16 @@ namespace phypp {
 
         return dr;
     }
+
+    template<typename TypeY>
+    auto cumul_reverse(const vec<1,TypeY>& y) -> vec<1,meta::rtype_t<TypeY>> {
+        vec<1,meta::rtype_t<TypeY>> dr(y.dims);
+        for (uint_t i : range(1, y.size())) {
+            dr.safe[dr.size()-1-i] = dr.safe[dr.size()-i] + y.safe[y.size()-1-i];
+        }
+
+        return dr;
+    }
 }
 
 #endif

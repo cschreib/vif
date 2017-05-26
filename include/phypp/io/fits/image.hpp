@@ -95,6 +95,21 @@ namespace fits {
             make_indices_(idim+1, naxes, fpixel, lpixel, args...);
         }
 
+        template <typename ... Args>
+        void make_indices_(uint_t idim, const std::vector<long>& naxes,
+            std::vector<long>& fpixel, std::vector<long>& lpixel,
+            uint_t i, const Args& ... args) const {
+
+            phypp_check_fits(i < naxes[naxes.size()-1-idim], "image subset goes outside of "
+                "the image boundaries (axis "+strn(idim)+": "+strn(i)+" vs. "+
+                strn(naxes[naxes.size()-1-idim]));
+
+            fpixel[naxes.size()-1-idim] = i+1;
+            lpixel[naxes.size()-1-idim] = i+1;
+
+            make_indices_(idim+1, naxes, fpixel, lpixel, args...);
+        }
+
     public:
         template<std::size_t Dim, typename Type>
         void read(vec<Dim,Type>& v) const {
@@ -179,14 +194,14 @@ namespace fits {
     protected :
 
         explicit output_image(const std::string& filename, impl::fits_impl::readwrite_tag_t) :
-            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
-            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
+            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
     public :
 
         explicit output_image(const std::string& filename) :
-            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
-            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
+            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
         output_image(output_image&&) noexcept = default;
         output_image(const output_image&) = delete;

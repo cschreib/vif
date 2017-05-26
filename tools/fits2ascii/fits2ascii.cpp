@@ -159,13 +159,14 @@ int phypp_main(int argc, char* argv[]) {
     vec1s exclude, include, rename;
     std::string ids_file;
     bool verbose = false;
+    uint_t hdu = 0;
 
     read_args(argc-2, argv+2, arg_list(name(tsplit, "split"), exclude, include,
-        rename, name(ids_file, "ids"), verbose));
+        rename, name(ids_file, "ids"), verbose, hdu));
 
     std::string in_file = argv[1];
     std::string out_file = argv[2];
-    auto cols = fits::read_table_columns(in_file);
+    auto cols = fits::read_table_columns(in_file, hdu);
 
     vec1s rename_from, rename_to;
     for (auto& n : rename) {

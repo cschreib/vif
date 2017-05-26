@@ -62,10 +62,12 @@ namespace phypp {
     }
 
     // Perform linear interpolation of data 'y' of position 'x' at new position 'nx'.
-    // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted. If one of
-    // the arrays contains special values (NaN, inf, ...), all the points that would use these values
-    // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
-    template<std::size_t DI = 1, typename TypeY = double, typename TypeX = double, typename T = double,
+    // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted.
+    // If one of the arrays contains special values (NaN, inf, ...), all the points that would use
+    // these values will be contaminated. If 'x' is not properly sorted, the result will simply be
+    // wrong.
+    template<std::size_t DI = 1, typename TypeY = double, typename TypeX = double,
+        typename T = double,
         typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
     auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeX>& x, const T& nx) ->
         decltype(y[0]*x[0]) {
@@ -105,7 +107,8 @@ namespace phypp {
     // will be contaminated. If 'x' is not properly sorted, the result will simply be wrong.
     template<std::size_t DI = 1, std::size_t DX = 1, typename TypeX2 = double, typename TypeY = double,
         typename TypeE = double, typename TypeX1 = double>
-    auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeE>& e, const vec<DI,TypeX1>& x, const vec<DX,TypeX2>& nx) ->
+    auto interpolate(const vec<DI,TypeY>& y, const vec<DI,TypeE>& e, const vec<DI,TypeX1>& x,
+        const vec<DX,TypeX2>& nx) ->
         std::pair<vec<DX,decltype(y[0]*x[0])>,vec<DX,decltype(y[0]*x[0])>> {
 
         using rtypey = meta::rtype_t<TypeY>;
@@ -151,6 +154,7 @@ namespace phypp {
         return p;
     }
 
+    // Raw bilinear interpolation (or extrapolation) between four values
     inline double bilinear(double v1, double v2, double v3, double v4, double x, double y) {
         return v1*(1.0-x)*(1.0-y) + v2*(1.0-x)*y + v3*x*(1.0-y) + v4*x*y;
     }
@@ -265,8 +269,15 @@ namespace phypp {
         return v;
     }
 
+    // Perform cubic interpolation of data 'y' of position 'x' at new position 'nx'.
+    // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted.
+    // If one of the arrays contains special values (NaN, inf, ...), all the points that would use
+    // these values will be contaminated. If 'x' is not properly sorted, the result will simply be
+    // wrong.
     template <std::size_t D, typename TN, typename TX, typename TY>
-    vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x, const vec<D,TN>& xn) {
+    vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x,
+        const vec<D,TN>& xn) {
+
         vec<D,meta::rtype_t<TY>> yn(xn.dims);
 
         phypp_check(y.size() == x.size(),
@@ -277,9 +288,14 @@ namespace phypp {
         const uint_t n = y.size()-1;
         vec1d b(n+1), d(n+1);
         vec1d h(n);
-        for (uint_t i : range(h)) h[i] = x[i+1]-x[i];
+        for (uint_t i : range(h)) {
+            h[i] = x[i+1]-x[i];
+        }
+
         vec1d al(n);
-        for (uint_t i : range(1, n)) al[i] = 3.0*(y[i+1] - y[i])/h[i] - 3.0*(y[i] - y[i-1])/h[i];
+        for (uint_t i : range(1, n)) {
+            al[i] = 3.0*(y[i+1] - y[i])/h[i] - 3.0*(y[i] - y[i-1])/h[i];
+        }
 
         vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
         l[0] = 1;
@@ -314,6 +330,134 @@ namespace phypp {
         }
 
         return yn;
+    }
+
+    // Perform cubic interpolation of the regularly gridded data 'y' at the new positions 'nx'.
+    // Assumes that the data array only contains finite elements. If this is not the case,
+    // all the points that would use these values will be contaminated.
+    template <std::size_t D, typename TN, typename TY>
+    vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<D,TN>& xn) {
+        vec<D,meta::rtype_t<TY>> yn(xn.dims);
+
+        phypp_check(y.size() >= 2, "'y' array must contain at least 2 elements");
+
+        const uint_t n = y.size()-1;
+        vec1d b(n+1), d(n+1);
+
+        vec1d al(n);
+        for (uint_t i : range(1, n)) {
+            al[i] = 3.0*(y[i+1] - y[i]) - 3.0*(y[i] - y[i-1]);
+        }
+
+        vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
+        l[0] = 1;
+        for (uint_t i : range(1, n)) {
+            l[i] = 4.0 - mu[i-1];
+            mu[i] = 1.0/l[i];
+            z[i] = (al[i] - z[i-1])/l[i];
+        }
+
+        l[n] = 1; {
+            uint_t i = n;
+            do {
+                --i;
+                c[i] = z[i] - mu[i]*c[i+1];
+                b[i] = (y[i+1]-y[i]) - (1.0/3.0)*(c[i+1] + 2*c[i]);
+                d[i] = (1.0/3.0)*(c[i+1] - c[i]);
+            } while (i != 0);
+        }
+
+        b[n] = b[n-1] + 2*c[n-1] + 3*d[n-1];
+
+        for (uint_t i : range(xn)) {
+            int_t k = floor(xn.safe[i]);
+            if (k < 0) {
+                k = 0;
+                double th = xn[i] - k;
+                yn[i] = y[k] + b[0]*th;
+            } else {
+                double th = xn[i] - k;
+                yn[i] = y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
+            }
+        }
+
+        return yn;
+    }
+
+    // Perform cubic interpolation of the regularly gridded data 'y' at the new positions 'nx'.
+    // Assumes that the data array only contains finite elements. If this is not the case,
+    // all the points that would use these values will be contaminated.
+    template <typename TN, typename TY>
+    meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const TN& xn) {
+        phypp_check(y.size() >= 2, "'y' array must contain at least 2 elements");
+
+        const uint_t n = y.size()-1;
+        vec1d b(n+1), d(n+1);
+
+        vec1d al(n);
+        for (uint_t i : range(1, n)) {
+            al[i] = 3.0*(y[i+1] - y[i]) - 3.0*(y[i] - y[i-1]);
+        }
+
+        vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
+        l[0] = 1;
+        for (uint_t i : range(1, n)) {
+            l[i] = 4.0 - mu[i-1];
+            mu[i] = 1.0/l[i];
+            z[i] = (al[i] - z[i-1])/l[i];
+        }
+
+        l[n] = 1; {
+            uint_t i = n;
+            do {
+                --i;
+                c[i] = z[i] - mu[i]*c[i+1];
+                b[i] = (y[i+1]-y[i]) - (1.0/3.0)*(c[i+1] + 2*c[i]);
+                d[i] = (1.0/3.0)*(c[i+1] - c[i]);
+            } while (i != 0);
+        }
+
+        b[n] = b[n-1] + 2*c[n-1] + 3*d[n-1];
+
+        int_t k = floor(xn);
+        if (k < 0) {
+            k = 0;
+            double th = xn - k;
+            return y[k] + b[0]*th;
+        } else {
+            double th = xn - k;
+            return y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
+        }
+    }
+
+    // Perform bicubic interpolation of the regularly gridded data 'map' at the new positions
+    // 'x' and 'y'.
+    // Assumes that the data array only contains finite elements. If this is not the case,
+    // all the points that would use these values will be contaminated.
+    template<typename Type, typename TypeD = double>
+    meta::rtype_t<Type> bicubic_strict(const vec<2,Type>& map, double x, double y,
+        TypeD def = 0.0) {
+
+        int_t tix = floor(x);
+        int_t tiy = floor(y);
+
+        if (tix <= 0 || uint_t(tix) >= map.dims[0]-2 || tiy <= 0 || uint_t(tiy) >= map.dims[1]-2) {
+            return def;
+        }
+
+        vec<1,meta::rtype_t<Type>> tmpx(4);
+        vec<1,meta::rtype_t<Type>> tmpy(4);
+        for (int_t ix : range(tmpx)) {
+            uint_t uix = ix + tix - 1;
+            for (uint_t iy : range(tmpy)) {
+                uint_t uiy = iy + tiy - 1;
+                tmpy.safe[iy] = map.safe(uix, uiy);
+            }
+
+            tmpx.safe[ix] = interpolate_3spline(tmpy, y - tiy + 1);
+        }
+
+        return interpolate_3spline(tmpx, x - tix + 1);
     }
 }
 

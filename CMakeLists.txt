@@ -330,37 +330,6 @@ set(DEPENDENCIES_LIBS "${DEPENDENCIES_LIBS} -L${CFITSIO_LIBRARY_DIR}")
 # handle pthread (mandatory for std::thread in Unix)
 set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -pthread")
 
-# build configuration
-set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
-set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
-file(WRITE ${PHYPP_OUTPUT_CONFIG} "# phy++ configuration file\n\n")
-
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_SHOW_CMD=0\n\n")
-
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DISABLE_REFLECTION=${NO_REFLECTION}\n\n")
-
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_INCLUDE_DIR=-I\"${CMAKE_INSTALL_PREFIX}/include\"\n")
-
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=\"${PROJECT_SOURCE_DIR}\"/\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\"\${PHYPP_PATH}data/\"\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TMP_DIR=\"/tmp/\"\n\n")
-
-if (NOT NO_REFLECTION)
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=\"${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\"\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=\"/tmp/\"\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -isystem ${CLANG_SYSTEM_INCLUDE} ${REFGEN_COMPILER_FLAGS} ${DEPENDENCIES_INCLUDES} ${REFGEN_ADD_COMPILER_FLAGS}\"\n\n")
-endif()
-
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=\"${CMAKE_CXX_COMPILER}\"\n")
-
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-g ${PHYPP_COMPILER_FLAGS} ${DEPENDENCIES_INCLUDES} ${DEPENDENCIES_LIBS} ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=\n")
-file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
-if (NOT NO_PROFILER)
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
-    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PROFILER=\"${PROFILER_BINARY}\"\n")
-endif()
-
 # make sure the destination folder is clean before installing there
 # this will remove headers that were moved by a refactoring
 install(CODE "message(\"-- Deleting:   ${CMAKE_INSTALL_PREFIX}/include/phypp\")")
@@ -380,10 +349,43 @@ if (PROFILER_LIBRARIES)
     install(PROGRAMS ${PROJECT_SOURCE_DIR}/bin/prophy++ DESTINATION bin COMPONENT scripts)
 endif()
 
-# install config
-if (NOT PHYPPRC_DIR)
-    set(PHYPPRC_DIR $ENV{HOME})
+# build configuration
+if (NOT PHYPP_INPLACE_BUILD)
+    set(PHYPP_OUTPUT_CONFIG_FILE ".phypprc")
+    set(PHYPP_OUTPUT_CONFIG "${CMAKE_BINARY_DIR}/${PHYPP_OUTPUT_CONFIG_FILE}")
+    file(WRITE ${PHYPP_OUTPUT_CONFIG} "# phy++ configuration file\n\n")
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_SHOW_CMD=0\n\n")
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DISABLE_REFLECTION=${NO_REFLECTION}\n\n")
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_INCLUDE_DIR=-I\"${CMAKE_INSTALL_PREFIX}/include\"\n")
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PATH=\"${PROJECT_SOURCE_DIR}\"/\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_DATA_DIR=\"\${PHYPP_PATH}data/\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TMP_DIR=\"/tmp/\"\n\n")
+
+    if (NOT NO_REFLECTION)
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN=\"${CMAKE_INSTALL_PREFIX}/bin/phy++-refgen\"\n")
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_TEMP_DIR=\"/tmp/\"\n")
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_REFGEN_FLAGS=\"-DDISABLE_REFLECTION -isystem ${CLANG_SYSTEM_INCLUDE} ${REFGEN_COMPILER_FLAGS} ${DEPENDENCIES_INCLUDES} ${REFGEN_ADD_COMPILER_FLAGS}\"\n\n")
+    endif()
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER=\"${CMAKE_CXX_COMPILER}\"\n")
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_FLAGS=\"-g ${PHYPP_COMPILER_FLAGS} ${DEPENDENCIES_INCLUDES} ${DEPENDENCIES_LIBS} ${PHYPP_ADD_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_DEBUG_FLAGS=\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_OPT_FLAGS=\"-O3 ${PHYPP_ADD_OPT_COMPILER_FLAGS}\"\n")
+    if (NOT NO_PROFILER)
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
+        file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PROFILER=\"${PROFILER_BINARY}\"\n")
+    endif()
+
+    # install config
+    if (NOT PHYPPRC_DIR)
+        set(PHYPPRC_DIR $ENV{HOME})
+    endif()
+    message(STATUS "phy++ configuration environment will be installed in ${PHYPPRC_DIR}")
+    install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION ${PHYPPRC_DIR} COMPONENT config)
+    install(CODE "message(\"note: to finalize the installation, please source ${PHYPPRC_DIR}/${PHYPP_OUTPUT_CONFIG_FILE} in your startup script (~/.bashrc).\")")
 endif()
-message(STATUS "phy++ configuration environment will be installed in ${PHYPPRC_DIR}")
-install(FILES ${PHYPP_OUTPUT_CONFIG} DESTINATION ${PHYPPRC_DIR} COMPONENT config)
-install(CODE "message(\"note: to finalize the installation, please source ${PHYPPRC_DIR}/${PHYPP_OUTPUT_CONFIG_FILE} in your startup script (~/.bashrc).\")")

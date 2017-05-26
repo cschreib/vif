@@ -276,11 +276,12 @@ namespace impl {
 
         inline int bitpix_to_type(int bitpix) {
             switch(bitpix) {
-                case BYTE_IMG   : return TBYTE;
-                case SHORT_IMG  : return TSHORT;
-                case LONG_IMG   : return TLONG;
-                case FLOAT_IMG  : return TFLOAT;
-                case DOUBLE_IMG : return TDOUBLE;
+                case BYTE_IMG     : return TBYTE;
+                case SHORT_IMG    : return TSHORT;
+                case LONG_IMG     : return TLONG;
+                case LONGLONG_IMG : return TLONGLONG;
+                case FLOAT_IMG    : return TFLOAT;
+                case DOUBLE_IMG   : return TDOUBLE;
                 default : throw fits::exception("unknown image type '"+strn(bitpix)+"'");
             }
         }
@@ -541,7 +542,7 @@ namespace impl {
                     if (hdu >= nhdu) {
                         // Create missing HDUs to be able to reach the one requested
                         long naxes = 0;
-                        for (uint_t i : range(hdu-nhdu+1)) {
+                        for (uint_t i = nhdu; i <= hdu; ++i) {
                             fits_insert_img(fptr_, impl::fits_impl::traits<float>::image_type,
                                 0, &naxes, &status_);
                             fits::phypp_check_cfitsio(status_,

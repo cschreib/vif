@@ -331,7 +331,7 @@ namespace astro {
         #endif
 
         add_comment(pool.coms, reflex::seek_name(in), com+" (from "+ref+")");
-    }a
+    }
 
     template<typename T, typename U, typename V>
     void catalog_t::merge(vec<1,T>& in, const U& out, const V& def, const std::string& com) {
