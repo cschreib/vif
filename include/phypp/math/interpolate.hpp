@@ -320,9 +320,8 @@ namespace phypp {
         for (uint_t i : range(xn)) {
             uint_t k = lower_bound(xn.safe[i], x);
             if (k == npos) {
-                k = 0;
-                double th = xn[i] - x[k];
-                yn[i] = y[k] + b[0]*th;
+                double th = xn[i] - x[0];
+                yn[i] = y[0] + b[0]*th;
             } else {
                 double th = xn[i] - x[k];
                 yn[i] = y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
@@ -372,11 +371,11 @@ namespace phypp {
         for (uint_t i : range(xn)) {
             int_t k = floor(xn.safe[i]);
             if (k < 0) {
-                k = 0;
-                double th = xn[i] - k;
-                yn[i] = y[k] + b[0]*th;
+                double th = xn[i];
+                yn[i] = y[0] + b[0]*th;
             } else {
-                double th = xn[i] - k;
+                if (k > n) k = n;
+                double th = double(xn[i]) - k;
                 yn[i] = y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
             }
         }
@@ -421,11 +420,11 @@ namespace phypp {
 
         int_t k = floor(xn);
         if (k < 0) {
-            k = 0;
-            double th = xn - k;
-            return y[k] + b[0]*th;
+            double th = xn;
+            return y[0] + b[0]*th;
         } else {
-            double th = xn - k;
+            if (k > n) k = n;
+            double th = double(xn) - k;
             return y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
         }
     }
