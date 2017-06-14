@@ -892,9 +892,9 @@ namespace astro {
         );
 
         angle = -(180.0/dpi)*atan2(x[1]-x[0], y[1]-y[0]);
+#endif
 
         return true;
-#endif
     }
 
     // Obtain the pixel rotation of a given image in degrees (CCW).
@@ -917,10 +917,10 @@ namespace astro {
                 note("parsing '", file, "'");
                 return false;
             }
-
-            return true;
         }
 #endif
+
+        return true;
     }
 
 }
