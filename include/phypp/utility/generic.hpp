@@ -165,8 +165,7 @@ namespace phypp {
 
             uint_t di = impl::vec_access::pitch(dims, I)*
                 impl::vec_access::template to_idx<I>(dims, ids[I]);
-            return flat_id_(dims, ret + di, meta::cte_t<I+1>{},
-                std::forward<Args>(args)...);
+            return flat_id_(dims, ret + di, meta::cte_t<I+1>{}, ids);
         }
     }
 
