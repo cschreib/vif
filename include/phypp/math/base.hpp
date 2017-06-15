@@ -342,12 +342,14 @@ namespace phypp {
         phypp_check(s > 0 && is_finite(s),
             "'rgen_step(a,b,s)' needs a strictly positive and finite value for 's' (got ", s, ")");
 
+        using ctype = decltype(i*j*s);
+
         uint_t n;
         double step = s;
-        if (i < T(j)) {
-            n = round((j - i)/s) + 1;
+        if (ctype(i) < ctype(j)) {
+            n = round((ctype(j) - ctype(i))/s) + 1;
         } else {
-            n = round((i - j)/s) + 1;
+            n = round((ctype(i) - ctype(j))/s) + 1;
             step *= -1.0;
         }
 
