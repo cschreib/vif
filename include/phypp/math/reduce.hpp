@@ -694,7 +694,8 @@ namespace phypp {
         phypp_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
 
-        phypp_check(x.front() <= x0 && x.back() >= x1, "x array must cover the range [x0,x1]");
+        phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
+        phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
 
         uint_t i0 = upper_bound(x0, x);
         uint_t i1 = lower_bound(x1, x);
