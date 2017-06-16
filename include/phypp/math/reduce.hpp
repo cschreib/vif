@@ -761,9 +761,16 @@ namespace phypp {
         phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
         phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
 
-        uint_t i0 = ihint;
-        while (i0 < x.size()-1 && x.safe[i0+1] <= x0) {
-            ++i0;
+        uint_t i0;
+        if (ihint == npos) {
+            // No hint provided, look for solution the best way we can
+            i0 = upper_bound(x0, x);
+        } else {
+            // Hint provided, assume our values are shortly after
+            i0 = ihint;
+            while (i0 < x.size()-1 && x.safe[i0+1] <= x0) {
+                ++i0;
+            }
         }
 
         uint_t i1 = i0;
