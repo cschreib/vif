@@ -752,6 +752,52 @@ namespace phypp {
     }
 
     template<typename TypeX, typename TypeY>
+    auto integrate_hinted(const vec<1,TypeX>& x, const vec<1,TypeY>& y, uint_t& ihint,
+        double x0, double x1) -> decltype(0.5*y[0]*(x[1]-x[0])) {
+
+        phypp_check(x.size() == y.size(),
+            "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+
+        phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
+        phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
+
+        uint_t i0 = ihint;
+        while (i0 < x.size()-1 && x.safe[i0+1] <= x0) {
+            ++i0;
+        }
+
+        uint_t i1 = i0;
+        while (i1 < x.size()-1 && x.safe[i1+1] <= x1) {
+            ++i1;
+        }
+
+        if (i0 != x.size()-1) ++i0;
+
+        ihint = i1;
+
+        if (i0 > i1) {
+            return 0.5*(y.safe[i1]+y.safe[i0])*(x1 - x0);
+        } else {
+            decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
+            for (uint_t i = i0; i < i1; ++i) {
+                r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
+            }
+
+            if (i0 > 0) {
+                double y0 = interpolate(y.safe[i0-1], y.safe[i0], x.safe[i0-1], x.safe[i0], x0);
+                r += 0.5*(y.safe[i0]+y0)*(x[i0]-x0);
+            }
+
+            if (i1 < x.size()-1) {
+                double y1 = interpolate(y.safe[i1], y.safe[i1+1], x.safe[i1], x.safe[i1+1], x1);
+                r += 0.5*(y1+y.safe[i1])*(x1-x.safe[i1]);
+            }
+
+            return r;
+        }
+    }
+
+    template<typename TypeX, typename TypeY>
     auto cumul(const vec<1,TypeX>& x, const vec<1,TypeY>& y) -> vec<1,decltype(integrate(x,y))> {
         vec<1,decltype(integrate(x,y))> dr(y.dims);
 
