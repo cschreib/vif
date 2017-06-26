@@ -341,6 +341,100 @@ namespace matrix {
         vecs = a;
         return inplace_eigen_symmetric<Dummy>(vecs, vals);
     }
+
+    struct linear_solver {
+        vec2d alpha;
+        vec2d l, u;
+        vec1u ipiv;
+        mutable vec1d y, z;
+
+        void decompose() {
+            const uint_t n = alpha.dims[0];
+
+            y.resize(n);
+            z.resize(n);
+            l.resize(alpha.dims);
+            u.resize(alpha.dims);
+            ipiv = uindgen(n);
+
+            // Find and apply pivot
+            for (uint_t i : range(n)) {
+                double aii = abs(alpha.safe(i,i));
+                for (uint_t k : range(i+1, n)) {
+                    double aki = abs(alpha.safe(k,i));
+                    if (aii < aki) {
+                        aii = aki;
+                        std::swap(ipiv.safe[i], ipiv.safe[k]);
+                        for (uint_t j : range(n)) {
+                            std::swap(alpha.safe(i,j), alpha.safe(k,j));
+                        }
+                    }
+                }
+            }
+
+            // Find L and U
+            for (uint_t k : range(n)) {
+                u.safe(k,k) = 1.0;
+                for (uint_t i : range(k, n)) {
+                    double sum = 0.0;
+                    for (uint_t p : range(k)) {
+                        sum += l.safe(i,p)*u.safe(p,k);
+                    }
+
+                    l.safe(i,k) = alpha.safe(i,k) - sum;
+                }
+
+                for (uint_t i : range(k+1, n)) {
+                    double sum = 0.0;
+                    for (uint_t p : range(k)) {
+                        sum += l.safe(k,p)*u.safe(p,i);
+                    }
+
+                    u.safe(k,i) = (alpha.safe(k,i) - sum)/l.safe(k,k);
+                }
+            }
+        }
+
+        vec1d solve(const vec1d& x) const {
+            vec1d r(x.size());
+
+            const uint_t n = x.size();
+
+            // Solve L*y = x
+            for (uint_t i : range(n)) {
+                double sum = 0.0;
+                for (uint_t p : range(i)) {
+                    sum += l.safe(i,p)*y.safe[p];
+                }
+
+                y.safe[i] = (x.safe[ipiv.safe[i]] - sum)/l.safe(i,i);
+            }
+
+            // Solve U*z = y
+            {
+                uint_t i = n;
+                while (i > 0) {
+                    --i;
+
+                    double sum = 0.0;
+                    uint_t p = n;
+                    while (p > i+1) {
+                        --p;
+                        sum += u.safe(i,p)*z.safe[p];
+                    }
+
+                    z.safe[i] = (y.safe[i] - sum)/u.safe(i,i);
+                }
+            }
+
+            // Apply pivot
+            for (uint_t i : range(n)) {
+                r.safe[ipiv.safe[i]] = z.safe[i];
+            }
+
+            return r;
+        }
+    };
 }
 }
 
