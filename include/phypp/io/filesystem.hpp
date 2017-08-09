@@ -181,6 +181,10 @@ namespace file {
         return !file::exists(file) || ::remove(file.c_str()) == 0;
     }
 
+    inline bool move(const std::string& file, const std::string& to) {
+        return ::rename(file.c_str(), to.c_str()) == 0;
+    }
+
     inline std::string to_string(const std::string& file_name) {
         std::string   dst;
         std::ifstream src(file_name, std::ios::binary);
@@ -370,7 +374,7 @@ namespace file {
 
 #undef VECTORIZE
 }
-    
+
     inline bool fork(const std::string& cmd) {
         return system((cmd+" &").c_str()) == 0;
     }
