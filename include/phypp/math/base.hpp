@@ -14,8 +14,8 @@ namespace phypp {
     static constexpr const float  fnan = std::numeric_limits<float>::quiet_NaN();
     static constexpr const double dinf = std::numeric_limits<double>::infinity();
     static constexpr const float  finf = std::numeric_limits<float>::infinity();
-    static constexpr const double dpi = 3.14159265359;
-    static constexpr const float  fpi = 3.14159265359;
+    static constexpr const double dpi = 3.14159265358979323;
+    static constexpr const float  fpi = 3.14159265358979323;
     static constexpr const double ln10 = 2.30258509299404568;
 
     // Import some standard functions into the global namespace for convenience
