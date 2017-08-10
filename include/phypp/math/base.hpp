@@ -16,6 +16,7 @@ namespace phypp {
     static constexpr const float  finf = std::numeric_limits<float>::infinity();
     static constexpr const double dpi = 3.14159265359;
     static constexpr const float  fpi = 3.14159265359;
+    static constexpr const double ln10 = 2.30258509299404568;
 
     // Import some standard functions into the global namespace for convenience
     using std::sqrt;
@@ -77,8 +78,8 @@ namespace phypp {
     }
 
     template<typename T>
-    auto e10(const T& t) -> decltype(pow(10.0, t)) {
-        return pow(10.0, t);
+    auto e10(const T& t) -> decltype(exp(ln10*t)) {
+        return exp(ln10*t);
     }
 
     template<typename T, typename U, typename V,
