@@ -51,6 +51,16 @@ namespace impl {
     namespace ascii_impl {
         using placeholder_t = phypp::impl::placeholder_t;
 
+        template<typename T>
+        struct is_tuple : std::false_type {};
+        template<typename ... Args>
+        struct is_tuple<std::tuple<Args...>> : std::true_type {};
+
+        template<typename T>
+        struct is_other : std::integral_constant<bool,
+            !meta::is_vec<T>::value && !std::is_same<T,impl::placeholder_t>::value &&
+            !is_tuple<T>::value> {};
+
         inline void read_table_resize_(std::size_t n) {}
 
         template<typename T, typename ... Args>
@@ -59,6 +69,8 @@ namespace impl {
         void read_table_resize_(std::size_t n, std::tuple<U,VArgs&...> v, Args& ... args);
         template<typename ... Args>
         void read_table_resize_(std::size_t n, impl::placeholder_t, Args& ... args);
+        template<typename T, typename ... Args, typename enable = typename std::enable_if<is_other<T>::value>::type>
+        void read_table_resize_(std::size_t n, T&, Args& ... args);
 
         template<typename T, typename ... Args>
         void read_table_resize_(std::size_t n, vec<1,T>& v, Args& ... args) {
@@ -97,6 +109,12 @@ namespace impl {
 
         template<typename ... Args>
         void read_table_resize_(std::size_t n, impl::placeholder_t, Args& ... args) {
+            read_table_resize_(n, args...);
+        }
+
+        template<typename T, typename ... Args, typename enable>
+        void read_table_resize_(std::size_t n, T&, Args& ... args) {
+            phypp_check(n <= 1, "cannot read multiple values into a scalar variable");
             read_table_resize_(n, args...);
         }
 
@@ -169,6 +187,8 @@ namespace impl {
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
         template<typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args);
+        template<typename T, typename ... Args, typename enable = typename std::enable_if<is_other<T>::value>::type>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, T& v, Args& ... args);
 
         template<typename T, typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
@@ -242,6 +262,25 @@ namespace impl {
 
             std::string s;
             fs >> s;
+            read_table_(fs, i, ++j, args...);
+        }
+
+        template<typename T, typename ... Args, typename enable>
+        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, T& v, Args& ... args) {
+            if (fs.eof()) {
+                throw ascii::exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
+                    "too few columns on line l."+strn(i+1));
+            }
+
+            std::string fb;
+            if (!read_value_(fs, v, fb)) {
+                if (fb.empty()) {
+                    throw ascii::exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                } else {
+                    throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
+                        strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                }
+            }
             read_table_(fs, i, ++j, args...);
         }
     }
