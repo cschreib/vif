@@ -409,7 +409,7 @@ namespace phypp {
 
     // In a sorted vector, return all the unique values.
     template<std::size_t Dim, typename Type>
-    vec<1,meta::rtype_t<Type>> unique_valuess_sorted(const vec<Dim,Type>& v) {
+    vec<1,meta::rtype_t<Type>> unique_values_sorted(const vec<Dim,Type>& v) {
         return v.safe[unique_ids_sorted(v)];
     }
 
