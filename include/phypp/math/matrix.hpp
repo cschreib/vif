@@ -176,12 +176,145 @@ namespace matrix {
         return vec<1,decltype(x*y)>{x, y, 1};
     }
 
-    template<typename Dummy = void>
-    bool inplace_invert(vec2d& i) {
+    struct decompose_lu {
+        vec2d lu;
+        vec1u ipiv;
+        mutable vec1d y;
+        bool bad = false;
+
+    public:
+        bool decompose(const vec2d& alpha) {
+            // LU decomposition
+
+            phypp_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
+                "square matrix (", alpha.dims, ")");
+
+            const uint_t n = alpha.dims[0];
+
+            y.resize(n);
+            lu.resize(alpha.dims);
+            ipiv = uindgen(n);
+
+            // Find pivot
+            for (uint_t i : range(n)) {
+                double aii = abs(alpha.safe(i,i));
+                for (uint_t k : range(i+1, n)) {
+                    double aki = abs(alpha.safe(k,i));
+                    if (aii < aki) {
+                        aii = aki;
+                        std::swap(ipiv.safe[i], ipiv.safe[k]);
+                    }
+                }
+            }
+
+            // Find L and U
+            for (uint_t k : range(n)) {
+                for (uint_t i : range(k, n)) {
+                    double sum = 0.0;
+                    for (uint_t p : range(k)) {
+                        sum += lu.safe(i,p)*lu.safe(p,k);
+                    }
+
+                    lu.safe(i,k) = alpha.safe(ipiv.safe[i],k) - sum;
+                }
+
+                if (lu.safe(k,k) == 0.0) {
+                    bad = true;
+                }
+
+                for (uint_t i : range(k+1, n)) {
+                    double sum = 0.0;
+                    for (uint_t p : range(k)) {
+                        sum += lu.safe(k,p)*lu.safe(p,i);
+                    }
+
+                    lu.safe(k,i) = (alpha.safe(ipiv.safe[k],i) - sum)/lu.safe(k,k);
+                }
+            }
+
+            return !bad;
+        }
+
+        vec2d invert() const {
+            vec2d inv(lu.dims);
+            const uint_t n = lu.dims[0];
+
+            for (uint_t c : range(n)) {
+                // Solve L*y = x
+                for (uint_t i : range(n)) {
+                    double sum = 0.0;
+                    for (uint_t p : range(i)) {
+                        sum += lu.safe(i,p)*y.safe[p];
+                    }
+
+                    y.safe[i] = ((c == ipiv.safe[i] ? 1.0 : 0.0) - sum)/lu.safe(i,i);
+                }
+
+                // Solve U*z = y
+                {
+                    uint_t i = n;
+                    while (i > 0) {
+                        --i;
+
+                        double sum = 0.0;
+                        uint_t p = n;
+                        while (p > i+1) {
+                            --p;
+                            sum += lu.safe(i,p)*inv.safe(p,c);
+                        }
+
+                        inv.safe(i,c) = y.safe[i] - sum;
+                    }
+                }
+            }
+
+            return inv;
+        }
+
+        vec1d solve(const vec1d& x) const {
+            phypp_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
+                "dimensions (got ", lu.dims[0], " and ", x.dims[0], ")");
+
+            vec1d r(x.size());
+            const uint_t n = x.size();
+
+            // Solve L*y = x
+            for (uint_t i : range(n)) {
+                double sum = 0.0;
+                for (uint_t p : range(i)) {
+                    sum += lu.safe(i,p)*y.safe[p];
+                }
+
+                y.safe[i] = (x.safe[ipiv.safe[i]] - sum)/lu.safe(i,i);
+            }
+
+            // Solve U*z = y
+            {
+                uint_t i = n;
+                while (i > 0) {
+                    --i;
+
+                    double sum = 0.0;
+                    uint_t p = n;
+                    while (p > i+1) {
+                        --p;
+                        sum += lu.safe(i,p)*r.safe[p];
+                    }
+
+                    r.safe[i] = y.safe[i] - sum;
+                }
+            }
+
+            return r;
+        }
+    };
+
+    inline bool invert(const vec2d& a, vec2d& i);
+
+    inline bool inplace_invert(vec2d& i) {
     #ifdef NO_LAPACK
-        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-            "please enable LAPACK to use this function");
-        return false;
+        vec2d a = i;
+        return invert(a, i);
     #else
         phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
@@ -206,18 +339,27 @@ namespace matrix {
     #endif
     }
 
-    template<typename TypeA>
-    bool invert(const vec<2,TypeA>& a, vec2d& i) {
+    inline bool invert(const vec2d& a, vec2d& i) {
+    #ifdef NO_LAPACK
+        decompose_lu d;
+        if (!d.decompose(a)) {
+            return false;
+        }
+
+        i = d.invert();
+        return true;
+    #else
         i = a;
-        return inplace_invert<TypeA>(i);
+        return inplace_invert(i);
+    #endif
     }
 
-    template<typename Dummy = void>
-    bool inplace_invert_symmetric(vec2d& i) {
+    inline bool invert_symmetric(const vec2d& a, vec2d& i);
+
+    inline bool inplace_invert_symmetric(vec2d& i) {
     #ifdef NO_LAPACK
-        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-            "please enable LAPACK to use this function");
-        return false;
+        vec2d a = i;
+        return invert_symmetric(a, i);
     #else
         phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
@@ -248,18 +390,27 @@ namespace matrix {
     #endif
     }
 
-    template<typename TypeA>
-    bool invert_symmetric(const vec<2,TypeA>& a, vec2d& i) {
+    inline bool invert_symmetric(const vec2d& a, vec2d& i) {
+    #ifdef NO_LAPACK
+        decompose_lu d;
+        if (!d.decompose(a)) {
+            return false;
+        }
+
+        i = d.invert();
+        return true;
+    #else
         i = a;
-        return inplace_invert_symmetric<TypeA>(i);
+        return inplace_invert_symmetric(i);
+    #endif
     }
 
-    template<typename Dummy = void>
-    bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
+    inline bool solve_symmetric(const vec2d& alpha, const vec1d& beta, vec1d& res);
+
+    inline bool inplace_solve_symmetric(vec2d& alpha, vec1d& beta) {
     #ifdef NO_LAPACK
-        static_assert(!std::is_same<Dummy,Dummy>::value, "LAPACK support has been disabled, "
-            "please enable LAPACK to use this function");
-        return false;
+        vec1d cbeta = beta;
+        return solve_symmetric(alpha, cbeta, beta);
     #else
         phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
             alpha.dims, ")");
@@ -290,11 +441,20 @@ namespace matrix {
     #endif
     }
 
-    template<typename Dummy = void>
-    bool solve_symmetric(const vec2d& alpha, const vec1d& beta, vec1d& res) {
+    inline bool solve_symmetric(const vec2d& alpha, const vec1d& beta, vec1d& res) {
+    #ifdef NO_LAPACK
+        decompose_lu d;
+        if (!d.decompose(alpha)) {
+            return false;
+        }
+
+        res = d.solve(beta);
+        return true;
+    #else
         vec2d a = alpha;
         res = beta;
-        return inplace_solve_symmetric<Dummy>(a, res);
+        return inplace_solve_symmetric(a, res);
+    #endif
     }
 
     template<typename Dummy = void>
@@ -341,100 +501,6 @@ namespace matrix {
         vecs = a;
         return inplace_eigen_symmetric<Dummy>(vecs, vals);
     }
-
-    struct linear_solver {
-        vec2d alpha;
-        vec2d l, u;
-        vec1u ipiv;
-        mutable vec1d y, z;
-
-        void decompose() {
-            const uint_t n = alpha.dims[0];
-
-            y.resize(n);
-            z.resize(n);
-            l.resize(alpha.dims);
-            u.resize(alpha.dims);
-            ipiv = uindgen(n);
-
-            // Find and apply pivot
-            for (uint_t i : range(n)) {
-                double aii = abs(alpha.safe(i,i));
-                for (uint_t k : range(i+1, n)) {
-                    double aki = abs(alpha.safe(k,i));
-                    if (aii < aki) {
-                        aii = aki;
-                        std::swap(ipiv.safe[i], ipiv.safe[k]);
-                        for (uint_t j : range(n)) {
-                            std::swap(alpha.safe(i,j), alpha.safe(k,j));
-                        }
-                    }
-                }
-            }
-
-            // Find L and U
-            for (uint_t k : range(n)) {
-                u.safe(k,k) = 1.0;
-                for (uint_t i : range(k, n)) {
-                    double sum = 0.0;
-                    for (uint_t p : range(k)) {
-                        sum += l.safe(i,p)*u.safe(p,k);
-                    }
-
-                    l.safe(i,k) = alpha.safe(i,k) - sum;
-                }
-
-                for (uint_t i : range(k+1, n)) {
-                    double sum = 0.0;
-                    for (uint_t p : range(k)) {
-                        sum += l.safe(k,p)*u.safe(p,i);
-                    }
-
-                    u.safe(k,i) = (alpha.safe(k,i) - sum)/l.safe(k,k);
-                }
-            }
-        }
-
-        vec1d solve(const vec1d& x) const {
-            vec1d r(x.size());
-
-            const uint_t n = x.size();
-
-            // Solve L*y = x
-            for (uint_t i : range(n)) {
-                double sum = 0.0;
-                for (uint_t p : range(i)) {
-                    sum += l.safe(i,p)*y.safe[p];
-                }
-
-                y.safe[i] = (x.safe[ipiv.safe[i]] - sum)/l.safe(i,i);
-            }
-
-            // Solve U*z = y
-            {
-                uint_t i = n;
-                while (i > 0) {
-                    --i;
-
-                    double sum = 0.0;
-                    uint_t p = n;
-                    while (p > i+1) {
-                        --p;
-                        sum += u.safe(i,p)*z.safe[p];
-                    }
-
-                    z.safe[i] = (y.safe[i] - sum)/u.safe(i,i);
-                }
-            }
-
-            // Apply pivot
-            for (uint_t i : range(n)) {
-                r.safe[ipiv.safe[i]] = z.safe[i];
-            }
-
-            return r;
-        }
-    };
 }
 }
 
