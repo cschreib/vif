@@ -1280,39 +1280,49 @@ namespace astro {
     // In other words, it must be converted to an "energy counter" filter (also called RSR), and
     // normalized to unit integral (i.e. integrate(lam, res) == 1).
 
+    template<typename TypeFL, typename TypeFR>
+    double sed2flux_interpolate(const vec<1,TypeFL>& l, const vec<1,TypeFR>& r, double x, uint_t i) {
+        return interpolate(r.safe[i], r.safe[i+1], l.safe[i], l.safe[i+1], x);
+    }
+
     template<typename TypeFL, typename TypeFR, typename TypeL, typename TypeS>
     double sed2flux(const vec<1,TypeFL>& flam, const vec<1,TypeFR>& fres,
         const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
 
-        uint_t nflam = flam.size();
+        uint_t ised = lower_bound(flam.safe[0], lam);
+        if (ised == npos) return dnan;
+        uint_t ifil = 0;
 
-        auto bnd = bounds(flam.safe[0], flam.safe[nflam-1], lam);
-        if (bnd[0] == npos || bnd[1] == npos) {
-            return dnan;
-        }
+        double plam = flam.safe[0];
+        double pval = fres.safe[0]*sed2flux_interpolate(lam, sed, plam, ised);
 
-        vec1d nlam; nlam.reserve(nflam + bnd[1] - bnd[0] + 1);
-        vec1d nrs;  nrs.reserve( nflam + bnd[1] - bnd[0] + 1);
+        double value = 0.0;
+        const uint_t nfil = flam.size();
+        const uint_t nsed = lam.size();
+        while (ifil < nfil-1 && ised < nsed-1) {
+            double nlam, nval;
 
-        uint_t j = bnd[0];
-        for (uint_t i : range(flam)) {
-            nlam.push_back(flam.safe[i]);
-            nrs.push_back(fres.safe[i]*interpolate(
-                sed.safe[j], sed.safe[j+1], lam.safe[j], lam.safe[j+1], flam.safe[i]));
-
-            if (i != nflam - 1) {
-                while (lam[j+1] < flam.safe[i+1]) {
-                    ++j;
-                    nlam.push_back(lam.safe[j]);
-                    nrs.push_back(sed.safe[j]*interpolate(
-                        fres.safe[i], fres.safe[i+1],
-                        flam.safe[i], flam.safe[i+1], lam.safe[j]
-                    ));
-                }
+            if (flam.safe[ifil+1] < lam.safe[ised+1]) {
+                // Next point is from filter
+                ++ifil;
+                nlam = flam.safe[ifil];
+                nval = fres.safe[ifil]*sed2flux_interpolate(lam, sed, nlam, ised);
+            } else {
+                // Next point is from SED
+                ++ised;
+                nlam = lam.safe[ised];
+                nval = sed.safe[ised]*sed2flux_interpolate(flam, fres, nlam, ifil);
             }
+
+            value += 0.5*(nval + pval)*(nlam - plam);
+
+            plam = nlam;
+            pval = nval;
         }
 
-        return integrate(nlam, nrs);
+        if (ifil != nfil - 1) return dnan;
+
+        return value;
     }
 
     template<typename TypeL, typename TypeS>
