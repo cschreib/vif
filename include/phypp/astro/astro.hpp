@@ -1298,16 +1298,16 @@ namespace astro {
         for (uint_t i : range(flam)) {
             nlam.push_back(flam.safe[i]);
             nrs.push_back(fres.safe[i]*interpolate(
-                sed.safe[j-1], sed.safe[j], lam.safe[j-1], lam.safe[j], flam.safe[i]));
+                sed.safe[j], sed.safe[j+1], lam.safe[j], lam.safe[j+1], flam.safe[i]));
 
             if (i != nflam - 1) {
-                while (lam[j] < flam.safe[i+1]) {
+                while (lam[j+1] < flam.safe[i+1]) {
+                    ++j;
                     nlam.push_back(lam.safe[j]);
                     nrs.push_back(sed.safe[j]*interpolate(
                         fres.safe[i], fres.safe[i+1],
                         flam.safe[i], flam.safe[i+1], lam.safe[j]
                     ));
-                    ++j;
                 }
             }
         }
