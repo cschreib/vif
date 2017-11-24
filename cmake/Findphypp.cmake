@@ -171,6 +171,9 @@ if(NOT PHYPP_FOUND)
     if (TCMALLOC_LIBRARY)
         set(PHYPP_LIBRARIES ${PHYPP_LIBRARIES} ${TCMALLOC_LIBRARY})
     endif()
+    if (PROFILER_LIBRARY)
+        set(PHYPP_LIBRARIES ${PHYPP_LIBRARIES} ${PROFILER_LIBRARY})
+    endif()
 endif()
 
 # Function to compile a phy++ program in CMake
