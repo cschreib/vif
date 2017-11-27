@@ -97,7 +97,9 @@ namespace phypp {
     }
 
     struct progress_t {
-        double start;
+        double start = 0.0;
+        double ips = 0.0;
+        std::size_t last_tick = 0;
         std::size_t i = 0;
         std::size_t n;
         std::size_t max_length = 0;
@@ -116,8 +118,11 @@ namespace phypp {
 
     namespace impl {
         inline void progress_(progress_t& p) {
-            double total = now() - p.start;
+            double n = now();
+            double total = n - p.start;
             double remaining = total*double(p.n)/(p.i+1) - total;
+
+            p.ips = (p.i+1)/total;
 
             std::string msg;
             // Progress bar
@@ -144,6 +149,23 @@ namespace phypp {
         if (p.ended) return;
 
         if (p.i % mod == 0 || p.i == p.n-1) {
+            impl::progress_(p);
+        }
+
+        ++p.i;
+
+        if (p.i >= p.n) {
+            std::cout << std::endl;
+            p.ended = true;
+        }
+    }
+
+    // Updates a progress bar for an iterative process ('p' is created from 'progress_start')
+    template<typename M = uint_t>
+    void progress_tick(progress_t& p, double ticklen) {
+        if (p.ended) return;
+
+        if (p.i < 10 || p.i - p.last_tick >= p.ips*ticklen) {
             impl::progress_(p);
         }
 
