@@ -166,6 +166,7 @@ namespace phypp {
         if (p.ended) return;
 
         if (p.i < 10 || p.i - p.last_tick >= p.ips*ticklen) {
+            p.last_tick = p.i;
             impl::progress_(p);
         }
 
