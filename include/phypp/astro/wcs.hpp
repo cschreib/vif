@@ -257,7 +257,7 @@ namespace wcs_impl {
                     warning("the keywords will be removed and distortion will be ignored");
                     cpdis_err = true;
                 }
-            } else if (regex_match(k.key, "^[AB]_([0-9]+_[0-9]+|ORDER)$")) {
+            } else if (regex_match(k.key, "^[AB]P?_([0-9]+_[0-9]+|ORDER)$")) {
                 // Identify use of SIP distortion with A and B matrices which gives incorrect results
                 if (!sipdis_err) {
                     warning("this header contains one or more SIP distortion keyword "
@@ -282,7 +282,7 @@ namespace wcs_impl {
             for (uint_t i : range(keys)) {
                 auto& k = keys[i];
 
-                if (regex_match(k.key, "^[AB]_([0-9]+_[0-9]+|ORDER)$")) {
+                if (regex_match(k.key, "^[AB]P?_([0-9]+_[0-9]+|ORDER)$")) {
                     keep[i] = false;
                 }
             }
