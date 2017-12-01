@@ -34,6 +34,14 @@ namespace ascii {
         return n;
     }
 
+    struct auto_find_skip_tag {
+        char pattern;
+    };
+
+    inline auto_find_skip_tag auto_skip(char pattern = '#') {
+        return auto_find_skip_tag{pattern};
+    }
+
     template<typename T, typename ... Args>
     auto columns(std::size_t n, T& t, Args& ... args) ->
         decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
@@ -334,6 +342,11 @@ namespace ascii {
         } catch (ascii::exception& e) {
             phypp_check(false, std::string(e.what())+" (reading "+name+")");
         }
+    }
+
+    template <typename ... Args>
+    void read_table(const std::string& name, auto_find_skip_tag t, Args&& ... args) {
+        read_table(name, find_skip(name, t.pattern), std::forward<Args>(args)...);
     }
 }
 
