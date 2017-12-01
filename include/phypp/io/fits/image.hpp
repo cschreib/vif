@@ -25,7 +25,7 @@ namespace fits {
         void read_prep_(uint_t rdims, int& naxis, std::vector<long>& naxes, int& type) const {
             fits_get_img_dim(fptr_, &naxis, &status_);
             fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
-            phypp_check_fits(naxis == rdims, "FITS file has wrong number of dimensions "
+            phypp_check_fits(naxis == int(rdims), "FITS file has wrong number of dimensions "
                 "(expected "+strn(rdims)+", got "+strn(naxis)+")");
 
             int bitpix;
