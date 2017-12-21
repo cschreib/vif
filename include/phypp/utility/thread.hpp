@@ -4,6 +4,7 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <functional>
 #include "phypp/core/vec.hpp"
 
 namespace phypp {
