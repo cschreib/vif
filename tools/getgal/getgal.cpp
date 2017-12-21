@@ -219,6 +219,26 @@ int phypp_main(int argc, char* argv[]) {
 
         if (verbose) print(img.short_name);
 
+        // Find HDU containing data
+        uint_t hdu = 0; {
+            std::string tfile;
+            if (end_with(img.filename, ".sectfits")) {
+                vec1s sects = fits::read_sectfits(img.filename);
+                tfile = sects[0];
+            } else {
+                tfile = img.filename;
+            }
+
+            fits::input_image iimg(tfile);
+            for (uint_t i : range(iimg.hdu_count())) {
+                iimg.reach_hdu(i);
+                if (iimg.axis_count() != 0) {
+                    hdu = i;
+                    break;
+                }
+            }
+        }
+
         int_t hsize;
         if (is_finite(radius)) {
             // Convert radius to number of pixels
@@ -256,8 +276,8 @@ int phypp_main(int argc, char* argv[]) {
         }
 
         for (uint_t i : range(ids)) {
-            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(
-                img.filename, qout.sect[i]
+            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits_hdu(
+                img.filename, qout.sect[i], hdu
             ));
 
             if (!fits::setkey(nhdr, "CRPIX1", hsize+1+qout.dx[i]) ||
@@ -287,8 +307,8 @@ int phypp_main(int argc, char* argv[]) {
         vec2d empty(2*hsize + 1, 2*hsize + 1);
         empty[_] = dnan;
         for (uint_t i : range(nids)) {
-            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits(
-                img.filename, 0
+            fits::header nhdr = astro::filter_wcs(fits::read_header_sectfits_hdu(
+                img.filename, 0, hdu
             ));
 
             if (!fits::setkey(nhdr, "CRPIX1", hsize+1) ||
