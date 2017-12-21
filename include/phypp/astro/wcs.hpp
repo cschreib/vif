@@ -857,7 +857,16 @@ namespace astro {
             vec1s sects = fits::read_sectfits(file);
             return get_pixel_size(sects[0], aspix);
         } else {
-            fits::header hdr = fits::read_header(file);
+            fits::input_image iimg(file);
+            fits::header hdr;
+            for (uint_t i : range(iimg.hdu_count())) {
+                iimg.reach_hdu(i);
+                if (iimg.axis_count() != 0) {
+                    hdr = iimg.read_header();
+                    break;
+                }
+            }
+
             auto wcs = astro::wcs(hdr);
             if (!get_pixel_size(wcs, aspix)) {
                 warning("could not extract WCS information");
