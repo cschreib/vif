@@ -302,7 +302,7 @@ namespace phypp {
     template<typename T, typename U = T>
     vec1d rgen(T i, U j, uint_t n) {
         if (n == 1) {
-            return {i};
+            return {static_cast<double>(i)};
         } else {
             vec1d v(n);
             double dx = (j-i)/double(n-1);
