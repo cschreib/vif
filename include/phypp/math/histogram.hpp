@@ -246,7 +246,7 @@ namespace phypp {
 
         impl::histogram_impl(x, bins,
             [&](uint_t i, const vec1u& ids, iterator i0, iterator i1) {
-                uint_t npts = i1 - i0;(npts);
+                uint_t npts = i1 - i0;
                 uint_t k0 = i0 - ids.data.begin();
                 tids.resize(npts);
                 for (uint_t k : range(npts)) {
