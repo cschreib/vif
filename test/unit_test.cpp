@@ -1042,7 +1042,7 @@ int phypp_main(int argc, char* argv[]) {
         double lam_obs = 160.0;
         auto lsun = uJy2lsun(z, d, lam_obs, jy);
         double lam_rf = lam_obs/(1.0 + z);
-        check(jy == lsun2uJy(z, d, lam_rf, lsun), "{1}");
+        check(abs(jy - lsun2uJy(z, d, lam_rf, lsun)) < 1e-5, "{1}");
     }
 
 #ifndef NO_REFLECTION
