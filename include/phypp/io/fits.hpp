@@ -102,6 +102,18 @@ namespace fits {
         }
     }
 
+    inline fits::header read_header_sectfits_hdu(const std::string& filename, uint_t sect, uint_t hdu) {
+        if (end_with(filename, ".sectfits")) {
+            vec1s sects = read_sectfits(filename);
+            phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
+                "' (only ", sects.size()," available)");
+
+            return read_header_hdu(sects[sect], hdu);
+        } else {
+            return read_header_hdu(filename, hdu);
+        }
+    }
+
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
     void write(const std::string& filename, const vec<Dim,Type>& v, const fits::header& hdr) {
