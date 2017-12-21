@@ -59,7 +59,7 @@ namespace fits {
             std::vector<long>& fpixel, std::vector<long>& lpixel,
             impl::range_impl::left_range_t r, const Args& ... args) const {
 
-            phypp_check_fits(r.last < naxes[naxes.size()-1-idim], "image subset goes outside of "
+            phypp_check_fits(r.last < uint_t(naxes[naxes.size()-1-idim]), "image subset goes outside of "
                 "the image boundaries (axis "+strn(idim)+": "+strn(r.last)+" vs. "+
                 strn(naxes[naxes.size()-1-idim]));
 
@@ -85,7 +85,7 @@ namespace fits {
             std::vector<long>& fpixel, std::vector<long>& lpixel,
             impl::range_impl::left_right_range_t r, const Args& ... args) const {
 
-            phypp_check_fits(r.last < naxes[naxes.size()-1-idim], "image subset goes outside of "
+            phypp_check_fits(r.last < uint_t(naxes[naxes.size()-1-idim]), "image subset goes outside of "
                 "the image boundaries (axis "+strn(idim)+": "+strn(r.last)+" vs. "+
                 strn(naxes[naxes.size()-1-idim]));
 
@@ -100,7 +100,7 @@ namespace fits {
             std::vector<long>& fpixel, std::vector<long>& lpixel,
             uint_t i, const Args& ... args) const {
 
-            phypp_check_fits(i < naxes[naxes.size()-1-idim], "image subset goes outside of "
+            phypp_check_fits(i < uint_t(naxes[naxes.size()-1-idim]), "image subset goes outside of "
                 "the image boundaries (axis "+strn(idim)+": "+strn(i)+" vs. "+
                 strn(naxes[naxes.size()-1-idim]));
 
