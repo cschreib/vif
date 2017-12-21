@@ -1019,7 +1019,8 @@ namespace phypp {
             vec_pair old_open = std::move(open);
 
             for (auto p : old_open) {
-                int_t ox = p.first, oy = p.second;
+                int_t ox = p.first;
+                int_t oy = p.second;
 
                 for (uint_t d : range(4)) {
                     int_t tnx, tny;
@@ -1035,7 +1036,8 @@ namespace phypp {
 
                     if (tnx < 0 || tny < 0) continue;
 
-                    x = tnx, y = tny;
+                    x = tnx;
+                    y = tny;
                     if (x >= map.dims[0] || y >= map.dims[1] || visit.safe(x,y)) continue;
 
                     if (!map.safe(x,y)) {
