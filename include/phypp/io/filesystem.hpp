@@ -35,12 +35,12 @@ namespace impl {
             DIR *dirfd;
         };
 
-        #define _A_NORMAL 0x00  /* Normalfile-Noread/writerestrictions */
-        #define _A_RDONLY 0x01  /* Read only file */
-        #define _A_HIDDEN 0x02  /* Hidden file */
-        #define _A_SYSTEM 0x04  /* System file */
-        #define _A_SUBDIR 0x10  /* Subdirectory */
-        #define _A_ARCH   0x20  /* Archive file */
+        #define A_NORMAL 0x00  /* Normalfile-Noread/writerestrictions */
+        #define A_RDONLY 0x01  /* Read only file */
+        #define A_HIDDEN 0x02  /* Hidden file */
+        #define A_SYSTEM 0x04  /* System file */
+        #define A_SUBDIR 0x10  /* Subdirectory */
+        #define A_ARCH   0x20  /* Archive file */
 
         int _findclose(long id);
         int _findnext(long id, _finddata_t *data);
@@ -109,22 +109,20 @@ namespace impl {
 
             struct stat stat_buf;
             if (stat(xfn, &stat_buf)) {
-                data->attrib = _A_NORMAL;
-                data->size = 0;
-            } else {
+                data->attrib = A_NORMAL;
+                data->size = 0;            } else {
                 if (S_ISDIR(stat_buf.st_mode)) {
-                    data->attrib = _A_SUBDIR;
+                    data->attrib = A_SUBDIR;
                 } else {
-                    data->attrib = _A_NORMAL;
+                    data->attrib = A_NORMAL;
                 }
-
                 data->size = stat_buf.st_size;
             }
 
             delete[] xfn;
 
             if (data->name [0] == '.') {
-                data->attrib |= _A_HIDDEN;
+                data->attrib |= A_HIDDEN;
             }
 
             return 0;
@@ -208,12 +206,12 @@ namespace file {
         handle = impl::file_impl::_findfirst(pattern.c_str(), &tagData);
         res = 0;
         while (handle != -1 && res != -1) {
-            if ((tagData.attrib & _A_HIDDEN) != 0) {
+            if ((tagData.attrib & A_HIDDEN) != 0) {
                 res = impl::file_impl::_findnext(handle, &tagData);
                 continue;
             }
 
-            if ((tagData.attrib & _A_SUBDIR) != 0) {
+            if ((tagData.attrib & A_SUBDIR) != 0) {
                 std::string s = tagData.name;
                 if (s != "." && s != "..") {
                     dlist.data.push_back(s);
@@ -240,12 +238,12 @@ namespace file {
         handle = impl::file_impl::_findfirst(pattern.c_str(), &tagData);
         res = 0;
         while (handle != -1 && res != -1) {
-            if ((tagData.attrib & _A_HIDDEN) != 0) {
+            if ((tagData.attrib & A_HIDDEN) != 0) {
                 res = impl::file_impl::_findnext(handle, &tagData);
                 continue;
             }
 
-            if ((tagData.attrib & _A_SUBDIR) == 0) {
+            if ((tagData.attrib & A_SUBDIR) == 0) {
                 flist.data.push_back(tagData.name);
             }
 
