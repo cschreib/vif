@@ -72,7 +72,14 @@ if [ ${PROFILE} -eq 1 ]; then
     OPTIONS="${OPTIONS} ${PHYPP_COMPILER_PROF_FLAGS}"
 fi
 
-T="$(date +%s%N)"
+case "$OSTYPE" in
+  darwin*)  DATE_FORMAT="+%s"
+            DATE_PRECISION="s"  ;;
+  *)        DATE_FORMAT="+%s%N"
+            DATE_PRECISION="ms" ;;
+esac
+
+T="$(date ${DATE_FORMAT})"
 
 if [ ${PHYPP_DISABLE_REFLECTION} -eq 0 ]; then
     TMP_OUTPUT="${PHYPP_TEMP_DIR}/._reflex_$(basename "${FILE}")"
@@ -89,12 +96,21 @@ if [ ${PHYPP_DISABLE_REFLECTION} -eq 0 ]; then
         exit 1
     fi
     if [ ${TIME} -eq 1 ]; then
-        TT="$(($(date +%s%N)-T))"
-        S="$((TT/1000000000))"
-        M="$((TT/1000000))"
+        TT="$(($(date ${DATE_FORMAT})-T))"
 
-        printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
-            "$((S/60%60))" "$((S%60))" "${M}"
+        if [ ${DATE_PRECISION} == "ms" ]; then
+            S="$((TT/1000000000))"
+            M="$((TT/1000000))"
+
+            printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
+                "$((S/60%60))" "$((S%60))" "${M}"
+        fi
+        if [ ${DATE_PRECISION} == "s" ]; then
+            S=${TT}
+
+            printf "phy++: reflection data generated (%02d:%02d)\n" \
+                "$((S/60%60))" "$((S%60))"
+        fi
     fi
 else
     TMP_OUTPUT="${FILE}"
@@ -112,10 +128,19 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 if [ ${TIME} -eq 1 ]; then
-    TT="$(($(date +%s%N)-T))"
-    S="$((TT/1000000000))"
-    M="$((TT/1000000))"
+    TT="$(($(date ${DATE_FORMAT})-T))"
 
-    printf "phy++: program '${PROG}' successfully compiled (%02d:%02d.%03d)\n" \
-        "$((S/60%60))" "$((S%60))" "${M}"
+    if [ ${DATE_PRECISION} == "ms" ]; then
+        S="$((TT/1000000000))"
+        M="$((TT/1000000))"
+
+        printf "phy++: program '${PROG}' successfully compiled (%02d:%02d.%03d)\n" \
+            "$((S/60%60))" "$((S%60))" "${M}"
+    fi
+    if [ ${DATE_PRECISION} == "s" ]; then
+        S=${TT}
+
+        printf "phy++: program '${PROG}' successfully compiled (%02d:%02d)\n" \
+            "$((S/60%60))" "$((S%60))"
+    fi
 fi
