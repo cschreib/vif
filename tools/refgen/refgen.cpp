@@ -524,10 +524,18 @@ int main(int argc, char* argv[]) {
     CXFile main_file = clang_getFile(ctu, file.c_str());
     clang_getFileUniqueID(main_file, &cpp);
 
+    std::size_t nerror = 0;
     std::size_t ndiag = clang_getNumDiagnostics(ctu);
     for (std::size_t i = 0; i < ndiag; ++i) {
         CXDiagnostic d = clang_getDiagnostic(ctu, i);
+
         format_diagnostic(d);
+
+        auto dt = clang_getDiagnosticSeverity(d);
+        if (dt != CXDiagnostic_Warning && dt != CXDiagnostic_Note) {
+            ++nerror;
+        }
+
         clang_disposeDiagnostic(d);
     }
 
@@ -538,7 +546,7 @@ int main(int argc, char* argv[]) {
     clang_disposeTranslationUnit(ctu);
     clang_disposeIndex(cidx);
 
-    if (ndiag != 0) return 1;
+    if (nerror != 0) return 1;
 
     // First sort the struct list by order of appearance in the file
     std::sort(db.begin(), db.end(), [](const struct_t& s1, const struct_t& s2) {
