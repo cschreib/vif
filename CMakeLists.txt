@@ -134,7 +134,6 @@ endif()
 if (NOT CLANG_FOUND OR NO_REFLECTION)
     set(NO_REFLECTION 1)
     add_definitions(-DNO_REFLECTION)
-    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -DNO_REFLECTION")
 else()
     handle_clang_options(${CLANG_VERSION} "REFGEN")
 endif()
@@ -380,6 +379,10 @@ if (NOT PHYPP_INPLACE_BUILD)
         file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_COMPILER_PROF_FLAGS=-lprofiler\n")
         file(APPEND ${PHYPP_OUTPUT_CONFIG} "export PHYPP_PROFILER=\"${PROFILER_BINARY}\"\n")
     endif()
+
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "if [ \${PHYPP_DISABLE_REFLECTION} -eq 1 ]; then\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "    export PHYPP_COMPILER_FLAGS=\"-DNO_REFLECTION \${PHYPP_COMPILER_FLAGS}\"\n")
+    file(APPEND ${PHYPP_OUTPUT_CONFIG} "fi\n")
 
     # install config
     if (NOT PHYPPRC_DIR)
