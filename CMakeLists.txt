@@ -320,11 +320,13 @@ if (NOT NO_REFLECTION)
 endif()
 
 # handle cftsio (mandatory for now, will make it optional later)
-set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -lcfitsio")
 set(DEPENDENCIES_INCLUDES "${DEPENDENCIES_INCLUDES} -I${CFITSIO_INCLUDES}")
 
-get_filename_component(CFITSIO_LIBRARY_DIR ${CFITSIO_LIBRARIES} PATH)
-set(DEPENDENCIES_LIBS "${DEPENDENCIES_LIBS} -L${CFITSIO_LIBRARY_DIR}")
+foreach(ITEM ${CFITSIO_LIBRARIES})
+    set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} ${ITEM}")
+    get_filename_component(LIBCFITSIO_LIB_DIR ${ITEM} PATH)
+    set(DEPENDENCIES_LIBS "${DEPENDENCIES_LIBS} -L${LIBCFITSIO_LIB_DIR}")
+endforeach()
 
 # handle pthread (mandatory for std::thread in Unix)
 set(PHYPP_ADD_COMPILER_FLAGS "${PHYPP_ADD_COMPILER_FLAGS} -pthread")
