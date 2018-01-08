@@ -558,6 +558,11 @@ namespace astro {
                 "kernel must have odd dimensions (", k.dims, ")");
         }
 
+        convolver2d(const convolver2d&) = delete;
+        convolver2d& operator=(const convolver2d&) = delete;
+        convolver2d(convolver2d&&) = default;
+        convolver2d& operator=(convolver2d&&) = default;
+
         ~convolver2d() {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
             if (pf_built) {
