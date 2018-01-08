@@ -1128,13 +1128,12 @@ namespace astro {
 namespace impl {
     namespace wcs_impl {
         // Convenience functions
-        inline double regrid_drizzle_getmin(const vec1d& v) {
-            double tmp = floor(min(v));
-            return tmp > 0.0 ? tmp : 0.0;
-        };
-        inline double regrid_drizzle_getmax(const vec1d& v, double n) {
-            double tmp = ceil(max(v));
-            return tmp > n ? n : tmp;
+        inline void regrid_drizzle_getbounds(const vec1d& v, uint_t& mi, int_t& ma, int_t n) {
+            auto p = minmax(v);
+            int_t tmp = floor(p.second+0.5);
+            ma = tmp > n ? n : tmp;
+            tmp = floor(p.first+0.5);
+            mi = tmp > 0 ? tmp : 0;
         };
 
         // Function to find if a point lies on the right side of a polygon's edge
@@ -1205,25 +1204,35 @@ namespace impl {
             return area;
         }
 
-        inline void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps, vec2d& res, vec2d& wei) {
-            // Get bounds of this projection
-            uint_t ymin = regrid_drizzle_getmin(yps-0.5);
-            uint_t xmin = regrid_drizzle_getmin(xps-0.5);
-            int_t tymax = regrid_drizzle_getmax(yps+0.5, res.dims[0]-1);
-            int_t txmax = regrid_drizzle_getmax(xps+0.5, res.dims[1]-1);
+        inline void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps,
+            double pixel_area, vec2d& res, vec2d& wei) {
 
-            if (tymax < 0 || txmax < 0) {
+            // Get bounds of this projection
+            uint_t ymin, xmin;
+            int_t tymax, txmax;
+            regrid_drizzle_getbounds(yps, ymin, tymax, res.dims[0]-1);
+            regrid_drizzle_getbounds(xps, xmin, txmax, res.dims[1]-1);
+
+            if (tymax < 0 || txmax < 0 || xmin >= res.dims[1] || ymin >= res.dims[0]) {
+                // Original pixel is outside of destination image
                 return;
             }
 
             uint_t ymax = tymax, xmax = txmax;
 
+            if (xmax == xmin && ymax == ymin) {
+                // Original pixel is fully contained within destination pixel
+                res.safe(ymin,xmin) += flx;
+                wei.safe(ymin,xmin) += pixel_area;
+                return;
+            }
+
+            // Normalize input flux to pixel area
+            flx /= pixel_area;
+
             // Get polygon orientation
             int_t orient = ((xps.safe[1] - xps.safe[0])*(yps.safe[2] - yps.safe[1]) -
                 (yps.safe[1] - yps.safe[0])*(xps.safe[2] - xps.safe[1]) > 0) ? 1 : -1;
-
-            // Normalize input flux to pixel area
-            flx /= polyon_area(xps, yps);
 
             // Sum flux from original pixel that fall inside the projection
             for (uint_t ipy = ymin; ipy <= ymax; ++ipy)
@@ -1481,6 +1490,7 @@ namespace astro {
 
     struct regrid_drizzle_params {
         bool verbose = false;
+        bool linearize = false;
         double pixfrac = 1.0;
         bool dest_pixfrac = false;
     };
@@ -1518,11 +1528,34 @@ namespace astro {
         //   # x_(i-0.5*pf)   # x_(i+0.5*pf)
         // Total of 4*Nx*Ny WCS transforms.
 
-        auto s2d = [&](double sx, double sy, double& dx, double& dy) {
+        auto s2d_wcs = [&](double sx, double sy, double& dx, double& dy) {
             double tra, tdec;
             astro::xy2ad(astros, sx+1, sy+1, tra, tdec);
             astro::ad2xy(astrod, tra, tdec, dx, dy);
             dx -= 1.0; dy -= 1.0;
+        };
+
+        // If "linearize" is set, build approximate transformation matrix from image center
+        double csx = imgs.dims[1]/2+1;
+        double csy = imgs.dims[0]/2+1;
+        double cdx, cdy, cdx1, cdy1, cdx2, cdy2;
+        double pixel_area;
+        if (opts.linearize) {
+            s2d_wcs(csx, csy, cdx, cdy);
+            s2d_wcs(csx+1.0, csy, cdx1, cdy1);
+            s2d_wcs(csx, csy+1.0, cdx2, cdy2);
+
+            cdx1 -= cdx; cdy1 -= cdy; cdx2 -= cdx; cdy2 -= cdy;
+            pixel_area = sqrt(sqr(cdx1) + sqr(cdy1))*sqrt(sqr(cdx2) + sqr(cdy2));
+        }
+
+        auto s2d = [&](double sx, double sy, double& dx, double& dy) {
+            if (opts.linearize) {
+                dx = (sx-csx)*cdx1 + (sy-csy)*cdx2 + cdx;
+                dy = (sx-csx)*cdy1 + (sy-csy)*cdy2 + cdy;
+            } else {
+                s2d_wcs(sx, sy, dx, dy);
+            }
         };
 
         auto pg = progress_start(imgs.size());
@@ -1585,7 +1618,10 @@ namespace astro {
                 }
 
                 double flx = imgs.safe(iy,ix)*sqr(opts.pixfrac);
-                impl::wcs_impl::regrid_drizzle(flx, xps, yps, res, wei);
+                if (!opts.linearize) {
+                    pixel_area = impl::wcs_impl::polyon_area(xps, yps);
+                }
+                impl::wcs_impl::regrid_drizzle(flx, xps, yps, pixel_area, res, wei);
 
                 if (opts.verbose) progress(pg, 31);
             }
