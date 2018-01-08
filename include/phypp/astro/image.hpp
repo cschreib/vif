@@ -966,6 +966,8 @@ namespace astro {
         uint_t min_area = 0u;
         // First ID used to place segments on the map
         uint_t first_id = 1u;
+        // Flux limit to compute the centroid (relative to peak; 0: all pixels in segmentation)
+        double centroid_flim = 0.0;
     };
 
     struct segment_deblend_output {
@@ -995,7 +997,7 @@ namespace astro {
 
         vec1u sid = sort(img);
         uint_t ipos = sid.size()-1;
-        while (!is_finite(img[sid[ipos]])) {
+        while (!is_finite(img.safe[sid.safe[ipos]])) {
             if (ipos == 0) break;
 
             --ipos;
@@ -1005,8 +1007,8 @@ namespace astro {
 
         auto explore_neighbors = [&](uint_t ty, uint_t tx) {
             auto check_add = [&](uint_t tty, uint_t ttx) {
-                if (visited(tty,ttx) != ipos) {
-                    visited(tty,ttx) = ipos;
+                if (visited.safe(tty,ttx) != ipos) {
+                    visited.safe(tty,ttx) = ipos;
                     ox.push_back(ttx);
                     oy.push_back(tty);
                 }
@@ -1028,6 +1030,9 @@ namespace astro {
         out.px.data.reserve(0.1*sqrt(img.size()));
         out.py.data.reserve(0.1*sqrt(img.size()));
 
+        vec1f flx_centroid;
+        flx_centroid.data.reserve(0.1*sqrt(img.size()));
+
         uint_t id = params.first_id;
 
         while (img[mid] >= params.detect_threshold && ipos > 0) {
@@ -1046,11 +1051,11 @@ namespace astro {
                 vec1u tox = std::move(ox), toy = std::move(oy);
                 ox.clear(); oy.clear();
                 for (uint_t i : range(tox)) {
-                    uint_t tseg = seg(toy[i],tox[i]);
+                    uint_t tseg = seg.safe(toy.safe[i],tox.safe[i]);
                     if (tseg > 0) {
                         // Favour the closest peak
-                        vec1d ttid = mult_ids(img, out.origin[tseg-1]);
-                        double d = sqr(toy[i] - ttid[0]) + sqr(tox[i] - ttid[1]);
+                        vec1d ttid = mult_ids(img, out.origin.safe[tseg-params.first_id]);
+                        double d = sqr(toy.safe[i] - ttid[0]) + sqr(tox.safe[i] - ttid[1]);
                         if (d < closest) {
                             neib_seg = tseg;
                             closest = d;
@@ -1058,7 +1063,7 @@ namespace astro {
                     }
 
                     if (neib_seg == 0) {
-                        explore_neighbors(toy[i], tox[i]);
+                        explore_neighbors(toy.safe[i], tox.safe[i]);
                     }
                 }
 
@@ -1067,26 +1072,78 @@ namespace astro {
 
             if (neib_seg > 0) {
                 seg[mid] = neib_seg;
-                out.area[neib_seg-1] += 1;
-                out.by[neib_seg-1] += tmid[0]*img[mid];
-                out.bx[neib_seg-1] += tmid[1]*img[mid];
-                out.flux[neib_seg-1] += img[mid];
             } else {
                 seg[mid] = id;
                 out.id.push_back(id);
-                out.area.push_back(1);
                 out.origin.push_back(mid);
                 out.py.push_back(tmid[0]);
                 out.px.push_back(tmid[1]);
-                out.by.push_back(tmid[0]*img[mid]);
-                out.bx.push_back(tmid[1]*img[mid]);
-                out.flux.push_back(img[mid]);
 
                 ++id;
             }
 
             --ipos;
             mid = sid[ipos];
+        }
+
+        // Erase islands
+        {
+            visited[_] = 0;
+            vec2u old_seg = seg;
+
+            seg[_] = 0;
+
+            out.area.resize(out.id.size());
+            out.flux.resize(out.id.size());
+            out.by.resize(out.id.size());
+            out.bx.resize(out.id.size());
+            flx_centroid.resize(out.id.size());
+
+            uint_t curseg = 0;
+
+            auto fetch_neighbors = [&](uint_t ty, uint_t tx) {
+                auto check_add = [&](uint_t tty, uint_t ttx) {
+                    if (visited.safe(tty,ttx) != curseg) {
+                        visited.safe(tty,ttx) = curseg;
+                        ox.push_back(ttx);
+                        oy.push_back(tty);
+                    }
+                };
+
+                if (ty != 0)             check_add(ty-1,tx);
+                if (ty != img.dims[0]-1) check_add(ty+1,tx);
+                if (tx != 0)             check_add(ty,tx-1);
+                if (tx != img.dims[1]-1) check_add(ty,tx+1);
+            };
+
+            for (uint_t s : range(out.area)) {
+                curseg = out.id[s];
+
+                vec1u tmid = mult_ids(seg, out.origin[s]);
+                oy.clear(); ox.clear();
+                oy.push_back(tmid[0]);
+                ox.push_back(tmid[1]);
+
+                while (!ox.empty()) {
+                    vec1u tox = std::move(ox), toy = std::move(oy);
+                    ox.clear(); oy.clear();
+                    for (uint_t i : range(tox)) {
+                        if (old_seg.safe(toy.safe[i],tox.safe[i]) == curseg) {
+                            mid = flat_id(seg, toy[i], tox[i]);
+                            seg[mid] = out.id[s];
+                            out.area[s] += 1;
+                            out.flux[s] += img[mid];
+                            if (img[mid] >= params.centroid_flim*img[out.origin[s]]) {
+                                out.by[s] += toy[i]*img[mid];
+                                out.bx[s] += tox[i]*img[mid];
+                                flx_centroid[s] += img[mid];
+                            }
+
+                            fetch_neighbors(toy[i], tox[i]);
+                        }
+                    }
+                }
+            }
         }
 
         // Erase too small regions
@@ -1097,8 +1154,8 @@ namespace astro {
 
             auto fetch_neighbors = [&](uint_t ty, uint_t tx) {
                 auto check_add = [&](uint_t tty, uint_t ttx) {
-                    if (visited(tty,ttx) != curseg) {
-                        visited(tty,ttx) = curseg;
+                    if (visited.safe(tty,ttx) != curseg) {
+                        visited.safe(tty,ttx) = curseg;
                         ox.push_back(ttx);
                         oy.push_back(tty);
                     }
@@ -1132,36 +1189,49 @@ namespace astro {
                     vec1u tox = std::move(ox), toy = std::move(oy);
                     ox.clear(); oy.clear();
                     for (uint_t i : range(tox)) {
-                        uint_t tseg = seg(toy[i],tox[i]);
+                        uint_t tseg = seg.safe(toy.safe[i],tox.safe[i]);
                         if (tseg > 0) {
                             if (tseg != curseg) {
-                                // Favour the closest peak
-                                vec1d ttid = mult_ids(img, out.origin[tseg-1]);
-                                double d = sqr(toy[i] - ttid[0]) + sqr(tox[i] - ttid[1]);
-                                if (d < closest) {
-                                    neib_seg = tseg;
-                                    closest = d;
+                                if (out.area.safe[tseg-params.first_id] >= params.min_area) {
+                                    // Favour the closest peak
+                                    vec1d ttid = mult_ids(img, out.origin.safe[tseg-params.first_id]);
+                                    double d = sqr(toy.safe[i] - ttid[0]) + sqr(tox.safe[i] - ttid[1]);
+                                    if (d < closest) {
+                                        neib_seg = tseg;
+                                        closest = d;
+                                    }
                                 }
                             } else {
-                                sids.push_back(flat_id(img, toy[i], tox[i]));
-                                fetch_neighbors(toy[i], tox[i]);
+                                sids.push_back(flat_id(img, toy.safe[i], tox.safe[i]));
+                                fetch_neighbors(toy.safe[i], tox.safe[i]);
                             }
                         }
                     }
                 }
 
+                if (sids.size() != out.area[s]) {
+                    error("huhuhh!!! ", sids.size(), " vs ", out.area[s]);
+                }
+
                 seg[sids] = neib_seg;
                 if (neib_seg != 0) {
-                    out.area[neib_seg-1] += out.area[s];
-                    out.flux[neib_seg-1] += out.flux[s];
-                    out.by[neib_seg-1] += out.by[s];
-                    out.bx[neib_seg-1] += out.bx[s];
+                    out.area[neib_seg-params.first_id] += out.area[s];
+                    out.flux[neib_seg-params.first_id] += out.flux[s];
+                    for (uint_t i : sids) {
+                        if (img[i] >= params.centroid_flim*img[out.origin[neib_seg-params.first_id]]) {
+                            tmid = mult_ids(img, i);
+                            out.by[neib_seg-params.first_id] += tmid[0]*img[i];
+                            out.bx[neib_seg-params.first_id] += tmid[1]*img[i];
+                            flx_centroid[neib_seg-params.first_id] += img[i];
+                        }
+                    }
                 }
             }
 
             inplace_remove(out.id, eids);
             inplace_remove(out.area, eids);
             inplace_remove(out.origin, eids);
+            inplace_remove(flx_centroid, eids);
             inplace_remove(out.flux, eids);
             inplace_remove(out.by, eids);
             inplace_remove(out.bx, eids);
@@ -1170,8 +1240,8 @@ namespace astro {
         }
 
         // Flux weighted barycenter
-        out.by /= out.flux;
-        out.bx /= out.flux;
+        out.by /= flx_centroid;
+        out.bx /= flx_centroid;
 
         return seg;
     }
