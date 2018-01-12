@@ -13,12 +13,12 @@ int phypp_main(int argc, char* argv[]) {
     double aspix = dnan;
     double ratio = dnan;
     double pixfrac = 1.0;
-    bool approx = false;
+    bool fast = false;
     std::string weight;
     std::string method = "drizzle";
     bool conserve_flux = false;
     read_args(argc-2, argv+2, arg_list(
-        verbose, name(tpl, "template"), aspix, ratio, method, conserve_flux, weight, pixfrac, approx
+        verbose, name(tpl, "template"), aspix, ratio, method, conserve_flux, weight, pixfrac, fast
     ));
 
     // Forward options
@@ -29,8 +29,9 @@ int phypp_main(int argc, char* argv[]) {
 
     if (method == "drizzle") {
         dopts.pixfrac = pixfrac;
-        if (approx) {
+        if (fast) {
             dopts.dest_pixfrac = true;
+            dopts.linearize = true;
         }
     } else if (method == "nearest") {
         iopts.conserve_flux = conserve_flux;
@@ -49,8 +50,8 @@ int phypp_main(int argc, char* argv[]) {
     fimgs.read(imgs);
 
     // Define input and output grids
-    astro::wcs astros;  // input astrometry
-    astro::wcs astrod;  // output astrometry
+    astro::wcs astros; // input astrometry
+    astro::wcs astrod; // output astrometry
     fits::header hdrd; // FITS header of output image (with astrometry)
 
     bool has_wcs = fimgs.has_keyword("CTYPE1");
