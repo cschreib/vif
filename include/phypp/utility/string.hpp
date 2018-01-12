@@ -580,6 +580,49 @@ namespace phypp {
         return ret;
     }
 
+    template<typename T>
+    std::string get_word(const std::string& str, int n, const T& chars) {
+        if (n < 0) {
+            n = -n;
+
+            uint_t p1 = str.npos, p2 = str.npos;
+
+            int nw = 0;
+            while (n > nw) {
+                p2 = str.find_last_not_of(chars, p1);
+                phypp_check(p2 != str.npos,
+                    "not enough words (found ", nw, ", expected ", n, ")");
+
+                p1 = str.find_last_of(chars, p2);
+                phypp_check(p1 != str.npos || nw == n-1,
+                    "not enough words (found ", nw+1, ", expected ", n, ")");
+
+                ++nw;
+            }
+
+            p1 = (p1 == str.npos ? 0 : p1 + 1);
+            return str.substr(p1, p2-p1+1);
+        } else {
+            uint_t p1 = 0, p2 = 0;
+
+            int nw = 0;
+            while (n >= nw) {
+                p1 = str.find_first_not_of(chars, p2);
+                phypp_check(p1 != str.npos,
+                    "not enough words (found ", nw, ", expected ", n+1, ")");
+
+                p2 = str.find_first_of(chars, p1);
+                phypp_check(p2 != str.npos || nw == n,
+                    "not enough words (found ", nw+1, ", expected ", n+1, ")");
+
+                ++nw;
+            }
+
+            p2 = (p2 == str.npos ? str.npos : p2-1);
+            return str.substr(p1, p2-p1+1);
+        }
+    }
+
     inline vec1s cut(const std::string& ts, uint_t size) {
         uint_t ncut = floor(ts.size()/float(size));
         vec1s res(ncut);
