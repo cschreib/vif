@@ -1661,8 +1661,23 @@ namespace impl {
             return area;
         }
 
-        inline void regrid_drizzle(double flx, const vec1d& xps, const vec1d& yps,
-            double pixel_area, vec2d& res, vec2d& wei) {
+        template<typename Type>
+        void add_flux(const vec<2,Type>& imgs, uint_t ix, uint_t iy, double flux_frac,
+            vec<2,double>& res, uint_t idx, uint_t idy) {
+
+            res.safe(idy,idx) += imgs.safe(iy,ix)*flux_frac;
+        }
+
+        template<typename Type>
+        void add_flux(const vec<3,Type>& imgs, uint_t ix, uint_t iy, double flux_frac,
+            vec<3,double>& res, uint_t idx, uint_t idy) {
+
+            res.safe(_,idy,idx) += imgs.safe(_,iy,ix)*flux_frac;
+        }
+
+        template<std::size_t D, typename Type>
+        inline void regrid_drizzle(const vec<D,Type>& imgs, uint_t ix, uint_t iy, double flux_frac,
+            const vec1d& xps, const vec1d& yps, double pixel_area, vec<D,double>& res, vec2d& wei) {
 
             // Get bounds of this projection
             uint_t ymin, xmin;
@@ -1679,13 +1694,10 @@ namespace impl {
 
             if (xmax == xmin && ymax == ymin) {
                 // Original pixel is fully contained within destination pixel
-                res.safe(ymin,xmin) += flx;
+                add_flux(imgs, ix, iy, flux_frac, res, xmin, ymin);
                 wei.safe(ymin,xmin) += pixel_area;
                 return;
             }
-
-            // Normalize input flux to pixel area
-            flx /= pixel_area;
 
             // Get polygon orientation
             int_t orient = ((xps.safe[1] - xps.safe[0])*(yps.safe[2] - yps.safe[1]) -
@@ -1750,9 +1762,9 @@ namespace impl {
                 // No intersection, just discard that pixel
                 if (cpx.size() < 3) continue;
 
-                // Compute the area of this intersection (1: full coverage, 0: no coverage)
+                // Compute the area of this intersection
                 double w = polyon_area(cpx, cpy);
-                res.safe(ipy,ipx) += flx*w;
+                add_flux(imgs, ix, iy, flux_frac*(w/pixel_area), res, ipx, ipy);
                 wei.safe(ipy,ipx) += w;
             }
         }
@@ -1837,6 +1849,30 @@ namespace impl {
             }
 
             return covered;
+        }
+
+        template<typename Type>
+        void copy_subset(const vec<3,Type>& imgs, vec<3,double>& res, const vec1u& ids, const vec1u& idd) {
+            uint_t nspix = imgs.dims[1]*imgs.dims[2];
+            uint_t ndpix = res.dims[1]*res.dims[2];
+            for (uint_t i : range(imgs.dims[0])) {
+                res.safe[idd+i*ndpix] = imgs.safe[ids+i*nspix];
+            }
+        }
+
+        template<typename Type>
+        void copy_subset(const vec<2,Type>& imgs, vec<2,double>& res, const vec1u& ids, const vec1u& idd) {
+            res.safe[idd] = imgs.safe[ids];
+        }
+
+        inline void apply_weights(vec3d& res, const vec2d& wei) {
+            for (uint_t i : range(res.dims[0])) {
+                res.safe(i,_,_) /= wei;
+            }
+        }
+
+        inline void apply_weights(vec2d& res, const vec2d& wei) {
+            res /= wei;
         }
     }
 }
@@ -1952,19 +1988,25 @@ namespace astro {
         bool dest_pixfrac = false; // approximation: assume pixfrac is linear on destination grid
     };
 
-    template<typename T = double>
-    vec2d regrid_drizzle(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
+    template<std::size_t D, typename T = double>
+    vec<D,double> regrid_drizzle(const vec<D,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
         vec2d& wei, regrid_drizzle_params opts = regrid_drizzle_params{}) {
 
         // Regridded image
-        vec2d res;
+        vec<D,double> res;
 
 #ifdef NO_WCSLIB
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        res = replicate(0, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
-        wei = replicate(0, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
+        auto resd = imgs.dims;
+        resd[D-2] = astrod.dims[astrod.y_axis];
+        resd[D-1] = astrod.dims[astrod.x_axis];
+        res = replicate(0.0, resd);
+        wei = replicate(0.0, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
+
+        uint_t nx = astros.dims[astros.x_axis];
+        uint_t ny = astros.dims[astros.y_axis];
 
         // Precompute the projection of the new pixel grid on the old
         // In case pixfrac=1:
@@ -1993,8 +2035,8 @@ namespace astro {
         };
 
         // If "linearize" is set, build approximate transformation matrix from image center
-        double csx = imgs.dims[1]/2;
-        double csy = imgs.dims[0]/2;
+        double csx = nx/2;
+        double csy = ny/2;
         double cdx, cdy, cdx1, cdy1, cdx2, cdy2;
         double pixel_area;
         if (opts.linearize) {
@@ -2012,15 +2054,16 @@ namespace astro {
                 // This is a simple integer translation, let's optimize this
                 int_t dx = round(cdx);
                 int_t dy = round(cdy);
-                int_t wx1 = imgs.dims[1]/2;
-                int_t wx2 = imgs.dims[1]-1 - wx1;
-                int_t wy1 = imgs.dims[0]/2;
-                int_t wy2 = imgs.dims[0]-1 - wy1;
+                int_t wx1 = nx/2;
+                int_t wx2 = nx-1 - wx1;
+                int_t wy1 = ny/2;
+                int_t wy2 = ny-1 - wy1;
 
                 vec1u ids, idd;
-                subregion(res, {dy-wy1, dx-wx1, dy+wy2, dx+wx2}, idd, ids);
+                subregion(wei, {dy-wy1, dx-wx1, dy+wy2, dx+wx2}, idd, ids);
+
                 res[_] = dnan;
-                res[idd] = imgs[ids];
+                impl::astro_impl::copy_subset(imgs, res, ids, idd);
                 wei[idd] = 1.0;
 
                 return res;
@@ -2036,35 +2079,35 @@ namespace astro {
             }
         };
 
-        auto pg = progress_start(imgs.size());
+        auto pg = progress_start(nx*ny);
         vec1d plx, ply;
         vec1d pux, puy;
         vec1d pllx, prlx, plux, prux;
         vec1d plly, prly, pluy, pruy;
         if (opts.pixfrac == 1 || opts.dest_pixfrac) {
-            plx.resize(imgs.dims[1]+1);
-            ply.resize(imgs.dims[1]+1);
-            for (uint_t ix : range(imgs.dims[1]+1)) {
+            plx.resize(nx+1);
+            ply.resize(nx+1);
+            for (uint_t ix : range(nx+1)) {
                 s2d(ix-0.5, -0.5, plx.safe[ix], ply.safe[ix]);
             }
 
-            pux.resize(imgs.dims[1]+1);
-            puy.resize(imgs.dims[1]+1);
+            pux.resize(nx+1);
+            puy.resize(nx+1);
         } else {
-            pllx.resize(imgs.dims[1]); prlx.resize(imgs.dims[1]);
-            plux.resize(imgs.dims[1]); prux.resize(imgs.dims[1]);
-            plly.resize(imgs.dims[1]); prly.resize(imgs.dims[1]);
-            pluy.resize(imgs.dims[1]); pruy.resize(imgs.dims[1]);
+            pllx.resize(nx); prlx.resize(nx);
+            plux.resize(nx); prux.resize(nx);
+            plly.resize(nx); prly.resize(nx);
+            pluy.resize(nx); pruy.resize(nx);
         }
 
-        for (uint_t iy : range(imgs.dims[0])) {
+        for (uint_t iy : range(ny)) {
             if (opts.pixfrac == 1 || opts.dest_pixfrac) {
-                for (uint_t ix : range(imgs.dims[1]+1)) {
+                for (uint_t ix : range(nx+1)) {
                     s2d(ix-0.5, iy+0.5, pux.safe[ix], puy.safe[ix]);
                 }
             } else {
                 const double dp = 0.5*opts.pixfrac;
-                for (uint_t ix : range(imgs.dims[1])) {
+                for (uint_t ix : range(nx)) {
                     s2d(ix-dp, iy-dp, pllx.safe[ix], plly.safe[ix]);
                     s2d(ix+dp, iy-dp, prlx.safe[ix], prly.safe[ix]);
                     s2d(ix-dp, iy+dp, plux.safe[ix], pluy.safe[ix]);
@@ -2072,7 +2115,7 @@ namespace astro {
                 }
             }
 
-            for (uint_t ix : range(imgs.dims[1])) {
+            for (uint_t ix : range(nx)) {
                 // Find projection of each pixel of the original image on the new grid
                 // NB: assumes the astrometry is such that this projection is
                 // reasonably approximated by a 4-edge polygon (i.e.: varying pixel scales,
@@ -2095,11 +2138,12 @@ namespace astro {
                     yps = {plly.safe[ix], prly.safe[ix], pruy.safe[ix], pluy.safe[ix]};
                 }
 
-                double flx = imgs.safe(iy,ix)*sqr(opts.pixfrac);
                 if (!opts.linearize) {
                     pixel_area = impl::astro_impl::polyon_area(xps, yps);
                 }
-                impl::astro_impl::regrid_drizzle(flx, xps, yps, pixel_area, res, wei);
+
+                double flx_frac = sqr(opts.pixfrac);
+                impl::astro_impl::regrid_drizzle(imgs, ix, iy, flx_frac, xps, yps, pixel_area, res, wei);
 
                 if (opts.verbose) progress(pg, 31);
             }
@@ -2111,13 +2155,13 @@ namespace astro {
         }
 #endif
 
-        res /= wei;
+        impl::astro_impl::apply_weights(res, wei);
 
         return res;
     }
 
-    template<typename T = double>
-    vec2d regrid_drizzle(const vec<2,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
+    template<std::size_t D, typename T = double>
+    vec<D,double> regrid_drizzle(const vec<D,T>& imgs, const astro::wcs& astros, const astro::wcs& astrod,
         regrid_drizzle_params opts = regrid_drizzle_params{}) {
         vec2d wei;
         return regrid_drizzle(imgs, astros, astrod, wei, opts);
