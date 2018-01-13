@@ -344,33 +344,16 @@ namespace file {
         return true;
     }
 
-
-#define VECTORIZE(name) \
-    template<std::size_t Dim, typename Type, typename ... Args, \
-        typename enable = typename std::enable_if< \
-            std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type> \
-    auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
-        vec<Dim,decltype(name(v[0], args...))> { \
-        using ntype = decltype(name(v[0], args...)); \
-        vec<Dim,ntype> r(v.dims); \
-        for (uint_t i : range(v)) { \
-            r.safe[i] = name(v.safe[i], args...); \
-        } \
-        return r; \
-    }
-
-    VECTORIZE(directorize)
-    VECTORIZE(is_absolute_path)
-    VECTORIZE(get_basename)
-    VECTORIZE(get_directory)
-    VECTORIZE(remove_extension)
-    VECTORIZE(get_extension)
-    VECTORIZE(split_extension)
-    VECTORIZE(mkdir)
-    VECTORIZE(exists)
-    VECTORIZE(is_older)
-
-#undef VECTORIZE
+    PHYPP_VECTORIZE(directorize)
+    PHYPP_VECTORIZE(is_absolute_path)
+    PHYPP_VECTORIZE(get_basename)
+    PHYPP_VECTORIZE(get_directory)
+    PHYPP_VECTORIZE(remove_extension)
+    PHYPP_VECTORIZE(get_extension)
+    PHYPP_VECTORIZE(split_extension)
+    PHYPP_VECTORIZE(mkdir)
+    PHYPP_VECTORIZE(exists)
+    PHYPP_VECTORIZE(is_older)
 }
 
     inline bool fork(const std::string& cmd) {

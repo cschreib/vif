@@ -512,39 +512,23 @@ namespace phypp {
         return hash_(std::string(), std::forward<Args>(args)...);
     }
 
-    #define VECTORIZE(name) \
-        template<std::size_t Dim, typename Type, typename ... Args, \
-            typename enable = typename std::enable_if< \
-                std::is_same<typename std::remove_pointer<Type>::type, std::string>::value>::type> \
-        auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
-            vec<Dim,decltype(name(v[0], args...))> { \
-            using ntype = decltype(name(v[0], args...)); \
-            vec<Dim,ntype> r = arr<ntype>(v.dims); \
-            for (uint_t i = 0; i < v.size(); ++i) { \
-                r.safe[i] = name(v.safe[i], args...); \
-            } \
-            return r; \
-        }
-
-    VECTORIZE(trim)
-    VECTORIZE(toupper)
-    VECTORIZE(tolower)
-    VECTORIZE(erase_begin)
-    VECTORIZE(erase_end)
-    VECTORIZE(empty)
-    VECTORIZE(distance)
-    VECTORIZE(find)
-    VECTORIZE(replace)
-    VECTORIZE(length)
-    VECTORIZE(align_left)
-    VECTORIZE(align_right)
-    VECTORIZE(align_center)
-    VECTORIZE(start_with)
-    VECTORIZE(end_with)
-    VECTORIZE(keep_start)
-    VECTORIZE(keep_end)
-
-    #undef VECTORIZE
+    PHYPP_VECTORIZE(trim)
+    PHYPP_VECTORIZE(toupper)
+    PHYPP_VECTORIZE(tolower)
+    PHYPP_VECTORIZE(erase_begin)
+    PHYPP_VECTORIZE(erase_end)
+    PHYPP_VECTORIZE(empty)
+    PHYPP_VECTORIZE(distance)
+    PHYPP_VECTORIZE(find)
+    PHYPP_VECTORIZE(replace)
+    PHYPP_VECTORIZE(length)
+    PHYPP_VECTORIZE(align_left)
+    PHYPP_VECTORIZE(align_right)
+    PHYPP_VECTORIZE(align_center)
+    PHYPP_VECTORIZE(start_with)
+    PHYPP_VECTORIZE(end_with)
+    PHYPP_VECTORIZE(keep_start)
+    PHYPP_VECTORIZE(keep_end)
 
     template<typename T>
     vec1s split(const std::string& ts, const T& pattern) {

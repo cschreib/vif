@@ -123,180 +123,47 @@ namespace phypp {
         return 1.0/(t*t);
     }
 
-    #define VECTORIZE(name) \
-        template<std::size_t Dim, typename Type, typename ... Args> \
-        auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
-            vec<Dim,decltype(name(v[0], args...))> { \
-            using ntype = decltype(name(v[0], args...)); \
-            vec<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
-            for (auto& t : v.data) { \
-                r.data.push_back(name(impl::dref<Type>(t), args...)); \
-            } \
-            return r; \
-        } \
-        template<std::size_t Dim, typename Type, typename ... Args> \
-        auto name(vec<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
-            !std::is_pointer<Type>::value && std::is_same<decltype(name(v[0], args...)), Type>::value, \
-            vec<Dim,Type>>::type { \
-            for (auto& t : v) { \
-                t = name(t, args...); \
-            } \
-            return std::move(v); \
-        }
-
-    #define VECTORIZE2(name) \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(const vec<D,T1>& v1, const vec<D,T2>& v2, const Args& ... args) -> \
-            vec<D,decltype(name(v1[0], v2[0], args...))> { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
-                v1.dims, " vs. ", v2.dims, ")"); \
-            using ntype = decltype(name(v1[0], v2[0], args...)); \
-            vec<D,ntype> r; r.dims = v1.dims; r.data.reserve(v1.size()); \
-            for (uint_t i : range(v1)) { \
-                r.data.push_back(name(v1.safe[i], v2.safe[i], args...)); \
-            } \
-            return r; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(vec<D,T1>&& v1, const vec<D,T2>& v2, const Args& ... args) -> typename std::enable_if< \
-            !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T1>::value, \
-            vec<D,T1>>::type { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
-                v1.dims, " vs. ", v2.dims, ")"); \
-            for (uint_t i : range(v1)) { \
-                v1.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
-            } \
-            return v1; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(const vec<D,T1>& v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if< \
-            !std::is_pointer<T2>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T2>::value, \
-            vec<D,T2>>::type { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
-                v1.dims, " vs. ", v2.dims, ")"); \
-            for (uint_t i : range(v1)) { \
-                v2.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
-            } \
-            return v2; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(vec<D,T1>&& v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if< \
-            !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T1>::value, \
-            vec<D,T1>>::type { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
-                v1.dims, " vs. ", v2.dims, ")"); \
-            for (uint_t i : range(v1)) { \
-                v1.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
-            } \
-            return v1; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(T1 v1, const vec<D,T2>& v2, const Args& ... args) -> typename std::enable_if<!meta::is_vec<T1>::value, \
-            vec<D,decltype(name(v1, v2[0], args...))>>::type { \
-            using ntype = decltype(name(v1, v2[0], args...)); \
-            vec<D,ntype> r; r.dims = v2.dims; r.data.reserve(v2.size()); \
-            for (uint_t i : range(v2)) { \
-                r.data.push_back(name(v1, v2.safe[i], args...)); \
-            } \
-            return r; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(const vec<D,T1>& v1, T2 v2, const Args& ... args) -> typename std::enable_if<!meta::is_vec<T2>::value, \
-            vec<D,decltype(name(v1[0], v2, args...))>>::type { \
-            using ntype = decltype(name(v1[0], v2, args...)); \
-            vec<D,ntype> r; r.dims = v1.dims; r.data.reserve(v1.size()); \
-            for (uint_t i : range(v1)) { \
-                r.data.push_back(name(v1.safe[i], v2, args...)); \
-            } \
-            return r; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(T1 v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if<!meta::is_vec<T1>::value && \
-            !std::is_pointer<T2>::value && std::is_same<decltype(name(v1, v2[0], args...)), T2>::value, \
-            vec<D,decltype(name(v1, v2[0], args...))>>::type { \
-            for (uint_t i : range(v2)) { \
-                v2.safe[i] = name(v1, v2.safe[i], args...); \
-            } \
-            return v2; \
-        } \
-        template<std::size_t D, typename T1, typename T2, typename ... Args> \
-        auto name(vec<D,T1>&& v1, T2 v2, const Args& ... args) -> typename std::enable_if<!meta::is_vec<T2>::value && \
-            !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2, args...)), T1>::value, \
-            vec<D,decltype(name(v1[0], v2, args...))>>::type { \
-            for (uint_t i : range(v1)) { \
-                v1.safe[i] = name(v1.safe[i], v2, args...); \
-            } \
-            return v1; \
-        } \
-
-    #define VECTORIZE_REN(name, orig) \
-        template<std::size_t Dim, typename Type, typename ... Args> \
-        auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
-            vec<Dim,decltype(orig(v[0], args...))> { \
-            using ntype = decltype(orig(v[0], args...)); \
-            vec<Dim,ntype> r; r.dims = v.dims; r.data.reserve(v.size()); \
-            for (auto& t : v.data) { \
-                r.data.push_back(orig(impl::dref<Type>(t), args...)); \
-            } \
-            return r; \
-        } \
-        template<std::size_t Dim, typename Type, typename ... Args> \
-        auto name(vec<Dim,Type>&& v, const Args& ... args) -> typename std::enable_if< \
-            !std::is_pointer<Type>::value && std::is_same<decltype(orig(v[0], args...)), Type>::value, \
-            vec<Dim,Type>>::type { \
-            for (auto& t : v) { \
-                t = orig(t, args...); \
-            } \
-            return std::move(v); \
-        } \
-        template<typename ... Args> \
-        auto name(Args&& ... args) -> decltype(orig(std::forward<Args>(args)...)) { \
-            return orig(std::forward<Args>(args)...); \
-        }
-
-    VECTORIZE(sqrt);
-    VECTORIZE(sqr);
-    VECTORIZE(invsqr);
-    VECTORIZE(pow);
-    VECTORIZE(fmod);
-    VECTORIZE(cos);
-    VECTORIZE(sin);
-    VECTORIZE(tan);
-    VECTORIZE(acos);
-    VECTORIZE(asin);
-    VECTORIZE(atan);
-    VECTORIZE2(atan2);
-    VECTORIZE(cosh);
-    VECTORIZE(sinh);
-    VECTORIZE(tanh);
-    VECTORIZE(acosh);
-    VECTORIZE(asinh);
-    VECTORIZE(atanh);
-    VECTORIZE(exp);
-    VECTORIZE(log);
-    VECTORIZE(log2);
-    VECTORIZE(log10);
-    VECTORIZE(erf);
-    VECTORIZE(erfc);
-    VECTORIZE(tgamma);
-    VECTORIZE(ceil);
-    VECTORIZE(floor);
-    VECTORIZE(round);
-    VECTORIZE(abs);
-    VECTORIZE(clamp);
-    VECTORIZE_REN(bessel_j0, j0);
-    VECTORIZE_REN(bessel_j1, j1);
-    VECTORIZE_REN(bessel_y0, y0);
-    VECTORIZE_REN(bessel_y1, y1);
+    PHYPP_VECTORIZE(sqrt);
+    PHYPP_VECTORIZE(sqr);
+    PHYPP_VECTORIZE(invsqr);
+    PHYPP_VECTORIZE(pow);
+    PHYPP_VECTORIZE(fmod);
+    PHYPP_VECTORIZE(cos);
+    PHYPP_VECTORIZE(sin);
+    PHYPP_VECTORIZE(tan);
+    PHYPP_VECTORIZE(acos);
+    PHYPP_VECTORIZE(asin);
+    PHYPP_VECTORIZE(atan);
+    PHYPP_VECTORIZE2(atan2);
+    PHYPP_VECTORIZE(cosh);
+    PHYPP_VECTORIZE(sinh);
+    PHYPP_VECTORIZE(tanh);
+    PHYPP_VECTORIZE(acosh);
+    PHYPP_VECTORIZE(asinh);
+    PHYPP_VECTORIZE(atanh);
+    PHYPP_VECTORIZE(exp);
+    PHYPP_VECTORIZE(log);
+    PHYPP_VECTORIZE(log2);
+    PHYPP_VECTORIZE(log10);
+    PHYPP_VECTORIZE(erf);
+    PHYPP_VECTORIZE(erfc);
+    PHYPP_VECTORIZE(tgamma);
+    PHYPP_VECTORIZE(ceil);
+    PHYPP_VECTORIZE(floor);
+    PHYPP_VECTORIZE(round);
+    PHYPP_VECTORIZE(abs);
+    PHYPP_VECTORIZE(clamp);
+    PHYPP_VECTORIZE_REN(bessel_j0, j0);
+    PHYPP_VECTORIZE_REN(bessel_j1, j1);
+    PHYPP_VECTORIZE_REN(bessel_y0, y0);
+    PHYPP_VECTORIZE_REN(bessel_y1, y1);
 
     #ifndef NO_GSL
-    VECTORIZE_REN(bessel_i0, gsl_sf_bessel_I0);
-    VECTORIZE_REN(bessel_i1, gsl_sf_bessel_I1);
-    VECTORIZE_REN(bessel_k0, gsl_sf_bessel_K0);
-    VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
+    PHYPP_VECTORIZE_REN(bessel_i0, gsl_sf_bessel_I0);
+    PHYPP_VECTORIZE_REN(bessel_i1, gsl_sf_bessel_I1);
+    PHYPP_VECTORIZE_REN(bessel_k0, gsl_sf_bessel_K0);
+    PHYPP_VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
     #endif
-
-    #undef VECTORIZE
 
     // Create a range of n steps from i to j (inclusive)
     template<typename T, typename U = T>

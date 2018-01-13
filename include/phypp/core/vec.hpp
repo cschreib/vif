@@ -1218,6 +1218,7 @@ namespace phypp {
 
 #define PHYPP_INCLUDING_CORE_VEC_BITS
 #include "phypp/core/bits/operators.hpp"
+#include "phypp/core/bits/vectorize.hpp"
 #undef PHYPP_INCLUDING_CORE_VEC_BITS
 
 #endif
