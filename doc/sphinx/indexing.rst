@@ -38,6 +38,7 @@ The elements of a vector can therefore be accessed in two ways: either using a f
 
 Indexing a vector can only be done with integers. Indexing with *unsigned* integers is faster, because it removes the need to check if the index is negative, and it should therefore be preferred whenever possible. Negative indices are allowed, and they are interpreted as *reverse* indices, that is, ``-1`` refers to the last element of the vector, ``-2`` to the one before the last, etc.
 
+.. _Safe indexing:
 
 Bounds checking, and safe indexing
 ----------------------------------
@@ -48,7 +49,7 @@ This bound checking has a small but sometimes noticeable impact on performances.
 
 However, there are cases where bound checking is superfluous, for example if we already know *by construction* that our indices will always be valid, and no check is required. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element and most of the time is spent iterating from one index to the next and loading the value in the CPU cache, then bound checking can take a significant amount of the total time.
 
-For this reason, the phy++ vector also offers an alternative indexing interface, the so-called "safe" interface. It behaves exactly like the standard indexing interface described above, except that it does not perform bound checking. One can use this interface using ``v.safe[i]`` instead of ``v[i]`` for flat indexing, or ``v.safe(x,y)'' instead of ``v(x,y)`` for multidimensional indexing. The safe interface can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times. Just be certain to use this interface when you know *for sure* what you are doing, and you can prove that the index will always be valid. A good strategy is to always use the standard interface and, only when the program runs successfully, switch to the safe interface for the most stable but time-consuming code sections.
+For this reason, the phy++ vector also offers an alternative indexing interface, the so-called "safe" interface. It behaves exactly like the standard indexing interface described above, except that it does not perform bound checking. One can use this interface using ``v.safe[i]`` instead of ``v[i]`` for flat indexing, or ``v.safe(x,y)`` instead of ``v(x,y)`` for multidimensional indexing. The safe interface can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times. Just be certain to use this interface when you know *for sure* what you are doing, and you can prove that the index will always be valid. A good strategy is to always use the standard interface and, only when the program runs successfully, switch to the safe interface for the most stable but time-consuming code sections.
 
 
 Loops, and traversing data
@@ -80,8 +81,6 @@ Lastly, if you care about the multidimensional index, then you need to loop on e
     for (uint_t j : range(m.dims[1])) {
         do_even_more_stuff_with(i, j, m(i,j));
     }
-
-For any vector ``v``, ``v.dims`` is an array that holds the length of each dimension of the vector: ``v.dims[0]`` is the number of elements along the first dimension, etc. This array is set automatically when the vector is created or resized, and should not be modified manually (except in very specific and rare circumstances).
 
 
 Partial indexing
