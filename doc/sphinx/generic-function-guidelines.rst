@@ -172,7 +172,7 @@ Most function created in C++ thus far, including those in the C++ standard libra
     vec1d v2 = {2.0, 4.0, 6.0};
     sqrt(v2); // {1.41..., 2.0, 2.45...}
 
-However the phy++ support library cannot contain *all* functions that ever existed, and you may create your own scalar functions that you wish to vectorize. This can be achieved using the preprocessor macro ``PHYPP_VECTORIZE()```:
+However the phy++ support library cannot contain *all* functions that ever existed, and you may create your own scalar functions that you wish to vectorize. This can be achieved using the preprocessor macro ``PHYPP_VECTORIZE()``:
 
 .. code-block:: c++
 

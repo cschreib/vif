@@ -94,6 +94,26 @@ This can be further refined to only encompass a fraction of the whole range, usi
     v[1-2] = 12;   // only access index 1-2 = -1
 
 
+Filtering and selecting elements
+--------------------------------
+
+In the previous section we have seen that a view can be created using a vector of indices. In most cases, such vector is not created manually, as in the examples above, but comes from a *filtering* function, ``where()``. This function is part of the support library, but it is important enough to be mentioned here.
+
+``where()`` accepts a vector of ``bool`` (of any dimension) as single argument, and returns all the *flat* indices where the vector values are ``true``. This can be combined with views to perform complex operations on vectors. For example:
+
+.. code-block:: c++
+
+    // Set all negative values to zero
+    vec1f v1 = {-1.01, 2.0, 5.0, -2.1, 6.5};
+    v1[where(v1 < 0.0)] = 0.0;
+    v1;     // { 0.0,  2.0, 5.0,  0.0, 6.5}
+
+    // Add one to all values between 0 and 6
+    vec2f v2 = {{-1.0, 2.0}, {8.0, 3.4}};
+    v2[where(v2 > 0.0 && v2 < 6.0)] += 1.0;
+    v2;     // {{-1.0, 3.0}, {8.0, 4.4}}
+
+
 Differences between views and vectors
 -------------------------------------
 
@@ -106,7 +126,7 @@ While views are mostly compatible with vectors in terms of interface, by design 
 Constant views and views on constant data
 -----------------------------------------
 
-There are two ways that views can have "constant" semantics, where it is only possible to *read* the viewed data and not modify it. The first way is when constructing a view from a constant vector, in which case the view carries the ``const`` qualifier in its data type (`vec<1,const int*>`):
+There are two ways that views can have "constant" semantics, where it is only possible to *read* the viewed data and not modify it. The first way is when constructing a view from a constant vector, in which case the view carries the ``const`` qualifier in its data type (``vec<1,const int*>``):
 
 .. code-block:: c++
 
