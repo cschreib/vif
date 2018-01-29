@@ -1771,8 +1771,8 @@ namespace impl {
 
 
         template<typename T, typename U>
-        bool regrid_nearest(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
-            int_t mx = round(mean(xps)), my = round(mean(yps));
+        bool regrid_nearest(const vec<2,T>& imgs, double xps, double yps, U& flx) {
+            int_t mx = round(xps), my = round(yps);
             if (mx > 0 && uint_t(mx) < imgs.dims[1] && my > 0 && uint_t(my) < imgs.dims[0]) {
                 flx = imgs.safe(uint_t(my), uint_t(mx));
                 return true;
@@ -1782,73 +1782,15 @@ namespace impl {
         }
 
         template<typename T, typename U>
-        bool regrid_nearest_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
-            bool covered = regrid_nearest(imgs, xps, yps, flx);
-            if (covered) {
-                flx *= polyon_area(xps, yps);
-            }
-
-            return covered;
+        bool regrid_linear(const vec<2,T>& imgs, double xps, double yps, U& flx) {
+            flx = bilinear_strict(imgs, yps, xps, dnan);
+            return is_finite(flx);
         }
 
         template<typename T, typename U>
-        bool regrid_linear(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
-            uint_t ncovered = 0;
-            flx = 0;
-            for (uint_t i : range(xps)) {
-                double tflx = bilinear_strict(imgs, yps.safe[i], xps.safe[i], dnan);
-                if (is_finite(tflx)) {
-                    ++ncovered;
-                    flx += tflx;
-                }
-            }
-
-            if (ncovered == 0) {
-                return false;
-            } else {
-                flx /= ncovered;
-                return true;
-            }
-        }
-
-        template<typename T, typename U>
-        bool regrid_linear_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
-            bool covered = regrid_linear(imgs, xps, yps, flx);
-            if (covered) {
-                flx *= polyon_area(xps, yps);
-            }
-
-            return covered;
-        }
-
-        template<typename T, typename U>
-        bool regrid_cubic(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
-            uint_t ncovered = 0;
-            flx = 0;
-            for (uint_t i : range(xps)) {
-                double tflx = bicubic_strict(imgs, yps.safe[i], xps.safe[i], dnan);
-                if (is_finite(tflx)) {
-                    ++ncovered;
-                    flx += tflx;
-                }
-            }
-
-            if (ncovered == 0) {
-                return false;
-            } else {
-                flx /= ncovered;
-                return true;
-            }
-        }
-
-        template<typename T, typename U>
-        bool regrid_cubic_fcon(const vec<2,T>& imgs, const vec1d& xps, const vec1d& yps, U& flx) {
-            bool covered = regrid_cubic(imgs, xps, yps, flx);
-            if (covered) {
-                flx *= polyon_area(xps, yps);
-            }
-
-            return covered;
+        bool regrid_cubic(const vec<2,T>& imgs, double xps, double yps, U& flx) {
+            flx = bicubic_strict(imgs, yps, xps, dnan);
+            return is_finite(flx);
         }
 
         template<typename Type>
@@ -1901,10 +1843,11 @@ namespace astro {
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
+
         res = replicate(dnan, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
 
-        uint_t nx = astros.dims[astros.x_axis];
-        uint_t ny = astros.dims[astros.y_axis];
+        uint_t nx = astrod.dims[astros.x_axis];
+        uint_t ny = astrod.dims[astros.y_axis];
 
         // Precompute the projection of the new pixel grid on the old
         // Note: for the horizontal pixel 'i' of line 'j' (x_i,y_j), the grid is:
@@ -1916,8 +1859,8 @@ namespace astro {
 
         auto s2d_wcs = [&](double sx, double sy, double& dx, double& dy) {
             double tra, tdec;
-            astro::xy2ad(astros, sx+1, sy+1, tra, tdec);
-            astro::ad2xy(astrod, tra, tdec, dx, dy);
+            astro::xy2ad(astrod, sx+1, sy+1, tra, tdec);
+            astro::ad2xy(astros, tra, tdec, dx, dy);
             dx -= 1.0; dy -= 1.0;
         };
 
@@ -1986,37 +1929,36 @@ namespace astro {
                 // pixel offsets and rotations are fine, but weird things may happen close
                 // to the poles of the projection where things become non-linear)
 
-                vec1d xps = {plx.safe[ix], plx.safe[ix+1], pux.safe[ix+1], pux.safe[ix]};
-                vec1d yps = {ply.safe[ix], ply.safe[ix+1], puy.safe[ix+1], puy.safe[ix]};
+                double xps = 0.25*(plx.safe[ix] + plx.safe[ix+1] + pux.safe[ix+1] + pux.safe[ix]);
+                double yps = 0.25*(ply.safe[ix] + ply.safe[ix+1] + puy.safe[ix+1] + puy.safe[ix]);
 
                 double flx = 0.0;
                 bool covered = false;
 
                 switch (opts.method) {
                 case interpolation_method::nearest:
-                    if (opts.conserve_flux) {
-                        covered = impl::astro_impl::regrid_nearest_fcon(imgs, xps, yps, flx);
-                    } else {
-                        covered = impl::astro_impl::regrid_nearest(imgs, xps, yps, flx);
-                    }
+                    covered = impl::astro_impl::regrid_nearest(imgs, xps, yps, flx);
                     break;
                 case interpolation_method::linear:
-                    if (opts.conserve_flux) {
-                        covered = impl::astro_impl::regrid_linear_fcon(imgs, xps, yps, flx);
-                    } else {
-                        covered = impl::astro_impl::regrid_linear(imgs, xps, yps, flx);
-                    }
+                    covered = impl::astro_impl::regrid_linear(imgs, xps, yps, flx);
                     break;
                 case interpolation_method::cubic:
-                    if (opts.conserve_flux) {
-                        covered = impl::astro_impl::regrid_cubic_fcon(imgs, xps, yps, flx);
-                    } else {
-                        covered = impl::astro_impl::regrid_cubic(imgs, xps, yps, flx);
-                    }
+                    covered = impl::astro_impl::regrid_cubic(imgs, xps, yps, flx);
                     break;
                 }
 
                 if (covered) {
+                    if (opts.conserve_flux) {
+                        if (!opts.linearize) {
+                            pixel_area = impl::astro_impl::polyon_area(
+                                {plx.safe[ix], plx.safe[ix+1], pux.safe[ix+1], pux.safe[ix]},
+                                {ply.safe[ix], ply.safe[ix+1], puy.safe[ix+1], puy.safe[ix]}
+                            );
+                        }
+
+                        flx *= pixel_area;
+                    }
+
                     res.safe(iy,ix) = flx;
                 }
 
@@ -2067,7 +2009,7 @@ namespace astro {
         uint_t nx = astros.dims[astros.x_axis];
         uint_t ny = astros.dims[astros.y_axis];
 
-        // Precompute the projection of the new pixel grid on the old
+        // Precompute the projection of the old pixel grid on the new
         // In case pixfrac=1:
         // For the horizontal pixel 'i' of line 'j' (x_i,y_j), the grid is:
         //   (pux,puy)[i]     (pux,puy)[i+1]    # y_(j+0.5)
