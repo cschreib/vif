@@ -1682,10 +1682,10 @@ namespace impl {
             // Get bounds of this projection
             uint_t ymin, xmin;
             int_t tymax, txmax;
-            regrid_drizzle_getbounds(yps, ymin, tymax, res.dims[0]-1);
-            regrid_drizzle_getbounds(xps, xmin, txmax, res.dims[1]-1);
+            regrid_drizzle_getbounds(yps, ymin, tymax, wei.dims[0]-1);
+            regrid_drizzle_getbounds(xps, xmin, txmax, wei.dims[1]-1);
 
-            if (tymax < 0 || txmax < 0 || xmin >= res.dims[1] || ymin >= res.dims[0]) {
+            if (tymax < 0 || txmax < 0 || xmin >= wei.dims[1] || ymin >= wei.dims[0]) {
                 // Original pixel is outside of destination image
                 return;
             }
@@ -1887,6 +1887,7 @@ namespace astro {
         bool verbose = false;
         bool conserve_flux = false;
         interpolation_method method = interpolation_method::linear;
+        bool linearize = false;    // approximation: assume WCS transform is linear
     };
 
     template<typename T = double>
@@ -1902,6 +1903,9 @@ namespace astro {
 #else
         res = replicate(dnan, astrod.dims[astrod.y_axis], astrod.dims[astrod.x_axis]);
 
+        uint_t nx = astros.dims[astros.x_axis];
+        uint_t ny = astros.dims[astros.y_axis];
+
         // Precompute the projection of the new pixel grid on the old
         // Note: for the horizontal pixel 'i' of line 'j' (x_i,y_j), the grid is:
         //   (pux,puy)[i]     (pux,puy)[i+1]    # y_(j+0.5)
@@ -1909,27 +1913,73 @@ namespace astro {
         //   # x_(i-0.5)      # x_(i+0.5)
         // To avoid re-computing stuff, pux and puy are moved into plx and ply
         // on each 'y' iteration for reuse.
-        auto pg = progress_start(res.size());
-        vec1d plx(res.dims[1]+1);
-        vec1d ply(res.dims[1]+1);
-        for (uint_t ix : range(res.dims[1]+1)) {
+
+        auto s2d_wcs = [&](double sx, double sy, double& dx, double& dy) {
             double tra, tdec;
-            astro::xy2ad(astrod, ix+0.5, 0.5, tra, tdec);
-            astro::ad2xy(astros, tra, tdec, plx.safe[ix], ply.safe[ix]);
-            plx.safe[ix] -= 1.0; ply.safe[ix] -= 1.0;
+            astro::xy2ad(astros, sx+1, sy+1, tra, tdec);
+            astro::ad2xy(astrod, tra, tdec, dx, dy);
+            dx -= 1.0; dy -= 1.0;
+        };
+
+        // If "linearize" is set, build approximate transformation matrix from image center
+        double csx = nx/2;
+        double csy = ny/2;
+        double cdx, cdy, cdx1, cdy1, cdx2, cdy2;
+        double pixel_area;
+        if (opts.linearize) {
+            s2d_wcs(csx, csy,     cdx,  cdy);
+            s2d_wcs(csx+1.0, csy, cdx1, cdy1);
+            s2d_wcs(csx, csy+1.0, cdx2, cdy2);
+
+            cdx1 -= cdx; cdy1 -= cdy; cdx2 -= cdx; cdy2 -= cdy;
+            pixel_area = sqrt(sqr(cdx1) + sqr(cdy1))*sqrt(sqr(cdx2) + sqr(cdy2));
+
+            if (abs(cdx-round(cdx)) < 1e-6 && abs(cdy-round(cdy)) < 1e-6 &&
+                abs(cdx1 - 1.0) < 1e-6 && abs(cdy2 - 1.0) < 1e-6 &&
+                abs(cdy1) < 1e-3 && abs(cdx2) < 1e-3) {
+
+                // This is a simple integer translation, let's optimize this
+                int_t dx = round(cdx);
+                int_t dy = round(cdy);
+                int_t wx1 = nx/2;
+                int_t wx2 = nx-1 - wx1;
+                int_t wy1 = ny/2;
+                int_t wy2 = ny-1 - wy1;
+
+                vec1u ids, idd;
+                subregion(res, {dy-wy1, dx-wx1, dy+wy2, dx+wx2}, idd, ids);
+
+                res[_] = dnan;
+                impl::astro_impl::copy_subset(imgs, res, ids, idd);
+
+                return res;
+            }
         }
 
-        for (uint_t iy : range(res.dims[0])) {
-            vec1d pux(res.dims[1]+1);
-            vec1d puy(res.dims[1]+1);
-            for (uint_t ix : range(res.dims[1]+1)) {
-                double tra, tdec;
-                astro::xy2ad(astrod, ix+0.5, iy+1.5, tra, tdec);
-                astro::ad2xy(astros, tra, tdec, pux.safe[ix], puy.safe[ix]);
-                pux.safe[ix] -= 1.0; puy.safe[ix] -= 1.0;
+        auto s2d = [&](double sx, double sy, double& dx, double& dy) {
+            if (opts.linearize) {
+                dx = (sx-csx)*cdx1 + (sy-csy)*cdx2 + cdx;
+                dy = (sx-csx)*cdy1 + (sy-csy)*cdy2 + cdy;
+            } else {
+                s2d_wcs(sx, sy, dx, dy);
+            }
+        };
+
+        auto pg = progress_start(res.size());
+        vec1d plx(nx+1);
+        vec1d ply(nx+1);
+        for (uint_t ix : range(nx+1)) {
+            s2d(ix-0.5, -0.5, plx.safe[ix], ply.safe[ix]);
+        }
+
+        vec1d pux(nx+1);
+        vec1d puy(nx+1);
+        for (uint_t iy : range(ny)) {
+            for (uint_t ix : range(nx+1)) {
+                s2d(ix-0.5, iy+0.5, pux.safe[ix], puy.safe[ix]);
             }
 
-            for (uint_t ix : range(res.dims[1])) {
+            for (uint_t ix : range(nx)) {
                 // Find projection of each pixel of the new grid on the original image
                 // NB: assumes the astrometry is such that this projection is
                 // reasonably approximated by a 4-edge polygon (i.e.: varying pixel scales,
@@ -1973,8 +2023,8 @@ namespace astro {
                 if (opts.verbose) progress(pg, 31);
             }
 
-            plx = std::move(pux);
-            ply = std::move(puy);
+            std::swap(plx, pux);
+            std::swap(ply, puy);
         }
 #endif
 
@@ -1999,6 +2049,15 @@ namespace astro {
         static_assert(!std::is_same<T,T>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
+
+        phypp_check(D == astros.dims.size(), "mismatch between WCS and image number of dimensions (",
+            astros.dims.size(), " vs. ", D, ")");
+
+        for (uint_t i : range(D)) {
+            phypp_check(imgs.dims[i] == astros.dims[i], "mismatch between WCS and image dimension (",
+                astros.dims, " vs. ", imgs.dims, ")");
+        }
+
         auto resd = imgs.dims;
         resd[D-2] = astrod.dims[astrod.y_axis];
         resd[D-1] = astrod.dims[astrod.x_axis];
@@ -2040,7 +2099,7 @@ namespace astro {
         double cdx, cdy, cdx1, cdy1, cdx2, cdy2;
         double pixel_area;
         if (opts.linearize) {
-            s2d_wcs(csx, csy, cdx, cdy);
+            s2d_wcs(csx, csy,     cdx,  cdy);
             s2d_wcs(csx+1.0, csy, cdx1, cdy1);
             s2d_wcs(csx, csy+1.0, cdx2, cdy2);
 
