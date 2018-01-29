@@ -26,19 +26,23 @@ int phypp_main(int argc, char* argv[]) {
     astro::regrid_drizzle_params     dopts;
     iopts.verbose = verbose;
     dopts.verbose = verbose;
+    iopts.conserve_flux = conserve_flux;
+    dopts.pixfrac = pixfrac;
+
+    if (fast) {
+        dopts.dest_pixfrac = true;
+        dopts.linearize = true;
+        iopts.linearize = true;
+    }
 
     if (method == "drizzle") {
-        dopts.pixfrac = pixfrac;
-        if (fast) {
-            dopts.dest_pixfrac = true;
-            dopts.linearize = true;
-        }
+        // Nothing to do
     } else if (method == "nearest") {
-        iopts.conserve_flux = conserve_flux;
         iopts.method = astro::interpolation_method::nearest;
     } else if (method == "linear") {
-        iopts.conserve_flux = conserve_flux;
         iopts.method = astro::interpolation_method::linear;
+    } else if (method == "cubic") {
+        iopts.method = astro::interpolation_method::cubic;
     } else {
         error("unknown regridding method '", method, "'");
         return 1;
