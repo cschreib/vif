@@ -96,7 +96,7 @@ namespace phypp {
         }
     }
 
-    template<std::size_t Dim, typename T, typename O,
+    template<std::size_t Dim = 1, typename T = std::string, typename O,
     typename enable = typename std::enable_if<
         std::is_same<meta::rtype_t<T>, std::string>::value &&
         meta::is_compatible_output_type<vec<Dim,T>,O>::value

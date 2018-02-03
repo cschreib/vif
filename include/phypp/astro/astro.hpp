@@ -1056,8 +1056,8 @@ namespace astro {
         return true;
     }
 
-    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD,
-        typename enable = typename std::enable_if<
+    template<std::size_t Dim = 1, typename TSR = std::string, typename TSD = std::string,
+        typename TR, typename TD, typename enable = typename std::enable_if<
             meta::is_compatible_output_type<vec<Dim,TSR>,TR>::value &&
             meta::is_compatible_output_type<vec<Dim,TSD>,TD>::value>::type>
     vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec, TR&& ra, TD&& dec) {
@@ -1112,8 +1112,8 @@ namespace astro {
         sdec = strn(dech)+':'+align_right(strn(decm),2,'0')+':'+format_sec(decs);
     }
 
-    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD,
-        typename enable = typename std::enable_if<
+    template<std::size_t Dim = 1, typename TSR = double, typename TSD = double,
+        typename TR, typename TD, typename enable = typename std::enable_if<
             meta::is_compatible_output_type<vec<Dim,TR>,TSR>::value &&
             meta::is_compatible_output_type<vec<Dim,TR>,TSD>::value>::type>
     void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, TSR&& sra, TSD&& sdec) {
