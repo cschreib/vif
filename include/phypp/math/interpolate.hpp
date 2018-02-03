@@ -75,10 +75,9 @@ namespace phypp {
         using rtypey = meta::rtype_t<TypeY>;
         using rtypex = meta::rtype_t<TypeX>;
 
-        phypp_check(n_elements(y) == n_elements(x),
-            "interpolate: 'x' and 'y' arrays must contain the same number of elements");
-        phypp_check(n_elements(y) >= 2,
-            "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
+        phypp_check(y.dims == x.dims, "incompatible dimensions between X and Y arrays (", x.dims,
+            " vs. ", y.dims, ")");
+        phypp_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
 
         uint_t nmax = x.size();
         uint_t low = lower_bound(nx, x);
@@ -115,10 +114,9 @@ namespace phypp {
         using rtypee = meta::rtype_t<TypeE>;
         using rtypex = meta::rtype_t<TypeX1>;
 
-        phypp_check(y.size() == x.size(),
-            "interpolate: 'x' and 'y' arrays must contain the same number of elements");
-        phypp_check(y.size() >= 2,
-            "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
+        phypp_check(y.dims == x.dims, "incompatible dimensions between X and Y arrays (", x.dims,
+            " vs. ", y.dims, ")");
+        phypp_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
 
         uint_t nmax = x.size();
         std::pair<vec<DX,decltype(y[0]*x[0])>,vec<DX,decltype(y[0]*x[0])>> p;

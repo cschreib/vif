@@ -110,7 +110,7 @@ namespace phypp {
         phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
             "(", x.dims, " vs. ", y.dims, ")");
 
-        uint_t npt = n_elements(x);
+        uint_t npt = x.size();
         vec1u res = uintarr(2*npt);
         vec1u ids = uindgen(npt);
         std::sort(ids.data.begin(), ids.data.end(), [&](uint_t i, uint_t j) {

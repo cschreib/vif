@@ -661,14 +661,14 @@ namespace astro {
     }
 
     void xmatch_check_lost(const id_pair& p) {
-        if (n_elements(p.lost) != 0) {
-            warning(n_elements(p.lost), " sources failed to cross match");
+        if (!p.lost.empty()) {
+            warning(p.lost.size(), " sources failed to cross match");
         }
     }
 
     void xmatch_save_lost(const id_pair& p, const std::string& save) {
-        if (n_elements(p.lost) != 0) {
-            warning(n_elements(p.lost), " sources failed to cross match");
+        if (!p.lost.empty()) {
+            warning(p.lost.size(), " sources failed to cross match");
             fits::write_table(save, ftable(p.lost));
         }
     }

@@ -108,7 +108,7 @@ namespace phypp {
 
                     if (!value.empty()) {
                         vec1s vals = split(value, ",");
-                        t.reserve(n_elements(vals));
+                        t.reserve(vals.size());
                         meta::rtype_t<T> tmp;
                         for (auto& s : vals) {
                             bool v = read_args_n2T_(tmp, trim(trim(s), "'\""));
