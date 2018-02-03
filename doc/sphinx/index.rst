@@ -45,6 +45,7 @@ Below is a code sample written in phy++ that illustrates the most basic function
    :caption: The support library
 
    generic
+   idl
    argv
    string
    os
