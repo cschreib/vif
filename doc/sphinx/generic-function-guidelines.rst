@@ -313,7 +313,7 @@ In this particular case, we use ``std::enable_if<>`` to make sure the input type
         }
     }
 
-The catch here is to support *views* as output arguments. Indeed, one may want to convert only part of a string vector with ``from_string()``, our current implementation fails:
+The catch here is to support *views* as output arguments. Indeed, one may want to convert only part of a string vector with ``from_string()`` and store the result in a view, in which case our current implementation fails:
 
 .. code-block:: c++
 
@@ -334,16 +334,16 @@ The catch here is to support *views* as output arguments. Indeed, one may want t
     vec1b r = from_string(s[id], tmp);
     v[id] = tmp;     // assign temporary values to 'v'
 
-.. note:: This issue also affects IDL. There, it can only be solved by introducing a temporary, as done in the example above. But C++ is smarter, and we can make it work! Read on.
+.. note:: This issue also affects IDL, in a nastier way since IDL will not throw any error. It will store the output values in a automatically generated temporary vector, which is then discarded, so the values of the view are not modified... Oops! In IDL, this can only be solved by explicitly introducing a temporary vector and assigning it back to the view, as done in the example above. But C++ is smarter, and we can make this work! Read on.
 
 To support this type of usage, we need an argument type that can be either an "l-value" (a reference to a vector) or an "r-value" (a temporary view). This is exactly what the "universal reference" is for: ``T&&``. Unfortunately, this universal reference requires an unconstrained type ``T``. This means we loose all the implicit constraints on the type: it is no longer ``vec<D,T>``, but simply ``T``. Therefore we will have to specify these constraints explicitly using ``std::enable_if<>``. And there are a lot of constraints! We want to make sure:
 
 * that ``T`` is a vector or a view,
 * that the number of dimensions of ``T`` is the same as the input vector of strings,
-* that if ``T`` is an r-value, if must be a non-constant view
-* that if ``T`` is an l-value, it must be a non-constant reference (to a vector or a view),
+* that if ``T`` is an r-value, if must be a non-constant view,
+* that if ``T`` is an l-value, it must be a non-constant reference (to a vector or a view).
 
-Since these requirements will be the same for every vectorized function with output parameters, a specific trait is provided in phy++ to express all these constraints: ``meta::is_compatible_output_type<In,Out>``. It is used in the following way:
+Since these basic requirements will be the same for every vectorized function with output parameters, a specific trait is provided in phy++ to express all these constraints: ``meta::is_compatible_output_type<In,Out>``. It is used in the following way:
 
 .. code-block:: c++
 
@@ -355,7 +355,7 @@ Since these requirements will be the same for every vectorized function with out
         // ...
     }
 
-In addition, here we need to differentiate the behavior of the function for the two cases: we want the "vector" version to automatically resize the output vector to the dimensions of the input vector, and the "view" version to simply check that the view has the same dimensions as the input vector. This is expected to be a common behavior for functions with output parameters, so again a helper function is provided in phy++ to do just that: ``meta::resize_or_check(v, d)``. This function resizes the vector ``v`` to the dimensions ``d``, or, if ``v`` is a view, checks that its dimensions match ``d``. The final, fully generic, vectorized function is therefore:
+In addition, here we need to differentiate the behavior of the function for the two cases: we want the "vector" version to automatically resize the output vector to the dimensions of the input vector, and the "view" version to simply check that the view has the same dimensions as the input vector. This is expected to be a common behavior for functions with output parameters, therefore a helper function is provided in phy++ to do just that: ``meta::resize_or_check(v, d)``. This function resizes the vector ``v`` to the dimensions ``d``, or, if ``v`` is a view, checks that its dimensions match ``d``. The final, fully generic, vectorized function is therefore:
 
 .. code-block:: c++
 
@@ -365,10 +365,11 @@ In addition, here we need to differentiate the behavior of the function for the 
     >::type>
     vec<D,bool> from_string(const vec<D,U>& s, T&& v) {
         vec<Dim,bool> res(s.dims);
-        meta::resize_or_check(v, s.dims); // here
+        meta::resize_or_check(v, s.dims);
         for (uint_t i : range(s)) {
             res.safe[i] = from_string(s.safe[i], v.safe[i]);
         }
 
         return res;
     }
+
