@@ -107,7 +107,7 @@ The error shown to the user then becomes clear:
 
     error: vector must have at least two elements along first dimension (got 0)
 
-**Note:** Since we now do an explicit check that the index ``1`` is valid before accessing the vector, we no longer need the vector to perform bounds checking. Therefore we can use the "safe" indexing interface:
+Finally, note that, since we now do an explicit check that the index ``1`` is valid before accessing the vector, we no longer need the vector to perform bounds checking. Therefore we can use the "safe" indexing interface:
 
 .. code-block:: c++
 
@@ -237,7 +237,7 @@ The optimal version would avoid the extra loop:
 
     vec1d v2 = std::move(tmp);
 
-This is only possible using expression templates, which phy++ does not currently support for the sake of simplicity. Therefore, if performances are critical you may want to write the loop explicitly (following the guidelines in :ref:`Indexing` for optimal performance). An cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a lambda function into a functor with overloaded call operator that works on both vector and scalar values. It also supports the optimization for chained calls. Contrary to the ``PHYPP_VECTORIZE()`` macro, ``vectorize_lambda_first()`` can be called in any scope, including inside other functions:
+This is only possible using expression templates, which currently phy++ does not support for the sake of simplicity. Therefore, if performances are critical you may want to write the loop explicitly (following the guidelines in :ref:`Indexing` for optimal performance). An cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a lambda function into a functor with overloaded call operator that works on both vector and scalar values. It also supports the optimization for chained calls. Contrary to the ``PHYPP_VECTORIZE()`` macro, ``vectorize_lambda_first()`` can be called in any scope, including inside other functions:
 
 .. code-block:: c++
 
@@ -249,3 +249,126 @@ This is only possible using expression templates, which phy++ does not currently
 Both ``PHYPP_VECTORIZE()`` and ``vectorize_lambda_first()`` will vectorize the function/lambda on the *first* argument only. Other arguments will simply be forwarded to all the calls, so ``foo(v,w)`` will call ``foo(v[i],w)`` for each index ``i`` in ``v``.
 
 If instead you need to call ``foo(v[i],w[i])``, you should use ``vectorize_lambda()``. This is an alternative implementation that will support vector or scalars for *all* its arguments, and will assume that the vectors all have the same size and should be jointly iterated. The downside of this implementation is that the chaining optimization is not available.
+
+
+Output arguments and vectorization
+----------------------------------
+
+In general, the only output of a function must be its return value. Output arguments should only be used when: a) the function must return multiple values, and b) it would be inefficient or impractical to return them by value. As you will see below, properly vectorizing functions with output arguments is possible but a bit nasty, so make sure you really need them before diving in.
+
+The typical example where output arguments are needed is the following function which converts a string to a value of another type (e.g., an integer):
+
+.. code-block:: c++
+
+    template<typename T>
+    bool from_string(const std::string& s, T& v) {
+        std::istringstream ss(s);
+        return ss >> v;
+    }
+
+The function returns a flag to let the user know whether the conversion was successful, and the output value is stored in the argument ``v``, which is a reference. The function is then used as follows:
+
+.. code-block:: c++
+
+    int v;
+    if (from_string("42", v)) {
+        // do whatever with 'v'
+    } else {
+        error("could not convert the string");
+    }
+
+.. note:: In C++17, one may wish to return an ``std::optional<T>`` instead, which would be the optimal solution for the scalar case. However this solution does not vectorize well. Currently, ``vec<D,std::optional<T>>`` is not supported; it may work, but use it at your own risk.
+
+The vectorization of such functions cannot be done with the automatic vectorization tools described above, but it is rather straightforward to do manually:
+
+.. code-block:: c++
+
+    template<std::size_t D, typename U, typename T, typename enable = typename std::enable_if<
+        std::is_same<meta::rtype_t<U>, std::string>::value
+    >::type>
+    vec<D,bool> from_string(const vec<D,U>& s, vec<D,T>& v) {
+        vec<Dim,bool> res(s.dims);
+        v.resize(s.dims);
+        for (uint_t i : range(s)) {
+            res.safe[i] = from_string(s.safe[i], v.safe[i]);
+        }
+
+        return res;
+    }
+
+In this particular case, we use ``std::enable_if<>`` to make sure the input type is a vector of string or a view on such vector. We then return a vector of ``bool`` so the user can check the success of the conversion for each individual value separately. The function is then used as follows:
+
+.. code-block:: c++
+
+    vec1s s = {"5", "-6", "9", "42"};
+
+    vec1i v;
+    vec1b r = from_string(s, v);
+
+    for (uint_t i : range(s)) {
+        if (r[i]) {
+            // do whatever with 'v[i]'
+        } else {
+            error("could not convert the string");
+        }
+    }
+
+The catch here is to support *views* as output arguments. Indeed, one may want to convert only part of a string vector with ``from_string()``, our current implementation fails:
+
+.. code-block:: c++
+
+    vec1s s = {"5", "-6", "9", "42"};
+
+    // We only want to convert values with 2 characters
+    vec1u id = where(length(s) == 2);
+
+    // This does *not* work:
+    vec1i v(s.dims); // resize output vector beforehand
+    vec1b r = from_string(s[id], v[id]);
+
+    // error: 'v[id]' is an r-value, cannot bind it to a reference 'vec<D,T>&'
+
+    // But this works:
+    vec1i v(s.dims); // resize output vector beforehand
+    vec1i tmp;       // create a temporary
+    vec1b r = from_string(s[id], tmp);
+    v[id] = tmp;     // assign temporary values to 'v'
+
+.. note:: This issue also affects IDL. There, it can only be solved by introducing a temporary, as done in the example above. But C++ is smarter, and we can make it work! Read on.
+
+To support this type of usage, we need an argument type that can be either an "l-value" (a reference to a vector) or an "r-value" (a temporary view). This is exactly what the "universal reference" is for: ``T&&``. Unfortunately, this universal reference requires an unconstrained type ``T``. This means we loose all the implicit constraints on the type: it is no longer ``vec<D,T>``, but simply ``T``. Therefore we will have to specify these constraints explicitly using ``std::enable_if<>``. And there are a lot of constraints! We want to make sure:
+
+* that ``T`` is a vector or a view,
+* that the number of dimensions of ``T`` is the same as the input vector of strings,
+* that if ``T`` is an r-value, if must be a non-constant view
+* that if ``T`` is an l-value, it must be a non-constant reference (to a vector or a view),
+
+Since these requirements will be the same for every vectorized function with output parameters, a specific trait is provided in phy++ to express all these constraints: ``meta::is_compatible_output_type<In,Out>``. It is used in the following way:
+
+.. code-block:: c++
+
+    template<std::size_t D, typename U, typename T, typename enable = typename std::enable_if<
+        std::is_same<meta::rtype_t<U>, std::string>::value && // this was there before
+        meta::is_compatible_output_type<vec<D,U>,T>::value    // this is the new trait
+    >::type>
+    vec<D,bool> from_string(const vec<D,U>& s, T&& v) {
+        // ...
+    }
+
+In addition, here we need to differentiate the behavior of the function for the two cases: we want the "vector" version to automatically resize the output vector to the dimensions of the input vector, and the "view" version to simply check that the view has the same dimensions as the input vector. This is expected to be a common behavior for functions with output parameters, so again a helper function is provided in phy++ to do just that: ``meta::resize_or_check(v, d)``. This function resizes the vector ``v`` to the dimensions ``d``, or, if ``v`` is a view, checks that its dimensions match ``d``. The final, fully generic, vectorized function is therefore:
+
+.. code-block:: c++
+
+    template<std::size_t D, typename U, typename T, typename enable = typename std::enable_if<
+        std::is_same<meta::rtype_t<U>, std::string>::value &&
+        meta::is_compatible_output_type<vec<D,U>,T>::value
+    >::type>
+    vec<D,bool> from_string(const vec<D,U>& s, T&& v) {
+        vec<Dim,bool> res(s.dims);
+        meta::resize_or_check(v, s.dims); // here
+        for (uint_t i : range(s)) {
+            res.safe[i] = from_string(s.safe[i], v.safe[i]);
+        }
+
+        return res;
+    }
