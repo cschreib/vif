@@ -1073,6 +1073,25 @@ namespace astro {
         return res;
     }
 
+    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
+    vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec,
+        vec<Dim,TR*> ra, vec<Dim,TD*> dec) {
+
+        phypp_check(sra.size() == sdec.size(), "input RA and Dec dimensions do not match (",
+            sra.dims, " vs ", sdec.dims, ")");
+        phypp_check(ra.size() == dec.size(), "output RA and Dec dimensions do not match (",
+            ra.dims, " vs ", dec.dims, ")");
+        phypp_check(sra.size() == ra.size(), "input and output dimensions do not match (",
+            sra.dims, " vs ", ra.dims, ")");
+
+        vec<Dim,bool> res(sra.dims);
+        for (uint_t i : range(sra)) {
+            res[i] = sex2deg(sra[i], sdec[i], ra[i], dec[i]);
+        }
+
+        return res;
+    }
+
     // Convert a set of degree coordinates into sexagesimal format ('hh:mm:ss.ms')
     inline void deg2sex(double ra, double dec, std::string& sra, std::string& sdec) {
         double signr = sign(ra);
@@ -1123,6 +1142,20 @@ namespace astro {
         }
     }
 
+    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
+    void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, vec<Dim,TSR*> sra, vec<Dim,TSD*> sdec) {
+        phypp_check(ra.size() == dec.size(), "input RA and Dec dimensions do not match (",
+            ra.dims, " vs ", dec.dims, ")");
+        phypp_check(sra.size() == sdec.size(), "output RA and Dec dimensions do not match (",
+            ra.dims, " vs ", dec.dims, ")");
+        phypp_check(ra.size() == sra.size(), "input and output dimensions do not match (",
+            ra.dims, " vs ", sra.dims, ")");
+
+        for (uint_t i : range(ra)) {
+            deg2sex(ra[i], dec[i], sra[i], sdec[i]);
+        }
+    }
+
     template<std::size_t Dim, typename TR, typename TD>
     void print_radec(const std::string& file, const vec<Dim,TR>& ra, const vec<Dim,TD>& dec) {
         std::ofstream f(file);
@@ -1150,7 +1183,8 @@ namespace astro {
     }
 
     template<typename Cat>
-    bool get_band(const vec1s& bands, const vec1s& notes, const std::string& band, const std::string& note_, uint_t& bid) {
+    bool get_band(const vec1s& bands, const vec1s& notes, const std::string& band,
+        const std::string& note_, uint_t& bid) {
         vec1u id = where(regex_match(bands, band) && regex_match(notes, note_));
         if (id.empty()) {
             error("no band matching '"+band+"' & '"+note_+"'");
