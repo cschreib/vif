@@ -35,7 +35,6 @@ namespace meta {
     >::type;
 }
 
-    // Helper to check if a given type is a generic vector.
 namespace impl {
     namespace meta_impl {
         template<typename T>
@@ -43,10 +42,17 @@ namespace impl {
 
         template<std::size_t Dim, typename Type>
         struct is_vec_<vec<Dim,Type>> : public std::true_type {};
+
+        template<typename T>
+        struct vec_dim_ : std::integral_constant<std::size_t,0> {};
+
+        template<std::size_t Dim, typename T>
+        struct vec_dim_<vec<Dim,T>> : std::integral_constant<std::size_t,Dim> {};
     }
 }
 
 namespace meta {
+    // Helper to check if a given type is a generic vector.
     template<typename T>
     using is_vec = impl::meta_impl::is_vec_<typename std::decay<T>::type>;
 
@@ -66,10 +72,7 @@ namespace meta {
 
     // Return the dimension of a vector
     template<typename T>
-    struct vec_dim;
-
-    template<std::size_t Dim, typename T>
-    struct vec_dim<vec<Dim,T>> : std::integral_constant<std::size_t,Dim> {};
+    struct vec_dim : impl::meta_impl::vec_dim_<typename std::decay<T>::type> {};
 
     // Helper to match a type to the corresponding vector internal type.
     template<typename T>
@@ -242,6 +245,38 @@ namespace impl {
         set_array_(v, meta::cte_t<0>{}, std::forward<Args>(args)...);
     }
 } // end namespace impl
+
+namespace meta {
+    // Trait to identify output types: vec<D,T>& or vec<D,T*>
+    template<typename T>
+    struct is_output_type : std::integral_constant<bool,
+        !std::is_const<typename std::remove_reference<T>::type>::value &&
+        std::is_reference<T>::value> {};
+
+    template<std::size_t D, typename T>
+    struct is_output_type<vec<D,T>> : std::integral_constant<bool,
+        !std::is_const<typename std::remove_pointer<T>::type>::value &&
+        std::is_pointer<T>::value> {};
+
+    // Trait to identify output types compatible with input type
+    template<typename I, typename O>
+    struct is_compatible_output_type : std::integral_constant<bool,
+        is_output_type<O>::value && is_vec<I>::value == is_vec<O>::value &&
+        vec_dim<I>::value == vec_dim<O>::value> {};
+
+    // Resize vectors to provided dimensions, or check views have the right dimensions
+    template<std::size_t Dim1, typename T, std::size_t Dim2>
+    void resize_or_check(const vec<Dim1,T*>& s, const std::array<uint_t,Dim2>& dims) {
+        phypp_check(s.dims == dims, "incompatible dimensions for view (expected ", dims, ", "
+            "got ", s.dims);
+    }
+
+    template<std::size_t Dim, typename T,
+        typename enable = typename std::enable_if<!std::is_pointer<T>::value>::type>
+    void resize_or_check(vec<Dim,T>& s, const std::array<uint_t,Dim>& dims) {
+        s.resize(dims);
+    }
+} // end namespace meta
 
 namespace impl {
 namespace meta_impl {

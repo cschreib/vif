@@ -98,26 +98,12 @@ namespace phypp {
 
     template<std::size_t Dim, typename T, typename O,
     typename enable = typename std::enable_if<
-        std::is_same<meta::rtype_t<T>, std::string>::value
+        std::is_same<meta::rtype_t<T>, std::string>::value &&
+        meta::is_compatible_output_type<vec<Dim,T>,O>::value
     >::type>
-    vec<Dim,bool> from_string(const vec<Dim,T>& s, vec<Dim,O>& t) {
+    vec<Dim,bool> from_string(const vec<Dim,T>& s, O&& t) {
         vec<Dim,bool> res(s.dims);
-        t.resize(s.dims);
-        for (uint_t i : range(s)) {
-            res.safe[i] = from_string(s.safe[i], t.safe[i]);
-        }
-
-        return res;
-    }
-
-    template<std::size_t Dim, typename T, typename O,
-    typename enable = typename std::enable_if<
-        std::is_same<meta::rtype_t<T>, std::string>::value
-    >::type>
-    vec<Dim,bool> from_string(const vec<Dim,T>& s, vec<Dim,O*> t) {
-        vec<Dim,bool> res(s.dims);
-        phypp_check(s.dims == t.dims, "incompatible dimensions between source and destination (",
-            s.dims, " vs. ", t.dims, ")");
+        meta::resize_or_check(t, s.dims);
         for (uint_t i : range(s)) {
             res.safe[i] = from_string(s.safe[i], t.safe[i]);
         }

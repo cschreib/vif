@@ -1056,34 +1056,16 @@ namespace astro {
         return true;
     }
 
-    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-    vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec,
-        vec<Dim,TR>& ra, vec<Dim,TD>& dec) {
-
+    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD,
+        typename enable = typename std::enable_if<
+            meta::is_compatible_output_type<vec<Dim,TSR>,TR>::value &&
+            meta::is_compatible_output_type<vec<Dim,TSD>,TD>::value>::type>
+    vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec, TR&& ra, TD&& dec) {
         phypp_check(sra.size() == sdec.size(), "RA and Dec dimensions do not match (",
             sra.dims, " vs ", sdec.dims, ")");
 
-        ra.resize(sra.dims);
-        dec.resize(sra.dims);
-        vec<Dim,bool> res(sra.dims);
-        for (uint_t i : range(sra)) {
-            res[i] = sex2deg(sra[i], sdec[i], ra[i], dec[i]);
-        }
-
-        return res;
-    }
-
-    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-    vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec,
-        vec<Dim,TR*> ra, vec<Dim,TD*> dec) {
-
-        phypp_check(sra.size() == sdec.size(), "input RA and Dec dimensions do not match (",
-            sra.dims, " vs ", sdec.dims, ")");
-        phypp_check(ra.size() == dec.size(), "output RA and Dec dimensions do not match (",
-            ra.dims, " vs ", dec.dims, ")");
-        phypp_check(sra.size() == ra.size(), "input and output dimensions do not match (",
-            sra.dims, " vs ", ra.dims, ")");
-
+        meta::resize_or_check(ra, sra.dims);
+        meta::resize_or_check(dec, sra.dims);
         vec<Dim,bool> res(sra.dims);
         for (uint_t i : range(sra)) {
             res[i] = sex2deg(sra[i], sdec[i], ra[i], dec[i]);
@@ -1130,27 +1112,16 @@ namespace astro {
         sdec = strn(dech)+':'+align_right(strn(decm),2,'0')+':'+format_sec(decs);
     }
 
-    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-    void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, vec<Dim,TSR>& sra, vec<Dim,TSD>& sdec) {
+    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD,
+        typename enable = typename std::enable_if<
+            meta::is_compatible_output_type<vec<Dim,TR>,TSR>::value &&
+            meta::is_compatible_output_type<vec<Dim,TR>,TSD>::value>::type>
+    void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, TSR&& sra, TSD&& sdec) {
         phypp_check(ra.size() == dec.size(), "RA and Dec dimensions do not match (",
             ra.dims, " vs ", dec.dims, ")");
 
-        sra.resize(ra.dims);
-        sdec.resize(ra.dims);
-        for (uint_t i : range(ra)) {
-            deg2sex(ra[i], dec[i], sra[i], sdec[i]);
-        }
-    }
-
-    template<std::size_t Dim, typename TSR, typename TSD, typename TR, typename TD>
-    void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, vec<Dim,TSR*> sra, vec<Dim,TSD*> sdec) {
-        phypp_check(ra.size() == dec.size(), "input RA and Dec dimensions do not match (",
-            ra.dims, " vs ", dec.dims, ")");
-        phypp_check(sra.size() == sdec.size(), "output RA and Dec dimensions do not match (",
-            ra.dims, " vs ", dec.dims, ")");
-        phypp_check(ra.size() == sra.size(), "input and output dimensions do not match (",
-            ra.dims, " vs ", sra.dims, ")");
-
+        meta::resize_or_check(sra, ra.dims);
+        meta::resize_or_check(sdec, ra.dims);
         for (uint_t i : range(ra)) {
             deg2sex(ra[i], dec[i], sra[i], sdec[i]);
         }
