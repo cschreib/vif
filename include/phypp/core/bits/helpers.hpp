@@ -247,6 +247,21 @@ namespace impl {
 } // end namespace impl
 
 namespace meta {
+    // Get the dimensions of a vector or scalar
+    template<std::size_t Dim, typename T>
+    vec1u dims(const vec<Dim,T>& v) {
+        vec1u d(Dim);
+        for (uint_t i : range(Dim)) {
+            d.safe[i] = v.dims[i];
+        }
+        return d;
+    }
+
+    template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
+    vec1u dims(const T& t) {
+        return {1u};
+    }
+
     // Trait to identify output types: vec<D,T>& or vec<D,T*>
     template<typename T>
     struct is_output_type : std::integral_constant<bool,

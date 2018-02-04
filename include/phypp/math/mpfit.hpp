@@ -878,9 +878,9 @@ namespace phypp {
         bool bad = !same_dims_or_scalar(x, y, ye);
         if (bad) {
             phypp_check(same_dims_or_scalar(x, y), "incompatible dimensions between X and Y arrays "
-                "("+strn(dim(x))+" vs. "+strn(dim(y))+")");
+                "(", meta::dims(x), " vs. ", meta::dims(y), ")");
             phypp_check(same_dims_or_scalar(x, ye), "incompatible dimensions between X and YE arrays "
-                "("+strn(dim(x))+" vs. "+strn(dim(ye))+")");
+                "(", meta::dims(x), " vs. ", meta::dims(ye), ")");
         }
 
         return mpfit([&](const vec1d& p) {

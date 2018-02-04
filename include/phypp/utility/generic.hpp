@@ -41,21 +41,6 @@ namespace phypp {
         return impl::indgen_<uint_t>(std::forward<Dims>(ds)...);
     }
 
-    // Get the dimensions of a vector
-    template<std::size_t Dim, typename T>
-    vec1u dim(const vec<Dim,T>& v) {
-        vec1u d = uintarr(Dim);
-        for (uint_t i = 0; i < Dim; ++i) {
-            d.safe[i] = v.dims[i];
-        }
-        return d;
-    }
-
-    template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-    vec1u dim(const T& t) {
-        return {1u};
-    }
-
     // Get multi-dim IDs from a flat ID
     template<std::size_t D>
     vec1u mult_ids(const std::array<uint_t,D>& dims, uint_t i) {

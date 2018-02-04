@@ -101,7 +101,7 @@ namespace phypp {
         template<typename TY, typename U, typename ... Args>
         void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
             phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
-                i, " (", dim(y), " vs. ", dim(t), ")");
+                i, " (", meta::dims(y), " vs. ", meta::dims(t), ")");
             linfit_error_dims_(y, i+1, args...);
         }
     }
@@ -111,7 +111,7 @@ namespace phypp {
         bool bad = !same_dims_or_scalar(y, ye, args...);
         if (bad) {
             phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
-                "YE arrays (", dim(y), " vs. ", dim(ye), ")");
+                "YE arrays (", meta::dims(y), " vs. ", meta::dims(ye), ")");
             impl::linfit_error_dims_(y, 0, args...);
         }
 
