@@ -637,7 +637,7 @@ namespace astro {
     };
 
     id_pair xmatch_clean_best(const qxmatch_res& r) {
-        const uint_t ngal = dim(r.id)[1];
+        const uint_t ngal = r.id.dims[1];
 
         id_pair c;
         c.id1.data.reserve(ngal);
