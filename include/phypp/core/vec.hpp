@@ -551,15 +551,16 @@ namespace phypp {
                 phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                     "' (", dims, " vs ", u.dims, ")"); \
                 if (u.view_same(*this)) { \
-                    std::vector<dtype> t; t.resize(data.size()); \
-                    for (uint_t i = 0; i < data.size(); ++i) { \
+                    std::vector<dtype> t; \
+                    t.resize(data.size()); \
+                    for (uint_t i : range(data)) { \
                         t[i] = u.safe[i]; \
                     } \
-                    for (uint_t i = 0; i < data.size(); ++i) { \
+                    for (uint_t i : range(data)) { \
                         data[i] op t[i]; \
                     } \
                 } else { \
-                    for (uint_t i = 0; i < data.size(); ++i) { \
+                    for (uint_t i : range(data)) { \
                         data[i] op u.safe[i]; \
                     } \
                 } \
@@ -1114,6 +1115,10 @@ namespace phypp {
                 } \
                 return *this; \
             }
+
+        // Notes on implementation above:
+        //  - For vector operator, need to check for aliasing and act accordingly
+        //  - For scalar operator, need to take *by value* to avoid aliasing
 
         OPERATOR(*=)
         OPERATOR(/=)

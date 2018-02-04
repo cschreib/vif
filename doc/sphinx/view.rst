@@ -147,7 +147,16 @@ There is no difference between these two cases: "a constant view on non-constant
 Aliasing
 --------
 
-Because views hold references to existing data, there is the possibility of *aliasing*, where the same data is read and modified in the same expression:
+The implementation of vectors and views in phy++ is such that aliasing *never* occurs in vectorized operations. More precisely, any assignment of the form ``x = y`` (or ``x += y``, etc.) occurs *as if* executed in the following order:
+
+1. ``y`` (the right-hand-side) is evaluated,
+2. the values of ``y`` are copied in a temporary vector,
+3. ``x`` (the left-hand-side) is evaluated,
+4. the values of the temporary vector are assigned to the elements of ``x``.
+
+In practice, the creation of the temporary vector (step 2) may be dropped for optimization purposes, but only in cases where it would not change the outcome of the operation, that is, when aliasing is guaranteed not to occur. The following illustrates when aliasing *could* occur, and describes in practice how it is avoided in phy++.
+
+Because views hold *references* to existing data, there is the possibility of the same data being read and modified in the same expression. This is, essentially, what is called "aliasing":
 
 .. code-block:: c++
 
@@ -157,4 +166,36 @@ Because views hold references to existing data, there is the possibility of *ali
 
 This can create confusing situations, like the above, where it matters in which *order* the operations are performed. These situations are identified using a check, made prior to every assignment between a vector and view, a view and a vector, or two views. Each view carries a pointer to the original vector: if this pointer matches the vector involved in the assignment (or the pointer of the other view), then aliasing is detected. In such cases, the data on the *right* side of the equal sign is copied to a temporary vector, which is then assigned to the data on the *left* side of the equal sign. In all other cases, aliasing is ignored and no temporary is created to avoid the performance hit.
 
-So, the example above first creates a copy of ``v``, then assigns it to itself following the order in the view. The vector then contains the values ``{4, 1, 2, 3}``, as one would expect if the data on the right side of the equal sign originated from another vector. If aliasing had not been detected, one possible outcome would have been ``{1, 1, 1, 1}``, as the vector's values would have been modified before being read.
+So, the example above first creates a copy of ``v``, then assigns it to itself following the order in the view. The vector then contains the values ``{4, 1, 2, 3}``, as one would expect if the data on the right side of the equal sign originated from another vector. If aliasing had not been detected, one possible outcome would have been ``{1, 1, 1, 1}``, as some of the vector's values would have been modified *before* being read.
+
+A similar problem can arise without views:
+
+.. code-block:: c++
+
+    vec1i v = {1,2,3,4};
+    v += v[0]; // what happens here?
+
+Possible outcomes are ``{2,3,4,5}`` if ``v[0]`` is treated as the *value* ``1``, or ``{2,4,5,6}`` if ``v[0]`` is treated as the *reference* to the first element of ``v``, leading to aliasing. To avoid the latter, assigning operators such as ``+=`` always take scalar arguments by value. The outcome will therefore be ``{2,3,4,5}``.
+
+This means that the above codes are *not* identical to their equivalent with explicit loops:
+
+.. code-block:: c++
+
+    vec1i v = {1,2,3,4};
+    vec1u id = {1,2,3,0};
+
+    for (uint_t i : range(v)) {
+        v[id[i]] = v[i];
+    }
+
+    // v = {1,1,1,1}, aliasing *did* occur
+
+    v = {1,2,3,4};
+
+    for (uint_t i : range(v)) {
+        v[i] += v[0];
+    }
+
+    // v = {2,4,5,6}, aliasing *did* occur
+
+While this may cause confusion, experience has shown that aliasing is more often an unwanted nuisance than a feature. Furthermore, with the explicit loop it is immediately apparent that ``v[i]``, ``v[id[i]]``, or ``v[0]`` will be re-evaluated on each iteration, therefore that the corresponding value may change.

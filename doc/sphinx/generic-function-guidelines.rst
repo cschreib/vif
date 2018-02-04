@@ -28,6 +28,10 @@ In C++, such generic functions are written using *template metaprogramming*:
 
 .. note:: This example uses the ``print()`` function from the phy++ support library, which simply displays its arguments on the terminal.
 
+
+Summary of guidelines
+---------------------
+
 The functions we use as examples here can be somewhat silly, but they will serve to illustrate a number of important "rules" which one should follow when writing generic functions. These rules are explained in detail below, and can be summarized as follows:
 
 * Use the most specific type possible for the function arguments (e.g., ``vec<1,T>`` instead of just ``T``).
