@@ -440,3 +440,15 @@ This traits only checks the last two conditions of ``meta::is_compatible_output_
 
 * that if ``T`` is an r-value, it must be a non-constant view,
 * that if ``T`` is an l-value, it must be a non-constant reference (to a vector or a view).
+
+
+Creating views
+--------------
+
+TODO
+
+
+Metaprogramming helpers
+-----------------------
+
+TODO

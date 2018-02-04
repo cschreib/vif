@@ -29,30 +29,30 @@ Below is a code sample written in phy++ that illustrates the most basic function
 .. _core-library:
 
 .. toctree::
-   :maxdepth: 2
-   :caption: The core library
+    :maxdepth: 2
+    :caption: The core library
 
-   overview
-   vector
-   indexing
-   view
-   generic-function-guidelines
+    overview
+    vector
+    indexing
+    view
+    generic-function-guidelines
 
 .. _support-library:
 
 .. toctree::
-   :maxdepth: 2
-   :caption: The support library
+    :maxdepth: 2
+    :caption: The support library
 
-   generic
-   idl
-   argv
-   string
-   os
-   io
-   print
-   time
-   math
-   thread
-   image
-   astro
+    generic
+    idl
+    argv
+    string
+    os
+    io
+    print
+    time
+    math
+    thread
+    image
+    astro
