@@ -177,29 +177,6 @@ namespace phypp {
         return size == 0 || impl::same_dims_or_scalar_(size, args...);
     }
 
-    template<std::size_t Dim, typename T>
-    auto element(const vec<Dim,T>& v) -> decltype(v.safe[0]) {
-        phypp_check(!v.empty(), "cannot get element of empty array");
-        return v.safe[0];
-    }
-
-    template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-    T& element(T& v) {
-        return v;
-    }
-
-    template<typename T>
-    auto first(const vec<1,T>& v) -> decltype(v.safe[0]) {
-        phypp_check(!v.empty(), "cannot get first element of empty array");
-        return v.safe[0];
-    }
-
-    template<typename T>
-    auto last(const vec<1,T>& v) -> decltype(v.safe[0]) {
-        phypp_check(!v.empty(), "cannot get last element of empty array");
-        return v.safe[v.data.size()-1];
-    }
-
     // Return the indices of the vector where the value is 'true'.
     template<std::size_t Dim, typename Type, typename enable =
         typename std::enable_if<std::is_same<meta::rtype_t<Type>,bool>::value>::type>
