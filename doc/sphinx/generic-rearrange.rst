@@ -40,9 +40,13 @@ reform
     template<std::size_t Dim, typename Type, typename ... Args>
     vec</*...*/,Type> reform(vec<Dim,Type>&& v, Args&& ... args); // [2]
 
-This function transforms a vector into another vector, simply changing its dimensions. The content in memory remains exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary ([2]), this function is extremely cheap as it produces no copy. However, the new dimensions have to sum up to the same number of elements as that in the provided vector. The ``flatten`` function is a special case of ``reform`` where all dimension are reformed into one, resulting in a 1D vector.
+This function transforms a vector into another vector, simply changing its dimensions. The content in memory remains exactly the same, so the operation is fast. In particular, if the argument of this function is a temporary ([2]), this function is extremely cheap as it produces no copy. However, the new dimensions have to sum up to the same number of elements as that in the provided vector. The ``flatten()`` function is a special case of ``reform()`` where all dimension are reformed into one, resulting in a 1D vector.
 
-The provided argument ``v`` is unchanged ([1]).
+The provided argument ``v`` is unchanged in [1], but not [2]. The number of dimensions of the resulting vector depends on the types ``Args`` of the arguments:
+
+* The starting dimension is ``0``.
+* Each argument of type ``uint_t`` increases the final dimension by one.
+* Each argument of type ``std::array<uint_t,D>`` increases the final dimension by ``D``.
 
 **Example:**
 
