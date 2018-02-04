@@ -734,7 +734,7 @@ namespace phypp {
     // Returns 'npos' if no value satisfy this criterium.
     // Note: assumes that 'v' is sorted and does not contain NaN values.
     template<typename T, std::size_t Dim, typename Type>
-    uint_t lower_bound(T x, const vec<Dim,Type>& v) {
+    uint_t lower_bound(const vec<Dim,Type>& v, T x) {
         if (v.empty()) return npos;
 
         auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
@@ -751,7 +751,7 @@ namespace phypp {
     // Returns 'npos' if no value satisfy this criterium.
     // Note: assumes that 'v' is sorted and does not contain NaN values.
     template<typename T, std::size_t Dim, typename Type>
-    uint_t upper_bound(T x, const vec<Dim,Type>& v) {
+    uint_t upper_bound(const vec<Dim,Type>& v, T x) {
         if (v.empty()) return npos;
 
         auto iter = std::upper_bound(v.data.begin(), v.data.end(), x,
@@ -768,7 +768,7 @@ namespace phypp {
     // the position of the first value in 'v' that is greater than 'x'.
     // Note: assumes that 'v' is sorted and does not contain NaN values.
     template<typename T, std::size_t Dim, typename Type>
-    std::array<uint_t,2> bounds(T x, const vec<Dim,Type>& v) {
+    std::array<uint_t,2> bounds(const vec<Dim,Type>& v, T x) {
         std::array<uint_t,2> res;
 
         if (v.empty()) {
@@ -799,7 +799,7 @@ namespace phypp {
     //  1) 'v' is sorted and does not contain NaN values,
     //  2) 'x2' is greater than or equal to 'x1'.
     template<typename T, typename U, std::size_t Dim, typename Type>
-    std::array<uint_t,2> bounds(T x1, U x2, const vec<Dim,Type>& v) {
+    std::array<uint_t,2> bounds(const vec<Dim,Type>& v, T x1, U x2) {
         std::array<uint_t,2> res;
 
         if (v.empty()) {
@@ -831,7 +831,7 @@ namespace phypp {
     // Return the indices of all the values in the array that are equal to 'x'.
     // Note: assumes that 'v' is sorted and does not contain NaN values.
     template<typename T, std::size_t Dim, typename Type>
-    vec1u equal_range(T x, const vec<Dim,Type>& v) {
+    vec1u equal_range(const vec<Dim,Type>& v, T x) {
         auto res = std::equal_range(v.data.begin(), v.data.end(), x,
             typename vec<Dim,Type>::comparator_less());
 
