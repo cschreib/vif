@@ -1,7 +1,7 @@
 Finding elements
 ================
 
-In ``phypp/utility/generic.hpp``.
+Defined in header ``<phypp/utility/generic.hpp>``.
 
 where, where_first, where_last
 ------------------------------
@@ -9,13 +9,13 @@ where, where_first, where_last
 .. code-block:: c++
 
     template<std::size_t Dim, typename Type>
-    vec1u where(const vec<Dim,Type>& v); // 1
+    vec1u where(const vec<Dim,Type>& v); // [1]
 
     template<std::size_t Dim, typename Type>
-    uint_t where_first(const vec<Dim,Type>& v); // 2
+    uint_t where_first(const vec<Dim,Type>& v); // [2]
 
     template<std::size_t Dim, typename Type>
-    uint_t where_last(const vec<Dim,Type>& v); // 3
+    uint_t where_last(const vec<Dim,Type>& v); // [3]
 
 
 complement
@@ -54,22 +54,22 @@ unique_ids, unique_values
 .. code-block:: c++
 
     template<std::size_t Dim, typename Type>
-    vec1u unique_ids(const vec<Dim,Type>& v); // 1
+    vec1u unique_ids(const vec<Dim,Type>& v); // [1]
 
     template<std::size_t Dim, typename Type>
-    vec1u unique_ids(const vec<Dim,Type>& v, const vec1u& sid); // 2
+    vec1u unique_ids(const vec<Dim,Type>& v, const vec1u& sid); // [2]
 
     template<std::size_t Dim, typename Type>
-    vec1u unique_ids_sorted(const vec<Dim,Type>& v); // 3
+    vec1u unique_ids_sorted(const vec<Dim,Type>& v); // [3]
 
     template<std::size_t Dim, typename Type>
-    vec<1,meta::rtype_t<Type>> unique_values(const vec<Dim,Type>& v); // 4
+    vec<1,meta::rtype_t<Type>> unique_values(const vec<Dim,Type>& v); // [4]
 
     template<std::size_t Dim, typename Type>
-    vec<1,meta::rtype_t<Type>> unique_values(const vec<Dim,Type>& v, const vec1u& sid); // 5
+    vec<1,meta::rtype_t<Type>> unique_values(const vec<Dim,Type>& v, const vec1u& sid); // [5]
 
     template<std::size_t Dim, typename Type>
-    vec<1,meta::rtype_t<Type>> unique_values_sorted(const vec<Dim,Type>& v); // 6
+    vec<1,meta::rtype_t<Type>> unique_values_sorted(const vec<Dim,Type>& v); // [6]
 
 
 is_any_of
@@ -78,10 +78,10 @@ is_any_of
 .. code-block:: c++
 
     template<typename Type1, std::size_t Dim2, typename Type2>
-    bool is_any_of(const Type1& v1, const vec<Dim2,Type2>& v2); // 1
+    bool is_any_of(const Type1& v1, const vec<Dim2,Type2>& v2); // [1]
 
     template<std::size_t Dim1, typename Type1, std::size_t Dim2 = Dim1, typename Type2>
-    vec<Dim1,bool> is_any_of(const vec<Dim1,Type1>& v1, const vec<Dim2,Type2>& v2); // 2
+    vec<Dim1,bool> is_any_of(const vec<Dim1,Type1>& v1, const vec<Dim2,Type2>& v2); // [2]
 
 
 bounds, lower_bound, upper_bound
@@ -90,16 +90,16 @@ bounds, lower_bound, upper_bound
 .. code-block:: c++
 
     template<typename T, std::size_t Dim, typename Type>
-    uint_t lower_bound(const vec<Dim,Type>& v, T x); // 1
+    uint_t lower_bound(const vec<Dim,Type>& v, T x); // [1]
 
     template<typename T, std::size_t Dim, typename Type>
-    uint_t upper_bound(const vec<Dim,Type>& v, T x); // 2
+    uint_t upper_bound(const vec<Dim,Type>& v, T x); // [2]
 
     template<typename T, std::size_t Dim, typename Type>
-    std::array<uint_t,2> bounds(const vec<Dim,Type>& v, T x); // 3
+    std::array<uint_t,2> bounds(const vec<Dim,Type>& v, T x); // [3]
 
     template<typename T, typename U, std::size_t Dim, typename Type>
-    std::array<uint_t,2> bounds(const vec<Dim,Type>& v, T x1, U x2); // 4
+    std::array<uint_t,2> bounds(const vec<Dim,Type>& v, T x1, U x2); // [4]
 
 
 equal_range

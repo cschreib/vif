@@ -1,7 +1,7 @@
 Error checking
 ==============
 
-In ``phypp/core/error.hpp``.
+Defined in header ``<phypp/core/error.hpp>``.
 
 phypp_check
 -----------

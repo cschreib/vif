@@ -44,6 +44,7 @@ Below is a code sample written in phy++ that illustrates the most basic function
     :maxdepth: 2
     :caption: The support library
 
+    support-intro
     generic
     idl
     argv
