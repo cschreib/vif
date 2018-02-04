@@ -249,16 +249,12 @@ namespace impl {
 namespace meta {
     // Get the dimensions of a vector or scalar
     template<std::size_t Dim, typename T>
-    vec1u dims(const vec<Dim,T>& v) {
-        vec1u d(Dim);
-        for (uint_t i : range(Dim)) {
-            d.safe[i] = v.dims[i];
-        }
-        return d;
+    std::array<uint_t,Dim> dims(const vec<Dim,T>& v) {
+        return v.dims;
     }
 
     template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-    vec1u dims(const T& t) {
+    std::array<uint_t,1> dims(const T& t) {
         return {1u};
     }
 
@@ -283,8 +279,10 @@ namespace meta {
     bool same_size(const T& v1, const U& v2, const Args& ... args) {
         return n_elements(v1) && n_elements(v2) && same_size(v1, args...);
     }
+}
 
-    namespace impl {
+namespace impl {
+    namespace meta_impl {
         inline bool same_dims_or_scalar_(uint_t size) {
             return true;
         }
@@ -318,11 +316,13 @@ namespace meta {
             return same_dims_or_scalar_get_size_(args...);
         }
     }
+}
 
+namespace meta {
     template<typename ... Args>
     bool same_dims_or_scalar(const Args& ... args) {
-        uint_t size = impl::same_dims_or_scalar_get_size_(args...);
-        return size == 0 || impl::same_dims_or_scalar_(size, args...);
+        uint_t size = impl::meta_impl::same_dims_or_scalar_get_size_(args...);
+        return size == 0 || impl::meta_impl::same_dims_or_scalar_(size, args...);
     }
 
     // Trait to identify output types: vec<D,T>& or vec<D,T*>
