@@ -251,7 +251,7 @@ This function just traverses the whole input vector and checks if its elements a
     vec1i v = {1,5,6,3,7};
     is_sorted(v); // false
     inplace_sort(v);
-    v; // {1,3,5,6,7}
+    // v = {1,3,5,6,7}
     is_sorted(v); // true
 
 
@@ -317,4 +317,4 @@ The first argument ``v`` cannot be a view. The values in ``ids`` are checked to 
 
     // [2]
     inplace_remove(v, {1,3});
-    v; // {4,2,1}
+    // v = {4,2,1}
