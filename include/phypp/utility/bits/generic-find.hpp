@@ -248,78 +248,72 @@ namespace phypp {
         }
     }
 
-    // Return a new vector containing only the values that are found in common in v1 and v2.
-    // Each value will be returned once. Values are returned sorted.
+    // Returns a new vector containing only the values that are found in common in v1 and v2.
+    // Values are returned sorted, duplicates are preserved. Assumes that input vectors
+    // are sorted.
     template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
-    auto intersection_set(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) -> vec<1,decltype(v1[0]*v2[0])> {
+    auto set_intersection_sorted(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
+        vec<1,decltype(v1[0]*v2[0])> {
+
         vec<1,decltype(v1[0]*v2[0])> ret;
 
-        vec1u ids1 = unique_ids(v1);
-        vec1u ids2 = unique_ids(v2);
-        uint_t n1 = ids1.size();
-        uint_t n2 = ids2.size();
-        uint_t n = std::min(n1, n2);
-        ret.data.reserve(n);
+        std::set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(),
+            std::back_inserter(ret.data), typename vec<D1,Type1>::comparator_less()
+        );
 
-        uint_t i1 = 0, i2 = 0;
-        while (i1 < n1 && i2 < n2) {
-            auto tv1 = v1.safe[ids1.safe[i1]];
-            auto tv2 = v2.safe[ids2.safe[i2]];
-            if (tv1 < tv2) {
-                ++i1;
-            } else if (tv1 > tv2) {
-                ++i2;
-            } else {
-                ret.push_back(tv1);
-                ++i1; ++i2;
-            }
-        }
+        ret.dims[0] = ret.data.size();
 
-        ret.data.shrink_to_fit();
         return ret;
     }
 
-    // Return a new vector containing the values from v1 and v2, excluding duplicates.
-    // Each value will therefore only be returned once. Values are returned sorted.
-    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
-    auto union_set(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) -> vec<1,decltype(v1[0]*v2[0])> {
-        vec<1,decltype(v1[0]*v2[0])> ret;
-
-        vec1u ids1 = unique_ids(v1);
-        vec1u ids2 = unique_ids(v2);
-        uint_t n1 = ids1.size();
-        uint_t n2 = ids2.size();
-        uint_t n = std::min(n1, n2);
-        ret.data.reserve(n);
-
-        uint_t i1 = 0, i2 = 0;
-        while (i1 < n1 || i2 < n2) {
-            if (i2 == n2) {
-                ret.push_back(v1.safe[ids1.safe[i1]]);
-                ++i1;
-            } else if (i1 == n1) {
-                ret.push_back(v2.safe[ids2.safe[i2]]);
-                ++i2;
-            } else {
-                auto tv1 = v1.safe[ids1.safe[i1]];
-                auto tv2 = v2.safe[ids2.safe[i2]];
-                if (tv1 < tv2) {
-                    ret.push_back(tv1);
-                    ++i1;
-                } else if (tv1 > tv2) {
-                    ret.push_back(tv2);
-                    ++i2;
-                } else {
-                    ret.push_back(tv1);
-                    ++i1; ++i2;
-                }
-            }
+    namespace impl {
+        template<std::size_t D, typename T>
+        vec<D,T> make_sorted_(vec<D,T> v) {
+            inplace_sort(v);
+            return std::move(v);
         }
 
-        ret.data.shrink_to_fit();
+        template<std::size_t D, typename T>
+        vec<D,meta::rtype_t<T>> make_sorted_(vec<D,T*> v) {
+            auto tv = v.concretize();
+            inplace_sort(tv);
+            return std::move(tv);
+        }
+    }
+
+    // Same as set_intersection_sorted() but without the assumption of sorted input.
+    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
+    auto set_intersection(vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
+        vec<1,decltype(v1[0]*v2[0])> {
+
+        return set_intersection_sorted(impl::make_sorted_(v1), impl::make_sorted_(v2));
+    }
+
+    // Returns a new vector containing the values from v1 and v2, with values found in both
+    // vectors merged into one. Values are returned sorted, duplicates are preserved.
+    // Assumes that input vectors are sorted.
+    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
+    auto set_union_sorted(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
+        vec<1,decltype(v1[0]*v2[0])> {
+
+        vec<1,decltype(v1[0]*v2[0])> ret;
+
+        std::set_union(v1.begin(), v1.end(), v2.begin(), v2.end(),
+            std::back_inserter(ret.data), typename vec<D1,Type1>::comparator_less()
+        );
+
+        ret.dims[0] = ret.data.size();
+
         return ret;
     }
 
+    // Same as set_intersection_sorted() but without the assumption of sorted input.
+    template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
+    auto set_union(vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
+        vec<1,decltype(v1[0]*v2[0])> {
+
+        return set_union_sorted(impl::make_sorted_(v1), impl::make_sorted_(v2));
+    }
 
     // Returns the position of the last value in the array that is less than or equal to 'x'.
     // Returns 'npos' if no value satisfy this criterium.
