@@ -81,7 +81,7 @@ shift, inplace_shift
     template<typename Type>
     void inplace_shift(vec<1,Type>& v, int_t n); // [2]
 
-``shift()`` returns a copy of the provided vector ``v`` where the elements are moved by circular shift of ``n`` elements. If ``n`` is positive, elements that would go beyond the bounds of the vector after the shift are moved to the beginning, with their order preserved. If ``n`` is negative, elements that would go beyond the beginning of the vector are placed at the end, with their order preserved. This function calls ``std::rotate()``. The original vector is unchanged. Only works with 1D vectors or views.
+``shift()`` ([1]) returns a copy of the provided vector ``v`` where the elements are moved by circular shift of ``n`` elements. If ``n`` is positive, elements that would go beyond the bounds of the vector after the shift are moved to the beginning, with their order preserved. If ``n`` is negative, elements that would go beyond the beginning of the vector are placed at the end, with their order preserved. This function calls ``std::rotate()``. The original vector is unchanged. Only works with 1D vectors or views.
 
 ``inplace_shift()`` ([2]) performs the same operation as ``shift()`` but operates directly on the provided vector, which is therefore modified, but no copy is made so the operation is faster.
 
@@ -136,7 +136,7 @@ The number of dimensions of the resulting vector depends on the types ``Args`` o
 
 * The starting dimension is ``0`` ([1]) or ``Dim`` ([2]).
 * Each argument of type ``uint_t`` increases the final dimension by one.
-* Each argument of type `̀ std::array<uint_t,D>`` increases the final dimension by ``D``.
+* Each argument of type ``std::array<uint_t,D>`` increases the final dimension by ``D``.
 
 **Example:**
 
@@ -214,7 +214,7 @@ In [2] and [4], the comparator function ``comp(x,y)`` must return ``true`` if ``
     });
 
     // (v1+v2)[id] = {2.5,4,4,5,6,nan}
-    // v1[id]      = {2,1,3,5,6,4}
+    // v1[id]      = {2.0,1,3,5,6,4}
     // v2[id]      = {0.5,3,1,0,0,nan}
 
     // Sort first by 'v2', then 'v1'
@@ -229,7 +229,7 @@ In [2] and [4], the comparator function ``comp(x,y)`` must return ``true`` if ``
         }
     });
 
-    // v1[id] = {5,6,2,3,1,4}
+    // v1[id] = {5,6,2.0,3,1,4}
     // v2[id] = {0,0,0.5,1,3,nan}
 
 
