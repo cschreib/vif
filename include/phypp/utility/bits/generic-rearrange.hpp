@@ -9,7 +9,8 @@ namespace phypp {
         return v;
     }
 
-    template<typename Type>
+    template<typename Type,
+        typename enable = typename std::enable_if<!std::is_pointer<Type>::value>::type>
     void inplace_shift(vec<1,Type>& v, int_t n) {
         n = (-n) % int_t(v.size());
         if (n < 0) n = int_t(v.size())+n;
@@ -19,13 +20,15 @@ namespace phypp {
         }
     }
 
-    template<typename Type>
+    template<typename Type,
+        typename enable = typename std::enable_if<!std::is_pointer<Type>::value>::type>
     vec<1,Type> shift(vec<1,Type> v, int_t n) {
         inplace_shift(v, n);
         return v;
     }
 
-    template<typename Type>
+    template<typename Type,
+        typename enable = typename std::enable_if<!std::is_pointer<Type>::value>::type>
     vec<2,Type> transpose(const vec<2,Type>& v) {
         vec<2,Type> r(impl::vec_nocopy_tag, v);
         std::swap(r.dims[0], r.dims[1]);
@@ -112,7 +115,8 @@ namespace phypp {
         return true;
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type,
+        typename enable = typename std::enable_if<!std::is_pointer<Type>::value>::type>
     void inplace_remove(vec<Dim,Type>& v, vec1u ids) {
         inplace_sort(ids);
 
@@ -143,14 +147,15 @@ namespace phypp {
         v.dims[0] -= ids.size();
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type,
+        typename enable = typename std::enable_if<!std::is_pointer<Type>::value>::type>
     vec<Dim,Type> remove(vec<Dim,Type> v, const vec1u& ids) {
         inplace_remove(v, ids);
         return v;
     }
 
     template<std::size_t N, std::size_t Dim, typename Type1, typename Type2 = Type1,
-        typename enable = typename std::enable_if<(N < Dim)>::type>
+        typename enable = typename std::enable_if<(N < Dim) && !std::is_pointer<Type1>::value>::type>
     void append(vec<Dim,Type1>& t1, const vec<Dim,Type2>& t2) {
         if (t1.empty()) {
             t1 = t2;
@@ -173,7 +178,7 @@ namespace phypp {
     }
 
     template<std::size_t N, std::size_t Dim, typename Type1, typename Type2 = Type1,
-        typename enable = typename std::enable_if<(N < Dim)>::type>
+        typename enable = typename std::enable_if<(N < Dim) && !std::is_pointer<Type1>::value>::type>
     void prepend(vec<Dim,Type1>& t1, const vec<Dim,Type2>& t2) {
         if (t1.empty()) {
             t1 = t2;
@@ -195,13 +200,15 @@ namespace phypp {
         t1(repeat<N>(_), n2+uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
     }
 
-    template<typename Type1, typename Type2 = Type1>
+    template<typename Type1, typename Type2 = Type1,
+        typename enable = typename std::enable_if<!std::is_pointer<Type1>::value>::type>
     void append(vec<1,Type1>& t1, const vec<1,Type2>& t2) {
         t1.data.insert(t1.data.end(), t2.begin(), t2.end());
         t1.dims[0] += t2.dims[0];
     }
 
-    template<typename Type1, typename Type2 = Type1>
+    template<typename Type1, typename Type2 = Type1,
+        typename enable = typename std::enable_if<!std::is_pointer<Type1>::value>::type>
     void prepend(vec<1,Type1>& t1, const vec<1,Type2>& t2) {
         t1.data.insert(t1.data.begin(), t2.begin(), t2.end());
         t1.dims[0] += t2.dims[0];
