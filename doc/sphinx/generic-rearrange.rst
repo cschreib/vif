@@ -1,5 +1,5 @@
-Rearranging elements
-====================
+Rearranging elements and dimensions
+===================================
 
 Defined in header ``<phypp/utility/generic.hpp>``.
 

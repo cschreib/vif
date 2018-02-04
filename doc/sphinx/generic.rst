@@ -16,5 +16,4 @@ We now describe the functions provided by this module, sorted by categories.
     generic-sequence
     generic-rearrange
     generic-find
-    generic-dims
     generic-error
