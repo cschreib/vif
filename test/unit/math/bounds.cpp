@@ -5,9 +5,9 @@ int main(int argc, char* argv[]) {
     vec1i v;
 
     auto get_and_check = [&]() {
-        auto res = bounds(4, 7, v);
-        check(res[0], lower_bound(4, v));
-        check(res[1], upper_bound(7, v));
+        auto res = bounds(v, 4, 7);
+        check(res[0], lower_bound(v, 4));
+        check(res[1], upper_bound(v, 7));
         return res;
     };
 

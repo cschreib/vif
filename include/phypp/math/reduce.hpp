@@ -697,8 +697,8 @@ namespace phypp {
         phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
         phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
 
-        uint_t i0 = upper_bound(x0, x);
-        uint_t i1 = lower_bound(x1, x);
+        uint_t i0 = upper_bound(x, x0);
+        uint_t i1 = lower_bound(x, x1);
 
         if (i0 > i1) {
             return 0.5*(y.safe[i1]+y.safe[i0])*(x1 - x0);
@@ -733,8 +733,8 @@ namespace phypp {
 
         phypp_check(x.safe[0] <= x0 && x.safe[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
 
-        uint_t i0 = upper_bound(x0, x(0,_));
-        uint_t i1 = lower_bound(x1, x(0,_));
+        uint_t i0 = upper_bound(x(0,_), x0);
+        uint_t i1 = lower_bound(x(0,_), x1);
 
         if (i0 > i1) {
             return y.safe[i1]*(x1 - x0);
@@ -764,7 +764,7 @@ namespace phypp {
         uint_t i0, i1;
         if (ihint == npos) {
             // No hint provided, look for solution the best way we can
-            i0 = upper_bound(x0, x);
+            i0 = upper_bound(x, x0);
             if (i0 == npos) {
                 i1 = x.size()-1;
             } else {

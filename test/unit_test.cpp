@@ -991,24 +991,24 @@ int phypp_main(int argc, char* argv[]) {
 
         i = findgen(10);
 
-        check(lower_bound(0.5, i) == 0, "1");
-        check(upper_bound(0.5, i) == 1, "1");
+        check(lower_bound(i, 0.5) == 0, "1");
+        check(upper_bound(i, 0.5) == 1, "1");
 
-        check(lower_bound(-0.1, i) == npos, "1");
-        check(lower_bound(0.0, i) == 0, "1");
-        check(lower_bound(0.1, i) == 0, "1");
+        check(lower_bound(i, -0.1) == npos, "1");
+        check(lower_bound(i, 0.0) == 0, "1");
+        check(lower_bound(i, 0.1) == 0, "1");
 
-        check(upper_bound(-0.1, i) == 0, "1");
-        check(upper_bound(0.0, i) == 1, "1");
-        check(upper_bound(0.1, i) == 1, "1");
+        check(upper_bound(i, -0.1) == 0, "1");
+        check(upper_bound(i, 0.0) == 1, "1");
+        check(upper_bound(i, 0.1) == 1, "1");
 
-        check(lower_bound(8.9, i) == 8, "1");
-        check(lower_bound(9.0, i) == 9, "1");
-        check(lower_bound(9.1, i) == 9, "1");
+        check(lower_bound(i, 8.9) == 8, "1");
+        check(lower_bound(i, 9.0) == 9, "1");
+        check(lower_bound(i, 9.1) == 9, "1");
 
-        check(upper_bound(8.9, i) == 9, "1");
-        check(upper_bound(9.0, i) == npos, "1");
-        check(upper_bound(9.1, i) == npos, "1");
+        check(upper_bound(i, 8.9) == 9, "1");
+        check(upper_bound(i, 9.0) == npos, "1");
+        check(upper_bound(i, 9.1) == npos, "1");
     }
 
     {

@@ -38,7 +38,7 @@ namespace phypp {
         uint_t nmax = x.size();
         vec<DX,decltype(y[0]*x[0])> r; r.reserve(nx.size());
         for (auto& tx : nx) {
-            uint_t low = lower_bound(tx, x);
+            uint_t low = lower_bound(x, tx);
 
             rtypey ylow, yup;
             rtypex xlow, xup;
@@ -80,7 +80,7 @@ namespace phypp {
         phypp_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
 
         uint_t nmax = x.size();
-        uint_t low = lower_bound(nx, x);
+        uint_t low = lower_bound(x, nx);
 
         rtypey ylow, yup;
         rtypex xlow, xup;
@@ -123,7 +123,7 @@ namespace phypp {
         p.first.reserve(nx.size());
         p.second.reserve(nx.size());
         for (auto& tx : nx) {
-            uint_t low = lower_bound(tx, x);
+            uint_t low = lower_bound(x, tx);
 
             rtypey ylow, yup;
             rtypee elow, eup;
@@ -316,7 +316,7 @@ namespace phypp {
         b[n] = b[n-1] + 2*c[n-1]*(x[n]-x[n-1]) + 3*d[n-1]*sqr(x[n]-x[n-1]);
 
         for (uint_t i : range(xn)) {
-            uint_t k = lower_bound(xn.safe[i], x);
+            uint_t k = lower_bound(x, xn.safe[i]);
             if (k == npos) {
                 double th = xn[i] - x[0];
                 yn[i] = y[0] + b[0]*th;

@@ -1294,7 +1294,7 @@ namespace astro {
     double sed2flux(const vec<1,TypeFL>& flam, const vec<1,TypeFR>& fres,
         const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
 
-        uint_t ised = lower_bound(flam.safe[0], lam);
+        uint_t ised = lower_bound(lam, flam.safe[0]);
         if (ised == npos) return dnan;
         uint_t ifil = 0;
 
@@ -1364,8 +1364,8 @@ namespace astro {
     // The return value is in the same units as the input SED, i.e. most likely Lsun.
     template<typename TL, typename TS>
     double sed_luminosity(const vec<1,TL>& lam, const vec<1,TS>& sed, double l0, double l1) {
-        uint_t s = lower_bound(l0, lam);
-        uint_t e = upper_bound(l1, lam);
+        uint_t s = lower_bound(lam, l0);
+        uint_t e = upper_bound(lam, l1);
         if (s == npos || e == npos) return dnan;
 
         return integrate(lam[s-_-e], sed[s-_-e]/lam[s-_-e]);

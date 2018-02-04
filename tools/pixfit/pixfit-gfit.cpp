@@ -215,7 +215,7 @@ int phypp_main(int argc, char* argv[]) {
     vec1u itdust;
     if (!tdust_range.empty()) {
         uint_t onsed = libs[0].tdust.size();
-        auto b = bounds(tdust_range[0], tdust_range[1], libs[0].tdust);
+        auto b = bounds(libs[0].tdust, tdust_range[0], tdust_range[1]);
         if (b[0] == npos) {
             warning("the IR library only goes as low as Tdust=", min(libs[0].tdust));
             b[0] = 0;
@@ -482,7 +482,7 @@ int phypp_main(int argc, char* argv[]) {
         vec2d tconvp(tnfit,nband);
 
         for (uint_t i : range(tnfit)) {
-            auto ised = bounds(tdust[i], libs[0].tdust);
+            auto ised = bounds(libs[0].tdust, tdust[i]);
             double x = 0.0;
             if (ised[0] == npos) {
                 ised[0] = ised[1];
