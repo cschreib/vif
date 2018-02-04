@@ -2,9 +2,26 @@
 #error this file is not meant to be included separately, include "phypp/utilty/generic.hpp" instead
 #endif
 
-namespace phypp {template<typename Type>
+namespace phypp {
+    template<typename Type>
     vec<1,Type> reverse(vec<1,Type> v) {
         std::reverse(v.data.begin(), v.data.end());
+        return v;
+    }
+
+    template<typename Type>
+    void inplace_shift(vec<1,Type>& v, int_t n) {
+        n = (-n) % int_t(v.size());
+        if (n < 0) n = int_t(v.size())+n;
+
+        if (n != 0) {
+            std::rotate(v.data.begin(), v.data.begin() + n, v.end());
+        }
+    }
+
+    template<typename Type>
+    vec<1,Type> shift(vec<1,Type> v, int_t n) {
+        inplace_shift(v, n);
         return v;
     }
 
@@ -98,6 +115,7 @@ namespace phypp {template<typename Type>
     template<std::size_t Dim, typename Type>
     void inplace_remove(vec<Dim,Type>& v, vec1u ids) {
         inplace_sort(ids);
+
         uint_t i = 0;
         uint_t pitch = v.pitch(0);
         uint_t osize = v.size();
@@ -187,21 +205,5 @@ namespace phypp {template<typename Type>
     void prepend(vec<1,Type1>& t1, const vec<1,Type2>& t2) {
         t1.data.insert(t1.data.begin(), t2.begin(), t2.end());
         t1.dims[0] += t2.dims[0];
-    }
-
-    template<typename Type>
-    void inplace_shift(vec<1,Type>& v, int_t n) {
-        n = (-n) % int_t(v.size());
-        if (n < 0) n = int_t(v.size())+n;
-
-        if (n != 0) {
-            std::rotate(v.data.begin(), v.data.begin() + n, v.end());
-        }
-    }
-
-    template<typename Type>
-    vec<1,Type> shift(vec<1,Type> v, int_t n) {
-        inplace_shift(v, n);
-        return v;
     }
 }
