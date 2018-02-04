@@ -100,7 +100,7 @@ namespace phypp {
 
         template<typename TY, typename U, typename ... Args>
         void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
-            phypp_check(same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
+            phypp_check(meta::same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
                 i, " (", meta::dims(y), " vs. ", meta::dims(t), ")");
             linfit_error_dims_(y, i+1, args...);
         }
@@ -108,15 +108,15 @@ namespace phypp {
 
     template<typename TypeY, typename TypeE, typename ... Args>
     linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
-        bool bad = !same_dims_or_scalar(y, ye, args...);
+        bool bad = !meta::same_dims_or_scalar(y, ye, args...);
         if (bad) {
-            phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
+            phypp_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
                 "YE arrays (", meta::dims(y), " vs. ", meta::dims(ye), ")");
             impl::linfit_error_dims_(y, 0, args...);
         }
 
         uint_t np = sizeof...(Args);
-        uint_t nm = n_elements(y);
+        uint_t nm = meta::size(y);
 
         vec2d cache(np,nm);
         impl::linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
@@ -233,7 +233,7 @@ namespace phypp {
         template<typename ... Args>
         linfit_batch_t(const TypeE& e, Args&&... args) : ye(e) {
             uint_t np = sizeof...(Args);
-            uint_t nm = n_elements(ye);
+            uint_t nm = meta::size(ye);
 
             cache.resize(np,nm);
             impl::linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
@@ -245,7 +245,7 @@ namespace phypp {
         template<typename TypeX>
         linfit_batch_t(pack_tag, const TypeE& e, const TypeX& x) : ye(e) {
             uint_t np = x.dims[0];
-            uint_t nm = n_elements(ye);
+            uint_t nm = meta::size(ye);
 
             cache.resize(np,nm);
             for (uint_t i : range(np))
@@ -275,8 +275,8 @@ namespace phypp {
 
         template<typename TypeY>
         void fit_nochi2(const TypeY& y) {
-            phypp_check(same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
-                "YE arrays (", dim(y), " vs. ", dim(ye), ")");
+            phypp_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
+                "YE arrays (", meta::dims(y), " vs. ", meta::dims(ye), ")");
 
             if (!fr.success) return;
 

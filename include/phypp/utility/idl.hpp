@@ -47,14 +47,9 @@ namespace phypp {
     }
 
     // Count the total number of elements in a vector.
-    template<std::size_t Dim, typename T>
-    uint_t n_elements(const vec<Dim,T>& v) {
-        return v.data.size();
-    }
-
-    template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-    uint_t n_elements(const T& v) {
-        return 1;
+    template<typename T>
+    uint_t n_elements(T&& v) {
+        return meta::size(std::forward<T>(v));
     }
 }
 

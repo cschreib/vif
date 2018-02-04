@@ -875,11 +875,11 @@ namespace phypp {
     mpfit_result mpfitfun(const TY& y, const TYE& ye, const TX& x, F&& model,
         const vec1d& params, const mpfit_options& options = mpfit_options()) {
 
-        bool bad = !same_dims_or_scalar(x, y, ye);
+        bool bad = !meta::same_dims_or_scalar(x, y, ye);
         if (bad) {
-            phypp_check(same_dims_or_scalar(x, y), "incompatible dimensions between X and Y arrays "
+            phypp_check(meta::same_dims_or_scalar(x, y), "incompatible dimensions between X and Y arrays "
                 "(", meta::dims(x), " vs. ", meta::dims(y), ")");
-            phypp_check(same_dims_or_scalar(x, ye), "incompatible dimensions between X and YE arrays "
+            phypp_check(meta::same_dims_or_scalar(x, ye), "incompatible dimensions between X and YE arrays "
                 "(", meta::dims(x), " vs. ", meta::dims(ye), ")");
         }
 

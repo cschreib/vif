@@ -125,58 +125,6 @@ namespace phypp {
         return flat_id(v.dims, ids);
     }
 
-
-    template<typename T, typename U, typename ... Args>
-    bool same_size(const T& v1, const U& v2) {
-        return n_elements(v1) && n_elements(v2);
-    }
-
-    template<typename T, typename U, typename ... Args>
-    bool same_size(const T& v1, const U& v2, const Args& ... args) {
-        return n_elements(v1) && n_elements(v2) && same_size(v1, args...);
-    }
-
-    namespace impl {
-        inline bool same_dims_or_scalar_(uint_t size) {
-            return true;
-        }
-
-        template<std::size_t Dim, typename T, typename ... Args>
-        bool same_dims_or_scalar_(uint_t size, const vec<Dim,T>& v1, const Args& ... args);
-
-        template<typename T, typename ... Args,
-            typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-        bool same_dims_or_scalar_(uint_t size, const T& v1, const Args& ... args) {
-            return same_dims_or_scalar_(size, args...);
-        }
-
-        template<std::size_t Dim, typename T, typename ... Args>
-        bool same_dims_or_scalar_(uint_t size, const vec<Dim,T>& v1, const Args& ... args) {
-            return v1.size() == size && same_dims_or_scalar_(size, args...);
-        }
-
-        inline uint_t same_dims_or_scalar_get_size_() {
-            return 0u;
-        }
-
-        template<std::size_t Dim, typename T, typename ... Args>
-        uint_t same_dims_or_scalar_get_size_(const vec<Dim,T>& v1, const Args& ... args) {
-            return v1.size();
-        }
-
-        template<typename T, typename ... Args,
-            typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-        uint_t same_dims_or_scalar_get_size_(const T& v1, const Args& ... args) {
-            return same_dims_or_scalar_get_size_(args...);
-        }
-    }
-
-    template<typename ... Args>
-    bool same_dims_or_scalar(const Args& ... args) {
-        uint_t size = impl::same_dims_or_scalar_get_size_(args...);
-        return size == 0 || impl::same_dims_or_scalar_(size, args...);
-    }
-
     // Return the indices of the vector where the value is 'true'.
     template<std::size_t Dim, typename Type, typename enable =
         typename std::enable_if<std::is_same<meta::rtype_t<Type>,bool>::value>::type>

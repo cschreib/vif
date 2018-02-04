@@ -262,6 +262,69 @@ namespace meta {
         return {1u};
     }
 
+    // Count the total number of elements in a vector.or scalar
+    template<std::size_t Dim, typename T>
+    uint_t size(const vec<Dim,T>& v) {
+        return v.size();
+    }
+
+    template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
+    uint_t size(const T& v) {
+        return 1;
+    }
+
+    // Check if all arguments have same size
+    template<typename T, typename U, typename ... Args>
+    bool same_size(const T& v1, const U& v2) {
+        return n_elements(v1) && n_elements(v2);
+    }
+
+    template<typename T, typename U, typename ... Args>
+    bool same_size(const T& v1, const U& v2, const Args& ... args) {
+        return n_elements(v1) && n_elements(v2) && same_size(v1, args...);
+    }
+
+    namespace impl {
+        inline bool same_dims_or_scalar_(uint_t size) {
+            return true;
+        }
+
+        template<std::size_t Dim, typename T, typename ... Args>
+        bool same_dims_or_scalar_(uint_t size, const vec<Dim,T>& v1, const Args& ... args);
+
+        template<typename T, typename ... Args,
+            typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
+        bool same_dims_or_scalar_(uint_t size, const T& v1, const Args& ... args) {
+            return same_dims_or_scalar_(size, args...);
+        }
+
+        template<std::size_t Dim, typename T, typename ... Args>
+        bool same_dims_or_scalar_(uint_t size, const vec<Dim,T>& v1, const Args& ... args) {
+            return v1.size() == size && same_dims_or_scalar_(size, args...);
+        }
+
+        inline uint_t same_dims_or_scalar_get_size_() {
+            return 0u;
+        }
+
+        template<std::size_t Dim, typename T, typename ... Args>
+        uint_t same_dims_or_scalar_get_size_(const vec<Dim,T>& v1, const Args& ... args) {
+            return v1.size();
+        }
+
+        template<typename T, typename ... Args,
+            typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
+        uint_t same_dims_or_scalar_get_size_(const T& v1, const Args& ... args) {
+            return same_dims_or_scalar_get_size_(args...);
+        }
+    }
+
+    template<typename ... Args>
+    bool same_dims_or_scalar(const Args& ... args) {
+        uint_t size = impl::same_dims_or_scalar_get_size_(args...);
+        return size == 0 || impl::same_dims_or_scalar_(size, args...);
+    }
+
     // Trait to identify output types: vec<D,T>& or vec<D,T*>
     template<typename T>
     struct is_output_type : std::integral_constant<bool,
