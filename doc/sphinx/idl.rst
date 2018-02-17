@@ -1,6 +1,43 @@
 IDL equivalents
 ===============
 
+.. raw:: html
+
+   <style>
+   table.docutils {
+       width: 100%;
+       table-layout: fixed;
+       border: none;
+   }
+
+   table.docutils th {
+       text-align: center;
+   }
+
+   table.docutils .line-block {
+       margin-left: 0;
+       margin-bottom: 0;
+   }
+
+   table.docutils code.literal {
+       color: initial;
+   }
+
+   code.docutils {
+       background: initial;
+       border: none;
+   }
+
+   * {
+       border: none;
+   }
+
+   .rst-content table.docutils td {
+       border-bottom: none;
+       border-left: none;
+   }
+   </style>
+
 The interface of phy++ was designed to facilitate the migration from IDL, an interpreted language that, wile dated, is still commonly used in astronomy. Although IDL as a language suffers from a number of design issues, there is much good in its interface and API that one may wish to emulate in C++. But not all of it.
 
 This page lists common language constructs in IDL and their C++ equivalent with phy++. The following table is inspired from the `xtensor documentation <https://xtensor.readthedocs.io/en/latest/numpy.html>`_.
@@ -117,6 +154,6 @@ Finding values
 |             IDL                                |               C++ 11 - phy++                   |
 +================================================+================================================+
 | | ``v = [1,2,3,4,5]``                          | | ``vec1f v = {1,2,3,4,5};``                   |
-| | ``id = where(v gt 3, cnt)``                  | | ``id = where(v > 3);``                       |
+| | ``id = where(v gt 3, cnt)``                  | | ``vec1u id = where(v > 3);``                 |
 | | ``if cnt ne 0 then v[id] = 0``               | | ``v[id] = 0;``                               |
 +------------------------------------------------+------------------------------------------------+
