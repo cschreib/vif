@@ -23,12 +23,12 @@ IDL equivalents
        color: initial;
    }
 
-   code.docutils {
+   table.docutils code.docutils {
        background: initial;
        border: none;
    }
 
-   * {
+   table.docutils * {
        border: none;
    }
 
