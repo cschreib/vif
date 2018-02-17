@@ -42,99 +42,58 @@ The interface of phy++ was designed to facilitate the migration from IDL, an int
 
 This page lists common language constructs in IDL and their C++ equivalent with phy++. The following table is inspired from the `xtensor documentation <https://xtensor.readthedocs.io/en/latest/numpy.html>`_.
 
-Main differences to keep in mind
---------------------------------
+Crucial differences to always keep in mind
+------------------------------------------
 
+* C++ statements must end with a semicolon ``;``. Line breaks are treated as white spaces.
 * C++ is a statically typed language: a variable, once created, can never change its type.
+* C++ variables must be *declared* before being used, and are destroyed automatically once the program exits the scope in which the variables were declared.
 * C++ is a row-major language, IDL is a column-major language: for the same layout in memory (or on the disk), the dimensions of a vector in C++ are reversed compared to IDL. In particular, an image is accessed as ``img[x,y]`` in IDL, and ``img(y,x)`` in C++.
 * C++ is case-sensitive, so ``a`` and ``A`` are different objects. Keywords and functions in C++ are always lowercase by convention.
-* C++'s loops *much* faster than IDL's, so there is no need to avoid them.
+
+
+Other notable differences
+-------------------------
+
+* C++ does not have a mechanism for finding where a function's code is based only on its name. If you put the function in a different file (a "header"), you must ``#include "..."`` this header explicitly in all other files that use this function.
 * C++ has no procedures, but functions are allowed to have no return values.
+* phy++ vectors can be empty, while IDL vectors cannot. It is possible to do operations with an empty vector (which have no cost and do nothing) if all the other vectors involved, if any, are also empty.
+* C++ loops are *much* faster than in IDL, so there is no need to avoid them except to make the code shorter and more readable.
 * C++ does not support keywords for functions, only normal arguments. A structure with named member values can be used instead.
-* phy++ vectors can be empty, while IDL vectors cannot. An empty vector has zero elements, and it is possible to do operations with an empty vector (which have no cost and do nothing) if all the other vectors involved, if any, are also empty.
+* C++ does not have an equivalent for IDL's ``common`` variables (shared between functions), but you can use ``static`` to declare variables that survive between different calls to the same function. They just cannot be shared with another function.
 
 
-Creating, accessing, modifying vectors
---------------------------------------
-
-+------------------------------------------------+------------------------------------------------+
-|             IDL                                |               C++ 11 - phy++                   |
-+================================================+================================================+
-| | ``v = fltarr(10)``                           | | ``vec1f v(10);``                             |
-| | ``v = fltarr(20)``                           | | ``v.resize(20);``                            |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(5)``                            | | ``vec1i v(10);``                             |
-| | ``d = double(v)``                            | | ``vec1d d = v;``                             |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(5)``                            | No equivalent. Types in C++ are *static*,      |
-| | ``v = double(v)``                            | cannot change ``int`` to ``double``.           |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(6)``                            | | ``vec1i v(6);``                              |
-| | ``d = reform(v, 3, 2)``                      | | ``vec2i d = reform(v, 2, 3);``               |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(2, 3)``                         | | ``vec2i v(3, 2);``                           |
-| | ``v = reform(v, 3, 2)``                      | | ``v = reform(v, 2, 3);``                     |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(6)``                            | No equivalent. The number of dimensions of a   |
-| | ``v = reform(v, 3, 2)``                      | vector is part of its type, and cannot change. |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = [1,2,5,7]``                            | | ``vec1i v = {1,2,5,7};``                     |
-| | ``v = [1,2,3]``                              | | ``v = {1,2,3};``                             |
-+------------------------------------------------+------------------------------------------------+
-| ``n_elements(v)``                              | ``v.size();``                                  |
-+------------------------------------------------+------------------------------------------------+
-| ``v = dindgen(5)``                             | ``vec1d v = dindgen(5);``                      |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = indgen(2,3)``                          | | ``vec2i v = indgen(3,2);``                   |
-| | ``v[0] = 1``                                 | | ``v[0] = 1;``                                |
-| | ``v[0,2] = 2``                               | | ``v(2,0) = 2;``                              |
-| | ``v[0,*] = [2,5,6]``                         | | ``v(_,0) = {2,5,6};``                        |
-| | ``v[0,*:1] = [5,6]``                         | | ``v(_-1,0) = {5,6};``                        |
-| | ``v[0,1:*] = [5,6]``                         | | ``v(1-_,0) = {5,6};``                        |
-| | ``v[0,1:2] = [5,6]``                         | | ``v(1-_-2,0) = {5,6};``                      |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(5)``                            | | ``vec1i v(5);``                              |
-| | ``w = intarr(5)``                            | | ``vec1i w(5);``                              |
-| | ``id = [1,3,4]``                             | | ``vec1u id = {1,3,4};``                      |
-| | ``v[id] = 1``                                | | ``v[id] = 1;``                               |
-| | ``v[id] = [-1,0,1]``                         | | ``v[id] = {-1,0,1};``                        |
-| | ``w[id] = v[id]``                            | | ``w[id] = v[id];``                           |
-+------------------------------------------------+------------------------------------------------+
-| | ``v = intarr(5)``                            | | ``vec1i v(5);``                              |
-| | ``v[0] = [1,2]`` (optimized assignment)      | | ``v[0-_-1] = {1,2};`` (need explicit range)  |
-+------------------------------------------------+------------------------------------------------+
-
-
-Vector operations
------------------
+Basics
+------
 
 +------------------------------------------------+------------------------------------------------+
 |             IDL                                |               C++ 11 - phy++                   |
 +================================================+================================================+
-| | ``v = indgen(5)``                            | | ``vec1i v = indgen(5);``                     |
-| | ``w = indgen(5)``                            | | ``vec1i w = indgen(5);``                     |
-| |                                              | | ``vec1i x;``                                 |
-| | ``x = v + w``                                | | ``x = v + w;``                               |
-| | ``x = v - w``                                | | ``x = v - w;``                               |
-| | ``x = v * w``                                | | ``x = v * w;``                               |
-| | ``x = v / w``                                | | ``x = v / w;``                               |
-| | ``x = v ^ w``                                | | ``x = pow(v, w);``                           |
-| | ``x = v mod w``                              | | ``x = v % w;``                               |
-| | ``x = v gt w``                               | | ``x = v > w;``                               |
-| | ``x = v ge w``                               | | ``x = v >= w;``                              |
-| | ``x = v lt w``                               | | ``x = v < w;``                               |
-| | ``x = v le w``                               | | ``x = v <= w;``                              |
-| | ``x = v and w``                              | | ``x = v && w;``                              |
-| | ``x = v or w``                               | | ``x = v || w;``                              |
-| | ``x = v > w``                                | | ``x = max(v, w);``                           |
-| | ``x = v < w``                                | | ``x = min(v, w);``                           |
+| ``; a comment``                                | ``// a comment``                               |
 +------------------------------------------------+------------------------------------------------+
-| | ``v = indgen(5,5)+1``                        | | ``vec2i v = indgen(5,5)+1;``                 |
-| | ``w = indgen(5,5)+0``                        | | ``vec2i w = indgen(5,5)+0;``                 |
-| | ``x = v # w``                                | | ``vec2i x = matrix::product(w, v);``         |
+| | ``a = 1``                                    | | ``int_t a = 1;``                             |
+| | ``s = 'foo'``                                | | ``std::string s = "foo";                     |
 +------------------------------------------------+------------------------------------------------+
-| ``x = v ## w``                                 | No direct equivalent. Do the operation         |
-|                                                | explicitly with indices in a loop.             |
+| | ``v1 = 1 & v2 = 'bar'``                      | | ``int_t v1 = 1; std::string v2 = "bar";``    |
++------------------------------------------------+------------------------------------------------+
+| | ``v = 1 + $``                                | | ``int_t v = 1 +``                            |
+| | ``    2 + 3``                                | | ``          2 + 3;``                         |
++------------------------------------------------+------------------------------------------------+
+| | ``a = 5``                                    | | ``int_t a = 5;``                             |
+| | ``print, 'a=', a``                           | | ``print("a=", a);``                          |
++------------------------------------------------+------------------------------------------------+
+| ``print, a, format='(F5.3)'``                  | No equivalent with ``print()``,                |
+|                                                | use ``std::cout`` or other formatting library. |
++------------------------------------------------+------------------------------------------------+
+| ``stop``                                       | No equivalent. C++ programs either run or      |
+|                                                | crash, but they cannot be stopped and resumed. |
++------------------------------------------------+------------------------------------------------+
+| ``r = execute('a = b')``                       | No equivalent.                                 |
++------------------------------------------------+------------------------------------------------+
+| ``a = 1``                                      | ``{``                                          |
+| ``delvar, a``                                  | ``int_t a = 1;``                               |
+|                                                | ``}``                                          |
+| ``; 'a' no longer exist``                      | ``// 'a' no longer exist``                     |
 +------------------------------------------------+------------------------------------------------+
 
 
@@ -186,6 +145,91 @@ Control flow
 | | ``case i of``                                | | No direct equivalent. Use ``switch()`` and   |
 | | ``// ...``                                   | | be sure to call ``break;`` at the end of     |
 | | ``endcase``                                  | | each case.                                   |
++------------------------------------------------+------------------------------------------------+
+
+
+Creating, accessing, modifying vectors
+--------------------------------------
+
++------------------------------------------------+------------------------------------------------+
+|             IDL                                |               C++ 11 - phy++                   |
++================================================+================================================+
+| | ``v = fltarr(10)``                           | | ``vec1f v(10);``                             |
+| | ``v = fltarr(20)``                           | | ``v.resize(20);``                            |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(5)``                            | | ``vec1i v(10);``                             |
+| | ``d = double(v)``                            | | ``vec1d d = v;``                             |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(5)``                            | No equivalent. Types in C++ are *static*,      |
+| | ``v = double(v)``                            | cannot change ``int`` to ``double``.           |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(6)``                            | | ``vec1i v(6);``                              |
+| | ``d = reform(v, 3, 2)``                      | | ``vec2i d = reform(v, 2, 3);``               |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(2, 3)``                         | | ``vec2i v(3, 2);``                           |
+| | ``v = reform(v, 3, 2)``                      | | ``v = reform(v, 2, 3);``                     |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(6)``                            | No equivalent. The number of dimensions of a   |
+| | ``v = reform(v, 3, 2)``                      | vector is part of its type, and cannot change. |
++------------------------------------------------+------------------------------------------------+
+| | ``v = [1,2,5,7]``                            | | ``vec1i v = {1,2,5,7};``                     |
+| | ``v = [1,2,3]``                              | | ``v = {1,2,3};``                             |
++------------------------------------------------+------------------------------------------------+
+| ``n_elements(v)``                              | ``v.size();``                                  |
++------------------------------------------------+------------------------------------------------+
+| ``v = dindgen(5)``                             | ``vec1d v = dindgen(5);``                      |
++------------------------------------------------+------------------------------------------------+
+| | ``v = indgen(2,3)``                          | | ``vec2i v = indgen(3,2);``                   |
+| | ``v[0] = 1``                                 | | ``v[0] = 1;``                                |
+| | ``v[0,2] = 2``                               | | ``v(2,0) = 2;``                              |
+| | ``v[0,*] = [2,5,6]``                         | | ``v(_,0) = {2,5,6};``                        |
+| | ``v[0,*:1] = [5,6]``                         | | ``v(_-1,0) = {5,6};``                        |
+| | ``v[0,1:*] = [5,6]``                         | | ``v(1-_,0) = {5,6};``                        |
+| | ``v[0,1:2] = [5,6]``                         | | ``v(1-_-2,0) = {5,6};``                      |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(5)``                            | | ``vec1i v(5);``                              |
+| | ``w = intarr(5)``                            | | ``vec1i w(5);``                              |
+| | ``id = [1,3,4]``                             | | ``vec1u id = {1,3,4};``                      |
+| | ``v[id] = 1``                                | | ``v[id] = 1;``                               |
+| | ``v[id] = [-1,0,1]``                         | | ``v[id] = {-1,0,1};``                        |
+| | ``w[id] = v[id]``                            | | ``w[id] = v[id];``                           |
++------------------------------------------------+------------------------------------------------+
+| | ``v = intarr(5)``                            | | ``vec1i v(5);``                              |
+| | ``v[0] = [1,2]`` (optimized assignment)      | | ``v[0-_-1] = {1,2};`` (need explicit range)  |
++------------------------------------------------+------------------------------------------------+
+| ``v = temporary(v) + 1``                       | ``v = std::move(v) + 1;``                      |
++------------------------------------------------+------------------------------------------------+
+
+Vector operations
+-----------------
+
++------------------------------------------------+------------------------------------------------+
+|             IDL                                |               C++ 11 - phy++                   |
++================================================+================================================+
+| | ``v = indgen(5)``                            | | ``vec1i v = indgen(5);``                     |
+| | ``w = indgen(5)``                            | | ``vec1i w = indgen(5);``                     |
+| |                                              | | ``vec1i x;``                                 |
+| | ``x = v + w``                                | | ``x = v + w;``                               |
+| | ``x = v - w``                                | | ``x = v - w;``                               |
+| | ``x = v * w``                                | | ``x = v * w;``                               |
+| | ``x = v / w``                                | | ``x = v / w;``                               |
+| | ``x = v ^ w``                                | | ``x = pow(v, w);``                           |
+| | ``x = v mod w``                              | | ``x = v % w;``                               |
+| | ``x = v gt w``                               | | ``x = v > w;``                               |
+| | ``x = v ge w``                               | | ``x = v >= w;``                              |
+| | ``x = v lt w``                               | | ``x = v < w;``                               |
+| | ``x = v le w``                               | | ``x = v <= w;``                              |
+| | ``x = v and w``                              | | ``x = v && w;``                              |
+| | ``x = v or w``                               | | ``x = v || w;``                              |
+| | ``x = v > w``                                | | ``x = max(v, w);``                           |
+| | ``x = v < w``                                | | ``x = min(v, w);``                           |
++------------------------------------------------+------------------------------------------------+
+| | ``v = indgen(5,5)+1``                        | | ``vec2i v = indgen(5,5)+1;``                 |
+| | ``w = indgen(5,5)+0``                        | | ``vec2i w = indgen(5,5)+0;``                 |
+| | ``x = v # w``                                | | ``vec2i x = matrix::product(w, v);``         |
++------------------------------------------------+------------------------------------------------+
+| ``x = v ## w``                                 | No direct equivalent. Do the operation         |
+|                                                | explicitly with indices in a loop.             |
 +------------------------------------------------+------------------------------------------------+
 
 
