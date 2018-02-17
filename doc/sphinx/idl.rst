@@ -34,7 +34,7 @@ IDL equivalents
 
    .rst-content table.docutils td {
        border-bottom: none;
-       border-left: none;
+       white-space: normal;
    }
    </style>
 
