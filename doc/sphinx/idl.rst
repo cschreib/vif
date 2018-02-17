@@ -47,6 +47,11 @@ Main differences to keep in mind
 
 * C++ is a statically typed language: a variable, once created, can never change its type.
 * C++ is a row-major language, IDL is a column-major language: for the same layout in memory (or on the disk), the dimensions of a vector in C++ are reversed compared to IDL. In particular, an image is accessed as ``img[x,y]`` in IDL, and ``img(y,x)`` in C++.
+* C++ is case-sensitive, so ``a`` and ``A`` are different objects. Keywords and functions in C++ are always lowercase by convention.
+* C++'s loops *much* faster than IDL's, so there is no need to avoid them.
+* C++ has no procedures, but functions are allowed to have no return values.
+* C++ does not support keywords for functions, only normal arguments. A structure with named member values can be used instead.
+* phy++ vectors can be empty, while IDL vectors cannot. An empty vector has zero elements, and it is possible to do operations with an empty vector (which have no cost and do nothing) if all the other vectors involved, if any, are also empty.
 
 
 Creating, accessing, modifying vectors
@@ -140,10 +145,47 @@ Control flow
 |             IDL                                |               C++ 11 - phy++                   |
 +================================================+================================================+
 | | ``if x lt y then begin``                     | | ``if (x < y) {``                             |
-| | ...                                          | | ...                                          |
+| | ``// ...``                                   | | ``// ...``                                   |
 | | ``endif else begin``                         | | ``} else {``                                 |
-| | ...                                          | | ...                                          |
+| | ``// ...``                                   | | ``// ...``                                   |
 | | ``endelse``                                  | | ``}``                                        |
++------------------------------------------------+------------------------------------------------+
+| | ``for i=0, n-1 do begin``                    | | ``for (uint_t i : range(n)) {``              |
+| | ``// ...``                                   | | ``// ...``                                   |
+| | ``break``                                    | | ``break;``                                   |
+| | ``// ...``                                   | | ``// ...``                                   |
+| | ``continue``                                 | | ``continue;``                                |
+| | ``// ...``                                   | | ``// ...``                                   |
+| | ``endfor``                                   | | ``}``                                        |
++------------------------------------------------+------------------------------------------------+
+| | ``array = ['foo','bar','blob']``             | | ``vec1s array = {"foo","bar","blob"};``      |
+| | ``foreach val, array do begin``              | | ``for (std::string val : array) {``          |
+| | ``// ...``                                   | | ``// ...``                                   |
+| | ``endforeach``                               | | ``}``                                        |
++------------------------------------------------+------------------------------------------------+
+| | ``while a gt b do begin``                    | | ``while (a > b) {``                          |
+| | ``// ...``                                   | | ``// ...``                                   |
+| | ``endfor``                                   | | ``}``                                        |
++------------------------------------------------+------------------------------------------------+
+| | ``repeat begin``                             | | ``do {``                                     |
+| | ``// ...``                                   | | ``// ...``                                   |
+| | ``endrep until a gt b``                      | | ``} while (a > b);``                         |
++------------------------------------------------+------------------------------------------------+
+| | ``switch i of``                              | | ``switch (i) {``                             |
+| | ``1: print, 'one'``                          | | ``case 1: print("one");``                    |
+| | ``2: print, 'two'``                          | | ``case 2: print("two");``                    |
+| | ``3: print, 'three'``                        | | ``case 3: print("three");``                  |
+| | ``4: begin``                                 | | ``case 4:``                                  |
+| | ``    print, 'four'``                        | | ``    print("four");                         |
+| | ``    break``                                | | ``    break;``                               |
+| | ``   end``                                   | |                                              |
+| | ``else: print, 'other'``                     | | ``default: print("other");``                 |
+| | ``endswitch``                                | | ``}``                                        |
+| |                                              | | Note: only works with integers, no strings.  |
++------------------------------------------------+------------------------------------------------+
+| | ``case i of``                                | | No direct equivalent. Use ``switch()`` and   |
+| | ``// ...``                                   | | be sure to call ``break;`` at the end of     |
+| | ``endcase``                                  | | each case.                                   |
 +------------------------------------------------+------------------------------------------------+
 
 
@@ -156,4 +198,6 @@ Finding values
 | | ``v = [1,2,3,4,5]``                          | | ``vec1f v = {1,2,3,4,5};``                   |
 | | ``id = where(v gt 3, cnt)``                  | | ``vec1u id = where(v > 3);``                 |
 | | ``if cnt ne 0 then v[id] = 0``               | | ``v[id] = 0;``                               |
+| |                                              | | Note: empty vectors are allowed in phy++,    |
+| |                                              | | so the check for ``cnt`` is not needed.      |
 +------------------------------------------------+------------------------------------------------+
