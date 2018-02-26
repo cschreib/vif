@@ -154,7 +154,7 @@ namespace phypp {
                 "non-implicitly-convertible types");
 
             if (v.view_same(*this)) {
-                std::vector<dtype> t(v.data.size());
+                std::vector<typename vec<Dim,T>::dtype> t(v.data.size());
                 for (uint_t i : range(v)) {
                     t[i] = v.safe[i];
                 }
@@ -551,7 +551,7 @@ namespace phypp {
                 phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                     "' (", dims, " vs ", u.dims, ")"); \
                 if (u.view_same(*this)) { \
-                    std::vector<dtype> t; \
+                    std::vector<typename vec<Dim,U>::dtype> t; \
                     t.resize(data.size()); \
                     for (uint_t i : range(data)) { \
                         t[i] = u.safe[i]; \
@@ -659,23 +659,22 @@ namespace phypp {
     struct vec<Dim,Type*> {
         using rtype = meta::rtype_t<Type*>;
         using effective_type = vec<Dim,rtype>;
-        using dtype = Type;
-        using drtype = rtype;
-        using vtype = std::vector<dtype*>;
+        using dtype = typename effective_type::dtype;
+        using vtype = std::vector<Type*>;
         using dim_type = std::array<std::size_t, Dim>;
 
         // Comparators
         template<typename Comp>
         struct comparator_base {
-            bool operator() (const dtype* t1, const dtype* t2) {
+            bool operator() (const Type* t1, const Type* t2) {
                 return Comp()(*t1, *t2);
             }
             template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
-            bool operator() (const dtype* t1, const U& t2) {
+            bool operator() (const Type* t1, const U& t2) {
                 return Comp()(*t1, t2);
             }
             template<typename U, typename enable = typename std::enable_if<!std::is_pointer<U>::value>::type>
-            bool operator() (const U& t1, const dtype* t2) {
+            bool operator() (const U& t1, const Type* t2) {
                 return Comp()(t1, *t2);
             }
 
@@ -732,7 +731,7 @@ namespace phypp {
         void assign_(const vec<Dim,T>& v) {
             if (view_same(v)) {
                 // Make a copy to prevent aliasing
-                std::vector<dtype> t(v.data.size());
+                std::vector<typename vec<Dim,T>::dtype> t(v.data.size());
                 for (uint_t i : range(v)) {
                     t[i] = v.safe[i];
                 }
@@ -1093,7 +1092,8 @@ namespace phypp {
                 phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                     "' (", dims, " vs ", u.dims, ")"); \
                 if (u.view_same(*this)) { \
-                    std::vector<dtype> t; t.resize(data.size()); \
+                    std::vector<typename vec<Dim,U>::dtype> t; \
+                    t.resize(data.size()); \
                     for (uint_t i = 0; i < data.size(); ++i) { \
                         t[i] = u.safe[i]; \
                     } \

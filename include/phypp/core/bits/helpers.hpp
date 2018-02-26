@@ -255,7 +255,7 @@ namespace meta {
 
     template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
     std::array<uint_t,1> dims(const T& t) {
-        return {1u};
+        return {{1u}};
     }
 
     // Count the total number of elements in a vector.or scalar
