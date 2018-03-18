@@ -358,6 +358,11 @@ namespace impl {
         void write_table_check_size_(std::size_t& n, std::size_t i, const std::tuple<U,VArgs...>& v,
             const Args& ... args);
 
+        template<typename F, typename ... Args,
+            typename enable = typename std::enable_if<meta::is_format_tag<F>::value>::type>
+        void write_table_check_size_(std::size_t& n, std::size_t i, const F& f,
+            const Args& ... args);
+
         template<std::size_t Dim, typename Type, typename ... Args>
         void write_table_check_size_(std::size_t& n, std::size_t i, const vec<Dim,Type>& v,
             const Args& ... args) {
@@ -388,6 +393,13 @@ namespace impl {
             write_table_check_size_(n, i+sizeof...(VArgs), args...);
         }
 
+        template<typename F, typename ... Args, typename enable>
+        void write_table_check_size_(std::size_t& n, std::size_t i, const F& f,
+            const Args& ... args) {
+
+            write_table_check_size_(n, i, f.obj, args...);
+        }
+
         inline void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j) {
             file << '\n';
@@ -401,29 +413,33 @@ namespace impl {
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const std::tuple<U,VArgs...>& v, const Args& ... args);
 
-        template<typename Type, typename ... Args>
+        template<typename F, typename ... Args,
+            typename enable = typename std::enable_if<meta::is_format_tag<F>::value>::type>
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-            std::size_t i, std::size_t j, const vec<1,Type>& v, const Args& ... args) {
+            std::size_t i, std::size_t j, const F& v, const Args& ... args);
 
-            if (j == 0) {
-                file << std::string(sep.size(), ' ');
-            } else {
-                file << sep;
-            }
+        template<typename Type, typename F, typename ... Args>
+        void write_table_do_impl_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<1,Type>& v, F&& fmt, const Args& ... args) {
+                if (j == 0) {
+                    file << std::string(sep.size(), ' ');
+                } else {
+                    file << sep;
+                }
 
-            std::string s = to_string(v[i]);
-            if (s.size() < cwidth) {
-                file << std::string(cwidth - s.size(), ' ');
-            }
+                std::string s = fmt(v[i]);
+                if (s.size() < cwidth) {
+                    file << std::string(cwidth - s.size(), ' ');
+                }
 
-            file << s;
+                file << s;
 
-            write_table_do_(file, cwidth, sep, i, j+1, args...);
+                write_table_do_(file, cwidth, sep, i, j+1, args...);
         }
 
-        template<typename Type, typename ... Args>
-        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-            std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
+        template<typename Type, typename F, typename ... Args>
+        void write_table_do_impl_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<2,Type>& v, F&& fmt, const Args& ... args) {
 
             for (uint_t k : range(v.dims[1])) {
                 if (j == 0) {
@@ -432,7 +448,7 @@ namespace impl {
                     file << sep;
                 }
 
-                std::string s = to_string(v(i,k));
+                std::string s = fmt(v(i,k));
                 if (s.size() < cwidth) {
                     file << std::string(cwidth - s.size(), ' ');
                 }
@@ -444,12 +460,32 @@ namespace impl {
             write_table_do_(file, cwidth, sep, i, j, args...);
         }
 
+        template<std::size_t D, typename Type, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<D,Type>& v, const Args& ... args) {
+
+            write_table_do_impl_(file, cwidth, sep, i, j, v, [](const Type& t) {
+                return to_string(t);
+            }, args...);
+        }
+
+        template<typename F, typename ... Args, typename enable>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const F& v, const Args& ... args) {
+
+            using DType = typename std::decay<decltype(v.obj[0])>::type;
+            write_table_do_impl_(file, cwidth, sep, i, j, v.obj, [&](const DType& t) {
+                return to_string(v.forward(t));
+            }, args...);
+        }
+
         inline void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t k, std::size_t j) {}
 
-        template<typename Type, typename ... Args>
-        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-            std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
+        template<typename Type, typename F, typename ... Args>
+        void write_table_do_tuple_impl_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, F&& fmt,
+            const Args& ... args) {
 
             if (j == 0) {
                 file << std::string(sep.size(), ' ');
@@ -457,8 +493,7 @@ namespace impl {
                 file << sep;
             }
 
-
-            std::string s = to_string(v(i,k));
+            std::string s = fmt(v(i,k));
             if (s.size() < cwidth) {
                 file << std::string(cwidth - s.size(), ' ');
             }
@@ -466,6 +501,25 @@ namespace impl {
             file << s;
 
             write_table_do_tuple_(file, cwidth, sep, i, k, j+1, args...);
+        }
+
+        template<typename Type, typename ... Args>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
+
+            write_table_do_tuple_(file, cwidth, sep, i, k, j, v, [](const Type& t) {
+                return to_string(t);
+            }, args...);
+        }
+
+        template<typename F, typename ... Args>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const F& v, const Args& ... args) {
+
+            using DType = typename std::decay<decltype(v.obj[0])>::type;
+            write_table_do_tuple_(file, cwidth, sep, i, k, j, v.obj, [&](const DType& t) {
+                return to_string(v.forward(t));
+            }, args...);
         }
 
         template<typename U, typename ... VArgs, std::size_t ... S>
