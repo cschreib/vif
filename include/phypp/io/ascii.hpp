@@ -468,7 +468,7 @@ namespace impl {
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const vec<D,Type>& v, const Args& ... args) {
 
-            using DType = typename std::decay<decltype(v.obj[0])>::type;
+            using DType = typename std::decay<decltype(v[0])>::type;
             write_table_do_impl_(file, cwidth, sep, i, j, v, [](const DType& t) {
                 return to_string(t);
             }, args...);
@@ -512,7 +512,7 @@ namespace impl {
         void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
 
-            using DType = typename std::decay<decltype(v.obj[0])>::type;
+            using DType = typename std::decay<decltype(v[0])>::type;
             write_table_do_tuple_(file, cwidth, sep, i, k, j, v, [](const DType& t) {
                 return to_string(t);
             }, args...);
