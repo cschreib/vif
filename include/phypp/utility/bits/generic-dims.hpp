@@ -67,7 +67,7 @@ namespace phypp {
         }
 
         phypp_check(v.size() == nsize,
-            "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+            "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = std::move(v.data);
 
@@ -84,7 +84,7 @@ namespace phypp {
         }
 
         phypp_check(v.size() == nsize,
-            "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+            "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = v.data;
 
@@ -101,7 +101,7 @@ namespace phypp {
         }
 
         phypp_check(v.size() == nsize,
-            "incompatible dimensions ("+strn(v.dims)+" vs "+strn(r.dims)+")");
+            "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = std::move(v.data);
 

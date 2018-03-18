@@ -131,7 +131,7 @@ int phypp_main(int argc, char* argv[]) {
                 tmp.id = uindgen(tmp.ra.size());
             }
 
-            name = strna(tmp.id);
+            name = to_string_vector(tmp.id);
         } else {
             name = tmp.name;
         }
@@ -143,7 +143,7 @@ int phypp_main(int argc, char* argv[]) {
         dec = tmp.dec;
     } else if (tsrc.size() == 1 && end_with(tsrc[0], ".reg")) {
         ascii::read_table(tsrc[0], ascii::find_skip(tsrc[0]), ra, dec);
-        name = strna(uindgen(ra.size())) + "_";
+        name = to_string_vector(uindgen(ra.size())) + "_";
     } else if (tsrc.size() == 2) {
         name.resize(1);
         if (!nbase.empty()) name[0] = nbase + "_";

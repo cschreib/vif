@@ -415,7 +415,7 @@ namespace astro {
             dims.resize(naxis);
             for (uint_t i : range(dims)) {
                 uint_t dim = npos;
-                if (fits::getkey(hdr, "NAXIS"+strn(i+1), dim)) {
+                if (fits::getkey(hdr, "NAXIS"+to_string(i+1), dim)) {
                     dims[naxis-1-i] = dim;
                 }
             }
@@ -487,7 +487,7 @@ namespace astro {
 
         bool valid_unit(uint_t axis, axis_unit unit, std::string& why) const {
             if (axis >= axis_count()) {
-                why = "axis "+strn(axis)+" does not exist";
+                why = "axis "+to_string(axis)+" does not exist";
                 return false;
             }
 
@@ -498,7 +498,7 @@ namespace astro {
                 }
             } else {
                 if (unit != axis_unit::native) {
-                    why = "axis "+strn(axis)+" has no CUNIT keyword";
+                    why = "axis "+to_string(axis)+" has no CUNIT keyword";
                     return false;
                 }
             }
@@ -527,7 +527,7 @@ namespace astro {
 
             if (type[axis] != axis_type::unknown && unit_type != axis_type::unknown &&
                 type[axis] != unit_type) {
-                why = "wrong type for axis "+strn(axis)+" (expected "+axis_type_string(type[axis])+
+                why = "wrong type for axis "+to_string(axis)+" (expected "+axis_type_string(type[axis])+
                     ", got "+axis_type_string(unit_type);
                 return false;
             }
@@ -714,8 +714,8 @@ namespace astro {
 #else
 
         phypp_check(w.is_valid(), "invalid WCS data");
-        phypp_check(ra.dims == dec.dims, "RA and Dec arrays do not match sizes ("+
-            strn(ra.dims)+" vs "+strn(dec.dims)+")");
+        phypp_check(ra.dims == dec.dims, "RA and Dec arrays do not match sizes (",
+            ra.dims, " vs ", dec.dims, ")");
 
         uint_t npt = ra.size();
         if (npt == 0) {
@@ -752,7 +752,7 @@ namespace astro {
 
         phypp_check(w.is_valid(), "invalid WCS data");
         phypp_check(x.dims == y.dims, "x and y arrays do not match sizes ("+
-            strn(x.dims)+" vs "+strn(y.dims)+")");
+            x.dims, " vs ", y.dims, ")");
 
         uint_t npt = x.size();
         if (npt == 0) {

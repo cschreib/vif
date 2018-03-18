@@ -138,7 +138,7 @@ namespace astro {
         catalog_t& add_catalog(const std::string& name, const vec1s& sources, const vec1s& files,
             const std::string& comment = "") {
 
-            std::string ref = "["+strn(pool.size()+1)+"]";
+            std::string ref = "["+to_string(pool.size()+1)+"]";
             pool.push_back({*this, uindgen(ngal), uindgen(ngal), {}, {}, name, sources, files, comment, ref});
             return pool.back();
         }
@@ -238,7 +238,7 @@ namespace astro {
                     ngal += idn.size();
                 }
 
-                std::string ref = "["+strn(pool.size()+1)+"]";
+                std::string ref = "["+to_string(pool.size()+1)+"]";
                 pool.push_back({*this, sel, idm, {}, std::move(td), name, sources, files, comment, ref});
                 return pool.back();
             }

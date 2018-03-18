@@ -120,7 +120,7 @@ int phypp_main(int argc, char* argv[]) {
         std::string data;
         for (uint_t j = 0; j < show.size(); ++j) {
             if (show[j].empty()) continue;
-            data += ", "+show[j]+"="+strn(show_data(j,i));
+            data += ", "+show[j]+"="+to_string(show_data(j,i));
         }
         print(i, ": ", d[i], "\", id=", id[i], data);
     }

@@ -92,7 +92,7 @@ int phypp_main(int argc, char* argv[]) {
                         return 1;
                     } else if (ib.size() != 1) {
                         error("multiple matches for band");
-                        note(strn(fcat.bands[ib]+" "+fcat.notes[ib]));
+                        note(fcat.bands[ib]+" "+fcat.notes[ib]);
                         return 1;
                     }
 

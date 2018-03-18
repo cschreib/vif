@@ -1,7 +1,7 @@
 #include <phypp.hpp>
 
 #define check(t, s) { \
-    std::string st = strn(t); \
+    std::string st = to_string(t); \
     if (st == s) print("  checked: "+st); \
     else         print("  failed: "+std::string(#t)+" = "+st+" != "+s); \
     assert(st == s); \
@@ -192,7 +192,7 @@ int phypp_main(int argc, char* argv[]) {
         print("'flatten' & 'reform' functions");
         vec2u v = {{1,2,3}, {4,5,6}};
         vec1u fv = flatten(v);
-        check(fv.dims, "{"+strn(v.size())+"}");
+        check(fv.dims, "{"+to_string(v.size())+"}");
         check(fv, "{1, 2, 3, 4, 5, 6}");
         vec2u rv = reform(v, 3, 2);
         check(rv.dims, "{3, 2}");
@@ -281,7 +281,7 @@ int phypp_main(int argc, char* argv[]) {
         vec2i v = uindgen(2,3);
         for (uint_t i = 0; i < v.size(); ++i) {
             vec1u ids = mult_ids(v, i);
-            check(v(ids[0], ids[1]), strn(i));
+            check(v(ids[0], ids[1]), to_string(i));
         }
     }
 
@@ -693,7 +693,7 @@ int phypp_main(int argc, char* argv[]) {
 
         check(float(integrate_func([](float t) -> float {
                 return (2.0/sqrt(3.14159))*exp(-t*t);
-            }, 0.0, 1.0)), strn(float(erf(1.0)))
+            }, 0.0, 1.0)), to_string(float(erf(1.0)))
         );
     }
 
@@ -934,7 +934,7 @@ int phypp_main(int argc, char* argv[]) {
         check(max(f, f2), "{2, 5, -1, 0, 12, 6, -1.5}");
         check(min(f, f2), "{1, 3, -1, 0, 4.45, -inf, -1e+06}");
         f = {fnan, fnan};
-        check(max(f), strn(fnan));
+        check(max(f), to_string(fnan));
     }
 
     {
@@ -1067,10 +1067,10 @@ int phypp_main(int argc, char* argv[]) {
         fits::write_table("out/reflex_tbl.fits", tmp);
         fits::read_table("out/reflex_tbl.fits", tmp2);
 
-        check(tmp2.f, strn(tmp.f));
-        check(tmp2.s, strn(tmp.s));
-        check(tmp2.t.u, strn(tmp.t.u));
-        check(tmp2.t.v, strn(tmp.t.v));
+        check(tmp2.f, to_string(tmp.f));
+        check(tmp2.s, to_string(tmp.s));
+        check(tmp2.t.u, to_string(tmp.t.u));
+        check(tmp2.t.v, to_string(tmp.t.v));
     }
 
     {

@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <array>
 #include <typeinfo>
 #include "phypp/core/vec.hpp"
@@ -24,7 +25,6 @@ namespace std {
     }
 }
 
-
 namespace phypp {
     namespace impl {
         template<typename T>
@@ -39,43 +39,111 @@ namespace phypp {
         return {obj, str};
     }
 
+    namespace impl {
+        struct format_base_t {};
+
+        template<typename F, typename T>
+        struct format_t : format_base_t {
+            using object_type = typename std::decay<T>::type;
+
+            template<typename U, typename ... Args>
+            explicit format_t(U&& o, Args&& ... args) :
+                fmt(std::forward<Args>(args)...), obj(std::forward<U>(o)) {}
+
+            F fmt;
+            const T& obj;
+
+            template<typename O>
+            void apply(O& o) const {
+                fmt.apply(o);
+            }
+
+            template<typename U>
+            format_t<F,U> forward(U&& u) const {
+                return format_t<F,U>(std::forward<U>(u), fmt);
+            }
+        };
+
+        struct format_scientific_t {
+            template<typename O>
+            void apply(O& o) const {
+                o << std::scientific;
+            }
+        };
+
+        struct format_precision_t {
+            uint_t pre = 0;
+
+            explicit format_precision_t(uint_t p) : pre(p) {}
+
+            template<typename O>
+            void apply(O& o) const {
+                o << std::setprecision(pre);
+            }
+        };
+    }
+
+    namespace meta {
+        template<typename T>
+        struct is_format_tag : std::is_base_of<impl::format_base_t, typename std::decay<T>::type> {};
+    }
+
+    namespace impl {
+        template<typename O, typename F,
+            typename enable = typename std::enable_if<meta::is_format_tag<F>::value>::type>
+        O& operator << (O& o, const F& v) {
+            std::ios old(nullptr);
+            old.copyfmt(o);
+
+            v.apply(o);
+            o << v.obj;
+
+            o.copyfmt(old);
+
+            return o;
+        }
+    }
+
+    namespace format {
+        template<typename T>
+        impl::format_t<impl::format_scientific_t,T> scientific(T&& obj) {
+            return impl::format_t<impl::format_scientific_t,T>(std::forward<T>(obj));
+        }
+
+        template<typename T>
+        impl::format_t<impl::format_precision_t,T> precision(T&& obj, uint_t p) {
+            return impl::format_t<impl::format_precision_t,T>(std::forward<T>(obj), p);
+        }
+    }
+
     template<typename T>
-    std::string strn(const T& t) {
+    std::string to_string(const T& t) {
         std::ostringstream ss;
         ss << t;
         return ss.str();
     }
 
-    inline std::string strn(double t) {
-        std::ostringstream ss;
-        ss.precision(12);
-        ss << t;
-        return ss.str();
+    std::string to_string(const std::string& t) {
+        return t;
     }
 
     template<std::size_t Dim, typename Type>
-    vec<Dim,std::string> strna(const vec<Dim,Type>& v) {
+    vec<Dim,std::string> to_string_vector(const vec<Dim,Type>& v) {
         vec<Dim,std::string> s(v.dims);
         for (uint_t i : range(v)) {
-            s.safe[i] = strn(v.safe[i]);
+            s.safe[i] = to_string(v.safe[i]);
         }
 
         return s;
     }
 
-    template<typename T>
-    std::string strn_sci(const T& t) {
-        std::ostringstream ss;
-        ss << std::scientific << t;
-        return ss.str();
-    }
-
-
-    template<std::size_t Dim, typename Type>
-    vec<Dim,std::string> strna_sci(const vec<Dim,Type>& v) {
-        vec<Dim,std::string> s(v.dims);
-        for (uint_t i : range(v)) {
-            s.safe[i] = strn_sci(v.safe[i]);
+    template<typename F, typename enable = typename std::enable_if<
+        meta::is_format_tag<F>::value && meta::is_vec<typename F::object_type>::value>::type>
+    auto to_string_vector(const F& f) ->
+        vec<meta::vec_dim<typename F::object_type>::value,std::string> {
+        vec<meta::vec_dim<typename F::object_type>::value,std::string> s(f.obj.dims);
+        for (uint_t i : range(f.obj)) {
+            s.safe[i] = to_string(f.forward(f.obj.safe[i]));
         }
 
         return s;
@@ -190,7 +258,7 @@ namespace phypp {
 
         template<std::size_t Dim, typename T>
         std::string pretty_type_(meta::type_list<vec<Dim,T>>) {
-            return "vec<"+strn(Dim)+","+pretty_type_(meta::type_list<T>{})+">";
+            return "vec<"+to_string(Dim)+","+pretty_type_(meta::type_list<T>{})+">";
         };
     }
 

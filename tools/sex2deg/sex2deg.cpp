@@ -12,7 +12,7 @@ int phypp_main(int argc, char* argv[]) {
     std::string sdec = argv[2];
     double ra, dec;
     if (sex2deg(sra, sdec, ra, dec)) {
-        print(strn(ra), "   ", strn(dec));
+        print(format::precision(ra, 12), "   ", format::precision(dec, 12));
     } else {
         error("could not read sexagesimal coordinates");
         return 1;

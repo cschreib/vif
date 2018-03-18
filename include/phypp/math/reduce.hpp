@@ -106,7 +106,7 @@ namespace phypp {
 
     template<typename ... Args>
     std::string percent_of(Args&& ... args) {
-        return strn(round(100.0*fraction_of(std::forward<Args>(args)...)))+"%";
+        return to_string(round(100.0*fraction_of(std::forward<Args>(args)...)))+"%";
     }
 
     namespace impl {

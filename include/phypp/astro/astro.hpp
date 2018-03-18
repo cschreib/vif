@@ -330,8 +330,8 @@ namespace astro {
             return cosmo_std();
         } else {
             cosmo_t c;
-            warning("unknown cosmology '"+name+"', using default (H0="+strn(c.H0)+", omega_lambda="+
-                strn(c.wL)+", omega_matter="+strn(c.wm)+", omega_rad="+strn(c.wk)+")");
+            warning("unknown cosmology '"+name+"', using default (H0=", c.H0, ", omega_lambda=",
+                c.wL, ", omega_matter=", c.wm, ", omega_rad=", c.wk, ")");
             return c;
         }
     }
@@ -782,7 +782,7 @@ namespace astro {
         if (!good) {
             status.success = false;
             status.failure = "maximum number of iterations reached "
-                "("+strn(options.max_iter)+"): try increasing the max_iter value in the "
+                "("+to_string(options.max_iter)+"): try increasing the max_iter value in the "
                 "options or check that the provided ranges in X and Y overlap the requested "
                 "region";
             return status;
@@ -833,7 +833,7 @@ namespace astro {
         if (!good) {
             status.success = false;
             status.failure = "maximum number of iterations reached "
-                "("+strn(options.max_iter)+"): try increasing the max_iter value in the "
+                "("+to_string(options.max_iter)+"): try increasing the max_iter value in the "
                 "options or check that the provided circle overlaps the requested "
                 "region";
             return status;
@@ -937,8 +937,8 @@ namespace astro {
 
         if (!status.success) {
             status.failure += "\n"
-                "context: placing "+strn(options.eta)+" random positions "
-                "in initial radius r="+strn(r0)+", x="+strn(x0)+", y="+strn(y0)+")";
+                "context: placing "+to_string(options.eta)+" random positions "
+                "in initial radius r="+to_string(r0)+", x="+to_string(x0)+", y="+to_string(y0)+")";
             return status;
         }
 
@@ -992,8 +992,8 @@ namespace astro {
             if (miss != 0) {
                 status.success = false;
                 status.failure = "could not reassign some fractional random positions "
-                    "("+strn(miss)+"/"+strn(miss0)+") over the available positions "
-                    "("+strn(x.size())+", level="+strn(l+1)+")";
+                    "("+to_string(miss)+"/"+to_string(miss0)+") over the available positions "
+                    "("+to_string(x.size())+", level="+to_string(l+1)+")";
                 return status;
             }
 
@@ -1007,9 +1007,9 @@ namespace astro {
 
                 if (!status.success) {
                     status.failure += "\n"
-                        "context: placing "+strn(ngal[i])+" random positions "
-                        "in level "+strn(l+1)+", radius r="+strn(r1)+", x="+strn(x[i])+
-                        ", y="+strn(y[i])+")";
+                        "context: placing "+to_string(ngal[i])+" random positions "
+                        "in level "+to_string(l+1)+", radius r="+to_string(r1)+", x="+to_string(x[i])+
+                        ", y="+to_string(y[i])+")";
                     return status;
                 }
 
@@ -1091,7 +1091,7 @@ namespace astro {
         dech *= signd;
 
         auto format_sec = [](double sec) {
-            std::string s = strn(sec);
+            std::string s = to_string(sec);
             auto p = s.find_first_of('.');
             if (p == s.npos) {
                 if (s.size() != 2) {
@@ -1108,8 +1108,8 @@ namespace astro {
             }
         };
 
-        sra = strn(rah)+':'+align_right(strn(ram),2,'0')+':'+format_sec(ras);
-        sdec = strn(dech)+':'+align_right(strn(decm),2,'0')+':'+format_sec(decs);
+        sra = to_string(rah)+':'+align_right(to_string(ram),2,'0')+':'+format_sec(ras);
+        sdec = to_string(dech)+':'+align_right(to_string(decm),2,'0')+':'+format_sec(decs);
     }
 
     template<std::size_t Dim = 1, typename TSR = double, typename TSD = double,

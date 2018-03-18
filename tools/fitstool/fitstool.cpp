@@ -233,7 +233,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             fits_get_colnum(fptr, CASESEN, const_cast<char*>(col.c_str()), &id, &status);
 
             char otform[80], comment[80];
-            std::string tformn = "TFORM"+strn(id);
+            std::string tformn = "TFORM"+to_string(id);
             fits_read_key(fptr, TSTRING, const_cast<char*>(tformn.c_str()), otform, comment, &status);
             fits::phypp_check_cfitsio(status, "cannot read TFORM for column '"+col+"'");
             print(otform);
@@ -365,10 +365,10 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
 
             char name[80] = {0};
             char comment[80];
-            fits_read_key(ifptr, TSTRING, const_cast<char*>(("TTYPE"+strn(c)).c_str()),
+            fits_read_key(ifptr, TSTRING, const_cast<char*>(("TTYPE"+to_string(c)).c_str()),
                 name, comment, &status);
             char ittform[80] = {0};
-            fits_read_key(ifptr, TSTRING, const_cast<char*>(("TFORM"+strn(c)).c_str()),
+            fits_read_key(ifptr, TSTRING, const_cast<char*>(("TFORM"+to_string(c)).c_str()),
                 ittform, comment, &status);
             std::string itform = ittform;
             itform = trim(ittform);
@@ -380,8 +380,8 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
             long nelem = 1;
             bool string = false;
             if (itform.size() == 1) {
-                tform = strn(nrow)+itform;
-                tdim = "("+strn(nrow)+")";
+                tform = to_string(nrow)+itform;
+                tdim = "("+to_string(nrow)+")";
             } else {
                 {
                     std::string tmp = itform; erase_end(tmp, 1);
@@ -389,20 +389,20 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 }
 
                 if (itform.back() == 'A') {
-                    tform = strn(nrow*nelem)+'A'+strn(nelem);
+                    tform = to_string(nrow*nelem)+'A'+to_string(nelem);
                     string = true;
                 } else {
-                    tform = strn(nrow*nelem)+itform.back();
+                    tform = to_string(nrow*nelem)+itform.back();
                 }
 
-                tdim = "("+strn(nelem)+","+strn(nrow)+")";
+                tdim = "("+to_string(nelem)+","+to_string(nrow)+")";
             }
 
             // Create the new column
             fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
             fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
             char tdim_com[] = "size of the multidimensional array";
-            fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+strn(c)).c_str()),
+            fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+to_string(c)).c_str()),
                 const_cast<char*>(tdim.c_str()), tdim_com, &status);
 
             if (string) {
@@ -484,24 +484,24 @@ bool copy_wcs_header(int argc, char* argv[], const std::string& file) {
         "PC001001", "PC001002", "PC002001", "PC002002", "LATPOLE", "LONPOLE"};
 
     for (uint_t i = 1; i < 13; ++i) {
-        keywords.push_back("CO1_"+strn(i));
-        keywords.push_back("CO2_"+strn(i));
+        keywords.push_back("CO1_"+to_string(i));
+        keywords.push_back("CO2_"+to_string(i));
     }
     for (uint_t i = 0; i < 10; ++i) {
-        keywords.push_back("PROJP"+strn(i));
-        keywords.push_back("PV1_"+strn(i));
-        keywords.push_back("PV2_"+strn(i));
-        keywords.push_back("CTYPE"+strn(i));
-        keywords.push_back("CUNIT"+strn(i));
-        keywords.push_back("CRVAL"+strn(i));
-        keywords.push_back("CRPIX"+strn(i));
-        keywords.push_back("CDELT"+strn(i));
-        keywords.push_back("CROTA"+strn(i));
-        keywords.push_back("SECPIX"+strn(i));
-        keywords.push_back("CD"+strn(i));
+        keywords.push_back("PROJP"+to_string(i));
+        keywords.push_back("PV1_"+to_string(i));
+        keywords.push_back("PV2_"+to_string(i));
+        keywords.push_back("CTYPE"+to_string(i));
+        keywords.push_back("CUNIT"+to_string(i));
+        keywords.push_back("CRVAL"+to_string(i));
+        keywords.push_back("CRPIX"+to_string(i));
+        keywords.push_back("CDELT"+to_string(i));
+        keywords.push_back("CROTA"+to_string(i));
+        keywords.push_back("SECPIX"+to_string(i));
+        keywords.push_back("CD"+to_string(i));
         for (uint_t j = 0; j < 10; ++j) {
-            keywords.push_back("CD"+strn(i)+"_"+strn(j));
-            keywords.push_back("PC"+strn(i)+"_"+strn(j));
+            keywords.push_back("CD"+to_string(i)+"_"+to_string(j));
+            keywords.push_back("PC"+to_string(i)+"_"+to_string(j));
         }
     }
 
@@ -983,20 +983,20 @@ bool make_2d(int argc, char* argv[], const std::string& file) {
 
         for (int i = 3; i <= naxis; ++i) {
             for (auto& k : keybase) {
-                fits_delete_key(fptr, (k+strn(i)).c_str(), &status);
+                fits_delete_key(fptr, (k+to_string(i)).c_str(), &status);
                 if (status != 0) {
                     status = 0;
                 }
             }
 
             for (int j = 1; j <= naxis; ++j) {
-                fits_delete_key(fptr, ("PC"+align_right(strn(i),2,'0')+"_"+
-                                            align_right(strn(j),2,'0')).c_str(), &status);
+                fits_delete_key(fptr, ("PC"+align_right(to_string(i),2,'0')+"_"+
+                                            align_right(to_string(j),2,'0')).c_str(), &status);
                 if (status != 0) {
                     status = 0;
                 }
-                fits_delete_key(fptr, ("PC"+align_right(strn(j),2,'0')+"_"+
-                                            align_right(strn(i),2,'0')).c_str(), &status);
+                fits_delete_key(fptr, ("PC"+align_right(to_string(j),2,'0')+"_"+
+                                            align_right(to_string(i),2,'0')).c_str(), &status);
                 if (status != 0) {
                     status = 0;
                 }
@@ -1142,7 +1142,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
         if (!force) {
             vec1s names;
             for (auto i : mcols) {
-                std::string id = strn(i);
+                std::string id = to_string(i);
                 char name[80];
                 int num;
                 fits_get_colname(fptr, CASESEN, const_cast<char*>(id.c_str()), name, &num, &status);
@@ -1172,7 +1172,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
 
         for (auto i : mcols) {
             fits_copy_col(ofptr, fptr, i, mcols.size(), 1, &status);
-            fits::phypp_check_cfitsio(status, "cannot copy column "+strn(i));
+            fits::phypp_check_cfitsio(status, "cannot copy column "+to_string(i));
         }
 
         for (auto i : reverse(mcols)) {
@@ -1271,7 +1271,7 @@ bool extract_extension(int argc, char* argv[], const std::string& file) {
 
         int hdut = 0;
         fits_movabs_hdu(ifptr, hdu+1, &hdut, &status);
-        fits::phypp_check_cfitsio(status, "cannot reach HDU "+strn(hdu));
+        fits::phypp_check_cfitsio(status, "cannot reach HDU "+to_string(hdu));
 
         fits_create_file(&ofptr, out.c_str(), &status);
         fits::phypp_check_cfitsio(status, "cannot create file '"+out+"'");

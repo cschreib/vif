@@ -63,7 +63,7 @@ namespace phypp {
     static bool check_show_line = false;
 
     #define check_base_(cond, msg, file, line) do { \
-        if (check_show_line) print(std::string(file)+":"+strn(line)); \
+        if (check_show_line) print(std::string(file)+":"+to_string(line)); \
         if (!cond) { \
             print(msg); \
             ++failed; \
@@ -74,7 +74,7 @@ namespace phypp {
     #define check_base(cond, msg) check_base_(reduce_and(cond), msg, __FILE__, __LINE__)
 
     #define check(t, s) \
-        check_base(is_same(t, s), "  failed: "+std::string(#t)+" = "+strn(t)+" != "+strn(s))
+        check_base(is_same(t, s), "  failed: "+std::string(#t)+" = "+to_string(t)+" != "+to_string(s))
 }
 
 #endif

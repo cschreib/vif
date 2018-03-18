@@ -203,10 +203,10 @@ namespace impl {
             std::string fb;
             if (!read_value_(fs, v[i], fb)) {
                 if (fb.empty()) {
-                    throw ascii::exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                    throw ascii::exception("cannot extract value from file, too few columns on line l."+to_string(i+1));
                 } else {
                     throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                        strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                        to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
                 }
             }
             read_table_(fs, i, ++j, args...);
@@ -224,10 +224,10 @@ namespace impl {
             std::string fb;
             if (!read_value_(fs, v(i,k), fb)) {
                 if (fb.empty()) {
-                    throw ascii::exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                    throw ascii::exception("cannot extract value from file, too few columns on line l."+to_string(i+1));
                 } else {
                     throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                        strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                        to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
                 }
             }
             read_table_cols_(fs, i, ++j, k, args...);
@@ -239,7 +239,7 @@ namespace impl {
             if (!(fs >> s)) {
                 if (fs.eof()) {
                     throw ascii::exception("cannot extract value from file, "
-                        "too few columns on line l."+strn(i+1));
+                        "too few columns on line l."+to_string(i+1));
                 }
             }
 
@@ -264,8 +264,8 @@ namespace impl {
         template<typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args) {
             if (fs.eof()) {
-                throw ascii::exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
-                    "too few columns on line l."+strn(i+1));
+                throw ascii::exception("cannot extract value at l."+to_string(i+1)+":"+to_string(j+1)+" from file, "
+                    "too few columns on line l."+to_string(i+1));
             }
 
             std::string s;
@@ -276,17 +276,17 @@ namespace impl {
         template<typename T, typename ... Args, typename enable>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, T& v, Args& ... args) {
             if (fs.eof()) {
-                throw ascii::exception("cannot extract value at l."+strn(i+1)+":"+strn(j+1)+" from file, "
-                    "too few columns on line l."+strn(i+1));
+                throw ascii::exception("cannot extract value at l."+to_string(i+1)+":"+to_string(j+1)+" from file, "
+                    "too few columns on line l."+to_string(i+1));
             }
 
             std::string fb;
             if (!read_value_(fs, v, fb)) {
                 if (fb.empty()) {
-                    throw ascii::exception("cannot extract value from file, too few columns on line l."+strn(i+1));
+                    throw ascii::exception("cannot extract value from file, too few columns on line l."+to_string(i+1));
                 } else {
                     throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                        strn(i+1)+":"+strn(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
+                        to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
                 }
             }
             read_table_(fs, i, ++j, args...);
@@ -367,8 +367,8 @@ namespace impl {
             }
 
             if (v.dims[0] != n) {
-                throw ascii::exception("incorrect dimension for column "+strn(i)+" ("+
-                    strn(v.dims[0])+" vs "+strn(n)+")");
+                throw ascii::exception("incorrect dimension for column "+to_string(i)+" ("+
+                    to_string(v.dims[0])+" vs "+to_string(n)+")");
             }
 
             write_table_check_size_(n, i+1, args...);
@@ -411,7 +411,7 @@ namespace impl {
                 file << sep;
             }
 
-            std::string s = strn(v[i]);
+            std::string s = to_string(v[i]);
             if (s.size() < cwidth) {
                 file << std::string(cwidth - s.size(), ' ');
             }
@@ -432,7 +432,7 @@ namespace impl {
                     file << sep;
                 }
 
-                std::string s = strn(v(i,k));
+                std::string s = to_string(v(i,k));
                 if (s.size() < cwidth) {
                     file << std::string(cwidth - s.size(), ' ');
                 }
@@ -458,7 +458,7 @@ namespace impl {
             }
 
 
-            std::string s = strn(v(i,k));
+            std::string s = to_string(v(i,k));
             if (s.size() < cwidth) {
                 file << std::string(cwidth - s.size(), ' ');
             }
@@ -619,7 +619,7 @@ namespace impl {
         void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args) {
             std::string base = vnames[i];
 
-            vec1s ncols = base+"_"+strna(uindgen(v.dims[1])+1);
+            vec1s ncols = base+"_"+to_stringa(uindgen(v.dims[1])+1);
             vnames.data.insert(vnames.data.begin()+i+1, ncols.begin()+1, ncols.end());
             vnames[i] = ncols[0];
             vnames.dims[0] += v.dims[1]-1;

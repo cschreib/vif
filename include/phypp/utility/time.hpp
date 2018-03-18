@@ -17,9 +17,9 @@ namespace phypp {
         std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         std::tm tm = *std::localtime(&t);
         std::ostringstream ss;
-        ss << align_right(strn(tm.tm_year+1900),4,'0')
-           << align_right(strn(tm.tm_mon+1),2,'0')
-           << align_right(strn(tm.tm_mday),2,'0');
+        ss << align_right(to_string(tm.tm_year+1900),4,'0')
+           << align_right(to_string(tm.tm_mon+1),2,'0')
+           << align_right(to_string(tm.tm_mday),2,'0');
         return ss.str();
     }
 
@@ -31,11 +31,11 @@ namespace phypp {
         if (t < 1.0) {
             int mag = floor(log10(t));
             if (mag >= -3) {
-                return strn(round(t*1e3))+"ms";
+                return to_string(round(t*1e3))+"ms";
             } else if (mag >= -6) {
-                return strn(round(t*1e6))+"us";
+                return to_string(round(t*1e6))+"us";
             } else {
-                return strn(round(t*1e9))+"ns";
+                return to_string(round(t*1e9))+"ns";
             }
         } else {
             std::size_t day  = floor(t/(24*60*60));
@@ -43,10 +43,10 @@ namespace phypp {
             std::size_t min  = floor(t/60) - day*24*60 - hour*60;
             std::size_t sec  = floor(t) - day*24*60*60 - hour*60*60 - min*60;
 
-            if (day  != 0) date += strn(day)+'d';
-            if (hour != 0) date += align_right(strn(hour),2,'0')+'h';
-            if (min  != 0) date += align_right(strn(min),2,'0')+'m';
-            date += align_right(strn(sec),2,'0')+'s';
+            if (day  != 0) date += to_string(day)+'d';
+            if (hour != 0) date += align_right(to_string(hour),2,'0')+'h';
+            if (min  != 0) date += align_right(to_string(min),2,'0')+'m';
+            date += align_right(to_string(sec),2,'0')+'s';
 
             if (date[0] == '0' && date.size() != 2) {
                 date.erase(0,1);
@@ -66,10 +66,10 @@ namespace phypp {
         std::size_t us  = floor(((t - sec)*1000 - ms)*1000);
         std::size_t ns  = floor((((t - sec)*1000 - ms)*1000 - us)*1000);
 
-        if (sec != 0)                  date += strn(sec)+"s";
-        if (ms  != 0 || !date.empty()) date += align_right(strn(ms),3,'0')+"ms";
-        if (us  != 0 || !date.empty()) date += align_right(strn(us),3,'0')+"us";
-        date += align_right(strn(ns),3,'0')+"ns";
+        if (sec != 0)                  date += to_string(sec)+"s";
+        if (ms  != 0 || !date.empty()) date += align_right(to_string(ms),3,'0')+"ms";
+        if (us  != 0 || !date.empty()) date += align_right(to_string(us),3,'0')+"us";
+        date += align_right(to_string(ns),3,'0')+"ns";
 
         while (date[0] == '0' && date.size() != 3) {
             date.erase(0,1);
@@ -129,9 +129,9 @@ namespace phypp {
             msg += "["+std::string(floor(progress_ndash*(p.i+1)/double(p.n)),'-')
                 + std::string(progress_ndash - floor(progress_ndash*(p.i+1)/double(p.n)),' ')+"] ";
             // Iteration count
-            msg += align_right(strn(p.i+1), floor(log10(double(p.n))) + 1)+" ";
+            msg += align_right(to_string(p.i+1), floor(log10(double(p.n))) + 1)+" ";
             // Percentage
-            msg += align_right(strn(std::size_t(floor(100.0*(p.i+1)/double(p.n)))), 3)+"%, ";
+            msg += align_right(to_string(std::size_t(floor(100.0*(p.i+1)/double(p.n)))), 3)+"%, ";
             // Timings
             msg += time_str(total)+" elapsed, "+time_str(remaining)+" left, "
                 + time_str(total+remaining)+" total";

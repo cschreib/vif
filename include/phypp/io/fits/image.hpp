@@ -26,7 +26,7 @@ namespace fits {
             fits_get_img_dim(fptr_, &naxis, &status_);
             fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
             phypp_check_fits(naxis == int(rdims), "FITS file has wrong number of dimensions "
-                "(expected "+strn(rdims)+", got "+strn(naxis)+")");
+                "(expected "+to_string(rdims)+", got "+to_string(naxis)+")");
 
             int bitpix;
             naxes.resize(naxis);
@@ -60,8 +60,8 @@ namespace fits {
             impl::range_impl::left_range_t r, const Args& ... args) const {
 
             phypp_check_fits(r.last < uint_t(naxes[naxes.size()-1-idim]), "image subset goes outside of "
-                "the image boundaries (axis "+strn(idim)+": "+strn(r.last)+" vs. "+
-                strn(naxes[naxes.size()-1-idim]));
+                "the image boundaries (axis "+to_string(idim)+": "+to_string(r.last)+" vs. "+
+                to_string(naxes[naxes.size()-1-idim]));
 
             fpixel[naxes.size()-1-idim] = 1;
             lpixel[naxes.size()-1-idim] = r.last+1;
@@ -86,8 +86,8 @@ namespace fits {
             impl::range_impl::left_right_range_t r, const Args& ... args) const {
 
             phypp_check_fits(r.last < uint_t(naxes[naxes.size()-1-idim]), "image subset goes outside of "
-                "the image boundaries (axis "+strn(idim)+": "+strn(r.last)+" vs. "+
-                strn(naxes[naxes.size()-1-idim]));
+                "the image boundaries (axis "+to_string(idim)+": "+to_string(r.last)+" vs. "+
+                to_string(naxes[naxes.size()-1-idim]));
 
             fpixel[naxes.size()-1-idim] = r.first+1;
             lpixel[naxes.size()-1-idim] = r.last+1;
@@ -101,8 +101,8 @@ namespace fits {
             uint_t i, const Args& ... args) const {
 
             phypp_check_fits(i < uint_t(naxes[naxes.size()-1-idim]), "image subset goes outside of "
-                "the image boundaries (axis "+strn(idim)+": "+strn(i)+" vs. "+
-                strn(naxes[naxes.size()-1-idim]));
+                "the image boundaries (axis "+to_string(idim)+": "+to_string(i)+" vs. "+
+                to_string(naxes[naxes.size()-1-idim]));
 
             fpixel[naxes.size()-1-idim] = i+1;
             lpixel[naxes.size()-1-idim] = i+1;
@@ -173,8 +173,8 @@ namespace fits {
                 vec<1,long> nn; nn.data = naxes; nn.dims = p.dims;
                 nn = reverse(nn);
                 phypp_check_fits(no_error,
-                    "FITS file has too small dimensions (reading pixel "+strn(p)+
-                    " in dims "+strn(nn)+")");
+                    "FITS file has too small dimensions (reading pixel "+to_string(p)+
+                    " in dims "+to_string(nn)+")");
             }
 
             type = impl::fits_impl::traits<Type>::ttype;
@@ -295,7 +295,7 @@ namespace fits {
             fits_get_img_dim(fptr_, &naxis, &status_);
             fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
             phypp_check_fits(naxis == Dim, "FITS file has wrong number of dimensions "
-                "(expected "+strn(Dim)+", got "+strn(naxis)+")");
+                "(expected "+to_string(Dim)+", got "+to_string(naxis)+")");
 
             int bitpix;
             std::vector<long> naxes(naxis);
@@ -311,8 +311,8 @@ namespace fits {
                 d[i] = naxes[Dim-1-i];
             }
 
-            phypp_check_fits(v.dims == d, "incompatible array dimensions ("+strn(v.dims)+
-                " vs. "+strn(d)+")");
+            phypp_check_fits(v.dims == d, "incompatible array dimensions ("+to_string(v.dims)+
+                " vs. "+to_string(d)+")");
 
             write_impl_(v.concretise());
         }

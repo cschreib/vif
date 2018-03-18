@@ -282,7 +282,7 @@ namespace impl {
                 case LONGLONG_IMG : return TLONGLONG;
                 case FLOAT_IMG    : return TFLOAT;
                 case DOUBLE_IMG   : return TDOUBLE;
-                default : throw fits::exception("unknown image type '"+strn(bitpix)+"'");
+                default : throw fits::exception("unknown image type '"+to_string(bitpix)+"'");
             }
         }
 
@@ -299,7 +299,7 @@ namespace impl {
             if (type == TINT32BIT) return "int32";
             if (type == TCOMPLEX) return "complex float";
             if (type == TDBLCOMPLEX) return "complex double";
-            return "unknown ("+strn(type)+")";
+            return "unknown ("+to_string(type)+")";
         }
 
         enum file_type {
@@ -546,17 +546,17 @@ namespace impl {
                             fits_insert_img(fptr_, impl::fits_impl::traits<float>::image_type,
                                 0, &naxes, &status_);
                             fits::phypp_check_cfitsio(status_,
-                                "could not create new HDUs to reach HDU "+strn(hdu));
+                                "could not create new HDUs to reach HDU "+to_string(hdu));
                         }
 
                         fits_set_hdustruc(fptr_, &status_);
                         fits::phypp_check_cfitsio(status_,
-                            "could not create new HDUs to reach HDU "+strn(hdu));
+                            "could not create new HDUs to reach HDU "+to_string(hdu));
                     }
                 }
 
                 fits_movabs_hdu(fptr_, hdu+1, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not reach HDU "+strn(hdu));
+                fits::phypp_check_cfitsio(status_, "could not reach HDU "+to_string(hdu));
             }
 
             // Return the number of dimensions of a FITS file
@@ -696,7 +696,7 @@ namespace fits {
 
         // Build new entry
         std::string entry = key+std::string(8-key.size(), ' ')+"= ";
-        std::string value = strn(v);
+        std::string value = to_string(v);
         if (!comment.empty()) {
             value += " / "+comment;
         }
