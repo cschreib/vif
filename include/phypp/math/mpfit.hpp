@@ -532,7 +532,7 @@ namespace phypp {
             options = mpfit_options(xall.size());
         } else {
             phypp_check(options.nparam == xall.size(), "incompatible number of elements in options "
-                "with provided parameters ("+strn(options.nparam)+" vs "+strn(xall.size())+")");
+                "with provided parameters (", options.nparam, " vs ", xall.size(), ")");
         }
 
         // Note: be carefull that limits are NaN by default, thus !(a == b) != (a != b)

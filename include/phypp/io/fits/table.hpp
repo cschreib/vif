@@ -160,7 +160,7 @@ namespace fits {
                 long repeat = 0;
                 fits_get_bcolparms(fptr_, c+1, name, nullptr, &type, &repeat,
                     nullptr, nullptr, nullptr, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not parameters of column "+strn(c+1)+" in HDU");
+                fits::phypp_check_cfitsio(status_, "could not parameters of column "+to_string(c+1)+" in HDU");
 
                 const uint_t max_dim = 256;
                 long axes[max_dim];
@@ -168,7 +168,7 @@ namespace fits {
                 fits_read_tdim(fptr_, c+1, max_dim, &naxis, axes, &status_);
                 fits::phypp_check_cfitsio(status_, "could not parameters of column '"+std::string(name)+"'");
 
-                if (!getkey(hdr, "TTYPE"+strn(c+1), ci.name)) {
+                if (!getkey(hdr, "TTYPE"+to_string(c+1), ci.name)) {
                     continue;
                 }
 
@@ -594,7 +594,7 @@ namespace fits {
             std::string extension;
             if (read_keyword("XTENSION", extension) && extension == "TABLE") {
                 std::string tform;
-                if (read_keyword("TFORM"+strn(cid), tform) && tform[0] == 'A') {
+                if (read_keyword("TFORM"+to_string(cid), tform) && tform[0] == 'A') {
                     from_string(erase_begin(tform, "A"), axes[0]);
                 }
             }
@@ -614,24 +614,24 @@ namespace fits {
 
             if (!read_column_check_dim_(opts, value, vdim, naxis, repeat)) {
                 return read_sentry{this, "wrong dimension for column '"+colname+"' "
-                    "(expected "+strn(vdim)+", got "+strn(naxis)+")"};
+                    "(expected "+to_string(vdim)+", got "+to_string(naxis)+")"};
             }
 
             auto raxes = axes;
             if (!read_column_check_rows_(opts, raxes, naxis)) {
                 std::string saxes = "{";
                 for (uint_t i : range(naxis)) {
-                    saxes += (i != 0 ? ", " : "") + strn(axes[i]);
+                    saxes += (i != 0 ? ", " : "") + to_string(axes[i]);
                 }
                 saxes += "}";
 
                 return read_sentry{this, "wrong dimension for column '"+colname+"' "
                     "(asking for "+(opts.first_row == opts.last_row ?
-                        "row "+strn(opts.first_row) :
+                        "row "+to_string(opts.first_row) :
                         "rows "+
-                        (opts.first_row == npos ? "0" : strn(opts.first_row))
+                        (opts.first_row == npos ? "0" : to_string(opts.first_row))
                         +" to "+
-                        (opts.last_row == npos ? strn(axes[naxis-1]) : strn(opts.last_row))
+                        (opts.last_row == npos ? to_string(axes[naxis-1]) : to_string(opts.last_row))
                     )+", in dimensions "+saxes+")"};
             }
 
@@ -1023,7 +1023,7 @@ namespace fits {
                 size *= d;
             }
 
-            return strn(size)+impl::fits_impl::traits<Type>::tform;
+            return to_string(size)+impl::fits_impl::traits<Type>::tform;
         }
 
         template<std::size_t Dim>
@@ -1033,7 +1033,7 @@ namespace fits {
                 size *= d;
             }
 
-            return strn(size)+impl::fits_impl::traits<std::string>::tform+strn(dims[0]);
+            return to_string(size)+impl::fits_impl::traits<std::string>::tform+to_string(dims[0]);
         }
 
 
@@ -1042,7 +1042,7 @@ namespace fits {
             int cid) {
             fits_write_tdim(fptr_, cid, Dim, const_cast<long*>(dims.data()), &status_);
             fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+
-                "' (dims "+strn(dims)+")");
+                "' (dims "+to_string(dims)+")");
         }
 
         void write_column_write_tdim_(const std::array<long,0>&, const std::string&, int) {

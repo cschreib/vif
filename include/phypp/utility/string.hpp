@@ -504,7 +504,7 @@ namespace phypp {
 
     template<typename T, typename ... Args>
     std::string hash_(std::string s, T&& t, Args&& ... args) {
-        return hash_(s+pretty_type(t)+strn(t), std::forward<Args>(args)...);
+        return hash_(s+pretty_type(t)+to_string(t), std::forward<Args>(args)...);
     }
 
     template<typename ... Args>

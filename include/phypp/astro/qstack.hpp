@@ -52,8 +52,7 @@ namespace impl {
                     is2D = found == 2;
                 }
 
-                phypp_check(is2D, "cannot stack on image cubes (image dimensions: "+
-                    strn(naxes)+")");
+                phypp_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
             }
 
             image_workspace(const image_workspace&) = delete;
@@ -285,7 +284,7 @@ namespace astro {
             is2D = found == 2;
         }
 
-        phypp_check(is2D, "cannot stack on image cubes (image dimensions: "+strn(naxes)+")");
+        phypp_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
 
         vec<1,long> wnaxes(naxis);
         fits_get_img_size(wfptr, naxis, wnaxes.data.data(), &status);
@@ -392,7 +391,7 @@ namespace astro {
         }
     }
 }
- 
+
 namespace impl {
     namespace qstack_impl {
         template<typename Type>

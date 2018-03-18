@@ -232,8 +232,8 @@ namespace plot {
                 }
 
                 ++itxt;
-                define_("text"+strn(itxt), fs.str);
-                file_ << "text"+strn(itxt)+" stringwidth pop";
+                define_("text"+to_string(itxt), fs.str);
+                file_ << "text"+to_string(itxt)+" stringwidth pop";
                 if (itxt == 1) {
                     file_ << "\n";
                 } else {
@@ -263,7 +263,7 @@ namespace plot {
                 }
 
                 ++itxt;
-                file_ << "text"+strn(itxt)+" show\n";
+                file_ << "text"+to_string(itxt)+" show\n";
             }
 
             if (last_level != 0) {

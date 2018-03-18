@@ -6,7 +6,14 @@ void read_column_(const std::string& filename, const std::string& colname,
 
     vec<D,T> tmp;
     fits::read_table(filename, colname, tmp);
-    v = strna(tmp);
+
+    if (std::is_same<T,float>::value) {
+        v = to_string_vector(format::scientific(tmp));
+    } else if (std::is_same<T,double>::value) {
+        v = to_string_vector(format::precision(format::scientific(tmp), 17));
+    } else {
+        v = to_string_vector(tmp);
+    }
 }
 
 template<std::size_t D>
@@ -64,7 +71,7 @@ do_next read_column_(const std::string& filename, const std::string& colname,
         tmp = tmp(ids, repeat<D-1>(_));
     }
 
-    v = strna(tmp);
+    v = to_string_vector(tmp);
 
     return do_next::run;
 }
@@ -245,7 +252,7 @@ int phypp_main(int argc, char* argv[]) {
         }
 
         vec1u ide = where(empty(split_names[i]));
-        split_names[i][ide] = split_cols[i] + '_' + strn(ide);
+        split_names[i][ide] = split_cols[i] + '_' + to_string(ide);
     }
 
     vec1u id_sel;

@@ -123,15 +123,15 @@ int phypp_main(int argc, char* argv[]) {
     uint_t maxi = std::max(hid.size(), uint_t(1+log10(cat.bands.size())));
     uint_t maxb = std::max(hband.size(), max(length(cat.bands)));
     uint_t maxn = std::max(hnote.size(), max(length(cat.notes)));
-    uint_t maxl = std::max(hlam.size(), max(length(strna(cat.lambda))));
-    uint_t maxdJ = std::max(hdepuJy.size(), max(length(strna_sci(cat.flux_err[rndid]))));
-    uint_t maxdAB = std::max(hdepAB.size(), max(length(strna(cat.flux_err[rndid]))));
-    uint_t maxdet = std::max(hdet.size(), length(strn(ngal)));
-    uint_t maxd3 = std::max(hd3s.size(), length(strn(ngal)));
-    uint_t maxd5 = std::max(hd5s.size(), length(strn(ngal)));
-    uint_t maxar = std::max(har.size(), max(length(strna(cat.lambda))));
-    uint_t maxmd = std::max(hmd.size(), max(length(strna(mindist))));
-    uint_t maxad = std::max(had.size(), max(length(strna(mindist))));
+    uint_t maxl = std::max(hlam.size(), max(length(to_string_vector(cat.lambda))));
+    uint_t maxdJ = std::max(hdepuJy.size(), max(length(to_string_vector(format::scientific(cat.flux_err[rndid])))));
+    uint_t maxdAB = std::max(hdepAB.size(), max(length(to_string_vector(cat.flux_err[rndid]))));
+    uint_t maxdet = std::max(hdet.size(), length(to_string(ngal)));
+    uint_t maxd3 = std::max(hd3s.size(), length(to_string(ngal)));
+    uint_t maxd5 = std::max(hd5s.size(), length(to_string(ngal)));
+    uint_t maxar = std::max(har.size(), max(length(to_string_vector(cat.lambda))));
+    uint_t maxmd = std::max(hmd.size(), max(length(to_string_vector(mindist))));
+    uint_t maxad = std::max(had.size(), max(length(to_string_vector(mindist))));
 
     std::string header = " "+
         align_center(hid, maxi)+" | "+
@@ -160,18 +160,18 @@ int phypp_main(int argc, char* argv[]) {
         if (idg.empty() || idg3s.empty()) continue;
 
         print(" ",
-            align_center(strn(i), maxi), " | ",
+            align_center(to_string(i), maxi), " | ",
             align_center(cat.bands[i], maxb), " | ",
             align_center(cat.notes[i], maxn), " | ",
-            align_right(strn(cat.lambda[i]), maxl), " | ",
-            align_right(strn_sci(3*median(e[idg3s])), maxdJ), " | ",
-            align_right(keep_start(strn(float(uJy2mag(3*median(e[idg3s])))), 4), maxdAB), " | ",
-            align_right(strn(idg.size()), maxdet), " | ",
-            align_right(strn(total(f[idg]/e[idg] > 3)), maxd3), " | ",
-            align_right(strn(total(f[idg]/e[idg] > 5)), maxd5), " | ",
-            align_right(align_left(strn(areas[i]), 9, '0'), maxar), " | ",
-            align_right(strn(mindist[i]), maxmd), " | ",
-            align_right(strn(3600.0*sqrt(areas[i]/idg3s.size())), maxad)
+            align_right(to_string(cat.lambda[i]), maxl), " | ",
+            align_right(to_string(format::scientific(3*median(e[idg3s]))), maxdJ), " | ",
+            align_right(keep_start(to_string(float(uJy2mag(3*median(e[idg3s])))), 4), maxdAB), " | ",
+            align_right(to_string(idg.size()), maxdet), " | ",
+            align_right(to_string(total(f[idg]/e[idg] > 3)), maxd3), " | ",
+            align_right(to_string(total(f[idg]/e[idg] > 5)), maxd5), " | ",
+            align_right(align_left(to_string(areas[i]), 9, '0'), maxar), " | ",
+            align_right(to_string(mindist[i]), maxmd), " | ",
+            align_right(to_string(3600.0*sqrt(areas[i]/idg3s.size())), maxad)
         );
     }
 

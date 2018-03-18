@@ -35,7 +35,7 @@ namespace astro {
         const vec<1,TFi>& filters) {
 
         phypp_check(z.size() == d.size(),
-            "incompatible redshift and distance variables ("+strn(z.dims)+" vs "+strn(d.dims)+")");
+            "incompatible redshift and distance variables (", z.dims, " vs ", d.dims, ")");
 
         struct {
             vec2d lam, sed;

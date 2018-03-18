@@ -30,7 +30,7 @@ namespace phypp {
 
         template<typename U>
         bool read_args_n2T_(vec<1,std::string>& t, const U& u) {
-            t = {strn(u)};
+            t = {to_string(u)};
             return true;
         }
 
@@ -42,7 +42,7 @@ namespace phypp {
 
         template<typename U>
         bool read_args_n2T_(std::string& t, const U& u) {
-            t = strn(u);
+            t = to_string(u);
             return true;
         }
 

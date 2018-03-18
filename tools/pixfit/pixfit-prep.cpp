@@ -13,17 +13,17 @@ int phypp_main(int argc, char* argv[]) {
     for (uint_t i : range(maps)) {
         oscript << "pixfit-extract cat=\""+cat_file+"\" img=\""+maps[i].band+"-sci.fits\" "
                 << "err=\""+maps[i].band+"-err.fits\" psf=\""+maps[i].psf+"\" "
-                << "fconv="+strn(maps[i].fconv)+" "
-                << "beam_flux="+strn(maps[i].beam_flux)+" "
+                << "fconv="+to_string(maps[i].fconv)+" "
+                << "beam_flux="+to_string(maps[i].beam_flux)+" "
                 << "out=fit-"+maps[i].band+".fits "
                 << "out_res="+maps[i].band+"-res.fits "
                 << "out_model="+maps[i].band+"-mod.fits make_groups "
                 << "out_gmap="+maps[i].band+"-grp.fits "
-                << "group_fit_threshold="+strn(maps[i].group_fit_threshold)+" "
-                << "group_aper_threshold="+strn(maps[i].group_aper_threshold)+" ";
+                << "group_fit_threshold="+to_string(maps[i].group_fit_threshold)+" "
+                << "group_aper_threshold="+to_string(maps[i].group_aper_threshold)+" ";
 
         if (is_finite(maps[i].beam_smear)) {
-            oscript << " beam_smeared beam_size=" << strn(maps[i].beam_smear);
+            oscript << " beam_smeared beam_size=" << to_string(maps[i].beam_smear);
         }
 
         oscript << "\n";
