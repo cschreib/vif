@@ -418,6 +418,10 @@ namespace impl {
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const F& v, const Args& ... args);
 
+        template<std::size_t D, typename Type, typename ... Args>
+        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t j, const vec<D,Type>& v, const Args& ... args);
+
         template<typename Type, typename F, typename ... Args>
         void write_table_do_impl_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const vec<1,Type>& v, F&& fmt, const Args& ... args) {
