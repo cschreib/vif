@@ -123,7 +123,7 @@ namespace phypp {
         return ss.str();
     }
 
-    std::string to_string(const std::string& t) {
+    inline std::string to_string(const std::string& t) {
         return t;
     }
 
