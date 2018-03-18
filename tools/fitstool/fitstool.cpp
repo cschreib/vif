@@ -631,11 +631,67 @@ void print_editkwd_help() {
     print("");
 }
 
+bool write_keyword_value(fitsfile* fptr, bool newk, std::string name, std::string new_value,
+    char* comment) {
+
+    int status = 0;
+    double d;
+    bool is_number = from_string(new_value, d);
+
+    if (!is_number) {
+        if (new_value[0] == '\'') {
+            new_value.erase(0,1);
+            for (uint_t i = new_value.size()-1; i != npos; --i) {
+                if (new_value[i] == '\'') {
+                    new_value.resize(i);
+                    return false;
+                }
+            }
+        }
+
+        if (newk) {
+            fits_write_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
+                const_cast<char*>(new_value.c_str()), comment, &status);
+            fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+        } else {
+            fits_update_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
+                const_cast<char*>(new_value.c_str()), comment, &status);
+            fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+        }
+    } else {
+        if (end_with(new_value, ".") || find(new_value, ".") == npos) {
+            int di = d;
+            if (newk) {
+                fits_write_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
+                    &status);
+                fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+            } else {
+                fits_update_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
+                    &status);
+                fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+            }
+        } else {
+            if (newk) {
+                fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                    &status);
+                fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+            } else {
+                fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
+                    &status);
+                fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+            }
+        }
+    }
+
+    return true;
+}
+
 bool edit_keyword(int argc, char* argv[], const std::string& file) {
     bool help = false;
     bool verbose = false;
     uint_t hdu = npos;
-    read_args(argc, argv, arg_list(help, verbose, hdu));
+    std::string key, val;
+    read_args(argc, argv, arg_list(help, verbose, hdu, key, val));
 
     if (help) {
         print_remove_help();
@@ -669,108 +725,80 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
             fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
         }
 
-        while (true) {
-            print("please type the name of the keyword you want to edit (empty to exit):");
-            std::string name;
-            std::cout << "> ";
-            std::getline(std::cin, name);
-            name = toupper(trim(name));
-            if (name.empty()) break;
+        if (key.empty() && val.empty()) {
+            while (true) {
+                print("please type the name of the keyword you want to edit (empty to exit):");
+                std::string name;
+                std::cout << "> ";
+                std::getline(std::cin, name);
+                name = toupper(trim(name));
+                if (name.empty()) break;
 
+                char value[80];
+                char comment[80];
+                bool newk = false;
+                fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
+                if (status != 0) {
+                    status = 0;
+                    newk = true;
+                    std::cout << "note: this keyword does not exist, do you want to create it? (y/n) "
+                        << std::flush;
+
+                    std::string line;
+                    bool stop = false;
+                    while (line.empty()) {
+                        std::getline(std::cin, line);
+                        line = tolower(line);
+                        if (line == "y" || line == "yes") break;
+                        if (line == "n" || line == "no") {
+                            stop = true;
+                            break;
+                        }
+
+                        line.clear();
+                        std::cout << "error: please answer either 'yes' (y) or 'no' (n): "
+                            << std::flush;
+                    }
+
+                    if (stop) {
+                        continue;
+                    }
+
+                    print("");
+                }
+
+                if (!newk) {
+                    print(name, " = ", value, " (", comment, ")");
+                }
+
+                print("please type the new value for this keyword (empty to abort):");
+                std::string new_value;
+                std::cout << "> ";
+                std::getline(std::cin, new_value);
+                new_value = trim(new_value);
+                if (new_value.empty()) break;
+
+                if (!write_keyword_value(fptr, newk, name, new_value, comment)) {
+                    error("could not write keyword");
+                    break;
+                }
+
+                fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
+                print(name, " = ", value, " (", comment, ")");
+            }
+        } else {
             char value[80];
             char comment[80];
             bool newk = false;
-            fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
+            fits_read_keyword(fptr, const_cast<char*>(key.c_str()), value, comment, &status);
             if (status != 0) {
                 status = 0;
                 newk = true;
-                std::cout << "note: this keyword does not exist, do you want to create it? (y/n) "
-                    << std::flush;
-
-                std::string line;
-                bool stop = false;
-                while (line.empty()) {
-                    std::getline(std::cin, line);
-                    line = tolower(line);
-                    if (line == "y" || line == "yes") break;
-                    if (line == "n" || line == "no") {
-                        stop = true;
-                        break;
-                    }
-
-                    line.clear();
-                    std::cout << "error: please answer either 'yes' (y) or 'no' (n): "
-                        << std::flush;
-                }
-
-                if (stop) {
-                    continue;
-                }
-
-                print("");
             }
 
-            if (!newk) {
-                print(name, " = ", value, " (", comment, ")");
+            if (!write_keyword_value(fptr, newk, key, val, comment)) {
+                error("could not write keyword");
             }
-
-            print("please type the new value for this keyword (empty to abort):");
-            std::string new_value;
-            std::cout << "> ";
-            std::getline(std::cin, new_value);
-            new_value = trim(new_value);
-            if (new_value.empty()) break;
-
-            double d;
-            bool is_number = from_string(new_value, d);
-
-            if (!is_number) {
-                if (new_value[0] == '\'') {
-                    new_value.erase(0,1);
-                    for (uint_t i = new_value.size()-1; i != npos; --i) {
-                        if (new_value[i] == '\'') {
-                            new_value.resize(i);
-                            break;
-                        }
-                    }
-                }
-
-                if (newk) {
-                    fits_write_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
-                        const_cast<char*>(new_value.c_str()), comment, &status);
-                    fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
-                } else {
-                    fits_update_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
-                        const_cast<char*>(new_value.c_str()), comment, &status);
-                    fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
-                }
-            } else {
-                if (end_with(new_value, ".") || find(new_value, ".") == npos) {
-                    int di = d;
-                    if (newk) {
-                        fits_write_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
-                            &status);
-                        fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
-                    } else {
-                        fits_update_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
-                            &status);
-                        fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
-                    }
-                } else {
-                    if (newk) {
-                        fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
-                            &status);
-                        fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
-                    } else {
-                        fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
-                            &status);
-                        fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
-                    }
-                }
-            }
-
-            fits_read_keyword(fptr, const_cast<char*>(name.c_str()), value, comment, &status);
-            print(name, " = ", value, " (", comment, ")");
         }
 
         fits_close_file(fptr, &status);
