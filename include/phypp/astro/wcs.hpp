@@ -751,7 +751,7 @@ namespace astro {
 #else
 
         phypp_check(w.is_valid(), "invalid WCS data");
-        phypp_check(x.dims == y.dims, "x and y arrays do not match sizes ("+
+        phypp_check(x.dims == y.dims, "x and y arrays do not match sizes (",
             x.dims, " vs ", y.dims, ")");
 
         uint_t npt = x.size();
