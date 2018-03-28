@@ -639,7 +639,9 @@ namespace fits {
             read_column_resize_(value, naxis, raxes);
 
             // Read
-            read_column_impl_(opts, value, tcolname, cid, naxis, axes, repeat, nrow, colfits);
+            if (nrow != 0) {
+                read_column_impl_(opts, value, tcolname, cid, naxis, axes, repeat, nrow, colfits);
+            }
 
             return read_sentry{};
         }
