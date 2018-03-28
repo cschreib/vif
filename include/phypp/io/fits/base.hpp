@@ -772,41 +772,75 @@ namespace fits {
 
     inline fits::parsed_header parse_header(const fits::header& hdr) {
         fits::parsed_header keys;
-        vec1s ckeys = cut(hdr, 80);
-        keys.resize(ckeys.size());
-        for (uint_t i : range(ckeys)) {
-            if (ckeys[i].find_first_of("HISTORY ") == 0) {
-                keys[i].key = trim(ckeys[i]);
-            } else {
-                auto p = ckeys[i].find_first_of("=/");
-                if (p == std::string::npos) {
-                    keys[i].key = trim(ckeys[i]);
-                } else if (ckeys[i][p] == '/') {
-                    keys[i].key = trim(ckeys[i].substr(0, p));
-                    keys[i].comment = trim(ckeys[i].substr(p));
-                } else if (ckeys[i][p] == '=') {
-                    keys[i].novalue = false;
-                    keys[i].key = trim(ckeys[i].substr(0, p));
+        vec1s lines = cut(hdr, 80);
+        keys.reserve(lines.size());
+        for (uint_t i : range(lines)) {
+            if (lines[i].find("HISTORY ") == 0) {
+                keys.push_back(header_keyword{});
+                auto& k = keys.back();
+                k.key = trim(lines[i]);
+            } else if (lines[i].find("CONTINUE ") == 0) {
+                auto& k = keys.back();
+                std::string right = trim(lines[i].substr(10));
+                if (!right.empty() && right[0] == '\'') {
+                    auto p2 = right.find_first_of('\'', 1);
+                    std::string val;
+                    if (p2 != std::string::npos) {
+                        val = trim(right.substr(1, p2-1));
+                        k.comment = trim(right.substr(p2+1));
+                    } else {
+                        val = trim(right);
+                    }
 
-                    std::string right = trim(ckeys[i].substr(p+1));
+
+                    if (!k.value.empty() && k.value[0] == '\'') {
+                        k.value = k.value.substr(1, k.value.size()-2);
+                    }
+
+                    if (k.value.back() == '&') {
+                        k.value = k.value.substr(0, k.value.size()-1);
+                    }
+                    if (val.back() == '&') {
+                        val = val.substr(0, val.size()-1);
+                    }
+
+                    k.value = '\''+k.value+val+'\'';
+                } else {
+                    // Don't know what to do, just ignore
+                }
+            } else {
+                keys.push_back(header_keyword{});
+                auto& k = keys.back();
+
+                auto p = lines[i].find_first_of("=/");
+                if (p == std::string::npos) {
+                    k.key = trim(lines[i]);
+                } else if (lines[i][p] == '/') {
+                    k.key = trim(lines[i].substr(0, p));
+                    k.comment = trim(lines[i].substr(p));
+                } else if (lines[i][p] == '=') {
+                    k.novalue = false;
+                    k.key = trim(lines[i].substr(0, p));
+
+                    std::string right = trim(lines[i].substr(p+1));
                     if (!right.empty()) {
                         if (right[0] == '\'') {
                             auto p2 = right.find_first_of('\'', 1);
                             if (p2 != std::string::npos) {
                                 ++p2;
 
-                                keys[i].value = trim(right.substr(0, p2));
-                                keys[i].comment = trim(right.substr(p2));
+                                k.value = trim(right.substr(0, p2));
+                                k.comment = trim(right.substr(p2));
                             } else {
-                                keys[i].value = trim(right);
+                                k.value = trim(right);
                             }
                         } else {
                             uint_t p2 = right.find_first_of('/');
                             if (p2 != std::string::npos) {
-                                keys[i].value = trim(right.substr(0, p2));
-                                keys[i].comment = trim(right.substr(p2));
+                                k.value = trim(right.substr(0, p2));
+                                k.comment = trim(right.substr(p2));
                             } else {
-                                keys[i].value = trim(right);
+                                k.value = trim(right);
                             }
                         }
                     }
