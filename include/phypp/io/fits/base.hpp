@@ -522,7 +522,7 @@ namespace impl {
                             } else {
                                 return fits::image_hdu;
                             }
-                        } else if (xtension == "BINTABLE") {
+                        } else if (xtension == "BINTABLE" || xtension == "TABLE") {
                             return fits::table_hdu;
                         } else {
                             phypp_check(false, "unknown XTENSION value '", xtension, "'");
