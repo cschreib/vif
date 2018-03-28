@@ -51,7 +51,7 @@ if(NOT PHYPP_FOUND)
             add_definitions(-Wno-old-style-cast)
         endif()
         if(NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.8))
-            add_definitions(-Wno-double-promote)
+            add_definitions(-Wno-double-promotion)
         endif()
 
         add_definitions(-std=c++11)
