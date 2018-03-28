@@ -696,7 +696,12 @@ namespace fits {
 
         // Build new entry
         std::string entry = key+std::string(8-key.size(), ' ')+"= ";
-        std::string value = to_string(v);
+        std::string value;
+        if (std::is_same<T,double>::value) {
+            value = to_string(format::precision(v, 16));
+        } else {
+            value = to_string(v);
+        }
         if (!comment.empty()) {
             value += " / "+comment;
         }
