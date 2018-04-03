@@ -405,10 +405,6 @@ namespace impl {
             file << '\n';
         }
 
-        template<typename Type, typename ... Args>
-        void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
-            std::size_t i, std::size_t j, const vec<2,Type>& v, const Args& ... args);
-
         template<typename U, typename ... VArgs, typename ... Args>
         void write_table_do_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t j, const std::tuple<U,VArgs...>& v, const Args& ... args);
@@ -487,6 +483,16 @@ namespace impl {
         inline void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t k, std::size_t j) {}
 
+        template<typename Type, typename ... Args>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, const Args& ... args);
+        template<typename F, typename ... Args>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const F& v, const Args& ... args);
+        template<typename U, typename ... VArgs, std::size_t ... S>
+        void write_table_do_tuple_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
+            std::size_t i, std::size_t k, std::size_t j, const std::tuple<U,VArgs...>& v, meta::seq_t<S...>);
+
         template<typename Type, typename F, typename ... Args>
         void write_table_do_tuple_impl_(std::ofstream& file, std::size_t cwidth, const std::string& sep,
             std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, F&& fmt,
@@ -513,7 +519,7 @@ namespace impl {
             std::size_t i, std::size_t k, std::size_t j, const vec<2,Type>& v, const Args& ... args) {
 
             using DType = typename std::decay<decltype(v[0])>::type;
-            write_table_do_tuple_(file, cwidth, sep, i, k, j, v, [](const DType& t) {
+            write_table_do_tuple_impl_(file, cwidth, sep, i, k, j, v, [](const DType& t) {
                 return to_string(t);
             }, args...);
         }
@@ -523,7 +529,7 @@ namespace impl {
             std::size_t i, std::size_t k, std::size_t j, const F& v, const Args& ... args) {
 
             using DType = typename std::decay<decltype(v.obj[0])>::type;
-            write_table_do_tuple_(file, cwidth, sep, i, k, j, v.obj, [&](const DType& t) {
+            write_table_do_tuple_impl_(file, cwidth, sep, i, k, j, v.obj, [&](const DType& t) {
                 return to_string(v.forward(t));
             }, args...);
         }
