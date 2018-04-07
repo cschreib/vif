@@ -46,7 +46,7 @@ Size and dimensions
 
 For any vector ``v``, ``v.dims`` is an ``std::array`` that holds the length of each dimension of the vector: ``v.dims[0]`` is the number of elements along the first dimension, etc. This array is set automatically when the vector is created or resized, and should not be modified manually (except in very specific and rare circumstances).
 
-The total number of elements in a vector can be obtained using ``v.size()``, and this is equal to the product of all the dimensions of the vector. This is cheap function, as the size is stored internally and does not need to be computed for each call. One can check if a vector is empty (i.e., contains no element) using ``v.empty()``, which returns either ``true`` or ``false`` (this does *not* empty the vector).
+The total number of elements in a vector can be obtained using ``v.size()``, and this is equal to the product of all the dimensions of the vector. This is a cheap function, as the size is stored internally and does not need to be computed for each call. One can check if a vector is empty (i.e., contains no element) using ``v.empty()``, which returns either ``true`` or ``false`` (this does *not* empty the vector).
 
 
 .. _Initialization:
@@ -78,7 +78,7 @@ The "size" initialization pre-allocates memory for the data, which is very usefu
     vec2f w(10,20); // 200 zeros, arranged in a 2D shape of 10x20
     vec3f z(w.dims,4); // 800 zeros, arranged in a 3D shape of 10x20x4
 
-As shown in the last example (initializing ``z``), the arguments of the constructor can be a mixture of integer values and ``std::array``, coming for example from the dimensions of another existing vector.
+As shown in the last example (initializing ``z``), the arguments of the constructor can be a mixture of integer values and ``std::array``; the arrays can come, for example, from the dimensions of other existing vectors.
 
 The "list" initialization explicitly specifies a set of values to be stored in the vector. This uses initializer lists, which can be nested for multidimensional vectors.
 
@@ -109,7 +109,7 @@ Resizing and adding elements
 
 The dimensions and size of a vector can be modified in three main ways.
 
-First, ``v.clear()`` will erase all the values from the vector and set all its dimensions to zero. This will set the vector the state of a default-initialized vector (see above).
+First, ``v.clear()`` will erase all the values from the vector and set all its dimensions to zero. This will set the vector in the state of a default-initialized vector (see above).
 
 Second, ``v.resize(...)`` will change the dimensions of the vector. The parameters it accepts are the same as the "size" constructor (see above), i.e., either integral values for individual dimensions, or an ``std::array`` containing multiple dimensions, or any combination of these. The only constraint is that the total number of dimensions of the vector must remain unchanged.
 
@@ -119,9 +119,9 @@ Second, ``v.resize(...)`` will change the dimensions of the vector. The paramete
     w.resize(20,10);  // 20x10
     w.resize(200,10); // 200x10
 
-Once the vector has been resized, its previous content is left in an undefined state, i.e., you can generally assume the previous values (if any) have been lost and replaced by meaningless garbage. The only exception is for 1D vectors. If the resize operation *decreases* the total number of elements, then values are erased from the end of the vector and while rest remains untouched. On the other hand, if the resize operation *increased* the total number of elements, new elements are inserted at the end of the vector, default constructed (i.e., zeros for integral types, etc.).
+Once the vector has been resized, its previous content is left in an undefined state, i.e., you can generally assume the previous values (if any) have been lost and replaced by meaningless garbage. The only exception is for 1D vectors. If the resize operation *decreases* the total number of elements, then values are erased from the end of the vector and the rest remains untouched. On the other hand, if the resize operation *increased* the total number of elements, new elements are inserted at the end of the vector, default constructed (i.e., zeros for integral types, etc.). This is the same behavior as ``std::vector``.
 
-Third, ``v.push_back(...)`` will add new values at the end of the vector, increasing its size. The behavior of this function is different for 1D and multidimensional vectors. For 1D vectors, this function appends a new element at the end of the vector, and therefore takes for argument a single scalar value. For multidimensional vectors, this function takes for argument another vector of ``D-1`` dimensions, and whose lengths match the *last* ``D-1`` dimensions of the first vector. The new vector is inserted after the existing elements, and the *first* dimension of the first vector is increased by one.
+Third, ``v.push_back(...)`` will add new values at the end of the vector, increasing its size. The behavior of this function is different for 1D and multidimensional vectors. For 1D vectors, this function appends a new element at the end of the vector, and therefore takes for argument a single scalar value. For multidimensional vectors, this function takes for argument another vector of ``D-1`` dimensions, and whose lengths match the *last* ``D-1`` dimensions of the first vector. The new vector is inserted after the existing elements in memory, and the *first* dimension of the first vector is increased by one.
 
 .. code-block:: c++
 
@@ -132,7 +132,8 @@ Third, ``v.push_back(...)`` will add new values at the end of the vector, increa
     w.push_back({7,8,9});         // shape 3x3
     w.push_back({7,8});           // error: dimensions do not match
 
-**Note:** For optimization, the ``push_back(...)`` function will generally be used in conjunction with ``v.reserve()``. This function is identical to ``std::vector::reserve()``. To understand what this function actually does, one needs to know the internal behavior of std::vector. At any instant, the ``std::vector`` only has enough memory to hold ``N`` elements, which is usually larger than the actual size of the vector. ``N`` is called the capacity of the vector. Once the allocated memory is full, and a new ``push_back()`` is called, ``std::vector`` allocates a larger amount of memory (typically ``2*N`` elements), copies the existing elements inside this new memory, and frees the old memory. This strategy allows virtually unlimited growth of a given vector; it is quite efficiently tuned but remains an expensive operation. Performances can be greatly improved if one knows *in advance* (and even approximatively) the total number of objects that need to be stored in the vector, so that the right amount of memory is allocated from the start, and no further reallocation is required. This function does just that: it tells ``std::vector`` how many elements it will (or might) contain at some point, so that the vector can already allocate enough memory to store them contiguously. Later, if you have reserved way too much memory, you can always ask the vector to free the surplus by calling std::vector::shrink_to_fit(), which will result in an additional reallocation.
+
+For optimization, the ``push_back(...)`` function will generally be used in conjunction with ``v.reserve()``. This function is identical to ``std::vector::reserve()``. To understand what this function actually does, one needs to know the internal behavior of ``std::vector``. At any instant, the ``std::vector`` only has enough memory to hold ``N`` elements, which is usually larger than the actual size of the vector. ``N`` is called the capacity of the vector. Once the allocated memory is full, and a new ``push_back()`` is called, ``std::vector`` allocates a larger amount of memory (typically ``2*N`` elements), copies the existing elements inside this new memory, and frees the old memory. This strategy allows virtually unlimited growth of a given vector; it is quite efficiently tuned, but it remains an expensive operation. Performances can be greatly improved if one knows *in advance* (and even approximatively) the total number of objects that need to be stored in the vector, so that the right amount of memory is allocated from the start, and no further reallocation is required. This function does just that: it tells ``std::vector`` how many elements it will (or might) contain at some point, so that the vector can already allocate enough memory to store them contiguously. Later, if you have reserved way too much memory, you can always ask the vector to free the surplus by calling ``std::vector::shrink_to_fit()``, which will result in an additional reallocation but will free some unused memory.
 
 
 .. _Type conversion:
@@ -197,7 +198,7 @@ Not only this, but we can also perform operations on a pair of vectors:
 
 Almost all the mathematical and logical operators are overloaded. Therefore, as a rule of thumb, if you can do an operation with a type ``T``, you can do it with ``vec<1,T>`` as well. The one notable exception are bitwise operators: ``|``, ``&``, and ``^``. The reason is twofold: first, these are not so commonly used in data analysis, and second, the ``^`` operator can be mistakenly interpreted as the exponentiation operator, that some other languages possess (if you need to do exponentiation, use ``pow()``).
 
-**Note:** Contrary to some other C++ libraries with vectorized arithmetic (such as Eigen_, blazelib_, or xtensor_), phy++ does not use *expression templates*. Instead, each operation is executed immediately (no lazy evaluation) and operates if necessary on temporary intermediate vectors. While this may appear to be a sub-optimal implementation, phy++ was tuned to makes good use of return value optimization, move semantics, and for reusing the memory of temporaries in chained expressions. As a result, performance was found to be on par with expression templates in the most common situations. The benefit of not using expression templates is a reduced compilation time, and a much simpler code base.
+.. note:: Contrary to some other C++ libraries with vectorized arithmetic (such as Eigen_, blazelib_, or xtensor_), phy++ does not use *expression templates*. Instead, each operation is executed immediately (no lazy evaluation) and operates if necessary on temporary intermediate vectors. While this may appear to be a sub-optimal implementation, phy++ was tuned to makes good use of return value optimization, move semantics, and for reusing the memory of temporaries in chained expressions. As a result, performance was found to be on par with expression templates in the most common situations. This is of course dependent on the precise calculation to perform. The benefit of not using expression templates is a reduced compilation time, and a much simpler code base.
 
 .. _Eigen: http://eigen.tuxfamily.org/index.php?title=Main_Page
 .. _blazelib: https://bitbucket.org/blaze-lib/blaze
