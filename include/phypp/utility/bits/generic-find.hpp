@@ -283,7 +283,7 @@ namespace phypp {
 
     // Same as set_intersection_sorted() but without the assumption of sorted input.
     template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
-    auto set_intersection(vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
+    auto set_intersection(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
         vec<1,decltype(v1[0]*v2[0])> {
 
         return set_intersection_sorted(impl::make_sorted_(v1), impl::make_sorted_(v2));
@@ -309,7 +309,7 @@ namespace phypp {
 
     // Same as set_intersection_sorted() but without the assumption of sorted input.
     template<std::size_t D1 = 1, std::size_t D2 = 1, typename Type1, typename Type2 = Type1>
-    auto set_union(vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
+    auto set_union(const vec<D1,Type1>& v1, const vec<D2,Type2>& v2) ->
         vec<1,decltype(v1[0]*v2[0])> {
 
         return set_union_sorted(impl::make_sorted_(v1), impl::make_sorted_(v2));
