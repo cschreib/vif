@@ -423,7 +423,7 @@ namespace phypp {
         return uindgen(1 + (res.second - res.first)) + (res.first - v.data.begin());
     }
 
-    // Find the closest point in a 2D array that satisfies a given criterium
+    // From a starting position on a 2D boolean map, find the closest point that is 'true'.
     inline bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
         phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
 
@@ -433,6 +433,7 @@ namespace phypp {
         if (map.safe(x,y)) return true;
 
         using vec_pair = vec<1,std::pair<uint_t,uint_t>>;
+
         vec_pair open;
         open.push_back(std::make_pair(x,y));
 
@@ -442,7 +443,7 @@ namespace phypp {
         while (!open.empty()) {
             vec_pair old_open = std::move(open);
 
-            for (auto p : old_open) {
+            for (auto& p : old_open) {
                 int_t ox = p.first;
                 int_t oy = p.second;
 
