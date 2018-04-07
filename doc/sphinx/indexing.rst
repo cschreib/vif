@@ -52,7 +52,7 @@ All the indexing methods described above perform *bound checks* before accessing
 
 When executed, the code above produces:
 
-.. code-block::
+.. code-block:: none
 
     error: operator[]: index out of bounds (20 vs. 10)
 
