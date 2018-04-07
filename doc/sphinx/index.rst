@@ -36,7 +36,9 @@ Below is a code sample written in phy++ that illustrates the most basic function
     vector
     indexing
     view
+    known-issues
     generic-function-guidelines
+    idl
 
 .. _support-library:
 
@@ -46,7 +48,6 @@ Below is a code sample written in phy++ that illustrates the most basic function
 
     support-intro
     generic
-    idl
     argv
     string
     os
