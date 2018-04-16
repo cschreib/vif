@@ -23,11 +23,12 @@ Creating a view is simple: instead of indexing a vector with integer values, as 
     vec1u id = {1,2,4};
 
     // We create the view and multiply all the elements by two.
-    w[id] *= 2; // {1,4,6,4,10,6};
+    w[id] *= 2;
+    // 'w' now contains {1,4,6,4,10,6};
 
-In the example above, the type of `id` is ``vec<1,float*>``. Views have the type of the vector they point to,  with the data type specified as a *pointer*, and the dimension is set by the vector that was used for *indexing* (regardless of the dimension of the pointed vector).
+In the example above, the type of `id` is ``vec<1,float*>``. Views have the type of the vector they point to,  with the data type specified as a *pointer* (``T`` -> ``T*``), and the dimension is set by the vector that was used for *indexing* (regardless of the dimension of the pointed vector).
 
-**Important note:** Since a view keeps *references* to the elements of the original vector, the lifetime of the view must not exceed that of the original vector. Else, it will contain *dangling* references, pointers to unused memory, and this should be avoided at *all cost*. For this reason, views are not meant to be stored into named variables, but should only be used in temporary expressions as above. The only notable exception to this rule is when passing views to functions (see :ref:`Generic function guidelines`).
+..note:: Since a view keeps *references* to the elements of the original vector, the lifetime of the view must not exceed that of the original vector. Else, it will contain *dangling* references, pointers to unused memory, and this should be avoided at *all cost*. For this reason, views are not meant to be stored into named variables, but should only be used in temporary expressions as above. This point is discussed also in :ref:`Known issues and problems`. The only notable exception to this rule is when passing views to functions (see :ref:`Generic function guidelines`).
 
 As for regular indexing, views can only be created using vectors of *integer* indices (signed or unsigned). Bounds checking will be done on each element of the index vector, so if you know your indices are valid you may want to use "safe" indexing (see :ref:`Indexing`).
 
@@ -52,7 +53,7 @@ Mixing views (or vectors) of different sizes will trigger an error at runtime.
 Range indexing
 --------------
 
-Sometimes, one will want to use views to access all the elements at once, for example to set all the elements of a vector to a specific value. This can be done with a loop, of course, but the whole point of phy++ is to avoid loops whenever possible. An alternative is to use a view, with an index vector that contains all the indices of the target vector:
+Sometimes, one will want to use views to access all the elements at once, for example to set all the elements of a vector to a specific value. This can be done with a loop, of course, but the whole point of phy++ is to avoid explicit loops whenever possible. An alternative is to use a view, with an index vector that contains all the indices of the target vector:
 
 .. code-block:: c++
 

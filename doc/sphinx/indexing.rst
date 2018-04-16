@@ -45,11 +45,29 @@ Bounds checking, and safe indexing
 
 All the indexing methods described above perform *bound checks* before accessing each element. In other words, the vector class makes sure that each index is smaller than either the total size of the vector (for flat indices) or the length of its corresponding dimension (for multidimensional indices). If this condition is not satisfied, an assertion is raised explaining the problem, with a backtrace, and the program is stopped immediately to prevent memory corruption.
 
+.. code-block:: c++
+
+    vec1f v(10):
+    v[20] = 3.1415;
+
+When executed, the code above produces:
+
+.. code-block:: none
+
+    error: operator[]: index out of bounds (20 vs. 10)
+
+    backtrace:
+     - phypp_main(int, char**)
+       at /home/cschreib/test.cpp:5
+
+
 This bound checking has a small but sometimes noticeable impact on performances. In most cases, the added security is definitely worth it. Indeed, accessing a vector with an out-of-bounds index has very unpredictable impacts on the behavior of the program: sometimes it will crash, but most of the time it will not and memory will be silently corrupted. These problems are hard to notice, and can have terrible consequences... Identifying the root of the problem and fixing it may prove even more challenging. This is why these checks are enabled by default, even in "Release" mode.
 
-However, there are cases where bound checking is superfluous, for example if we already know *by construction* that our indices will always be valid, and no check is required. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element and most of the time is spent iterating from one index to the next and loading the value in the CPU cache, then bound checking can take a significant amount of the total time.
+However, there are cases where bound checking is superfluous, for example if we already know *by construction* that our indices will always be valid, and no check is required. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element and most of the time is spent iterating from one index to the next and loading the value in the CPU cache, then bounds checking can take a significant amount of the total time.
 
 For this reason, the phy++ vector also offers an alternative indexing interface, the so-called "safe" interface. It behaves exactly like the standard indexing interface described above, except that it does not perform bound checking. One can use this interface using ``v.safe[i]`` instead of ``v[i]`` for flat indexing, or ``v.safe(x,y)`` instead of ``v(x,y)`` for multidimensional indexing. The safe interface can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times. Just be certain to use this interface when you know *for sure* what you are doing, and you can prove that the index will always be valid. A good strategy is to always use the standard interface and, only when the program runs successfully, switch to the safe interface for the most stable but time-consuming code sections.
+
+.. note:: One may wonder why the word ``safe`` was used instead of ``unsafe``, since indexing without bounds checking is actually an "unsafe" operation. The reason why is that writing ``v.safe[i]`` can be understood as telling the vector: "I am in a context where I know where the index ``i`` came from, you're *safe*, you can disable bounds checking". I was also feeling somewhat uncomfortable at writing ``unsafe`` everywhere in the core functions of the library...
 
 
 Loops, and traversing data
