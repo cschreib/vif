@@ -5,11 +5,11 @@
 #include <cctype>
 
 namespace phypp {
-    inline char to_upper(char s) {
+    inline char to_upper(char c) {
         return std::toupper(static_cast<unsigned char>(c));
     }
 
-    inline char to_lower(char s) {
+    inline char to_lower(char c) {
         return std::tolower(static_cast<unsigned char>(c));
     }
 
