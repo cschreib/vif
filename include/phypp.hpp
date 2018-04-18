@@ -10,6 +10,7 @@
 // Generic utility functions
 #include "phypp/utility/string.hpp"
 #include "phypp/utility/argv.hpp"
+#include "phypp/utility/os.hpp"
 #include "phypp/utility/time.hpp"
 #include "phypp/utility/thread.hpp"
 #include "phypp/utility/generic.hpp"
