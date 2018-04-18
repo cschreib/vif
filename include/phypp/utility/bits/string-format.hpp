@@ -13,11 +13,11 @@ namespace phypp {
         return std::tolower(static_cast<unsigned char>(c));
     }
 
-    inline unsigned char to_upper(unsigned char s) {
+    inline unsigned char to_upper(unsigned char c) {
         return std::toupper(c);
     }
 
-    inline unsigned char to_lower(unsigned char s) {
+    inline unsigned char to_lower(unsigned char c) {
         return std::tolower(c);
     }
 
