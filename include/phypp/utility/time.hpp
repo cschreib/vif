@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include "phypp/utility/string.hpp"
+#include "phypp/utility/os.hpp"
 
 namespace phypp {
     // Return the current time [seconds]
