@@ -23,7 +23,7 @@ namespace phypp {
 
     inline std::string to_upper(std::string s) {
         for (auto& c : s) {
-            c = to_toupper(c);
+            c = to_upper(c);
         }
         return s;
     }
@@ -61,8 +61,8 @@ namespace phypp {
         return s;
     }
 
-    PHYPP_VECTORIZE(toupper)
-    PHYPP_VECTORIZE(tolower)
+    PHYPP_VECTORIZE(to_upper)
+    PHYPP_VECTORIZE(to_lower)
     PHYPP_VECTORIZE(align_left)
     PHYPP_VECTORIZE(align_right)
     PHYPP_VECTORIZE(align_center)

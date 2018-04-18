@@ -137,7 +137,7 @@ namespace astro {
                 return false;
             }
 
-            spl[0] = trim(tolower(spl[0]));
+            spl[0] = trim(to_lower(spl[0]));
 
             if (spl[0] == "pixel_scale") {
                 if (!from_string(spl[1], params.pixel_scale)) {
@@ -477,7 +477,7 @@ namespace astro {
         uint_t find_axis(const std::string& name) const {
             for (uint_t i : range(axis_count())) {
                 std::string ctype = split(w->ctype[i], "-")[0];
-                if (ctype == toupper(name)) {
+                if (ctype == to_upper(name)) {
                     return w->naxis-1 - i;
                 }
             }

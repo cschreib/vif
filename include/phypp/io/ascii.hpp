@@ -150,7 +150,7 @@ namespace impl {
             std::istringstream ss(fallback);
             ss >> v;
             if (ss.fail()) {
-                std::string s = trim(toupper(fallback));
+                std::string s = trim(to_upper(fallback));
                 if (s == "NAN" || s == "+NAN" || s == "-NAN") {
                     v = dnan;
                     return true;

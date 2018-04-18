@@ -545,7 +545,7 @@ namespace fits {
 
             template<typename P>
             void operator () (reflex::member_t& m, P&& v) {
-                tbl->read_column(opts, base+toupper(m.name), std::forward<P>(v));
+                tbl->read_column(opts, base+to_upper(m.name), std::forward<P>(v));
             }
         };
 
@@ -557,7 +557,7 @@ namespace fits {
                 "this value cannot be read from a FITS file");
 
             // Check if column exists
-            std::string colname = toupper(tcolname);
+            std::string colname = to_upper(tcolname);
             int cid;
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
             if (status_ != 0) {
@@ -655,7 +655,7 @@ namespace fits {
                 "this function requires reflection capabilities (NO_REFLECTION=0)");
             #endif
 
-            do_read_struct_ run{this, opts, toupper(colname)+"."};
+            do_read_struct_ run{this, opts, to_upper(colname)+"."};
             reflex::foreach_member(value, run);
 
             return read_sentry{};
@@ -670,7 +670,7 @@ namespace fits {
                 "this function requires reflection capabilities (NO_REFLECTION=0)");
             #endif
 
-            do_read_struct_ run{this, opts, toupper(colname)+"."};
+            do_read_struct_ run{this, opts, to_upper(colname)+"."};
             reflex::foreach_member(reflex::wrap(value), run);
 
             return read_sentry{};
@@ -1057,7 +1057,7 @@ namespace fits {
 
             template<typename P>
             void operator () (const reflex::member_t& m, P&& v) {
-                tbl->write_column(base+toupper(m.name), std::forward<P>(v));
+                tbl->write_column(base+to_upper(m.name), std::forward<P>(v));
             }
         };
 
@@ -1076,7 +1076,7 @@ namespace fits {
             const auto dims = write_column_get_dims_(value);
 
             // Create empty column
-            std::string colname = toupper(tcolname);
+            std::string colname = to_upper(tcolname);
             std::string tform = write_column_make_tform_(meta::type_list<vtype>{}, dims);
             fits_insert_col(
                 fptr_, cid, const_cast<char*>(colname.c_str()),
@@ -1098,7 +1098,7 @@ namespace fits {
                 "this function requires reflection capabilities (NO_REFLECTION=0)");
             #endif
 
-            do_write_struct_ run{this, toupper(colname)+"."};
+            do_write_struct_ run{this, to_upper(colname)+"."};
             reflex::foreach_member(value, run);
         }
 
@@ -1109,7 +1109,7 @@ namespace fits {
                 "this function requires reflection capabilities (NO_REFLECTION=0)");
             #endif
 
-            do_write_struct_ run{this, toupper(colname)+"."};
+            do_write_struct_ run{this, to_upper(colname)+"."};
             reflex::foreach_member(reflex::wrap(value), run);
         }
 
@@ -1220,7 +1220,7 @@ namespace fits {
 
         void remove_column(const std::string& tcolname) {
             int cid;
-            std::string colname = toupper(tcolname);
+            std::string colname = to_upper(tcolname);
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
             if (status_ == 0) {
                 fits_delete_col(fptr_, cid, &status_);
@@ -1322,7 +1322,7 @@ namespace fits {
 
             template<typename P>
             void operator () (const reflex::member_t& m, P&& v) {
-                tbl->update_column(toupper(m.name), std::forward<P>(v));
+                tbl->update_column(to_upper(m.name), std::forward<P>(v));
             }
         };
 
