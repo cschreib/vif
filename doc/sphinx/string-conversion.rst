@@ -16,6 +16,8 @@ to_string, to_string_vector
 
 The function [1] will convert the value ``v`` into a string. This value can be of any type, as long as it is convertible to string. In particular, ``v`` can be a vector, in which case the output string will contain all the values of the vector, separated by commas, and enclosed inside curly braces: ``"{a,b,c,d,....}"``.
 
+**Example:**
+
 .. code-block:: c++
 
     to_string(2);            // "2"
@@ -46,6 +48,8 @@ The ``to_string()`` and ``to_string_vector()`` functions adopt a default format 
 
 Function [1], ``format::scientific()``, will specify that it's argument ``v`` *must* be formated using the scientific notation.
 
+**Example:**
+
 .. code-block:: c++
 
     double v = 0.15;
@@ -53,6 +57,8 @@ Function [1], ``format::scientific()``, will specify that it's argument ``v`` *m
     to_string(format::scientific(v)); // "1.500000e-01"
 
 Function [2], ``format::precision()``, will specify that it's first argument ``v`` *must* be formated using ``ndigit`` digits. "Digits" here include numbers on either side of the decimal separator, so ``"3.15"``, ``"31.5"``, and ``"315"`` are all three digits. When not in scientific format, trailing zeros after the decimal separator will still be removed, so the total number of digits may still be less than ``ndigit``.
+
+**Example:**
 
 .. code-block:: c++
 
@@ -82,6 +88,8 @@ The function [1] tries to convert the string ``s`` into a C++ value ``v`` and re
 
 The version [2] will try to convert each value inside the string vector ``s``, and will store the converted values inside the vector ``v``. It will automatically take care or resizing the vector ``v``, so you can pass an empty vector in input. The return value is an array of boolean values, corresponding to the success or failure of conversion for each individual value inside ``s``. If an element of ``s`` failed to convert, the corresponding value in ``v`` will be undefined.
 
+**Example:**
+
 .. code-block:: c++
 
     float f;
@@ -109,6 +117,8 @@ hash
 This function scans all the arguments that are provided, and returns the hexadecimal representation of the SHA-1 "hash" of this argument list. The hash is a string such that: 1) all further calls of ``hash(...)`` with arguments that have the exact same value (perhaps when the program is executed a second time later) will always return the same string, and 2) the probability is very small that the function returns the same string for another set of arguments, or arguments with different values. Although this algorithm was created in 1995, the first "collision" (two different data sets producing the same hash) was found in 2017.
 
 This is useful for example to cache the result of some heavy computation: once the computation is done, the *input* parameters of the computation can be fed to ``hash()`` to give a "sort-of-unique" identifier to the "input+result" pair. The result of the computation can then be saved somewhere with the hash as an identifier. Later on, if the computation is requested with a new set of parameters, these parameters are fed to ``hash()`` and the resulting string is compared to all the identifiers of the cached results: if a match is found, then the associated pre-computed result can be re-used, else the computation must be executed anew.
+
+**Example:**
 
 .. code-block:: c++
 

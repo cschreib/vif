@@ -6,4 +6,9 @@ String manipulation
     :caption: Categories
 
     string-conversion
-    string-operations
+    string-base
+    string-split
+    string-format
+    string-find-replace
+    string-regex
+    string-hash
