@@ -433,13 +433,13 @@ namespace impl {
 
                 for (uint_t i : range(nentry)) {
                     std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
-                    if (start_with(entry, "END ")) continue;
+                    if (begins_with(entry, "END ")) continue;
 
                     // Skip if it is an internal FITS keyword
                     std::size_t eqpos = entry.find_first_of("=");
                     if (eqpos != entry.npos) {
                         std::string nam = trim(entry.substr(0, eqpos));
-                        if (nam == "SIMPLE" || nam == "BITPIX" || start_with(nam, "NAXIS") ||
+                        if (nam == "SIMPLE" || nam == "BITPIX" || begins_with(nam, "NAXIS") ||
                             nam == "EXTEND" || nam == "XTENSION" || nam == "EXTNAME" ||
                             nam == "PCOUNT" || nam == "GCOUNT") {
                             continue;
@@ -857,7 +857,7 @@ namespace fits {
         for (auto& k : keys) {
             std::string entry;
             if (!k.novalue) {
-                if (start_with(k.key, "HIERARCH ")) {
+                if (begins_with(k.key, "HIERARCH ")) {
                     entry = k.key+" = "+k.value;
                 } else {
                     std::string val;

@@ -95,7 +95,7 @@ namespace astro {
         phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
         vec1s sects;
-        if (end_with(filename, ".sectfits")) {
+        if (ends_with(filename, ".sectfits")) {
             sects = fits::read_sectfits(filename);
         } else {
             sects.push_back(filename);
@@ -227,7 +227,7 @@ namespace astro {
         phypp_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
         phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
-        if (end_with(ffile, ".sectfits") || end_with(wfile, ".sectfits")) {
+        if (ends_with(ffile, ".sectfits") || ends_with(wfile, ".sectfits")) {
             uint_t norig = ids.size();
             qstack(ra, dec, ffile, hsize, cube, ids, params);
             uint_t nsci = ids.size() - norig;

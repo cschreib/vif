@@ -336,7 +336,7 @@ namespace file {
         std::string tmp;
         for (auto& d : dirs) {
             if (d.empty()) continue;
-            if (!tmp.empty() || start_with(path, "/")) tmp += "/";
+            if (!tmp.empty() || begins_with(path, "/")) tmp += "/";
             tmp += d;
             bool res = (::mkdir(tmp.c_str(), 0775) == 0) || (errno == EEXIST);
             if (!res) return false;

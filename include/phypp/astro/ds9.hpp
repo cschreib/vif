@@ -26,7 +26,7 @@ namespace ds9 {
             ++l;
             if (line.empty() || trim(line).empty() || trim(line)[0] == '#') continue;
 
-            if (start_with(line, "global")) {
+            if (begins_with(line, "global")) {
                 std::string key = "color=";
                 auto pos = line.find(key);
                 if (pos != line.npos) {
@@ -89,7 +89,7 @@ namespace ds9 {
                         return false;
                     }
                 } else {
-                    if (!end_with(from, "\"")) {
+                    if (!ends_with(from, "\"")) {
                         warning("expected "+name+" in arcsec (\")");
                         warning("at ", filename, ":", l);
                         return false;

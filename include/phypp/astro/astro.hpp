@@ -1516,7 +1516,7 @@ namespace astro {
         vec1s spl = split(str, ":");
 
         auto read_filter_file = [](std::string filename, filter_t& tf) {
-            if (end_with(filename, ".fits")) {
+            if (ends_with(filename, ".fits")) {
                 fits::input_table(filename).read_columns(fits::narrow, ftable(tf.lam, tf.res));
             } else {
                 ascii::read_table(filename, ascii::find_skip(filename), tf.lam, tf.res);

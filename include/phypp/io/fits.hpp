@@ -91,7 +91,7 @@ namespace fits {
     }
 
     inline fits::header read_header_sectfits(const std::string& filename, uint_t sect) {
-        if (end_with(filename, ".sectfits")) {
+        if (ends_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
             phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
                 "' (only ", sects.size()," available)");
@@ -103,7 +103,7 @@ namespace fits {
     }
 
     inline fits::header read_header_sectfits_hdu(const std::string& filename, uint_t sect, uint_t hdu) {
-        if (end_with(filename, ".sectfits")) {
+        if (ends_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
             phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
                 "' (only ", sects.size()," available)");

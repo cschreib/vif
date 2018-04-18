@@ -1408,7 +1408,7 @@ namespace astro {
 
         void setup_image(const std::string& filename) {
             vec1s files;
-            if (end_with(filename, ".fits")) {
+            if (ends_with(filename, ".fits")) {
                 files.push_back(filename);
             } else {
                 files = fits::read_sectfits(filename);

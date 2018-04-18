@@ -219,7 +219,7 @@ namespace astro {
         vec1s nkeys;
         for (auto& k : okeys) {
             for (auto& wk : keywords) {
-                if (start_with(k, wk)) {
+                if (begins_with(k, wk)) {
                     nkeys.push_back(k);
                 }
             }
@@ -853,7 +853,7 @@ namespace astro {
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        if (end_with(file, ".sectfits")) {
+        if (ends_with(file, ".sectfits")) {
             vec1s sects = fits::read_sectfits(file);
             return get_pixel_size(sects[0], aspix);
         } else {
@@ -915,7 +915,7 @@ namespace astro {
         static_assert(!std::is_same<Dummy,Dummy>::value, "WCS support is disabled, "
             "please enable the WCSLib library to use this function");
 #else
-        if (end_with(file, ".sectfits")) {
+        if (ends_with(file, ".sectfits")) {
             vec1s sects = fits::read_sectfits(file);
             return get_image_rotation(sects[0], angle);
         } else {
