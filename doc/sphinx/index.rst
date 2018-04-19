@@ -50,9 +50,9 @@ Below is a code sample written in phy++ that illustrates the most basic function
     generic
     argv
     string
+    print
     os
     io
-    print
     time
     math
     thread

@@ -72,16 +72,16 @@ We are not done though. Indeed, we still left the type of the elements unconstra
     vec2s v5 = {{"I", "am"}, {"a", "string"}};
     foo(v5); // error! vector of strings
 
-Again, this emits a length error from inside the function (20 lines of errors). We can fix this by adding extra constraints on the type ``T`` of the elements. One possibility is to force it to be some "common" type, like ``double``:
+Again, this emits a lengthy error from inside the function (20 lines of errors). We can fix this by adding extra constraints on the type ``T`` of the elements. One possibility is to force it to be some "common" type, like ``double``:
 
 .. code-block:: c++
 
-    // Note: parameter is fully constrained, it not generic anymore
+    // Note: parameter is fully constrained, it is not generic anymore
     void foo(const vec<2,double>& v) {
         print(v(1,_)*2.5);
     }
 
-This makes the error much easier to understand (7 lines of errors), but it has the important downside that the function is no longer generic: it *needs* a vector of ``double``. If you try to call it on a vector of ``float``, it will not compile. It will also fail to work on *views* (see below). So unless you know the function should only be used with ``double`` values, this is not the right solution. Instead, we can leave the type of elements to be generic, and use ``std::enable_if<>`` to express a constraint on this type, in this case ``std::is_arithmetic<T>``:
+This makes the error much easier to understand (7 lines of errors), but it has the important downside that the function is no longer generic: it *needs* a vector of ``double``. If you try to call it on a vector of ``float``, it will first have to make a copy of that vector and convert all values to ``double`` before calling the function, which is not optimal. It will also fail to work on *views* (see below). So unless you know the function should only be used with ``double`` values, this is not the right solution. Instead, we can leave the type of elements to be generic, and use ``std::enable_if<>`` to express a constraint on this type, in this case ``std::is_arithmetic<T>``:
 
 .. code-block:: c++
 
@@ -93,7 +93,7 @@ This makes the error much easier to understand (7 lines of errors), but it has t
 
 With this version of the function, the error when called on vectors of strings becomes much clearer (4 lines of errors) and says that you cannot call the function on strings. Again, much better!
 
-So, that's it? Not quite. There is one last implicit requirement when we write ``v(1,_)``: the first dimension of ``v`` must have at least two elements. There is no way to check this at the time of compilation, so the program will compile:
+So, that's it? Not quite. There is one last implicit requirement when we write ``v(1,_)``: the first dimension of ``v`` must have at least two elements. There is no way to check this at the time of compilation, so the faulty program below will compile:
 
 .. code-block:: c++
 

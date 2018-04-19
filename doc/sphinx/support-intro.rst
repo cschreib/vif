@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Here we describe the set of helper functions that are part of the phy++ support library. These functions are not *essential* to the use of the library, in that the vector and view classes can be used on their own, but they are definitely *useful*. The functions in the support library are arranged inside modular components, which one may choose to use or not. This is first repository in which one should look for existing, extensively tested functions, which are written to be as generic and efficient as possible.
+Here we describe the set of helper functions that are part of the phy++ support library. These functions are not *essential* to the use of the library, in that the vector and view classes can be used on their own, but they are definitely *useful*. The functions in the support library are arranged inside modular components, which one may choose to use or not. This is the first repository in which one should look for existing, extensively tested functions, which are written to be as generic and efficient as possible.
 
 In this documentation, all these functions are sorted into categories to help you discover new functions and algorithm. Alternatively, if you know the name of a function and would like to read its documentation, you may use the search feature.
 

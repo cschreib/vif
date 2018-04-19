@@ -1,3 +1,5 @@
+.. _String conversions:
+
 String conversions
 ==================
 
@@ -31,6 +33,35 @@ The function [2] allows you to convert *each value* of a vector into a separate 
 
     to_string(vec1i{2,5,9});        // "{2, 5, 9}"
     to_string_vector(vec1i{2,5,9}); // {"2", "5", "9"}
+
+Internally, the argument is converted to a string using the ``std::ostream`` ``operator<<``. This means that most types from the standard C++ or external C++ libraries will be convertible to a string out of the box. If you encounter some errors for a particular type, this probably means that the ``operator<<`` is missing and you have to write it yourself. Here is how you would do that:
+
+.. code-block:: c++
+
+    // We want to make this structure printable
+    struct test {
+        std::string name;
+        int i, j;
+    };
+
+    // We just need to write this function
+    std::ostream& operator<< (std::ostream& o, const test& t) {
+        o << t.name << ":{i=" << i << " j=" << j << "}";
+        return o; // do not forget to always return the std::ostream!
+    }
+
+    // The idea is always to rely on the existence of an operator<<
+    // function for the types that are contained by your structure
+    // or class. In our case, 'std::string' and 'int' are already
+    // conertible to string, This is the standard C++ way of doing
+    // string conversions, but it can be annoying to use regularly
+    // because the "<<" are taking a lot of screen space.
+    // 'to_string()' makes it much more convenient.
+
+    // Now we can convert!
+    test t = {"toto", 5, 12};
+    std::string s = to_string(t);
+    s; // "toto:{i=5 j=12}"
 
 
 format::precision, format::scientific
