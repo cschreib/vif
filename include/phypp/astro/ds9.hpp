@@ -302,7 +302,9 @@ namespace ds9 {
 namespace impl {
 namespace astro {
 namespace ds9 {
-    inline void write_region(std::ofstream& out, const std::string& ss, const phypp::ds9::region& r) {
+    inline void write_region(std::ofstream& out, const std::string& ss,
+        const phypp::astro::ds9::region& r) {
+
         if (r.type == "circle") {
             out << r.type << "(" << r.params[0] << ", " << r.params[1] << ", " <<
                 r.params[2] << ss << ")\n";
