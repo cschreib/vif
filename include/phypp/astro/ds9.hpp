@@ -190,10 +190,9 @@ namespace ds9 {
         } else if (r.type == "box") {
             r.params[2] *= aspix;
             r.params[3] *= aspix;
-        } else
-            warning("physical-to-wcs conversion for regions of type '",
+        } else {
+            phypp_check(false, "physical-to-wcs conversion for regions of type '",
                 r.type, "' is not implemented");
-            continue;
         }
 
         r.physical = false;
@@ -217,9 +216,8 @@ namespace ds9 {
             r.params[2] /= aspix;
             r.params[3] /= aspix;
         } else {
-            warning("wcs-to-physical conversion for regions of type '",
+            phypp_check(false, "wcs-to-physical conversion for regions of type '",
                 r.type, "' is not implemented");
-            continue;
         }
 
         r.physical = true;
