@@ -311,8 +311,7 @@ namespace ds9 {
                 r.params[2] << ss << ", " <<
                 r.params[3] << ss << ", " << r.params[4] << ")\n";
         } else {
-            warning("writing regions of type '", r.type, "' is not implemented");
-            continue;
+            phypp_check(false, "writing regions of type '", r.type, "' is not implemented");
         }
     }
 }
