@@ -8,18 +8,20 @@ namespace astro {
 namespace ds9 {
     struct region {
         std::string type, color, text;
+        bool physical = true;
+
         vec1d params;
         // circle: params = {center_x,center_y,radius}
         // box:    params = {center_x,center_y,width,height,angle}
     };
 
-    inline void read_regions(const std::string& filename, vec<1,region>& regs, bool& physical) {
+    inline void read_regions(const std::string& filename, vec<1,region>& regs) {
         phypp_check(file::exists(filename), "could not open region file '"+filename+"'");
 
         std::ifstream file(filename);
 
         std::string global_color = "green";
-        physical = false;
+        bool physical = false;
         std::string line;
         uint_t l = 0;
         while (std::getline(file, line)) {
@@ -46,6 +48,7 @@ namespace ds9 {
             region r;
             r.type = trim(line.substr(0, spos));
             r.color = global_color;
+            r.physical = physical;
 
             // Isolate region parameters
             auto epos = line.find_first_of(')', spos+1);
@@ -59,7 +62,7 @@ namespace ds9 {
             }
 
             // Read region center
-            double ra, dec;
+            double x0, y0;
             if (args[0].find_first_of(':') != args[0].npos) {
                 if (physical) {
                     warning("cannot work with sexagesimal coordinates in 'physical' mode");
@@ -67,17 +70,22 @@ namespace ds9 {
                     continue;
                 }
 
-                if (!sex2deg(args[0], args[1], ra, dec)) {
+                if (!sex2deg(args[0], args[1], x0, y0)) {
                     warning("could not convert sexagesimal coordinates to degrees");
                     warning("at ", filename, ":", l);
                     continue;
                 }
             } else {
-                if (!from_string(args[0], ra) || !from_string(args[1], dec)) {
+                if (!from_string(args[0], x0) || !from_string(args[1], y0)) {
                     warning("could not read coordinates to "+std::string(physical ? "(x,y)" : "degrees"));
                     warning("at ", filename, ":", l);
                     continue;
                 }
+            }
+
+            if (physical) {
+                // Subtract 1 from X and Y to go from FITS convention to C++ convention
+                x0 -= 1.0; y0 -= 1.0;
             }
 
             // Helper function to read dimensions in pixels or arcsec
@@ -118,7 +126,7 @@ namespace ds9 {
                     continue;
                 }
 
-                r.params = {ra, dec, rad};
+                r.params = {x0, y0, rad};
             } else if (r.type == "box") {
                 if (args.size() != 5) {
                     warning("ill formed 'box' line, expecting 5 arguments, got ", args.size());
@@ -138,7 +146,7 @@ namespace ds9 {
                     continue;
                 }
 
-                r.params = {ra, dec, width, height, angle};
+                r.params = {x0, y0, width, height, angle};
             } else {
                 warning("support for regions of type '", r.type, "' is not implemented");
                 continue;
@@ -166,47 +174,84 @@ namespace ds9 {
         }
     }
 
+    region physical_to_wcs(const astro::wcs& w, region r) {
+        if (!r.physical) return r;
+
+        double aspix = 1.0;
+        astro::get_pixel_size(w, aspix);
+
+        double ra, dec;
+        astro::xy2ad(w, r.params[0]+1, r.params[1]+1, ra, dec);
+        r.params[0] = ra;
+        r.params[1] = dec;
+
+        if (r.type == "circle") {
+            r.params[2] *= aspix;
+        } else if (r.type == "box") {
+            r.params[2] *= aspix;
+            r.params[3] *= aspix;
+        } else
+            warning("physical-to-wcs conversion for regions of type '",
+                r.type, "' is not implemented");
+            continue;
+        }
+
+        r.physical = false;
+        return r;
+    }
+
+    region wcs_to_physical(const astro::wcs& w, region r) {
+        if (r.physical) return r;
+
+        double aspix = 1.0;
+        astro::get_pixel_size(w, aspix);
+
+        double x, y;
+        astro::ad2xy(w, r.params[0], r.params[1], x, y);
+        r.params[0] = x-1;
+        r.params[1] = y-1;
+
+        if (r.type == "circle") {
+            r.params[2] /= aspix;
+        } else if (r.type == "box") {
+            r.params[2] /= aspix;
+            r.params[3] /= aspix;
+        } else {
+            warning("wcs-to-physical conversion for regions of type '",
+                r.type, "' is not implemented");
+            continue;
+        }
+
+        r.physical = true;
+        return r;
+    }
+
     inline void read_regions_physical(const std::string& filename, const astro::wcs& w,
         vec<1,region>& regs) {
 
-        bool physical = false;
-        read_regions(filename, regs, physical);
+        read_regions(filename, regs);
 
-        if (physical) return;
-
-        double aspix = 1.0;
-        phypp_check(w.is_valid() && astro::get_pixel_size(w, aspix),
+        phypp_check(w.is_valid(),
             "invalid WCS, cannot convert regions to 'physical' coordinates");
 
         for (auto& r : regs) {
-            double x, y;
-            astro::ad2xy(w, r.params[0], r.params[1], x, y);
-            r.params[0] = x-1;
-            r.params[1] = y-1;
-
-            if (r.type == "circle") {
-                r.params[2] /= aspix;
-            } else if (r.type == "box") {
-                r.params[2] /= aspix;
-                r.params[3] /= aspix;
-            } else {
-                warning("wcs-to-physical conversion for regions of type '",
-                    r.type, "' is not implemented");
-                continue;
-            }
+            r = wcs_to_physical(w, r);
         }
     }
 
     inline void read_regions_physical(const std::string& filename, vec<1,region>& regs) {
-        bool physical = false;
-        read_regions(filename, regs, physical);
-        phypp_check(physical, "expected regions in 'physical' coordinates");
+        read_regions(filename, regs);
+        for (auto& r : regs) {
+            phypp_check(r.physical, "expected regions in 'physical' coordinates (in ", filename, ")");
+        }
     }
 
     inline void mask_regions(const vec<1,region>& regs, vec2b& mask) {
         phypp_check(!mask.empty(), "mask file must be initialized before calling this function");
 
         for (auto& r : regs) {
+            phypp_check(r.physical, "regions must be in physical coordinates to create masks");
+
             if (r.type == "circle") {
                 mask = mask || (circular_mask(mask.dims, r.params[2], r.params[1], r.params[0]) > 0.5);
             } else if (r.type == "box") {
@@ -214,8 +259,8 @@ namespace ds9 {
                 vec1d yo = {+0.5*r.params[3], -0.5*r.params[3], -0.5*r.params[3], +0.5*r.params[3]};
                 double ca = cos(r.params[4]*dpi/180.0);
                 double sa = sin(r.params[4]*dpi/180.0);
-                vec1d xr = xo*ca - yo*sa + r.params[0]-1;
-                vec1d yr = yo*ca + xo*sa + r.params[1]-1;
+                vec1d xr = xo*ca - yo*sa + r.params[0];
+                vec1d yr = yo*ca + xo*sa + r.params[1];
 
                 int_t x0 = floor(min(xr)), x1 = ceil(max(xr));
                 int_t y0 = floor(min(yr)), y1 = ceil(max(yr));
@@ -233,7 +278,7 @@ namespace ds9 {
 
                 for (int_t iy = y0; iy <= y1; ++iy)
                 for (int_t ix = x0; ix <= x1; ++ix) {
-                    mask(iy,ix) = mask(iy,ix) || in_convex_hull(iy, ix, hull);
+                    mask.safe(iy,ix) = mask.safe(iy,ix) || in_convex_hull(iy, ix, hull);
                 }
             } else {
                 warning("masks for regions of type '", r.type, "' is not implemented");
@@ -252,6 +297,105 @@ namespace ds9 {
         vec<1,region> regs;
         read_regions_physical(filename, w, regs);
         mask_regions(regs, mask);
+    }
+}
+}
+
+namespace impl {
+namespace astro {
+namespace ds9 {
+    inline void write_region(std::ofstream& out, const std::string& ss, const region& r) {
+        if (r.type == "circle") {
+            out << r.type << "(" << r.params[0] << ", " << r.params[1] << ", " <<
+                r.params[2] << ss << ")\n";
+        } else if (r.type == "box") {
+            out << r.type << "(" << r.params[0] << ", " << r.params[1] << ", " <<
+                r.params[2] << ss << ", " <<
+                r.params[3] << ss << ", " << r.params[4] << ")\n";
+        } else {
+            warning("writing regions of type '", r.type, "' is not implemented");
+            continue;
+        }
+    }
+}
+}
+}
+
+namespace astro {
+namespace ds9 {
+    inline void write_regions_wcs(const std::string& filename, const vec<1,region>& regs,
+        const astro::wcs& w) {
+
+        std::ofstream regfile(filename);
+        regfile << "# Region file format: DS9 version 4.1\n";
+        regfile << "global color=green dashlist=8 3 width=1 font=\"helvetica 10 normal "
+            "roman\" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 "
+            "source=1\n";
+
+        bool wcs_radec = false;
+        if (w.type[0] == axis_type::spatial) {
+            wcs_radec = true;
+        }
+
+        std::string size_suffix;
+        if (wcs_radec) {
+            size_suffix = "\"";
+            regfile << "fk5\n";
+        } else {
+            regfile << "wcs;\n";
+        }
+
+        regfile.precision(12);
+
+        for (auto& r : regs) {
+            if (r.physical) {
+                region n = physical_to_wcs(w, r);
+                impl::astro::ds9::write_region(regfile, size_suffix, n);
+            } else {
+                impl::astro::ds9::write_region(regfile, size_suffix, r);
+            }
+        }
+    }
+
+    inline void write_regions_physical(const std::string& filename, const vec<1,region>& regs,
+        const astro::wcs& w) {
+
+        double aspix;
+        astro::get_pixel_size(w, aspix);
+
+        std::ofstream regfile(filename);
+        regfile << "# Region file format: DS9 version 4.1\n";
+        regfile << "global color=green dashlist=8 3 width=1 font=\"helvetica 10 normal "
+            "roman\" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 "
+            "source=1\n";
+        regfile << "physical\n";
+
+        regfile.precision(12);
+
+        for (auto& r : regs) {
+            if (r.physical) {
+                impl::astro::ds9::write_region(regfile, "", r);
+            } else {
+                region n = wcs_to_physical(w, r);
+                impl::astro::ds9::write_region(regfile, "", n);
+            }
+        }
+    }
+
+    inline void write_regions_physical(const std::string& filename, const vec<1,region>& regs) {
+        std::ofstream regfile(filename);
+        regfile << "# Region file format: DS9 version 4.1\n";
+        regfile << "global color=green dashlist=8 3 width=1 font=\"helvetica 10 normal "
+            "roman\" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 "
+            "source=1\n";
+        regfile << "physical\n";
+
+        regfile.precision(12);
+
+        for (auto& r : regs) {
+            phypp_check(r.physical, "no WCS provided to convert region to physical");
+            impl::astro::ds9::write_region(regfile, "", r);
+        }
     }
 }
 }
