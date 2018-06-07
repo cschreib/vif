@@ -154,6 +154,14 @@ do_next read_column(const std::string& in_file, const fits::column_info& cinfo,
     return do_next::run;
 }
 
+bool regex_match_any_of(const std::string& str, const vec1s& rs) {
+    for (auto& r : rs) {
+        if (regex_match(str, r)) return true;
+    }
+
+    return false;
+}
+
 void print_help();
 
 int phypp_main(int argc, char* argv[]) {
@@ -166,7 +174,7 @@ int phypp_main(int argc, char* argv[]) {
     vec1s exclude, include, rename;
     std::string ids_file;
     bool verbose = false;
-    uint_t hdu = 0;
+    uint_t hdu = 1;
 
     read_args(argc-2, argv+2, arg_list(name(tsplit, "split"), exclude, include,
         rename, name(ids_file, "ids"), verbose, hdu));
@@ -193,7 +201,7 @@ int phypp_main(int argc, char* argv[]) {
     std::vector<vec1s> split_names(nsplit);
     for (uint_t i : range(nsplit)) {
         vec1s ss = split(tsplit[i], ":");
-        split_cols[i] = toupper(ss[0]);
+        split_cols[i] = to_upper(ss[0]);
 
         auto iterc = std::find_if(cols.begin(), cols.end(),
             [&](const fits::column_info& ci) {
@@ -214,7 +222,7 @@ int phypp_main(int argc, char* argv[]) {
         if (ss.size() == 1) continue;
 
         for (uint_t j : range(1, ss.size())) {
-            if (start_with(ss[j], "[")) {
+            if (begins_with(ss[j], "[")) {
                 vec1s st = split(erase_end(erase_begin(ss[j], "["), "]"), ",");
                 if (st.size() != ncols2) {
                     error("incompatible array for '", split_cols[i], "' split name (got ",
@@ -223,8 +231,8 @@ int phypp_main(int argc, char* argv[]) {
                 }
 
                 split_names[i] += st;
-            } else if (start_with(ss[j], "#")) {
-                std::string col = toupper(erase_begin(ss[j], "#"));
+            } else if (begins_with(ss[j], "#")) {
+                std::string col = to_upper(erase_begin(ss[j], "#"));
                 auto iter = std::find_if(cols.begin(), cols.end(),
                     [&](const fits::column_info& ci) {
                     return ci.name == col;
@@ -245,7 +253,7 @@ int phypp_main(int argc, char* argv[]) {
 
                 vec1s st;
                 read_column<1,std::string>(in_file, col, st);
-                split_names[i] += tolower(st);
+                split_names[i] += to_lower(st);
             } else {
                 split_names[i] += ss[j];
             }
@@ -267,9 +275,9 @@ int phypp_main(int argc, char* argv[]) {
 
     for (auto& c : cols) {
         if (include.empty()) {
-            if (!exclude.empty() && regex_match_any_of(tolower(c.name), exclude)) continue;
+            if (!exclude.empty() && regex_match_any_of(to_lower(c.name), exclude)) continue;
         } else {
-            if (!regex_match_any_of(tolower(c.name), include)) continue;
+            if (!regex_match_any_of(to_lower(c.name), include)) continue;
         }
 
         if (verbose) {
@@ -293,7 +301,7 @@ int phypp_main(int argc, char* argv[]) {
             }
 
             out_cols.push_back(v);
-            names.push_back(tolower(name));
+            names.push_back(to_lower(name));
             types.push_back("["+type+"]");
         } else if (c.dims.size() == 2) {
             vec1u i2c = where(split_cols == c.name);
@@ -363,7 +371,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("fits2ascii v1.0");
     header("Usage: fits2ascii file.fits out.dat [options]");
