@@ -2,40 +2,21 @@ if(NOT DEFINED CLANG_ROOT)
   set(CLANG_ROOT $ENV{CLANG_ROOT})
 endif()
 
+file(GLOB CLANG_INCLUDE_HINTS /usr/lib/llvm-*/include /opt/local/libexec/llvm-*/include)
+
 find_path(CLANG_INCLUDE clang-c/Index.h
           HINTS
           ${CLANG_ROOT}/include
-          /usr/lib/llvm-3.5/include
-          /usr/lib/llvm-3.4/include
-          /usr/lib/llvm-3.3/include
-          /usr/lib/llvm-3.2/include
-          /usr/lib/llvm-3.1/include
-          /opt/local/libexec/llvm-3.5/include
-          /opt/local/libexec/llvm-3.4/include
-          /opt/local/libexec/llvm-3.3/include
-          /opt/local/libexec/llvm-3.2/include
-          /opt/local/libexec/llvm-3.1/include
+          ${CLANG_INCLUDE_HINTS}
           NO_DEFAULT_PATH)
-if (NOT EXISTS ${CLANG_INCLUDE})
-  find_path(CLANG_INCLUDE clang-c/Index.h)
-endif ()
+find_path(CLANG_INCLUDE clang-c/Index.h)
 
 find_path(CLANG_COMPILATION_INCLUDE clang-c/CXCompilationDatabase.h
-      HINTS
-      ${CLANG_ROOT}/include
-      /opt/local/libexec/llvm-3.5/include
-      /opt/local/libexec/llvm-3.4/include
-      /opt/local/libexec/llvm-3.3/include
-      /opt/local/libexec/llvm-3.2/include
-      /opt/local/libexec/llvm-3.1/include
-      /opt/local/libexec/llvm-3.0/include
-      /usr/lib/llvm-3.5/include
-      /usr/lib/llvm-3.4/include
-      /usr/lib/llvm-3.3/include
-      NO_DEFAULT_PATH)
-if (NOT EXISTS ${CLANG_COMPILATION_INCLUDE})
-  find_path(CLANG_COMPILATION_INCLUDE clang-c/CXCompilationDatabase.h)
-endif ()
+          HINTS
+          ${CLANG_ROOT}/include
+          ${CLANG_INCLUDE_HINTS}
+          NO_DEFAULT_PATH)
+find_path(CLANG_COMPILATION_INCLUDE clang-c/CXCompilationDatabase.h)
 
 if (EXISTS ${CLANG_INCLUDE})
   if ("${CLANG_ROOT}" STREQUAL "")
