@@ -174,7 +174,7 @@ namespace ds9 {
         }
     }
 
-    region physical_to_wcs(const astro::wcs& w, region r) {
+    inline region physical_to_wcs(const astro::wcs& w, region r) {
         if (!r.physical) return r;
 
         double aspix = 1.0;
@@ -199,7 +199,7 @@ namespace ds9 {
         return r;
     }
 
-    region wcs_to_physical(const astro::wcs& w, region r) {
+    inline region wcs_to_physical(const astro::wcs& w, region r) {
         if (r.physical) return r;
 
         double aspix = 1.0;
@@ -244,44 +244,47 @@ namespace ds9 {
         }
     }
 
-    inline void mask_regions(const vec<1,region>& regs, vec2b& mask) {
+    inline void mask_region(const region& r, vec2b& mask) {
         phypp_check(!mask.empty(), "mask file must be initialized before calling this function");
+        phypp_check(r.physical, "regions must be in physical coordinates to create masks");
 
-        for (auto& r : regs) {
-            phypp_check(r.physical, "regions must be in physical coordinates to create masks");
+        if (r.type == "circle") {
+            mask = mask || (circular_mask(mask.dims, r.params[2], r.params[1], r.params[0]) > 0.5);
+        } else if (r.type == "box") {
+            vec1d xo = {+0.5*r.params[2], +0.5*r.params[2], -0.5*r.params[2], -0.5*r.params[2]};
+            vec1d yo = {+0.5*r.params[3], -0.5*r.params[3], -0.5*r.params[3], +0.5*r.params[3]};
+            double ca = cos(r.params[4]*dpi/180.0);
+            double sa = sin(r.params[4]*dpi/180.0);
+            vec1d xr = xo*ca - yo*sa + r.params[0];
+            vec1d yr = yo*ca + xo*sa + r.params[1];
 
-            if (r.type == "circle") {
-                mask = mask || (circular_mask(mask.dims, r.params[2], r.params[1], r.params[0]) > 0.5);
-            } else if (r.type == "box") {
-                vec1d xo = {+0.5*r.params[2], +0.5*r.params[2], -0.5*r.params[2], -0.5*r.params[2]};
-                vec1d yo = {+0.5*r.params[3], -0.5*r.params[3], -0.5*r.params[3], +0.5*r.params[3]};
-                double ca = cos(r.params[4]*dpi/180.0);
-                double sa = sin(r.params[4]*dpi/180.0);
-                vec1d xr = xo*ca - yo*sa + r.params[0];
-                vec1d yr = yo*ca + xo*sa + r.params[1];
-
-                int_t x0 = floor(min(xr)), x1 = ceil(max(xr));
-                int_t y0 = floor(min(yr)), y1 = ceil(max(yr));
-                if (x1 < 0 || y1 < 0 || x0 > int_t(mask.dims[1])-1 || y0 > int_t(mask.dims[0])-1) {
-                    // Not covered
-                    continue;
-                }
-
-                x0 = max(x0, 0);
-                y0 = max(y0, 0);
-                x1 = min(x1, mask.dims[1]-1);
-                y1 = min(y1, mask.dims[0]-1);
-
-                auto hull = build_convex_hull(yr, xr);
-
-                for (int_t iy = y0; iy <= y1; ++iy)
-                for (int_t ix = x0; ix <= x1; ++ix) {
-                    mask.safe(iy,ix) = mask.safe(iy,ix) || in_convex_hull(iy, ix, hull);
-                }
-            } else {
-                warning("masks for regions of type '", r.type, "' is not implemented");
-                continue;
+            int_t x0 = floor(min(xr)), x1 = ceil(max(xr));
+            int_t y0 = floor(min(yr)), y1 = ceil(max(yr));
+            if (x1 < 0 || y1 < 0 || x0 > int_t(mask.dims[1])-1 || y0 > int_t(mask.dims[0])-1) {
+                // Not covered
+                return;
             }
+
+            x0 = max(x0, 0);
+            y0 = max(y0, 0);
+            x1 = min(x1, mask.dims[1]-1);
+            y1 = min(y1, mask.dims[0]-1);
+
+            auto hull = build_convex_hull(yr, xr);
+
+            for (int_t iy = y0; iy <= y1; ++iy)
+            for (int_t ix = x0; ix <= x1; ++ix) {
+                mask.safe(iy,ix) = mask.safe(iy,ix) || in_convex_hull(iy, ix, hull);
+            }
+        } else {
+            warning("masks for regions of type '", r.type, "' is not implemented");
+            return;
+        }
+    }
+
+    inline void mask_regions(const vec<1,region>& regs, vec2b& mask) {
+        for (auto& r : regs) {
+            mask_region(r, mask);
         }
     }
 
