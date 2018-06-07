@@ -160,13 +160,13 @@ namespace fits {
                 long repeat = 0;
                 fits_get_bcolparms(fptr_, c+1, name, nullptr, &type, &repeat,
                     nullptr, nullptr, nullptr, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not parameters of column "+to_string(c+1)+" in HDU");
+                fits::phypp_check_cfitsio(status_, "could not read parameters of column "+to_string(c+1)+" in HDU");
 
                 const uint_t max_dim = 256;
                 long axes[max_dim];
                 int naxis = 0;
                 fits_read_tdim(fptr_, c+1, max_dim, &naxis, axes, &status_);
-                fits::phypp_check_cfitsio(status_, "could not parameters of column '"+std::string(name)+"'");
+                fits::phypp_check_cfitsio(status_, "could not read parameters of column '"+std::string(name)+"'");
 
                 if (!getkey(hdr, "TTYPE"+to_string(c+1), ci.name)) {
                     continue;
