@@ -149,6 +149,8 @@ file::get_directory
 
 The function [1] scans the path given in argument and returns the path to the parent directory. This behavior is similar to the bash function ``dirname``, except that here the returned path always ends with a forward slash ``/``.
 
+The function [2] is the vectorized version of [1].
+
 **Example:**
 
 .. code-block:: c++

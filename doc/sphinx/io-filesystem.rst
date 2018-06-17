@@ -66,7 +66,7 @@ Hidden directories are ignored. An empty list is returned if there is no subdire
     d; // subdirectories of the working directory
 
     d = file::list_directories("/path/to/phypp/");
-    d; // {"bin", "cmake", "doc", "include", "test", "tools"}
+    d; // {"cmake", "test", "doc", "bin", "include", "tools"}
 
     d = file::list_directories("/path/to/phypp/", "t*");
     d; // {"test", "tools"}
@@ -91,7 +91,7 @@ Hidden files are ignored. An empty list is returned if there is no file matching
     d; // files in the working directory
 
     d = file::list_files("/path/to/phypp/doc");
-    d; // {"compile.sh", "phypp.pdf", "phypp.tex"}
+    d; // {"phypp.pdf", "compile.sh", "phypp.tex"}
 
     d = file::list_files("/path/to/phypp/doc", "*.tex");
     d; // {"phypp.tex"}
@@ -160,9 +160,14 @@ file::mkdir
 
 .. code-block:: c++
 
-    bool file::mkdir(const std::string& d);
+    bool file::mkdir(const std::string& d); // [1]
 
-This function creates a new directory at the path given in argument (including all the parent directories, if necessary), and returns ``true``. If the directory could not be created (e.g., because of permission issues), the function returns ``false``. If the directory already exists, the function does nothing and returns ``true``. This function is equivalent to the bash function ``mkdir -p``.
+    template<std::size_t D>
+    vec<D,bool> file::mkdir(const vec<D,std::string>& d); // [2]
+
+The function [1] creates a new directory at the path given in argument (including all the parent directories, if necessary), and returns ``true``. If the directory could not be created (e.g., because of permission issues), the function returns ``false``. If the directory already exists, the function does nothing and returns ``true``. This function is equivalent to the bash function ``mkdir -p``.
+
+The function [2] is the vectorized version of [1].
 
 **Example:**
 
