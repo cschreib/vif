@@ -1,6 +1,8 @@
 Printing to the terminal
 ========================
 
+Defined in header ``<phypp/core/print.hpp>``.
+
 print
 -----
 

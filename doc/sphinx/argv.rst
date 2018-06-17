@@ -3,6 +3,8 @@
 Command line arguments
 ======================
 
+Defined in header ``<phypp/utility/argv.hpp>``.
+
 read_args
 ---------
 

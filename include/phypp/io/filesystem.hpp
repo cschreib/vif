@@ -16,135 +16,6 @@
 #include "phypp/core/error.hpp"
 
 namespace phypp {
-namespace impl {
-    namespace file_impl {
-        // Emulate directory and file listing windows functions
-        // Note : Taken directly from Ogre3D
-        // http://www.ogre3d.org/
-        struct _finddata_t {
-            char *name;
-            int attrib;
-            unsigned long size;
-        };
-
-        struct _find_search_t {
-            char *pattern;
-            char *curfn;
-            char *directory;
-            int dirlen;
-            DIR *dirfd;
-        };
-
-        #define A_NORMAL 0x00  /* Normalfile-Noread/writerestrictions */
-        #define A_RDONLY 0x01  /* Read only file */
-        #define A_HIDDEN 0x02  /* Hidden file */
-        #define A_SYSTEM 0x04  /* System file */
-        #define A_SUBDIR 0x10  /* Subdirectory */
-        #define A_ARCH   0x20  /* Archive file */
-
-        int _findclose(long id);
-        int _findnext(long id, _finddata_t *data);
-
-        inline long _findfirst(const char *pattern, _finddata_t *data) {
-            _find_search_t *fs = new _find_search_t;
-            fs->curfn = NULL;
-            fs->pattern = NULL;
-
-            const char *mask = strrchr(pattern, '/');
-            if (mask) {
-                fs->dirlen = mask - pattern;
-                mask++;
-                fs->directory = static_cast<char*>(malloc(fs->dirlen + 1));
-                memcpy(fs->directory, pattern, fs->dirlen);
-                fs->directory[fs->dirlen] = 0;
-            } else {
-                mask = pattern;
-                fs->directory = strdup(".");
-                fs->dirlen = 1;
-            }
-
-            fs->dirfd = opendir(fs->directory);
-            if (!fs->dirfd) {
-                _findclose(reinterpret_cast<long>(fs));
-                return -1;
-            }
-
-            if (strcmp(mask, "*.*") == 0) {
-                mask += 2;
-            }
-
-            fs->pattern = strdup(mask);
-
-            if (_findnext(reinterpret_cast<long>(fs), data) < 0) {
-                _findclose(reinterpret_cast<long>(fs));
-                return -1;
-            }
-
-            return reinterpret_cast<long>(fs);
-        }
-
-        inline int _findnext(long id, _finddata_t *data) {
-            _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
-
-            dirent *entry;
-            for (;;) {
-                if (!(entry = readdir(fs->dirfd))) {
-                    return -1;
-                }
-
-                if (fnmatch(fs->pattern, entry->d_name, 0) == 0) {
-                    break;
-                }
-            }
-
-            if (fs->curfn) {
-                free(fs->curfn);
-            }
-
-            data->name = fs->curfn = strdup(entry->d_name);
-
-            size_t namelen = strlen(entry->d_name);
-            char *xfn = new char[fs->dirlen + 1 + namelen + 1];
-            sprintf(xfn, "%s/%s", fs->directory, entry->d_name);
-
-            struct stat stat_buf;
-            if (stat(xfn, &stat_buf)) {
-                data->attrib = A_NORMAL;
-                data->size = 0;            } else {
-                if (S_ISDIR(stat_buf.st_mode)) {
-                    data->attrib = A_SUBDIR;
-                } else {
-                    data->attrib = A_NORMAL;
-                }
-                data->size = stat_buf.st_size;
-            }
-
-            delete[] xfn;
-
-            if (data->name [0] == '.') {
-                data->attrib |= A_HIDDEN;
-            }
-
-            return 0;
-        }
-
-        inline int _findclose(long id) {
-            int ret;
-            _find_search_t *fs = reinterpret_cast<_find_search_t*>(id);
-
-            ret = fs->dirfd ? closedir(fs->dirfd) : 0;
-            free(fs->pattern);
-            free(fs->directory);
-            if (fs->curfn)
-                free(fs->curfn);
-            delete fs;
-
-            return ret;
-        }
-    }
-}
-
-namespace file {
     inline bool exists(const std::string& file) {
         if (file.empty()) {
             return false;
@@ -197,64 +68,127 @@ namespace file {
         return dst;
     }
 
-    inline vec1s list_directories(const std::string& pattern = "*") {
-        vec1s dlist;
+    class explorer {
+        std::string directory;
+        std::string pattern;
+        DIR* dirfd = nullptr;
 
-        long handle, res;
-        struct impl::file_impl::_finddata_t tagData;
+    public :
 
-        handle = impl::file_impl::_findfirst(pattern.c_str(), &tagData);
-        res = 0;
-        while (handle != -1 && res != -1) {
-            if ((tagData.attrib & A_HIDDEN) != 0) {
-                res = impl::file_impl::_findnext(handle, &tagData);
-                continue;
+        struct file_data {
+            std::string full_path;
+            std::string name;
+            uint_t size;
+            bool is_hidden = false;
+            bool is_dir = false;
+        };
+
+        explorer() = default;
+        explorer(const explorer&) = delete;
+        explorer(explorer&&) = delete;
+        explorer& operator=(const explorer&) = delete;
+        explorer& operator=(explorer&&) = delete;
+
+        explicit explorer(const std::string& dir, const std::string& p = "") {
+            open(dir, p);
+        }
+
+        ~explorer() {
+            close();
+        }
+
+        void close() {
+            directory = "";
+            pattern = "";
+
+            if (dirfd) {
+                closedir(dirfd);
+            };
+        }
+
+        bool open(const std::string& dir, const std::string& p = "") {
+            close();
+
+            dirfd = opendir(dir.c_str());
+            if (!dirfd) {
+                return false;
             }
 
-            if ((tagData.attrib & A_SUBDIR) != 0) {
-                std::string s = tagData.name;
-                if (s != "." && s != "..") {
-                    dlist.data.push_back(s);
+            directory = dir;
+            pattern = p;
+            if (pattern == "*") pattern = "";
+
+            return true;
+        }
+
+        bool find_next(file_data& f) {
+            if (!dirfd) return false;
+
+            dirent* entry;
+
+            if (pattern.empty()) {
+                entry = readdir(dirfd);
+            } else {
+                while ((entry = readdir(dirfd))) {
+                    if (fnmatch(pattern.c_str(), entry->d_name, 0) == 0) {
+                        break;
+                    }
                 }
             }
 
-            res = impl::file_impl::_findnext(handle, &tagData);
+            if (!entry) return false;
+
+            f.name = entry->d_name;
+            f.full_path = directory + "/" + f.name;
+
+            struct stat stat_buf;
+            if (stat(f.full_path.c_str(), &stat_buf)) {
+                f.is_dir = false;
+                f.size = 0;
+            } else {
+                f.is_dir = S_ISDIR(stat_buf.st_mode);
+                f.size = stat_buf.st_size;
+            }
+
+            f.is_hidden = (f.name.size() > 1 && f.name[0] == '.');
+
+            return true;
+        }
+    };
+
+    inline vec1s list_directories(const std::string& dir, const std::string& pattern = "*") {
+        vec1s dlist;
+
+        explorer e;
+        if (!e.open(dir, pattern)) {
+            return dlist;
         }
 
-        if (handle != -1) {
-            impl::file_impl::_findclose(handle);
+        explorer::file_data f;
+        while (e.find_next(f)) {
+            if (!f.is_hidden && f.is_dir && f.name != "." && f.name != "..") {
+                dlist.data.push_back(f.name);
+            }
         }
 
-        dlist.dims[0] = dlist.size();
         return dlist;
     }
 
-    inline vec1s list_files(const std::string& pattern = "*") {
+    inline vec1s list_files(const std::string& dir, const std::string& pattern = "*") {
         vec1s flist;
 
-        long handle, res;
-        struct impl::file_impl::_finddata_t tagData;
-
-        handle = impl::file_impl::_findfirst(pattern.c_str(), &tagData);
-        res = 0;
-        while (handle != -1 && res != -1) {
-            if ((tagData.attrib & A_HIDDEN) != 0) {
-                res = impl::file_impl::_findnext(handle, &tagData);
-                continue;
-            }
-
-            if ((tagData.attrib & A_SUBDIR) == 0) {
-                flist.data.push_back(tagData.name);
-            }
-
-            res = impl::file_impl::_findnext(handle, &tagData);
+        explorer e;
+        if (!e.open(dir, pattern)) {
+            return flist;
         }
 
-        if (handle != -1) {
-            impl::file_impl::_findclose(handle);
+        explorer::file_data f;
+        while (e.find_next(f)) {
+            if (!f.is_hidden && !f.is_dir) {
+                flist.data.push_back(f.name);
+            }
         }
 
-        flist.dims[0] = flist.size();
         return flist;
     }
 
