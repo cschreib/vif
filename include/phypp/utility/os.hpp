@@ -25,6 +25,14 @@ namespace phypp {
     inline std::string system_var(const std::string& name, const char* def) {
         return system_var(name, std::string(def));
     }
+
+    inline bool fork(const std::string& cmd) {
+        return system((cmd+" &").c_str()) == 0;
+    }
+
+    inline bool spawn(const std::string& cmd) {
+        return system(cmd.c_str()) == 0;
+    }
 }
 
 #endif

@@ -289,14 +289,6 @@ namespace phypp {
     PHYPP_VECTORIZE(exists)
     PHYPP_VECTORIZE(is_older)
 }
-
-    inline bool fork(const std::string& cmd) {
-        return system((cmd+" &").c_str()) == 0;
-    }
-
-    inline bool spawn(const std::string& cmd) {
-        return system(cmd.c_str()) == 0;
-    }
 }
 
 
