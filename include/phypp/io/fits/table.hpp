@@ -856,8 +856,16 @@ namespace impl {
 }
 
 namespace fits {
+    // Output format of FITS table (row/column oriented)
+    enum class output_format {
+        column_oriented,
+        row_oriented
+    };
+
     // Output FITS table (write only, overwrites existing files)
     class output_table : public impl::fits_impl::output_file_base {
+        fits::output_format format_ = fits::output_format::column_oriented;
+
     public :
 
         explicit output_table(const std::string& filename) :
@@ -868,6 +876,19 @@ namespace fits {
         output_table(const output_table&) = delete;
         output_table& operator = (output_table&&) noexcept = delete;
         output_table& operator = (const output_table&&) = delete;
+
+        void set_format(fits::output_format fmt) {
+            // Check if data already exists, in which case we cannot change format
+            uint_t nhdu = hdu_count();
+            if (nhdu != 0) {
+                int ncols = 0;
+                fits_get_num_cols(fptr_, &ncols, &status_);
+                fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+                phypp_check(ncols == 0, "cannot change table format when data exists in the table");
+            }
+
+            format_ = fmt;
+        }
 
     protected :
 
@@ -916,7 +937,7 @@ namespace fits {
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<
                 !std::is_same<Type,std::string>::value && !std::is_pointer<Type>::value>::type>
-        void write_column_impl_(const vec<Dim,Type>& value, const std::array<long,Dim>&,
+        void write_column_impl_(const vec<Dim,Type>& value, const vec<1,long>&,
             const std::string& tcolname, int cid) {
             // cfitsio doesn't like writing empty columns
             if (value.empty()) return;
@@ -927,7 +948,7 @@ namespace fits {
         }
 
         template<typename Type>
-        void write_column_impl_(const Type& value, const std::array<long,0>&,
+        void write_column_impl_(const Type& value, const vec<1,long>&,
             const std::string& tcolname, int cid) {
             using dtype = typename impl::fits_impl::traits<Type>::dtype;
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1,
@@ -937,7 +958,7 @@ namespace fits {
 
         template<std::size_t Dim>
         void write_column_impl_(const vec<Dim,std::string>& value,
-            const std::array<long,Dim+1>& dims, const std::string& tcolname, int cid) {
+            const vec<1,long>& dims, const std::string& tcolname, int cid) {
 
             const uint_t nmax = dims[0];
 
@@ -963,7 +984,7 @@ namespace fits {
             delete[] buffer;
         }
 
-        void write_column_impl_(const std::string& value, const std::array<long,1>&,
+        void write_column_impl_(const std::string& value, const vec<1,long>&,
             const std::string& tcolname, int cid) {
 
             // NB: for some reason cfitsio crashes on empty string
@@ -978,30 +999,41 @@ namespace fits {
             delete[] buffer;
         }
 
-        template<std::size_t Dim, typename Type, std::size_t DD>
-        void write_column_impl_(const vec<Dim,Type*>& value, const std::array<long,DD>& dims,
+        template<std::size_t Dim, typename Type>
+        void write_column_impl_(const vec<Dim,Type*>& value, const vec<1,long>& dims,
             const std::string& tcolname, int cid) {
             write_column_impl_(value.concretise(), dims, tcolname, cid);
         }
 
         template<std::size_t Dim, typename Type>
-        std::array<long,Dim> write_column_get_dims_(const vec<Dim,Type>& value) {
-            std::array<long,Dim> dims;
-            for (uint_t i : range(Dim)) {
-                dims[i] = value.dims[Dim-1-i];
+        vec<1,long> write_column_get_dims_(const vec<Dim,Type>& value, uint_t& nrow) {
+            vec<1,long> dims;
+            if (format_ == fits::output_format::column_oriented) {
+                nrow = 1;
+                dims.resize(Dim);
+                for (uint_t i : range(Dim)) {
+                    dims.safe[i] = value.dims[Dim-1-i];
+                }
+            } else {
+                nrow = value.dims[0];
+                dims.resize(Dim-1);
+                for (uint_t i : range(Dim-1)) {
+                    dims.safe[i] = value.dims[Dim-1-i];
+                }
             }
 
             return dims;
         }
 
         template<typename T>
-        std::array<long,0> write_column_get_dims_(const T&) {
+        vec<1,long> write_column_get_dims_(const T&, uint_t& nrow) {
+            nrow = 1;
             return {};
         }
 
         template<std::size_t Dim, typename T>
-        std::array<long,Dim+1> write_column_get_dims_stringv_(const vec<Dim,T>& value) {
-            std::array<long,Dim+1> dims;
+        vec<1,long> write_column_get_dims_stringv_(const vec<Dim,T>& value, uint_t& nrow) {
+            vec<1,long> dims;
 
             std::size_t nmax = 0;
             for (auto& s : value) {
@@ -1010,31 +1042,44 @@ namespace fits {
                 }
             }
 
-            dims[0] = nmax;
-            for (uint_t i : range(Dim)) {
-                dims[i+1] = value.dims[Dim-1-i];
+            if (format_ == fits::output_format::column_oriented) {
+                nrow = 1;
+                dims.resize(Dim+1);
+                dims[0] = nmax;
+                for (uint_t i : range(Dim)) {
+                    dims[i+1] = value.dims[Dim-1-i];
+                }
+            } else {
+                nrow = value.dims[0];
+                dims.resize(Dim);
+                dims[0] = nmax;
+                for (uint_t i : range(Dim-1)) {
+                    dims[i+1] = value.dims[Dim-1-i];
+                }
             }
 
             return dims;
         }
 
         template<std::size_t Dim>
-        std::array<long,Dim+1> write_column_get_dims_(const vec<Dim,std::string>& value) {
-            return write_column_get_dims_stringv_(value);
+        vec<1,long> write_column_get_dims_(const vec<Dim,std::string>& value, uint_t& nrow) {
+            return write_column_get_dims_stringv_(value, nrow);
         }
 
         template<std::size_t Dim>
-        std::array<long,Dim+1> write_column_get_dims_(const vec<Dim,std::string*>& value) {
-            return write_column_get_dims_stringv_(value);
+        vec<1,long> write_column_get_dims_(const vec<Dim,std::string*>& value, uint_t& nrow) {
+            return write_column_get_dims_stringv_(value, nrow);
         }
 
-        std::array<long,1> write_column_get_dims_(const std::string& value) {
+        vec<1,long> write_column_get_dims_(const std::string& value, uint_t& nrow) {
+            nrow = 1;
             return {{long(value.size())}};
         }
 
-        template<typename Type, std::size_t Dim>
-        std::string write_column_make_tform_(meta::type_list<Type>, const std::array<long,Dim>& dims) {
+        template<typename Type>
+        std::string write_column_make_tform_(meta::type_list<Type>, const vec<1,long>& dims) {
             uint_t size = 1;
+
             for (uint_t d : dims) {
                 size *= d;
             }
@@ -1042,9 +1087,9 @@ namespace fits {
             return to_string(size)+impl::fits_impl::traits<Type>::tform;
         }
 
-        template<std::size_t Dim>
-        std::string write_column_make_tform_(meta::type_list<std::string>, const std::array<long,Dim>& dims) {
+        std::string write_column_make_tform_(meta::type_list<std::string>, const vec<1,long>& dims) {
             uint_t size = 1;
+
             for (uint_t d : dims) {
                 size *= d;
             }
@@ -1052,17 +1097,17 @@ namespace fits {
             return to_string(size)+impl::fits_impl::traits<std::string>::tform+to_string(dims[0]);
         }
 
-
-        template<std::size_t Dim>
-        void write_column_write_tdim_(const std::array<long,Dim>& dims, const std::string& tcolname,
+        void write_column_write_tdim_(const vec<1,long>& dims, const std::string& tcolname,
             int cid) {
-            fits_write_tdim(fptr_, cid, Dim, const_cast<long*>(dims.data()), &status_);
+
+            if (dims.empty()) {
+                // Nothing to do
+                return;
+            }
+
+            fits_write_tdim(fptr_, cid, dims.size(), const_cast<long*>(dims.data.data()), &status_);
             fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+
                 "' (dims "+to_string(dims)+")");
-        }
-
-        void write_column_write_tdim_(const std::array<long,0>&, const std::string&, int) {
-            // Nothing to do
         }
 
         struct do_write_struct_ {
@@ -1087,7 +1132,18 @@ namespace fits {
 
             // Collect data on the input type
             using vtype = typename impl::fits_impl::data_type<T>::type;
-            const auto dims = write_column_get_dims_(value);
+            uint_t ndrow = 1;
+            const vec<1,long> dims = write_column_get_dims_(value, ndrow);
+
+            // If row-oriented and data already exists, check we have
+            // the right number of rows before writing
+            if (cid > 1 && format_ == output_format::row_oriented) {
+                long nrow;
+                fits_get_num_rows(fptr_, &nrow, &status_);
+                fits::phypp_check_cfitsio(status_, "could not get number of rows in HDU");
+                phypp_check(ndrow == uint_t(nrow), "incompatible number "
+                    "of rows in '", tcolname, "' (expected ", nrow, ", got ", ndrow, ")");
+            }
 
             // Create empty column
             std::string colname = to_upper(tcolname);
