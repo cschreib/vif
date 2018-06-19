@@ -4,6 +4,7 @@
 #include "phypp/io/fits/base.hpp"
 #include "phypp/io/fits/table.hpp"
 #include "phypp/io/fits/image.hpp"
+#include "phypp/utils/os.hpp"
 
 namespace phypp {
 namespace fits {
