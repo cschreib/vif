@@ -16,12 +16,13 @@
 #include "phypp/core/error.hpp"
 
 namespace phypp {
-    inline bool exists(const std::string& file) {
-        if (file.empty()) {
+namespace file {
+    inline bool exists(const std::string& path) {
+        if (path.empty()) {
             return false;
         }
 
-        std::ifstream f(file.c_str());
+        std::ifstream f(path.c_str());
         return f.is_open();
     }
 
@@ -32,9 +33,9 @@ namespace phypp {
         return std::difftime(st1.st_ctime, st2.st_ctime) < 0.0;
     }
 
-    inline bool is_absolute_path(const std::string& file) {
-        auto pos = file.find_first_not_of(" \t");
-        return pos != file.npos && file[pos] == '/';
+    inline bool is_absolute_path(const std::string& path) {
+        auto pos = path.find_first_not_of(" \t");
+        return pos != path.npos && path[pos] == '/';
     }
 
     inline bool copy(const std::string& file_from, const std::string& file_to) {
@@ -46,12 +47,12 @@ namespace phypp {
         return true;
     }
 
-    inline bool remove(const std::string& file) {
-        return !file::exists(file) || ::remove(file.c_str()) == 0;
+    inline bool remove(const std::string& path) {
+        return !file::exists(path) || ::remove(path.c_str()) == 0;
     }
 
-    inline bool move(const std::string& file, const std::string& to) {
-        return ::rename(file.c_str(), to.c_str()) == 0;
+    inline bool move(const std::string& from, const std::string& to) {
+        return ::rename(from.c_str(), to.c_str()) == 0;
     }
 
     inline std::string to_string(const std::string& file_name) {
