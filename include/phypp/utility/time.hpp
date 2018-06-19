@@ -174,6 +174,7 @@ namespace phypp {
         ++p.i;
 
         if (p.i >= p.n) {
+            impl::progress_(p);
             std::cout << std::endl;
             p.ended = true;
         }
