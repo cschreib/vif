@@ -1183,6 +1183,7 @@ namespace fits {
             reflex::foreach_member(reflex::wrap(value), run);
         }
 
+    protected :
 
         template<typename T>
         void write_column_(const std::string& colname, T&& value) {
