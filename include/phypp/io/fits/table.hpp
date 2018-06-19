@@ -1127,12 +1127,18 @@ namespace fits {
             reflex::foreach_member(reflex::wrap(value), run);
         }
 
+
+        template<typename T>
+        void write_column_(const std::string& colname, T&& value) {
+            write_column_(colname, std::forward<T>(value), reflex::enabled<meta::decay_t<T>>{});
+        }
+
     public :
 
         template<typename T>
         void write_column(const std::string& colname, T&& value) {
             create_table_();
-            write_column_(colname, std::forward<T>(value), reflex::enabled<meta::decay_t<T>>{});
+            write_column_(colname, std::forward<T>(value));
         }
 
     private :
@@ -1143,7 +1149,7 @@ namespace fits {
 
         template<typename T, typename ... Args>
         void write_columns_impl_(const std::string& tcolname, const T& value, Args&& ... args) {
-            write_column(tcolname, value);
+            write_column_(tcolname, value);
             write_columns_impl_(std::forward<Args>(args)...);
         }
 
@@ -1154,7 +1160,7 @@ namespace fits {
         template<typename T, typename ... Args>
         void write_columns_impl_(impl::ascii_impl::macroed_t, std::string names, T& value, Args&& ... args) {
             std::string tcolname = impl::ascii_impl::pop_macroed_name(names);
-            write_column(impl::ascii_impl::bake_macroed_name(tcolname), value);
+            write_column_(impl::ascii_impl::bake_macroed_name(tcolname), value);
             write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
@@ -1163,7 +1169,7 @@ namespace fits {
             Args&& ... args) {
 
             impl::ascii_impl::pop_macroed_name(names);
-            write_column(value.name, value.obj);
+            write_column_(value.name, value.obj);
             write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
@@ -1260,7 +1266,7 @@ namespace fits {
         void update_column(const std::string& tcolname, const T& value) {
             create_table_();
             remove_column(tcolname);
-            write_column(tcolname, value);
+            write_column_(tcolname, value);
         }
 
     private :
