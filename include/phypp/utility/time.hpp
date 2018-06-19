@@ -122,6 +122,7 @@ namespace phypp {
             double n = now();
             double total = n - p.start;
             double remaining = total*double(p.n)/(p.i+1) - total;
+            if (p.i == p.n-1) remaining = 0.0;
 
             p.ips = (p.i+1)/total;
 
