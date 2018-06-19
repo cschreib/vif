@@ -2,7 +2,7 @@
 #include <phypp/astro/qstack.hpp>
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("qstack v2.0");
     paragraph("usage: qstack2 cat=\"...\" img=\"...\" out=\"...\" hsize=... [options=...]");
@@ -184,9 +184,9 @@ int phypp_main(int argc, char* argv[]) {
     } fcat;
 
     if (!cat.empty()) {
-        if (end_with(cat, ".fits")) {
+        if (ends_with(cat, ".fits")) {
             std::string posh = pos.empty() ? "" : pos+".";
-            fits::read_table(cat, toupper(posh+"ra"), fcat.ra, toupper(posh+"dec"), fcat.dec);
+            fits::read_table(cat, to_upper(posh+"ra"), fcat.ra, to_upper(posh+"dec"), fcat.dec);
         } else {
             ascii::read_table(cat, ascii::find_skip(cat), fcat.ra, fcat.dec);
         }
@@ -354,7 +354,7 @@ int phypp_main(int argc, char* argv[]) {
 
     if (bstrap) {
         std::string bstrap_out;
-        if (end_with(out, ".fits")) {
+        if (ends_with(out, ".fits")) {
             bstrap_out = out.substr(0, out.size()-5) + "_bs.fits";
         } else {
             bstrap_out = file::get_directory(out) + "bstrap.fits";

@@ -2,7 +2,7 @@
 #include <phypp/astro/qxmatch.hpp>
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("qxmatch2 v2.0");
     paragraph("usage: qxmatch2 cats=[file1,file2] output=ofile [options=...]");

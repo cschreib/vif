@@ -16,10 +16,10 @@ int phypp_main(int argc, char* argv[]) {
         return 0;
     }
 
-    std::string op = tolower(argv[1]);
+    std::string op = to_lower(argv[1]);
 
     if (op == "help") {
-        op = tolower(argv[2]);
+        op = to_lower(argv[2]);
         if (op == "convolve") {
             print_convolve_help();
         } else if (op == "multiply") {
@@ -45,7 +45,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_convolve_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will convolve the first image (map) with the second image (kernel).");
 
@@ -85,7 +85,7 @@ bool convolve(int argc, char* argv[]) {
 }
 
 void print_multiply_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will multiply the first image by the provided value.");
 
@@ -124,7 +124,7 @@ bool multiply(int argc, char* argv[]) {
 }
 
 void print_rotate_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will rotate the image by the provided angle (in degrees, counter clock-wise).");
 
@@ -163,7 +163,7 @@ bool rotate(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("imgtool v1.0");
     header("Usage: imgtool operation [options]");

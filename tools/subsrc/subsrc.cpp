@@ -32,7 +32,7 @@ int phypp_main(int argc, char* argv[]) {
     } cat;
 
     std::string cat_file = argv[2];
-    if (end_with(cat_file, ".fits")) {
+    if (ends_with(cat_file, ".fits")) {
         struct {
             vec1u id;
             vec1d ra, dec;
@@ -56,7 +56,7 @@ int phypp_main(int argc, char* argv[]) {
         bool found = false;
         auto info = fits::read_table_columns(cat_file);
         for (auto& i : info) {
-            i.name = tolower(i.name);
+            i.name = to_lower(i.name);
             if (i.name == "flux") {
                 if (i.dims.size() == 2) {
                     vec2f tflux;
@@ -157,7 +157,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("subsrc v1.0");
     paragraph("usage: subsrc img.fits srcs.[fits/cat] [psf=...,out=...]");

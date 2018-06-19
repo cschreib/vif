@@ -70,7 +70,7 @@ int phypp_main(int argc, char* argv[]) {
     vec1f mindist(cat.bands.size());
 
     std::string cache = argv[1];
-    if (end_with(cache, ".fits")) cache = erase_end(cache, 5);
+    if (ends_with(cache, ".fits")) cache = erase_end(cache, 5);
     cache = "."+cache+"_photinfo_cache.fits";
 
     if (!file::exists(cache) || file::is_older(cache, argv[1])) {
@@ -165,7 +165,7 @@ int phypp_main(int argc, char* argv[]) {
             align_center(cat.notes[i], maxn), " | ",
             align_right(to_string(cat.lambda[i]), maxl), " | ",
             align_right(to_string(format::scientific(3*median(e[idg3s]))), maxdJ), " | ",
-            align_right(keep_start(to_string(float(uJy2mag(3*median(e[idg3s])))), 4), maxdAB), " | ",
+            align_right(to_string(format::precision(float(uJy2mag(3*median(e[idg3s]))), 4)), maxdAB), " | ",
             align_right(to_string(idg.size()), maxdet), " | ",
             align_right(to_string(total(f[idg]/e[idg] > 3)), maxd3), " | ",
             align_right(to_string(total(f[idg]/e[idg] > 5)), maxd5), " | ",

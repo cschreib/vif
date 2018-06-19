@@ -38,7 +38,7 @@ int phypp_main(int argc, char* argv[]) {
 
     // Read input position list
     vec1d hra, hdec;
-    if (!pos.empty() && !end_with(pos, ".")) pos = pos+".";
+    if (!pos.empty() && !ends_with(pos, ".")) pos = pos+".";
     fits::read_table(argv[1], pos+"ra", hra, pos+"dec", hdec);
 
     if (nsrc == 0) nsrc = hra.size();
@@ -80,7 +80,7 @@ int phypp_main(int argc, char* argv[]) {
 
     if (out.empty()) {
         out = argv[1];
-        if (end_with(out, ".fits")) {
+        if (ends_with(out, ".fits")) {
             out = erase_end(out, ".fits");
         }
 

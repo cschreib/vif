@@ -132,7 +132,7 @@ bool read_ds9_region_circles(std::string file_name, vec2d& regs, vec1s& text, bo
         ++l;
         if (line.empty() || trim(line).empty() || trim(line)[0] == '#') continue;
 
-        if (start_with(line, "global")) {
+        if (begins_with(line, "global")) {
             std::string key = "color=";
             auto pos = line.find(key);
             if (pos != line.npos) {
@@ -170,7 +170,7 @@ bool read_ds9_region_circles(std::string file_name, vec2d& regs, vec1s& text, bo
                 return false;
             }
 
-            if (!end_with(args[2], "\"")) {
+            if (!ends_with(args[2], "\"")) {
                 error(file_name, ":", l, ": expected radius in arcsec");
                 return false;
             }

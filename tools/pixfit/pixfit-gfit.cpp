@@ -3,7 +3,7 @@
 #include "pixfit-common.hpp"
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("gfit v1.0");
     paragraph(
@@ -155,7 +155,7 @@ int phypp_main(int argc, char* argv[]) {
 
         fits::read_table(cat, zvar, fcat.z);
         if (fcat.z.empty()) {
-            error("gfit: no redshift information in '"+cat+"' ("+toupper(zvar)+")");
+            error("gfit: no redshift information in '"+cat+"' ("+to_upper(zvar)+")");
             return 1;
         }
     }

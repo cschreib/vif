@@ -1,7 +1,7 @@
 #include <phypp.hpp>
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("qconvol v1.0");
     paragraph("usage: qconvol img.fits radius=1 kernel=\"\" out=output.fits");

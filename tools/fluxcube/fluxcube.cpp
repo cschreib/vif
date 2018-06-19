@@ -714,7 +714,7 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("fluxcube v1.0");
     header("Usage: fluxcube <cube>.fits <operation> [options]");

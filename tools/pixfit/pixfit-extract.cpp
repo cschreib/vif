@@ -150,7 +150,7 @@ int phypp_main(int argc, char* argv[]) {
         map.beam_smear = (beam_smeared ? beam_size : fnan);
 
         if (psf_file.empty()) {
-            if (end_with(img_file, "sci.fits")) {
+            if (ends_with(img_file, "sci.fits")) {
                 psf_file = erase_end(img_file, "sci.fits")+"psf.fits";
 
                 if (!file::exists(psf_file)) {
@@ -165,7 +165,7 @@ int phypp_main(int argc, char* argv[]) {
         }
 
         if (err_file.empty()) {
-            if (end_with(img_file, "sci.fits")) {
+            if (ends_with(img_file, "sci.fits")) {
                 err_file = erase_end(img_file, "sci.fits")+"err.fits";
 
                 if (!file::exists(err_file)) {
@@ -1139,7 +1139,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("pixfit v1.0");
     paragraph("usage: pixfit cat=... img=... psf=... out=... [...]");

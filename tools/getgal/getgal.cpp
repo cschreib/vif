@@ -113,7 +113,7 @@ int phypp_main(int argc, char* argv[]) {
 
     vec1d ra, dec;
     vec1s name;
-    if (tsrc.size() == 1 && end_with(tsrc[0], ".fits")) {
+    if (tsrc.size() == 1 && ends_with(tsrc[0], ".fits")) {
         struct {
             vec1d ra, dec;
             vec1s name;
@@ -141,7 +141,7 @@ int phypp_main(int argc, char* argv[]) {
 
         ra = tmp.ra;
         dec = tmp.dec;
-    } else if (tsrc.size() == 1 && end_with(tsrc[0], ".reg")) {
+    } else if (tsrc.size() == 1 && ends_with(tsrc[0], ".reg")) {
         ascii::read_table(tsrc[0], ascii::find_skip(tsrc[0]), ra, dec);
         name = to_string_vector(uindgen(ra.size())) + "_";
     } else if (tsrc.size() == 2) {
@@ -174,7 +174,7 @@ int phypp_main(int argc, char* argv[]) {
 
     vec<1,image_t> imgs;
 
-    if (end_with(clist, ".fits")) {
+    if (ends_with(clist, ".fits")) {
         // Single FITS file
         image_t img;
         img.filename = clist;
@@ -222,7 +222,7 @@ int phypp_main(int argc, char* argv[]) {
         // Find HDU containing data
         uint_t hdu = 0; {
             std::string tfile;
-            if (end_with(img.filename, ".sectfits")) {
+            if (ends_with(img.filename, ".sectfits")) {
                 vec1s sects = fits::read_sectfits(img.filename);
                 tfile = sects[0];
             } else {
@@ -359,7 +359,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("getgal v1.0");
     paragraph("usage: getgal field.param src=[...] out=... [options=...]");

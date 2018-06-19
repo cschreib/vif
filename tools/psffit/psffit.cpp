@@ -103,7 +103,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
     print("psffit v1.0");
     paragraph("usage: psffit img.fits x y psf=...");
 }

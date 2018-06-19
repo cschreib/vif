@@ -58,7 +58,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("angcorrel v1.0");
     paragraph("usage: angcorrel cat.fits refcat.fits [range,nbin,out,seed]");

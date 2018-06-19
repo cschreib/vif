@@ -35,7 +35,7 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     std::string file = argv[1];
-    std::string op = tolower(argv[2]);
+    std::string op = to_lower(argv[2]);
 
     if (op == "help") {
         op = file;
@@ -101,7 +101,7 @@ int phypp_main(int argc, char* argv[]) {
 }
 
 void print_remove_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will remove the provided columns from this FITS file. Be warned that "
         "the contained data is permantently lost.");
@@ -138,7 +138,7 @@ bool remove_columns(int argc, char* argv[], const std::string& file) {
         fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1s fcols;
-        cols = toupper(cols);
+        cols = to_upper(cols);
         if (!get_columns(cols, fptr, fcols, force)) {
             return true;
         }
@@ -149,7 +149,7 @@ bool remove_columns(int argc, char* argv[], const std::string& file) {
             std::string line;
             while (line.empty()) {
                 std::getline(std::cin, line);
-                line = tolower(line);
+                line = to_lower(line);
                 if (line == "y" || line == "yes") break;
                 if (line == "n" || line == "no") {
                     fits_close_file(fptr, &status);
@@ -184,7 +184,7 @@ bool remove_columns(int argc, char* argv[], const std::string& file) {
 }
 
 void print_transpose_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will transpose the provided 2D columns, effectively transforming a NxM "
         "column into an MxN one. No data is lost in the process.");
@@ -221,7 +221,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
         fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1s fcols;
-        cols = toupper(cols);
+        cols = to_upper(cols);
         if (!get_columns(cols, fptr, fcols, force)) {
             return true;
         }
@@ -291,7 +291,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
 }
 
 void print_r2c_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will convert a row-oriented FITS file to a column-oriented FITS file. "
         "No data is lost in the process.");
@@ -321,7 +321,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
 
     file::mkdir(file::get_directory(out));
 
-    if (!start_with(out, "!")) {
+    if (!begins_with(out, "!")) {
         out = "!"+out;
     }
 
@@ -453,7 +453,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
 }
 
 void print_cpwcs_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will copy all the WCS related header keywords from the provided file to "
         "another file. Previous WCS data in the other file will be lost.");
@@ -554,7 +554,7 @@ bool copy_wcs_header(int argc, char* argv[], const std::string& file) {
 }
 
 void print_hdr_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will just display the content of the provided FITS file's header.");
 
@@ -619,7 +619,7 @@ bool show_header(int argc, char* argv[], const std::string& file) {
 }
 
 void print_editkwd_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will allow you to edit manually any keyword within this FITS file. It "
         "is an interactive tool, that first asks your for the name of the keyword, then for the "
@@ -659,7 +659,7 @@ bool write_keyword_value(fitsfile* fptr, bool newk, std::string name, std::strin
             fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
         }
     } else {
-        if (end_with(new_value, ".") || find(new_value, ".") == npos) {
+        if (ends_with(new_value, ".") || find(new_value, ".") == npos) {
             int di = d;
             if (newk) {
                 fits_write_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
@@ -731,7 +731,7 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
                 std::string name;
                 std::cout << "> ";
                 std::getline(std::cin, name);
-                name = toupper(trim(name));
+                name = to_upper(trim(name));
                 if (name.empty()) break;
 
                 char value[80];
@@ -748,7 +748,7 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
                     bool stop = false;
                     while (line.empty()) {
                         std::getline(std::cin, line);
-                        line = tolower(line);
+                        line = to_lower(line);
                         if (line == "y" || line == "yes") break;
                         if (line == "n" || line == "no") {
                             stop = true;
@@ -812,7 +812,7 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
 }
 
 void print_rmkwd_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will remove the listed keywords (if found) from the provided FITS "
         "file. This is a destructive procedure: the FITS file will be modified and data will "
@@ -872,7 +872,7 @@ bool remove_keyword(int argc, char* argv[], const std::string& file) {
 }
 
 void print_readkwd_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will print the values of the provided keywords from the provided FITS "
         "file. Keywords that do not exist will print empty values.");
@@ -957,7 +957,7 @@ bool read_keyword(int argc, char* argv[], const std::string& file) {
 }
 
 void print_make2d_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will remove and modify specific keywords to transform a "
         "multidimensional image into a simple 2D image. Note that the pixel content "
@@ -1047,7 +1047,7 @@ bool make_2d(int argc, char* argv[], const std::string& file) {
 }
 
 void print_meta_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will identify 'meta' columns in a column oriented FITS table. It will "
         "then move these columns to a new table within the FITS file, so that the file can be "
@@ -1116,7 +1116,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
                 std::string line;
                 while (line.empty()) {
                     std::getline(std::cin, line);
-                    line = tolower(line);
+                    line = to_lower(line);
                     if (line == "y" || line == "yes") break;
                     if (line == "n" || line == "no") {
                         print("available dimensions:");
@@ -1183,7 +1183,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
             std::string line;
             while (line.empty()) {
                 std::getline(std::cin, line);
-                line = tolower(line);
+                line = to_lower(line);
                 if (line == "y" || line == "yes") break;
                 if (line == "n" || line == "no") {
                     fits_close_file(fptr, &status);
@@ -1233,7 +1233,7 @@ bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force) {
                 std::string line;
                 while (line.empty()) {
                     std::getline(std::cin, line);
-                    line = tolower(line);
+                    line = to_lower(line);
                     if (line == "y" || line == "yes") break;
                     if (line == "n" || line == "no") {
                         fits_close_file(fptr, &status);
@@ -1254,7 +1254,7 @@ bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force) {
 }
 
 void print_extract_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     paragraph("The program will extract one extension from the provided FITS file and save it "
         "(with its header and content) in a new FITS file.");
@@ -1285,7 +1285,7 @@ bool extract_extension(int argc, char* argv[], const std::string& file) {
 
     file::mkdir(file::get_directory(out));
 
-    if (!start_with(out, "!")) {
+    if (!begins_with(out, "!")) {
         out = "!"+out;
     }
 
@@ -1319,7 +1319,7 @@ bool extract_extension(int argc, char* argv[], const std::string& file) {
 }
 
 void print_help() {
-    using namespace format;
+    using namespace terminal_format;
 
     print("fitstool v1.0");
     header("Usage: fitstool operation [options]");
