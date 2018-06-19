@@ -12,6 +12,7 @@ namespace fits {
         bool allow_narrow = false;
         bool allow_missing = false;
         bool allow_dim_promote = false;
+        bool allow_flatten = false;
         uint_t first_row = 0;
         uint_t last_row = npos;
 
@@ -20,6 +21,7 @@ namespace fits {
             if (o.allow_narrow)      n.allow_narrow = true;
             if (o.allow_missing)     n.allow_missing = true;
             if (o.allow_dim_promote) n.allow_dim_promote = true;
+            if (o.allow_flatten)     n.allow_flatten = true;
             n.first_row = std::min(first_row, o.first_row);
             n.last_row = std::max(last_row, o.last_row);
             return n;
@@ -44,11 +46,18 @@ namespace fits {
         return opts;
     }();
 
+    const table_read_options flatten = []() {
+        table_read_options opts;
+        opts.allow_flatten = true;
+        return opts;
+    }();
+
     const table_read_options permissive = []() {
         table_read_options opts;
         opts.allow_narrow = true;
         opts.allow_missing = true;
         opts.allow_dim_promote = true;
+        opts.allow_flatten = true;
         return opts;
     }();
 
@@ -423,11 +432,20 @@ namespace fits {
         void read_column_resize_(vec<Dim,Type>& v, long naxis,
             const std::array<long,max_column_dims>& naxes) const {
 
-            for (uint_t i : range(Dim)) {
-                if (i < (Dim-naxis)) {
-                    v.dims[i] = 1;
-                } else {
-                    v.dims[i] = naxes[Dim-1-i];
+            if (Dim == 1 && naxis > 1) {
+                // For allow_flatten
+                v.dims[0] = 1;
+                for (uint_t i : range(uint_t(naxis))) {
+                    v.dims[0] *= naxes[i];
+                }
+            } else {
+                for (uint_t i : range(Dim)) {
+                    if (i < (Dim-naxis)) {
+                        // For allow_dim_promote
+                        v.dims[i] = 1;
+                    } else {
+                        v.dims[i] = naxes[Dim-1-i];
+                    }
                 }
             }
 
@@ -465,16 +483,24 @@ namespace fits {
             }
         }
 
+        bool read_column_check_dim_impl_(const table_read_options& opts, uint_t naxis, uint_t vdim) const {
+            if (naxis < vdim) {
+                return opts.allow_dim_promote;
+            }
+
+            if (naxis > vdim) {
+                return vdim == 1 && opts.allow_flatten;
+            }
+
+            return true;
+        }
+
         template<std::size_t Dim, typename T, typename enable =
             typename std::enable_if<!std::is_same<T,std::string>::value>::type>
         bool read_column_check_dim_(const table_read_options& opts, vec<Dim,T>&, uint_t vdim,
             long naxis, long repeat) const {
 
-            if (opts.allow_dim_promote) {
-                return uint_t(naxis) <= vdim;
-            } else {
-                return uint_t(naxis) == vdim;
-            }
+            return read_column_check_dim_impl_(opts, naxis, vdim);
         }
 
         template<typename T>
@@ -485,11 +511,7 @@ namespace fits {
             // element is greater than one
             if (naxis == 1 && repeat > 1) return false;
 
-            if (opts.allow_dim_promote) {
-                return uint_t(naxis) <= vdim;
-            } else {
-                return uint_t(naxis) == vdim;
-            }
+            return read_column_check_dim_impl_(opts, naxis, vdim);
         }
 
         template<std::size_t Dim>
@@ -499,21 +521,13 @@ namespace fits {
             // Early exit to allow loading 1D byte into vec1s
             if (Dim == 1 && naxis == 1) return true;
 
-            if (opts.allow_dim_promote) {
-                return uint_t(naxis) <= vdim;
-            } else {
-                return uint_t(naxis) == vdim;
-            }
+            return read_column_check_dim_impl_(opts, naxis, vdim);
         }
 
         bool read_column_check_dim_(const table_read_options& opts, std::string&, uint_t vdim,
             long naxis, long repeat) const {
 
-            if (opts.allow_dim_promote) {
-                return uint_t(naxis) <= vdim;
-            } else {
-                return uint_t(naxis) == vdim;
-            }
+            return read_column_check_dim_impl_(opts, naxis, vdim);
         }
 
         bool read_column_check_rows_(table_read_options& opts,
