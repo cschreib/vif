@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <array>
 #include <typeinfo>
+#include <cctype>
+#include <limits>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/range.hpp"
 #include "phypp/core/meta.hpp"
@@ -149,6 +151,32 @@ namespace phypp {
         return s;
     }
 
+namespace impl {
+    template<typename T>
+    bool from_string_fallback(const std::string& s, T& t, std::true_type) {
+        std::string su = s;
+        for (auto& c : su) c = std::toupper(c);
+
+        if (su == "NAN" || su == "+NAN" || su == "-NAN") {
+            t = std::numeric_limits<T>::quiet_NaN();
+            return true;
+        } else if (su == "+INF" || su == "INF+" || su == "INF") {
+            t = std::numeric_limits<T>::infinity();
+            return true;
+        } else if (su == "-INF" || su == "INF-") {
+            t = -std::numeric_limits<T>::infinity();
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename T>
+    bool from_string_fallback(const std::string&, T&, std::false_type) {
+        return false;
+    }
+}
+
     template<typename T>
     bool from_string(const std::string& s, T& t) {
         std::istringstream ss(s);
@@ -160,7 +188,8 @@ namespace phypp {
             ss >> rem;
             return rem.find_first_not_of(" \t") == rem.npos;
         } else {
-            return false;
+            // Try special strings
+            return impl::from_string_fallback(s, t, std::is_floating_point<T>{});
         }
     }
 
