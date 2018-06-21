@@ -441,12 +441,12 @@ int phypp_main(int argc, char* argv[]) {
         print("File system functions");
         check(file::exists("unit_test.cpp"), "1");
         check(file::exists("unit_test_not_gonna_work.cpp"), "0");
-        vec1s dlist = file::list_directories("../*");
+        vec1s dlist = file::list_directories("../");
         print(dlist);
         check(where(dlist == "bin").empty(), "0");
-        vec1s flist = file::list_files();
+        vec1s flist = file::list_files("./");
         print(flist);
-        flist = file::list_files("../include/*.hpp");
+        flist = file::list_files("../include/", "*.hpp");
         print(flist);
     }
 
@@ -963,12 +963,6 @@ int phypp_main(int argc, char* argv[]) {
     }
 
     {
-        print("keep_start, keep_end");
-        check(keep_start("hello world", 5), "hello");
-        check(keep_end("hello world", 5), "world");
-    }
-
-    {
         print("Cosmology functions");
         auto cosmo = cosmo_wmap();
         check(float(lumdist(0.5, cosmo)), "2863.03");
@@ -1160,8 +1154,8 @@ int phypp_main(int argc, char* argv[]) {
         double ra, dec;
         sex2deg(sra, sdec, ra, dec);
 
-        check(ra, "53.0880375");
-        check(dec, "-27.9407427778");
+        check(format::precision(ra, 12), "53.0880375");
+        check(format::precision(dec, 12), "-27.9407427778");
 
         std::string sra2, sdec2;
         deg2sex(ra, dec, sra2, sdec2);
