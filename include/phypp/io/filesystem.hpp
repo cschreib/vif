@@ -168,7 +168,7 @@ namespace file {
         explorer::file_data f;
         while (e.find_next(f)) {
             if (!f.is_hidden && f.is_dir && f.name != "." && f.name != "..") {
-                dlist.data.push_back(f.name);
+                dlist.push_back(f.name);
             }
         }
 
@@ -186,7 +186,7 @@ namespace file {
         explorer::file_data f;
         while (e.find_next(f)) {
             if (!f.is_hidden && !f.is_dir) {
-                flist.data.push_back(f.name);
+                flist.push_back(f.name);
             }
         }
 
