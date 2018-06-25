@@ -73,6 +73,13 @@ namespace phypp {
             }
         };
 
+        struct format_fixed_t {
+            template<typename O>
+            void apply(O& o) const {
+                o << std::fixed;
+            }
+        };
+
         struct format_precision_t {
             uint_t pre = 0;
 
@@ -115,6 +122,11 @@ namespace phypp {
         template<typename T>
         impl::format_t<impl::format_precision_t,T> precision(T&& obj, uint_t p) {
             return impl::format_t<impl::format_precision_t,T>(std::forward<T>(obj), p);
+        }
+
+        template<typename T>
+        impl::format_t<impl::format_fixed_t,T> fixed(T&& obj) {
+            return impl::format_t<impl::format_fixed_t,T>(std::forward<T>(obj));
         }
     }
 
