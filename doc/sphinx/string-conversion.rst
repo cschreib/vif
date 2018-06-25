@@ -64,8 +64,8 @@ Internally, the argument is converted to a string using the ``std::ostream`` ``o
     s; // "toto:{i=5 j=12}"
 
 
-format::precision, format::scientific
--------------------------------------
+format::precision, format::scientific, format::fixed
+----------------------------------------------------
 
 .. code-block:: c++
 
@@ -74,6 +74,9 @@ format::precision, format::scientific
 
     template<typename Type>
     /* ... */ format::precision(const Type& v, uint_t ndigit); // [2]
+
+    template<typename Type>
+    /* ... */ format::fixed(const Type& v); // [3]
 
 The ``to_string()`` and ``to_string_vector()`` functions adopt a default format for converting numbers into strings. While integers have a unique and natural string representation, floating point numbers often require a choice regarding the number of significant digits, and whether scientific notation should be used. By default, these functions follow the behavior of ``std::ostream``, which is to only use scientific notation when the number would be "too big" (or "too small").
 
@@ -87,7 +90,7 @@ Function [1], ``format::scientific()``, will specify that it's argument ``v`` *m
     to_string(v);                     // "0.15"
     to_string(format::scientific(v)); // "1.500000e-01"
 
-Function [2], ``format::precision()``, will specify that it's first argument ``v`` *must* be formated using ``ndigit`` digits. "Digits" here include numbers on either side of the decimal separator, so ``"3.15"``, ``"31.5"``, and ``"315"`` are all three digits. When not in scientific format, trailing zeros after the decimal separator will still be removed, so the total number of digits may still be less than ``ndigit``.
+Function [2], ``format::precision()``, will specify that it's first argument ``v`` *must* be formated using ``ndigit`` digits. Normally, "digits" include numbers on either side of the decimal separator, so ``"3.15"``, ``"31.5"``, and ``"315"`` are all three digits. When not in scientific format, trailing zeros after the decimal separator will still be removed, so the total number of digits may still be less than ``ndigit``.
 
 **Example:**
 
@@ -101,7 +104,25 @@ Function [2], ``format::precision()``, will specify that it's first argument ``v
     to_string(v);                       // "0.123457"
     to_string(format::precision(v, 8)); // "0.12345679"
 
-Note that both functions can be used in other contexts than just ``to_string()`` and ``to_string_vector()``, essentially whenever a conversion to string is performed. See for example ``ascii::write_table()``.
+Function [3], ``format::fixed()``, will format the value with a fixed number of digits after the decimal separator. Trailing zeroes will not be removed. This is best used in combination with ``format::precision``, which then specifies how many digits to keep after the decimal separator (digits before the separator do not count).
+
+**Example:**
+
+.. code-block:: c++
+
+    double v = 0.15;
+    to_string(v);                                      // "0.15"
+    to_string(format::fixed(format::precision(v, 8))); // "0.15000000"
+
+    v = 3150.15;
+    to_string(v);                                      // "3150.15"
+    to_string(format::fixed(format::precision(v, 8))); // "3150.15000000"
+
+    v = 0.123456789123456789;
+    to_string(v);                                      // "0.123457"
+    to_string(format::fixed(format::precision(v, 8))); // "0.12345679"
+
+Note that all these functions can be used in other contexts than just ``to_string()`` and ``to_string_vector()``, essentially whenever a conversion to string is performed. See for example ``ascii::write_table()``.
 
 
 from_string
