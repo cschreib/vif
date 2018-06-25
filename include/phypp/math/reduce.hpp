@@ -17,7 +17,9 @@ namespace phypp {
             double>::type;
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value
+    >::type>
     meta::total_return_type<meta::rtype_t<Type>> total(const vec<Dim,Type>& v) {
         meta::total_return_type<meta::rtype_t<Type>> total = 0;
         for (auto& t : v) {
@@ -38,7 +40,9 @@ namespace phypp {
         return n;
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value
+    >::type>
     double mean(const vec<Dim,Type>& v) {
         double total = 0.0;
         for (auto& t : v) {
@@ -48,7 +52,9 @@ namespace phypp {
         return total/v.size();
     }
 
-    template<std::size_t Dim, typename Type, typename TypeW>
+    template<std::size_t Dim, typename Type, typename TypeW, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value && std::is_arithmetic<meta::rtype_t<TypeW>>::value
+    >::type>
     double weighted_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
         phypp_check(v.dims == w.dims, "incompatible dimensions between values and weights "
             "(", v.dims, " vs. ", w.dims, ")");
@@ -63,7 +69,9 @@ namespace phypp {
         return total/totalw;
     }
 
-    template<std::size_t Dim, typename Type, typename TypeW>
+    template<std::size_t Dim, typename Type, typename TypeW, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value && std::is_arithmetic<meta::rtype_t<TypeW>>::value
+    >::type>
     std::pair<double,double> optimal_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& e) {
         phypp_check(v.dims == e.dims, "incompatible dimensions between values and uncertianties "
             "(", v.dims, " vs. ", e.dims, ")");
@@ -159,7 +167,9 @@ namespace phypp {
         return inplace_median(v);
     }
 
-    template<std::size_t Dim, typename Type, typename TypeW>
+    template<std::size_t Dim, typename Type, typename TypeW, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeW>>::value
+    >::type>
     meta::rtype_t<Type> weighted_median(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
         phypp_check(!v.empty(), "cannot find the weighted median of an empty vector");
         phypp_check(v.dims == w.dims, "incompatible dimensions between values and weights "
@@ -188,7 +198,9 @@ namespace phypp {
         return dnan;
     }
 
-    template<std::size_t Dim, typename Type, typename U>
+    template<std::size_t Dim, typename Type, typename U, typename enable = typename std::enable_if<
+        std::is_arithmetic<U>::value
+    >::type>
     meta::rtype_t<Type> inplace_percentile(vec<Dim,Type>& v, const U& u) {
         phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
@@ -197,7 +209,9 @@ namespace phypp {
         return impl::nth_element_(v, clamp((v.size()-nwrong)*u, 0u, v.size()-1));
     }
 
-    template<std::size_t Dim, typename Type, typename U>
+    template<std::size_t Dim, typename Type, typename U, typename enable = typename std::enable_if<
+        std::is_arithmetic<U>::value
+    >::type>
     meta::rtype_t<Type> percentile(vec<Dim,Type> v, const U& u) {
         return inplace_percentile(v, u);
     }
@@ -232,7 +246,9 @@ namespace phypp {
         return inplace_percentiles(v, args...);
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value
+    >::type>
     vec<Dim,bool> sigma_clip(const vec<Dim,Type>& tv, double sigma) {
         auto v = tv.concretise();
         auto med = inplace_median(v);
@@ -425,7 +441,9 @@ namespace phypp {
         return r;
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value
+    >::type>
     double rms(const vec<Dim,Type>& v) {
         double sum = 0;
         for (auto& t : v) {
@@ -435,12 +453,16 @@ namespace phypp {
         return sqrt(sum/v.size());
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value
+    >::type>
     double stddev(const vec<Dim,Type>& v) {
         return rms(v - mean(v));
     }
 
-    template<std::size_t Dim, typename Type>
+    template<std::size_t Dim, typename Type, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<Type>>::value
+    >::type>
     meta::rtype_t<Type> mad(const vec<Dim,Type>& v) {
         return median(abs(v - median(v)));
     }
@@ -655,7 +677,9 @@ namespace phypp {
         print("data info: ", #x, " (", typeid(x).name(), ")"); \
         phypp::impl::data_info_(x);
 
-    template<typename TypeX, typename TypeY>
+    template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
+    >::type>
     auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y)
         -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
@@ -670,7 +694,9 @@ namespace phypp {
         return r;
     }
 
-    template<typename TypeX, typename TypeY>
+    template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
+    >::type>
     auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y)
         -> decltype(y[0]*(x[1]-x[0])) {
 
@@ -687,7 +713,9 @@ namespace phypp {
         return r;
     }
 
-    template<typename TypeX, typename TypeY>
+    template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
+    >::type>
     auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y, double x0, double x1)
         -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
@@ -722,7 +750,9 @@ namespace phypp {
         }
     }
 
-    template<typename TypeX, typename TypeY>
+    template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
+    >::type>
     auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y, double x0, double x1)
         -> decltype(y[0]*(x[1]-x[0])) {
 
@@ -751,7 +781,9 @@ namespace phypp {
         }
     }
 
-    template<typename TypeX, typename TypeY>
+    template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
+    >::type>
     auto integrate_hinted(const vec<1,TypeX>& x, const vec<1,TypeY>& y, uint_t& ihint,
         double x0, double x1) -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
@@ -814,7 +846,9 @@ namespace phypp {
         }
     }
 
-    template<typename TypeX, typename TypeY>
+    template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
+    >::type>
     auto cumul(const vec<1,TypeX>& x, const vec<1,TypeY>& y) -> vec<1,decltype(integrate(x,y))> {
         vec<1,decltype(integrate(x,y))> dr(y.dims);
 
