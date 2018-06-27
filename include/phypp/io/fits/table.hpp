@@ -864,6 +864,8 @@ namespace fits {
 
     // Output FITS table (write only, overwrites existing files)
     class output_table : public impl::fits_impl::output_file_base {
+    protected :
+
         fits::output_format format_ = fits::output_format::column_oriented;
 
     public :
@@ -1282,18 +1284,48 @@ namespace fits {
     public :
         explicit table(const std::string& filename) :
             impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
-            output_table(filename), input_table(filename) {}
+            output_table(filename), input_table(filename) {
+                get_format_();
+            }
 
         explicit table(const std::string& filename, uint_t hdu) :
             impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
             output_table(filename), input_table(filename) {
             reach_hdu(hdu);
+            get_format_();
         }
 
         table(table&&) noexcept = default;
         table(const table&) = delete;
         table& operator = (table&&) noexcept = delete;
         table& operator = (const table&&) = delete;
+
+    private :
+
+        void get_format_() {
+            // Check if data exists
+            uint_t nhdu = hdu_count();
+            if (nhdu != 0) {
+                int ncols = 0;
+                fits_get_num_cols(fptr_, &ncols, &status_);
+                fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+                if (ncols != 0) {
+                    // Data exists, see if row or column-oriented
+                    uint_t nrow;
+                    if (read_keyword("NAXIS2", nrow)) {
+                        if (nrow > 1) {
+                            format_ = output_format::row_oriented;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Default
+            format_ = output_format::column_oriented;
+        }
+
+    public :
 
         void remove_column(const std::string& tcolname) {
             int cid;
