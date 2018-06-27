@@ -413,14 +413,22 @@ namespace phypp {
         return res;
     }
 
-    // Return the indices of all the values in the array that are equal to 'x'.
+    // Return the indices of all the first and last values in the array that are equal to 'x'.
     // Note: assumes that 'v' is sorted and does not contain NaN values.
     template<typename T, std::size_t Dim, typename Type>
-    vec1u equal_range(const vec<Dim,Type>& v, T x) {
-        auto res = std::equal_range(v.data.begin(), v.data.end(), x,
+    std::array<uint_t,2> equal_range(const vec<Dim,Type>& v, T x) {
+        std::array<uint_t,2> res;
+        auto tres = std::equal_range(v.data.begin(), v.data.end(), x,
             typename vec<Dim,Type>::comparator_less());
 
-        return uindgen(1 + (res.second - res.first)) + (res.first - v.data.begin());
+        if (tres.first != v.data.end()) {
+            res[0] = tres.first - v.data.begin();
+            res[1] = tres.second - v.data.begin();
+        } else {
+            res[0] = res[1] = npos;
+        }
+
+        return res;
     }
 
     // From a starting position on a 2D boolean map, find the closest point that is 'true'.

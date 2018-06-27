@@ -301,20 +301,20 @@ equal_range
 .. code-block:: c++
 
     template<typename T, std::size_t Dim, typename Type>
-    vec1u equal_range(const vec<Dim,Type>& v, T x);
+    std::array<uint_t,2> equal_range(const vec<Dim,Type>& v, T x);
 
 This function uses a binary search algorithm to locate all the values in the input vector ``v`` that are equal to ``x``. The binary search assumes that the elements in the input vector are *sorted* by increasing value. This algorithm also assumes that, if the input vector contains floating point numbers, none of them is ``NaN``.
 
-The function returns the indices of all the values equal to ``x``. If no such value is found, an empty vector is returned.
+The function returns the first and last indices of the values equal to ``x``. If no such value is found, the two indices will be set to ``npos``.
 
-If ``v`` is not sorted, the only alternative is to call ``where(v == x)``; this will be slower than ``equal_range()``, but it should still be faster than sorting ``v``.
+If ``v`` is not sorted, an alternative is to call ``where(v == x)``; this should be faster than sorting ``v`` and then using ``equal_range()``.
 
 **Example:**
 
 .. code-block:: c++
 
     vec1i v = {2,2,5,9,9,9,12,50};
-    equal_range(v, 9); // {3,4,5}
+    equal_range(v, 9); // {3,5}
 
     // The above is a faster version of:
     where(v == 9);
