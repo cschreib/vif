@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include <cctype>
 #include <limits>
+#include <typeinfo>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/range.hpp"
 #include "phypp/core/meta.hpp"
