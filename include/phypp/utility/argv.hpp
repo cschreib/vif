@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include "phypp/core/vec.hpp"
+#include "phypp/core/string_conversion.hpp"
 #include "phypp/utility/string.hpp"
 
 namespace phypp {
@@ -152,7 +153,7 @@ namespace phypp {
             for (auto& i : idm) {
                 read_args_impl_(argv[i], read[i], valid[i], name, t);
                 if (!valid[i]) {
-                    warning("could not convert '", name, "' argument to type ", typeid(T).name());
+                    warning("could not convert '", name, "' argument to type ", pretty_type_t(T));
                     break;
                 }
             }
@@ -178,7 +179,7 @@ namespace phypp {
             for (auto& i : idm) {
                 read_args_impl_(argv[i], read[i], valid[i], t.name, t.obj);
                 if (!valid[i]) {
-                    warning("could not convert '", t.name, "' argument to type ", typeid(T).name());
+                    warning("could not convert '", t.name, "' argument to type ", pretty_type_t(T));
                     break;
                 }
             }
