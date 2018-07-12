@@ -1,6 +1,9 @@
 #ifndef PHYPP_CORE_ERROR_HPP
 #define PHYPP_CORE_ERROR_HPP
 
+#include <string>
+#include <algorithm>
+#include <vector>
 #include "phypp/core/print.hpp"
 #include "phypp/core/typedefs.hpp"
 
