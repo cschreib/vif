@@ -685,6 +685,7 @@ namespace phypp {
 
         phypp_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+        phypp_check(!y.empty(), "cannot integrate empty array");
 
         decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
         for (uint_t i = 0; i < x.size()-1; ++i) {
@@ -704,6 +705,7 @@ namespace phypp {
             "got dim=[", x.dims[0], ",...]");
         phypp_check(x.dims[1] == y.size(),
             "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
+        phypp_check(!y.empty(), "cannot integrate empty array");
 
         decltype(y[0]*(x[1]-x[0])) r = 0;
         for (uint_t i = 0; i < x.dims[1]; ++i) {
@@ -721,6 +723,7 @@ namespace phypp {
 
         phypp_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+        phypp_check(!y.empty(), "cannot integrate empty array");
 
         phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
         phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
@@ -760,6 +763,7 @@ namespace phypp {
             "got dim=[", x.dims[0], ",...]");
         phypp_check(x.dims[1] == y.size(),
             "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
+        phypp_check(!y.empty(), "cannot integrate empty array");
 
         phypp_check(x.safe[0] <= x0 && x.safe[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
 
@@ -789,6 +793,7 @@ namespace phypp {
 
         phypp_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
+        phypp_check(!y.empty(), "cannot integrate empty array");
 
         phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
         phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
