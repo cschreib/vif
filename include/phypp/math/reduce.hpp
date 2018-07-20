@@ -732,7 +732,9 @@ namespace phypp {
         uint_t i1 = lower_bound(x, x1);
 
         if (i0 > i1) {
-            return 0.5*(y.safe[i1]+y.safe[i0])*(x1 - x0);
+            double y0 = interpolate(y.safe[i1], y.safe[i0], x.safe[i1], x.safe[i0], x0);
+            double y1 = interpolate(y.safe[i1], y.safe[i0], x.safe[i1], x.safe[i0], x1);
+            return 0.5*(y0+y1)*(x1-x0);
         } else {
             decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
             for (uint_t i = i0; i < i1; ++i) {
@@ -830,7 +832,9 @@ namespace phypp {
         ihint = i1;
 
         if (i0 > i1) {
-            return 0.5*(y.safe[i1]+y.safe[i0])*(x1 - x0);
+            double y0 = interpolate(y.safe[i1], y.safe[i0], x.safe[i1], x.safe[i0], x0);
+            double y1 = interpolate(y.safe[i1], y.safe[i0], x.safe[i1], x.safe[i0], x1);
+            return 0.5*(y0+y1)*(x1-x0);
         } else {
             decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
             for (uint_t i = i0; i < i1; ++i) {
