@@ -84,7 +84,8 @@ namespace phypp {
             } \
             return tv; \
         } \
-        template<std::size_t Dim, typename T, typename U> \
+        template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
+            !meta::is_vec<U>::value>::type> \
         vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> operator op (const vec<Dim,T>& v, const U& u) { \
             vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> tv; tv.dims = v.dims; tv.reserve(v.size()); \
             for (uint_t i : range(v)) { \
