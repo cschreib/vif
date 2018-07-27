@@ -55,8 +55,8 @@ namespace matrix {
 
     template<typename TypeA, typename TypeB>
     auto product(const vec<1,TypeB>& b, const vec<2,TypeA>& a) -> vec<1,decltype(a(0,0)*b(0,0))> {
-        phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in vector-matrix multiplication "
-            "(", a.dims, " x ", b.dims, ")");
+        phypp_check(b.dims[0] == a.dims[0], "incompatible dimensions in vector-matrix multiplication "
+            "(", b.dims, " x ", a.dims, ")");
 
         const uint_t o = a.dims[0];
 
