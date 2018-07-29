@@ -142,7 +142,7 @@ int phypp_main(int argc, char* argv[]) {
         ra = tmp.ra;
         dec = tmp.dec;
     } else if (tsrc.size() == 1 && ends_with(tsrc[0], ".reg")) {
-        ascii::read_table(tsrc[0], ascii::find_skip(tsrc[0]), ra, dec);
+        ascii::read_table(tsrc[0], ascii::auto_skip(), ra, dec);
         name = to_string_vector(uindgen(ra.size())) + "_";
     } else if (tsrc.size() == 2) {
         name.resize(1);
