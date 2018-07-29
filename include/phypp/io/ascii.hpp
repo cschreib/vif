@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/error.hpp"
+#include "phypp/core/range.hpp"
 #include "phypp/math/base.hpp"
 
 namespace phypp {
@@ -14,25 +15,6 @@ namespace ascii {
     struct exception : std::runtime_error {
         exception(const std::string& w) : std::runtime_error(w) {}
     };
-
-    inline uint_t find_skip(const std::string& name, char pattern = '#') {
-        phypp_check(file::exists(name), "cannot open file '"+name+"'");
-
-        std::string line;
-
-        std::size_t n = 0;
-        std::ifstream file(name.c_str());
-        while (std::getline(file, line)) {
-            auto p = line.find_first_not_of(" \t");
-            if (p != line.npos && line[p] != pattern) {
-                break;
-            }
-
-            ++n;
-        }
-
-        return n;
-    }
 
     struct auto_find_skip_tag {
         char pattern;
@@ -127,64 +109,26 @@ namespace impl {
         }
 
         template<typename I, typename T>
-        bool read_value_(I& in, T& v, std::string& fallback) {
+        void read_value_(I& in, std::size_t i, std::size_t j, T& v) {
             auto pos = in.tellg();
+            std::string fallback;
             in >> fallback;
 
-            std::istringstream ss(fallback);
-            ss >> v;
-            if (ss.fail() || !ss.eof()) {
+            if (fallback.empty()) {
                 in.clear();
                 in.seekg(pos);
-                return false;
+
+                throw ascii::exception("cannot extract value from file, too few columns on line l."+
+                    to_string(i+1));
             }
 
-            return true;
-        }
-
-        template<typename I, typename T>
-        bool read_value_float_(I& in, T& v, std::string& fallback) {
-            auto pos = in.tellg();
-            in >> fallback;
-
-            std::istringstream ss(fallback);
-            ss >> v;
-            if (ss.fail()) {
-                std::string s = trim(to_upper(fallback));
-                if (s == "NAN" || s == "+NAN" || s == "-NAN") {
-                    v = dnan;
-                    return true;
-                } else if (s == "+INF" || s == "INF+" || s == "INF") {
-                    v = dinf;
-                    return true;
-                } else if (s == "-INF" || s == "INF-") {
-                    v = -dinf;
-                    return true;
-                } else if (s == "NULL") {
-                    v = dnan;
-                    return true;
-                }
-
+            if (!from_string(fallback, v)) {
                 in.clear();
                 in.seekg(pos);
-                return false;
-            } else if (!ss.eof()) {
-                in.clear();
-                in.seekg(pos);
-                return false;
+
+                throw ascii::exception("cannot extract value '"+fallback+"' from file, wrong type for l."+
+                    to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+in.str());
             }
-
-            return true;
-        }
-
-        template<typename I>
-        bool read_value_(I& in, float& v, std::string& fallback) {
-            return read_value_float_(in, v, fallback);
-        }
-
-        template<typename I>
-        bool read_value_(I& in, double& v, std::string& fallback) {
-            return read_value_float_(in, v, fallback);
         }
 
         inline void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
@@ -200,15 +144,7 @@ namespace impl {
 
         template<typename T, typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
-            std::string fb;
-            if (!read_value_(fs, v[i], fb)) {
-                if (fb.empty()) {
-                    throw ascii::exception("cannot extract value from file, too few columns on line l."+to_string(i+1));
-                } else {
-                    throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                        to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
-                }
-            }
+            read_value_(fs, i, j, v.safe[i]);
             read_table_(fs, i, ++j, args...);
         }
 
@@ -221,26 +157,16 @@ namespace impl {
 
         template<typename T, typename ... VArgs>
         void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
-            std::string fb;
-            if (!read_value_(fs, v(i,k), fb)) {
-                if (fb.empty()) {
-                    throw ascii::exception("cannot extract value from file, too few columns on line l."+to_string(i+1));
-                } else {
-                    throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                        to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
-                }
-            }
+            read_value_(fs, i, j, v.safe(i,k));
             read_table_cols_(fs, i, ++j, k, args...);
         }
 
         template<typename ... VArgs>
         void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args) {
             std::string s;
-            if (!(fs >> s)) {
-                if (fs.eof()) {
-                    throw ascii::exception("cannot extract value from file, "
-                        "too few columns on line l."+to_string(i+1));
-                }
+            if (!(fs >> s) && fs.eof()) {
+                throw ascii::exception("cannot extract value from file, too few columns on line l."+
+                    to_string(i+1));
             }
 
             read_table_cols_(fs, i, ++j, k, args...);
@@ -254,7 +180,7 @@ namespace impl {
         template<typename U, typename ... VArgs, typename ... Args>
         void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args) {
             std::size_t n = std::get<0>(v);
-            for (std::size_t k = 0; k < n; ++k) {
+            for (std::size_t k : range(n)) {
                 read_table_cols_i_(fs, i, j, k, v, typename meta::gen_seq<1, sizeof...(VArgs)>::type());
             }
 
@@ -280,15 +206,7 @@ namespace impl {
                     "too few columns on line l."+to_string(i+1));
             }
 
-            std::string fb;
-            if (!read_value_(fs, v, fb)) {
-                if (fb.empty()) {
-                    throw ascii::exception("cannot extract value from file, too few columns on line l."+to_string(i+1));
-                } else {
-                    throw ascii::exception("cannot extract value '"+fb+"' from file, wrong type for l."+
-                        to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+fs.str());
-                }
-            }
+            read_value_(fs, i, j, v);
             read_table_(fs, i, ++j, args...);
         }
     }
@@ -302,9 +220,11 @@ namespace ascii {
         try {
             std::string line;
 
+            // Count number of lines and, if asked, skip first lines
             std::size_t n = 0;
-            std::size_t rpos = 0; {
-                std::ifstream file(name.c_str());
+            std::size_t rpos = 0;
+            {
+                std::ifstream file(name);
                 while (!file.eof()) {
                     std::getline(file, line);
 
@@ -325,12 +245,13 @@ namespace ascii {
                 n -= skip;
             }
 
-            std::ifstream file(name.c_str());
+            // Read data
+            std::ifstream file(name);
             file.seekg(rpos);
 
             impl::ascii_impl::read_table_resize_(n, args...);
 
-            for (std::size_t i = 0; i < n; ++i) {
+            for (uint_t i : range(n)) {
                 do {
                     std::getline(file, line);
                 } while (line.find_first_not_of(" \t") == line.npos);
@@ -346,7 +267,22 @@ namespace ascii {
 
     template <typename ... Args>
     void read_table(const std::string& name, auto_find_skip_tag t, Args&& ... args) {
-        read_table(name, find_skip(name, t.pattern), std::forward<Args>(args)...);
+        phypp_check(file::exists(name), "cannot open file '"+name+"'");
+
+        // Automatically find number of lines to skip
+        std::string line;
+        std::size_t n = 0;
+        std::ifstream file(name);
+        while (std::getline(file, line)) {
+            auto p = line.find_first_not_of(" \t");
+            if (p != line.npos && line[p] != t.pattern) {
+                break;
+            }
+
+            ++n;
+        }
+
+        read_table(name, n, std::forward<Args>(args)...);
     }
 }
 
@@ -427,7 +363,7 @@ namespace impl {
                     file << sep;
                 }
 
-                std::string s = fmt(v[i]);
+                std::string s = fmt(v.safe[i]);
                 if (s.size() < cwidth) {
                     file << std::string(cwidth - s.size(), ' ');
                 }
@@ -504,7 +440,7 @@ namespace impl {
                 file << sep;
             }
 
-            std::string s = fmt(v(i,k));
+            std::string s = fmt(v.safe(i,k));
             if (s.size() < cwidth) {
                 file << std::string(cwidth - s.size(), ' ');
             }
@@ -599,8 +535,6 @@ namespace ascii {
             phypp_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
-
-    #define ftable(...) phypp::impl::ascii_impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
 }
 
 namespace impl {
@@ -709,16 +643,18 @@ namespace ascii {
         write_table_hdr(filename, cwidth, vnames, args...);
     }
 
+    #define ftable(...) phypp::impl::ascii_impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
+
     template<typename ... Args>
-    void write_table_csv(const std::string& filename, std::size_t cwidth, const Args& ... args) {
+    void write_table_csv(const std::string& filename, const Args& ... args) {
         std::size_t n = 0, t = 0;
         impl::ascii_impl::write_table_check_size_(n, t,args...);
 
         std::ofstream file(filename);
         phypp_check(file.is_open(), "could not open file "+filename+" to write data");
 
-        for (std::size_t i = 0; i < n; ++i) {
-            impl::ascii_impl::write_table_do_(file, cwidth, ",", i, 0, args...);
+        for (std::size_t i : range(n)) {
+            impl::ascii_impl::write_table_do_(file, 0, ",", i, 0, args...);
         }
     }
 }
