@@ -19,13 +19,13 @@ namespace ascii {
     // Control table layout for read_table()
     struct input_format {
         bool auto_skip    = true;
-        char skip_pattern = '#';
+        std::string skip_pattern = "#";
         uint_t skip_first = 0;
         std::string delim = " \t";
         bool delim_single = false;
 
         input_format() = default;
-        input_format(bool sk, char sp, uint_t sf, const std::string& d, bool ds) :
+        input_format(bool sk, const std::string sp, uint_t sf, const std::string& d, bool ds) :
             auto_skip(sk), skip_pattern(sp), skip_first(sf), delim(d), delim_single(ds) {}
 
         static const input_format standard;
@@ -33,7 +33,7 @@ namespace ascii {
     };
 
     const input_format input_format::standard = input_format{};
-    const input_format input_format::csv      = input_format{true, '#', 0, ",", true};
+    const input_format input_format::csv      = input_format{true, "#", 0, ",", true};
 
     // Control table layout for write_table()
     struct output_format {
@@ -322,7 +322,7 @@ namespace ascii {
                     std::getline(file, spl.line);
 
                     auto p = spl.line.find_first_not_of(" \t");
-                    if (p == spl.line.npos || (opts.auto_skip && spl.line[p] == opts.skip_pattern)) {
+                    if (p == spl.line.npos || (opts.auto_skip && spl.line.find(opts.skip_pattern) == p)) {
                         continue;
                     }
 
@@ -346,7 +346,7 @@ namespace ascii {
                 std::getline(file, spl.line);
 
                 auto p = spl.line.find_first_not_of(" \t");
-                if (p == spl.line.npos || (opts.auto_skip && spl.line[p] == opts.skip_pattern)) {
+                if (p == spl.line.npos || (opts.auto_skip && spl.line.find(opts.skip_pattern) == p)) {
                     continue;
                 }
 
