@@ -227,7 +227,7 @@ namespace impl {
             }
         }
 
-        void read_value_(line_splitter_t& spl, uint_t i, uint_t j, std::string& v) {
+        inline void read_value_(line_splitter_t& spl, uint_t i, uint_t j, std::string& v) {
             if (!spl.next_word(v)) {
                 throw ascii::exception("cannot extract value from file, too few columns on line l."+
                     to_string(i+1));
