@@ -67,7 +67,7 @@ Function [2] allows you to fine tune how the table data is read using the option
 
 Some pre-defined sets of options are made available for simplicity:
 
-* ``ascii::input_format::standard``. This is the default behavior of ``read_table()``, when no options are given (see default values above). With this setup, columns in the file can be separated by any number of spaces and tabulations. The data does not need to be perfectly aligned to be read correctly, even though it is recommended for better human readability. The table may also contain empty lines, they will simply be ignored.
+* ``ascii::input_format::standard()``. This is the default behavior of ``read_table()``, when no options are given (see default values above). With this setup, columns in the file can be separated by any number of spaces and tabulations. The data does not need to be perfectly aligned to be read correctly, even though it is recommended for better human readability. The table may also contain empty lines, they will simply be ignored.
 
   However, "holes" in the table are not supported (i.e., rows that only have data for some columns, but not all). For example:
 
@@ -85,8 +85,6 @@ Some pre-defined sets of options are made available for simplicity:
 
   This also means that string columns cannot contain spaces in them, since they would otherwise be understood as column separators. Adding quotes ``"..."`` will *not* change that. If you need to read strings containing spaces, you should use another table format (such as CSV, see below).
 
-* ``ascii::input_format::csv``. This preset enables loading comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``). Contrary to the ``standard`` format, spaces are considered to be a significant part of the data, and will not be trimmed.
-
   Using this format is done as follows:
 
   .. code-block:: c++
@@ -96,7 +94,19 @@ Some pre-defined sets of options are made available for simplicity:
       vec1f x, y;
 
       // Read the data, asking for three columns.
-      ascii::read_table("my_table.dat", ascii::output_format::csv, id, x, y);
+      ascii::read_table("my_table.dat", ascii::input_format::standard(), id, x, y);
+      // This is equivalent to
+      ascii::read_table("my_table.dat", id, x, y);
+
+  You can also use it as a starting point to create customized options:
+
+  .. code-block:: c++
+
+      ascii::input_format opts = ascii::input_format::standard();
+      opts.skip_pattern = "%"; // skip lines starting with '%'
+      ascii::read_table("my_table.dat", opts, id, x, y);
+
+* ``ascii::input_format::csv()``. This preset enables loading comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``). Contrary to the ``standard`` format, spaces are considered to be a significant part of the data, and will not be trimmed.
 
 
 The information below applies to any type of table.
@@ -237,9 +247,31 @@ Function [2] allows you to change the output format by specifying a number of op
 
 Some pre-defined sets of options are made available for simplicity:
 
-* ``ascii::output_format::standard``. This is the default behavior of ``write_table()``, when no options are given (see default values above). With this setup, columns in the file are separated by at least one white space character (and possibly more, for alignment). The data in a given column is automatically aligned.
+* ``ascii::output_format::standard()``. This is the default behavior of ``write_table()``, when no options are given (see default values above). With this setup, columns in the file are separated by at least one white space character (and possibly more, for alignment). The data in a given column is automatically aligned.
 
-* ``ascii::output_format::csv``. This preset enables writing comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``), and the data is not aligned at all.
+  Using this format is done as follows:
+
+  .. code-block:: c++
+
+    // We have some data
+    vec1u id = {1,2,3,4,5};
+    vec1i x = {125,568,9852,12,-51};
+    vec1i y = {-56,157,2,99,1024};
+
+    // Write these in a simple ASCII file
+    ascii::write_table("my_table.dat", output_options::standard(), id, x, y);
+    // This is equivalent to
+    ascii::write_table("my_table.dat", id, x, y);
+
+  You can also use it as a starting point to create customized options:
+
+  .. code-block:: c++
+
+      ascii::output_format opts = ascii::output_format::standard();
+      opts.header_chars = "% "; // begin header line with '% ' instead of '# '
+      ascii::write_table("my_table.dat", opts, id, x, y);
+
+* ``ascii::output_format::csv()``. This preset enables writing comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``), and the data is not aligned at all.
 
 The information below applies to any type of table.
 

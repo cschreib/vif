@@ -28,12 +28,14 @@ namespace ascii {
         input_format(bool sk, const std::string sp, uint_t sf, const std::string& d, bool ds) :
             auto_skip(sk), skip_pattern(sp), skip_first(sf), delim(d), delim_single(ds) {}
 
-        static const input_format standard;
-        static const input_format csv;
-    };
+        static input_format standard() {
+            return input_format{};
+        }
 
-    const input_format input_format::standard = input_format{};
-    const input_format input_format::csv      = input_format{true, "#", 0, ",", true};
+        static input_format csv() {
+            return input_format{true, "#", 0, ",", true};
+        }
+    };
 
     // Control table layout for write_table()
     struct output_format {
@@ -47,12 +49,13 @@ namespace ascii {
         output_format(bool aw, uint_t mw, const std::string& d) :
             auto_width(aw), min_width(mw), delim(d) {}
 
-        static const output_format standard;
-        static const output_format csv;
+        static output_format standard() {
+            return output_format{};
+        }
+        static output_format csv() {
+            return output_format{false, 0, ","};
+        }
     };
-
-    const output_format output_format::standard = output_format{};
-    const output_format output_format::csv      = output_format{false, 0, ","};
 
     // Helper function to merge multiple columns into one vector
     template<typename T, typename ... Args>
@@ -368,7 +371,7 @@ namespace ascii {
         !std::is_same<typename std::decay<T>::type, input_format>::value
     >::type>
     void read_table(const std::string& name, T&& t, Args&& ... args) {
-        read_table(name, input_format::standard, std::forward<T>(t), std::forward<Args>(args)...);
+        read_table(name, input_format::standard(), std::forward<T>(t), std::forward<Args>(args)...);
     }
 }
 
@@ -694,7 +697,7 @@ namespace ascii {
     >::type>
     void write_table(const std::string& filename, const T& t,
         const Args& ... args) {
-        write_table(filename, output_format::standard, t, args...);
+        write_table(filename, output_format::standard(), t, args...);
     }
 }
 
@@ -808,7 +811,7 @@ namespace ascii {
     template<typename ... Args>
     void write_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const char* names, const Args& ... args) {
-        write_table(filename, output_format::standard, impl::ascii_impl::macroed_t{}, names, args...);
+        write_table(filename, output_format::standard(), impl::ascii_impl::macroed_t{}, names, args...);
     }
 
     #define ftable(...) phypp::impl::ascii_impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
