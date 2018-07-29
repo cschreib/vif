@@ -19,12 +19,13 @@ namespace ascii {
         struct options {
             bool auto_skip    = true;
             char skip_pattern = '#';
+            uint_t skip_first = 0;
             std::string delim = " \t";
             bool delim_single = false;
 
             options() = default;
-            options(bool sk, char sp, const std::string& d, bool ds) :
-                auto_skip(sk), skip_pattern(sp), delim(d), delim_single(ds) {}
+            options(bool sk, char sp, uint_t sf, const std::string& d, bool ds) :
+                auto_skip(sk), skip_pattern(sp), skip_first(sf), delim(d), delim_single(ds) {}
         };
     }
 
@@ -301,6 +302,8 @@ namespace ascii {
 
                     ++n;
                 }
+
+                n -= opts.skip_first;
             }
 
             // Resize all vectors
@@ -311,12 +314,18 @@ namespace ascii {
             file.seekg(0);
 
             uint_t i = 0;
+            uint_t to_skip = opts.skip_first;
             while (!file.eof()) {
                 spl.reset();
                 std::getline(file, spl.line);
 
                 auto p = spl.line.find_first_not_of(" \t");
                 if (p == spl.line.npos || (opts.auto_skip && spl.line[p] == opts.skip_pattern)) {
+                    continue;
+                }
+
+                if (to_skip > 0) {
+                    --to_skip;
                     continue;
                 }
 
@@ -331,7 +340,7 @@ namespace ascii {
 
     namespace input_format {
         static const options standard = options{};
-        static const options csv      = options{true, '#', ",", true};
+        static const options csv      = options{true, '#', 0, ",", true};
     }
 
     template<typename T, typename ... Args, typename enable = typename std::enable_if<
