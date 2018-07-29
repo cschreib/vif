@@ -11,14 +11,14 @@ ascii::read_table
 .. code-block:: c++
 
     template<typename ... Args>
-    void ascii::read_table(std::string f, uint_t s, Args&& ... args); // [1]
+    void ascii::read_table(std::string f, Args&& ... args); // [1]
 
     template<typename ... Args>
-    void ascii::read_table(std::string f, auto_find_skip_tag t, Args&& ... args); // [2]
+    void ascii::read_table(std::string f, const ascii::input_format& o, Args&& ... args); // [2]
 
-These functions read the content of the ASCII table whose path is given in ``f``, and stores the data inside the vectors listed in ``args``. For [1], the second argument ``s`` gives the number of lines to skip before starting reading data, and which can be used to ignore the "header" of the table. If the length of this header is unknown at the time of compilation, one can use function [2] instead and provide a ``ascii::auto_skip(c)`` as second argument, where ``c`` is the leading character of header lines (defaults to ``'#'`` if not provided).
+These functions read the content of the ASCII table whose path is given in ``f``, and stores the data inside the vectors listed in ``args``. Each column of the file will be stored in a separate vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
 
-The vectors that will receive the table data must be listed in ``args``, one after the other. Each column of the file will be stored in a separate vector, in the order in which they are provided to the function. If there is more columns than vectors, the extra columns are ignored. If there is more vectors than columns, the program will stop and report an error.
+Function [1] assumes a number of default options regarding the layout of the table. In particular, it assumes the columns are separated by white spaces, and that there may be a header at the beginning of the table (lines starting with the character ``'#'``) that must be skipped before reading the data. See below for more detail on how the table data is read. Below is an example of such a table.
 
 **Example:**
 
@@ -40,26 +40,68 @@ We can read this in C++ with the following code:
     vec1u id;
     vec1f x, y;
 
-    // Read the data.
-    // The two lines below are equivalent in this case, but [2] is more flexible
-    // if we ever change the format of the file by adding more lines to the header.
-    ascii::read_table("my_table.dat", 2,                  id, x, y); // [1]
-    ascii::read_table("my_table.dat", ascii::auto_skip(), id, x, y); // [2]
+    // Read the data, asking for three columns.
+    ascii::read_table("my_table.dat", id, x, y);
 
     // Use the vectors
     print(id); // {0, 5, 6, 8, 22}
 
 
-.. warning:: Beware that, with these functions, the *names* of the C++ vectors are not used to identify the data in the file, and the information contained in the header is plainly ignored. Only the *order* of the columns and vectors matters.
+.. warning:: Beware that, with these functions, the *names* of the C++ vectors are not used to identify the data in the file, and the information contained in the table header is plainly ignored. Only the *order* of the columns and vectors matters.
+
+Function [2] allows you to fine tune how the table data is read using the option structure ``o``. This structure has the following members:
+
+.. code-block:: c++
+
+    struct input_format {
+        bool        auto_skip    = true;
+        std::string skip_pattern = "#";
+        uint_t      skip_first   = 0;
+        std::string delim        = " \t";
+        bool        delim_single = false;
+    };
+
+* ``auto_skip`` and ``skip_pattern``. When ``auto_skip`` is set to ``true``, the function will automatically ignore all the lines starting with ``skip_pattern`` (typically, the header).
+* ``skip_first``. This is an alternative way to skip a header, when the header has always the same number of lines (one or two, typically), but when the lines do not start with a specific character. By setting this option to a positive number, the function will skip the first ``skip_first`` lines before reading the data.
+* ``delim`` and ``delim_single``. The string ``delim`` determines what characters are used to separate the columns in the file. When ``delim_single`` is ``false``, ``delim`` is interpreted as a list of characters that can be expected in between columns, in any number and order. For example, ``delim = " \t"; delim_single = false;`` states that columns can be separated by any number of white spaces and tabulations. On the other hand, when ``delim_single`` is ``true``, ``delim`` is interpreted as a fixed string that must be found between each column, and any other character is considered part of the column data itself. For example, ``delim = ","; delim_single = true;`` would specify a comma-separated table.
+
+Some pre-defined sets of options are made available for simplicity:
+
+* ``ascii::input_format::standard``. This is the default behavior of ``read_table()``, when no options are given (see default values above). With this setup, columns in the file can be separated by any number of spaces and tabulations. The data does not need to be perfectly aligned to be read correctly, even though it is recommended for better human readability. The table may also contain empty lines, they will simply be ignored.
+
+  However, "holes" in the table are not supported (i.e., rows that only have data for some columns, but not all). For example:
+
+  .. code-block:: none
+
+      # my_table.dat
+      # id    x     y
+         0   10    20
+         5   -1   3.5
+         6         20  # <-- not OK!
+         8    5     1
+        22  6.5    -5
+
+  In such cases (see how ``x`` is missing a value on the third row), the "hole" would be considered as whitespace and ignored, and the data from this column would actually be read from the next one (so ``x`` would have a value of ``20`` for this row). This would eventually trigger an error when trying to read the last columns, because there won't be enough data on this line (there is no value for ``y``). Therefore, *every* row must have a value for *every* column. If data is missing, use special values such as ``-1`` or ``NaN`` to indicate it.
+
+  This also means that string columns cannot contain spaces in them, since they would otherwise be understood as column separators. Adding quotes ``"..."`` will *not* change that. If you need to read strings containing spaces, you should use another table format (such as CSV, see below).
+
+* ``ascii::input_format::csv``. This preset enables loading comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``). Contrary to the ``standard`` format, spaces are considered to be a significant part of the data, and will not be trimmed.
+
+  Using this format is done as follows:
+
+  .. code-block:: c++
+
+      // Declare the vectors that will receive the data
+      vec1u id;
+      vec1f x, y;
+
+      // Read the data, asking for three columns.
+      ascii::read_table("my_table.dat", ascii::output_format::csv, id, x, y);
 
 
-**Spacing, alignment.** Columns in the file can be separated by any number of spaces and tabulations. The data does not need to be perfectly aligned to be read by this function, even though it is recommended for better human readability. The table may also contain empty lines, they will simply be ignored. However, "holes" in the table are not supported (i.e., rows that only have data for some columns, but not all). In such cases, the "hole" would be considered as white space and ignored, and the data from this column would actually be read from the next one. This would eventually trigger an error when trying to read the last columns, because there won't be enough data on this line.
+The information below applies to any type of table.
 
-
-**Data type.** Values in ASCII tables are not explicitly typed, so a column containing integers can be read as a vector of integers, floats, or even strings. As long as the data in the table can be converted to a value of the corresponding C++ vector using ``from_string()`` (see :ref:`String conversions`), this function will be able to read it. There are specific rules though:
-
-* Strings may not contain spaces (since they would be understood as column separators). Adding quotes ``"..."`` will *not* change that. If you need to read strings containing spaces, you will have to read the table data manually with an ``std::ifstream``.
-* For all numeric columns, if the value to be read is too large to fit in the corresponding C++ variable, the program will stop report the error. This will happen for example when trying to read a number like ``1e128`` inside a ``float`` vector. In such cases, use a larger data type to fix this (e.g., ``double`` in this particular case).
+**Data type.** Values in ASCII tables are not explicitly typed, so a column containing integers can be read as a vector of integers, floats, or even strings. As long as the data in the table can be converted to a value of the corresponding C++ vector using ``from_string()`` (see :ref:`String conversions`), this function will be able to read it. Note that, for all numeric columns, if the value to be read is too large to fit in the corresponding C++ variable, the program will stop and report an error. This will happen for example when trying to read a number like ``1e128`` inside a ``float`` vector. In such cases, use a larger data type to fix this (e.g., ``double`` in this particular case).
 
 
 **Skipping columns.** If you want to ignore a specific column, you can use the "placeholder" symbol ``_`` instead of providing an actual vector. The corresponding data in the table will not be read. If you want to ignore ``n`` columns, you can use ``ascii::columns(n,_)``. With the example table above:
@@ -73,8 +115,10 @@ We can read this in C++ with the following code:
     // Read the data, ignoring the 'x' column
     ascii::read_table("my_table.dat", 2, id, _, y);
 
-    // Read the data, ignoring the 'id' and 'x' columns
+    // Read the data, ignoring the 'id' and 'x' columns.
+    // This can be done with two '_':
     ascii::read_table("my_table.dat", 2, _, _, y);
+    // ... or with the function ascii::columns():
     ascii::read_table("my_table.dat", 2, ascii::columns(2,_), y);
 
 
@@ -132,20 +176,22 @@ This can also be mixed with the placeholder symbol `_` to skip column (see above
     ascii::read_table("abc_data.dat", 2, id, ascii::columns(3,value,_));
 
 
-ascii::write_table, ascii::write_table_csv, ascii::write_table_hdr
-------------------------------------------------------------------
+ascii::write_table
+------------------
 
 .. code-block:: c++
 
-    void ascii::write_table(std::string f, uint_t w, const Args& ... args); // [1]
+    void ascii::write_table(std::string f, const Args& ... args); // [1]
 
-    void ascii::write_table_csv(std::string f, const Args& ... args); // [2]
+    void ascii::write_table(std::string f, const ascii::output_format& o, const Args& ... args); // [2]
 
-    void ascii::write_table_hdr(std::string f, uint_t w, const vec1s& hdr, const Args& ... args); // [3]
+    void ascii::write_table(std::string f, ftable(...)); // [3]
 
-    void ascii::write_table_hdr(std::string f, uint_t w, ftable(...)); // [4]
+    void ascii::write_table(std::string f, const ascii::output_format& o, ftable(...)); // [4]
 
-These functions will write the data of the vectors listed in ``args`` into the file whose path is given in ``f``. The data will be formated in a human-readable form, commonly called "ASCII" format. With function [1], the data is written in separate columns of fixed width of ``w`` characters, and white spaces are used to fill the empty space between columns. With function [2], the columns will be separated by commas (``','``), as "CSV" stands for "comma-separated values". In all cases, all columns must have the same number of rows.
+These functions will write the data of the vectors listed in ``args`` into the file whose path is given in ``f``. The data will be formated in a human-readable form, colloquially called "ASCII" format. In all cases, all columns must have the same number of rows, otherwise the function will report an error.
+
+Function [1] uses a "standard" format, where the data is written in separate columns, separated and automatically aligned by white spaces. See below for more detail on how the table data is written. Here is a simple example.
 
 **Example:**
 
@@ -157,32 +203,45 @@ These functions will write the data of the vectors listed in ``args`` into the f
     vec1i y = {-56,157,2,99,1024};
 
     // Write these in a simple ASCII file
-    ascii::write_table("my_table.dat", 8, id, x, y);
-    // ... or a CSV file
-    ascii::write_table_csv("my_table.csv", id, x, y);
+    ascii::write_table("my_table.dat", id, x, y);
 
 The content of ``my_table.dat`` will be:
 
 .. code-block:: none
 
-           1     125     -56
-           2     568     157
-           3    9852       2
-           4      12      99
-           5     -51    1024
-
-The content of ``my_table.csv`` will be:
-
-.. code-block:: none
-
-    1,125,-56
-    2,568,157
-    3,9852,2
-    4,12,99
-    5,-51,1024
+    1  125  -56
+    2  568  157
+    3 9852    2
+    4   12   99
+    5  -51 1024
 
 
 .. note:: Human-readable formats are simple, and quite convenient for small files. But if the volume of data is huge, consider instead using :ref:`FITS files` instead. This will be faster to read and write, and will also occupy less space on your disk.
+
+Function [2] allows you to change the output format by specifying a number of options in the option structure ``o``. This structure has the following members:
+
+.. code-block:: c++
+
+    struct output_format {
+        bool        auto_width   = true;
+        uint_t      min_width    = 0;
+        std::string delim        = " ";
+        std::string header_chars = "# ";
+        vec1s       header;
+    };
+
+* ``auto_width``. When set to ``true`` (the default), the function will compute the maximum width (in characters) of each column before writing the data to the disk. It will then use this maximum width to nicely align the data in each column. Note that it also takes into account the width of the header string (see below). This two-step process reduces performances a bit, and for large data sets you may want to disable it by setting this option to ``false``. In this case, either the data is written without alignment (still readable by a machine, but not really by a human), or with a fixed common width if ``min_width`` is set to a positive value.
+* ``min_width``. This defines the minimum width allowed for a column, in characters. The default is zero, which means columns can be as narrow as one single character if that is all the space they require.
+* ``delim``. This string defines which character(s) should be used to separate columns in the file. The default is to use a single white space (plus any alignment coming from adjusting the column widths).
+* ``header`` and ``header_chars``. These variables can be used to print a header at the beginning of the file, before the data. This header can be used by a human (or, possibly, a machine) to understand what kind of data is contained in the table. The header will be written on a single line, starting with ``header_chars`` (the header starting string). Then, each column written in the file must have its name listed in the ``header`` array, in the same order as given in ``args``.
+
+Some pre-defined sets of options are made available for simplicity:
+
+* ``ascii::output_format::standard``. This is the default behavior of ``write_table()``, when no options are given (see default values above). With this setup, columns in the file are separated by at least one white space character (and possibly more, for alignment). The data in a given column is automatically aligned.
+
+* ``ascii::output_format::csv``. This preset enables writing comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``), and the data is not aligned at all.
+
+The information below applies to any type of table.
 
 **Output format.** When providing vectors of floats or doubles, these functions will convert the values to strings using the default C++ format. See discussion in :ref:`String conversions`. When this is not appropriate, you can use the ``format::...`` functions to modify the output format, as you would with ``to_string()``.
 
@@ -197,17 +256,17 @@ The content of ``my_table.csv`` will be:
     value(_,1) = {9.6, 0.0, 4.5, 0.0, 0.0};
 
     // Write these in a simple ASCII file
-    ascii::write_table("my_table.dat", 8, id, ascii::columns(2,value));
+    ascii::write_table("my_table.dat", id, ascii::columns(2,value));
 
 The content of ``my_table.dat`` will be:
 
 .. code-block:: none
 
-           1       0     9.6
-           2     1.2       0
-           3     5.6     4.5
-           4     9.5       0
-           5     1.5       0
+    1   0 9.6
+    2 1.2   0
+    3 5.6 4.5
+    4 9.5   0
+    5 1.5   0
 
 
 **Multiple 2D vectors.** As for ``ascii::read_table()``, you can use the above mechanism to write multiple 2D columns following a pattern by listing them in the ``ascii::columns()``. For example, ``ascii::columns(n, value, uncertainty)`` will write ``n`` pairs of columns, with ``value`` and ``uncertainty`` in each pair.
@@ -224,48 +283,24 @@ The content of ``my_table.dat`` will be:
     uncertainty(_,1) = {0.02, 0.05, 0.01, 0.21, 0.04};
 
     // Write these in a simple ASCII file
-    ascii::write_table("my_table.dat", 8, id, ascii::columns(2,value,uncertainty));
+    ascii::write_table("my_table.dat", id, ascii::columns(2,value,uncertainty));
 
 The content of ``my_table.dat`` will be:
 
 .. code-block:: none
 
-           1       0    0.01     9.6    0.02
-           2     1.2    0.03       0    0.05
-           3     5.6    0.05     4.5    0.01
-           4     9.5    0.09       0    0.21
-           5     1.5    0.01       0    0.04
+    1   0 0.01 9.6 0.02
+    2 1.2 0.03   0 0.05
+    3 5.6 0.05 4.5 0.01
+    4 9.5 0.09   0 0.21
+    5 1.5 0.01   0 0.04
 
 
-**Headers.** Functions [3] and [4] will adopt the same output format as function [1]. The only difference is that these functions all also write a "header" at the beginning of the file. This header is composed of two lines each starting with a hash ``'#'``. The first line lists the names of the columns, automatically aligned with the data, while the second line is empty. In C++, the header must be specified as a 1D vector of strings (``hdr``), each containing the name of a column. Therefore there must be as many elements in this vector as there are columns to write.
-
-.. code-block:: c++
-
-    // We have some data
-    vec1u id = {1,2,3,4,5};
-    vec1i x = {125,568,9852,12,-51};
-    vec1i y = {-56,157,2,99,1024};
-
-    // Write these in a simple ASCII file
-    ascii::write_table_hdr("my_table.dat", 8, {"id", "x", "y"}, id, x, y); // [3]
-
-The content of ``my_table.dat`` will be:
-
-.. code-block:: none
-
-    #     id       x       y
-    #
-           1     125     -56
-           2     568     157
-           3    9852       2
-           4      12      99
-           5     -51    1024
-
-If, as in the example above, the vectors in C++ have meaningful names that could be used directly as names for the columns in the file, you can use function [4] with the ``ftable()`` macro to automatically build the header. With this function, the example above becomes:
+**Easy headers.** Functions [3] and [4] will adopt the same output format as functions [1] and [2]. The only difference is that they will automatically create the header based on the names of the C++ variables that are listed in argument. To do so, you must use the ``ftable()`` macro to list the data to be written. For example:
 
 .. code-block:: c++
 
     // Write these in a simple ASCII file
-    ascii::write_table_hdr("my_table.dat", 8, ftable(id, x, y)); // [4]
+    ascii::write_table_hdr("my_table.dat", ftable(id, x, y)); // [4]
 
-This also works for 2D vectors. In such cases, ``_i`` is appended to the name of the vector for each column ``i``. If you need better looking headers, you can always write them manually using function [3].
+This also works for 2D vectors. In such cases, ``_i`` is appended to the name of the vector for each column ``i``. If you need better looking headers, you can always write them manually using function [2].
