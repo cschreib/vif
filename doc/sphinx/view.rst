@@ -8,7 +8,7 @@ Overview
 
 As shown in :ref:`Operator overloading`, instead of accessing each element of a vector individually to perform some operation, we can use operator overloading to act on all the elements of the vector at once: ``v *= 2``. As shown in :ref:`Indexing`, we can also, like with ``std::vector``, modify each element individually using their indices: ``v[2] *= 2``.
 
-The *view* is a generalization of this concept, allowing you to access and operate on an arbitrary number of elements from an existing vector. Each element of the view is actually a *reference* to an element in this vector, and performing operations on the elements of the view will modify the elements in the vector. From in interface point of view, views are almost indistinguishable from vectors, and both can be used interchangeably. Generic codes and functions that work with vectors will therefore also work with views.
+The *view* is a generalization of this concept, allowing you to access and operate on an arbitrary number of elements from an existing vector. Each element of the view is actually a *reference* to an element in this vector, and performing operations on the elements of the view will modify the elements in the vector. The interface of views is almost indistinguishable from that of vectors, and both can be used interchangeably in almost all cases. Generic codes and functions that work with vectors will therefore also work with views.
 
 Creating a view is simple: instead of indexing a vector with integer values, as in ``v[2]``, you would index the vector using *another vector* containing multiple indices:
 
@@ -26,13 +26,13 @@ Creating a view is simple: instead of indexing a vector with integer values, as 
     w[id] *= 2;
     // 'w' now contains {1,4,6,4,10,6};
 
-In the example above, the type of `id` is ``vec<1,float*>``. Views have the type of the vector they point to,  with the data type specified as a *pointer* (``T`` -> ``T*``), and the dimension is set by the vector that was used for *indexing* (regardless of the dimension of the pointed vector).
+In the example above, the type of the epxression ``w[id]`` is ``vec<1,float*>``. Views have the same elements type as the vector they point to, but the template parameter of ``vec<...>`` is specified as a *pointer* (``T`` -> ``T*``) to distinguish them from vectors. The dimensions of the view are set by the vector that was used for *indexing* (regardless of the dimensions of the pointed vector). For example, if ``v`` is a 1D vector and we create a 2D array of indices ``id``, then ``v[id]`` will be a 2D view.
 
-..note:: Since a view keeps *references* to the elements of the original vector, the lifetime of the view must not exceed that of the original vector. Else, it will contain *dangling* references, pointers to unused memory, and this should be avoided at *all cost*. For this reason, views are not meant to be stored into named variables, but should only be used in temporary expressions as above. This point is discussed also in :ref:`Known issues and problems`. The only notable exception to this rule is when passing views to functions (see :ref:`Generic function guidelines`).
+..note: Since a view keeps *references* to the elements of the original vector, the lifetime of the view must not exceed that of the original vector. Else, it will contain *dangling* references, pointers to unused memory, and this should be avoided at *all cost*. For this reason, views are not meant to be stored into named variables, but should only be used in temporary expressions as above. This point is discussed also in :ref:`Known issues and problems`. The only notable exception to this rule is when passing views to functions (see :ref:`Generic function guidelines`).
 
-As for regular indexing, views can only be created using vectors of *integer* indices (signed or unsigned). Bounds checking will be done on each element of the index vector, so if you know your indices are valid you may want to use "safe" indexing (see :ref:`Indexing`).
+As for regular indexing, views can only be created using vectors of *integer* indices (signed, or unsigned). Bounds checking will be done on each element of the index vector, to make sure that no index goes past the end of the vector. If you know this cannot happen, and therefore that this bounds checking is superfluous, you may want to use "safe" indexing (see :ref:`Indexing`) to improve performances.
 
-Views on different vectors can be involved in the same expression, as long as their number of elements is the same:
+Lastly, views on different vectors can be involved in the same expression, as long as their dimensions are the same:
 
 .. code-block:: c++
 
@@ -61,10 +61,12 @@ Sometimes, one will want to use views to access all the elements at once, for ex
     vec1u id = {0,1,2,3}; // all the indices of 'v'
     v[id] = 12;           // all the values are now equal to 12
 
-    // Note that the following does something different:
-    v = 12; // 'v' now contains a single element equal to 12
+    // Note that, by design, the following will not compile (too error prone):
+    v = 12; // "error: no viable overloaded '='"
 
-However, not only is this not very practical to write, it is error prone and not very clear. If we decide to add an element to ``v``, we also have to modify ``id``. Not only this, but it will most likely be slower than writing the loop directly, because the compiler may not realize that you are accessing all the elements contiguously, and will fail to optimize it properly. For this reason, we also introduce the "placeholder" symbol, defined as a single underscore ``_``. When used as an index, it means "all the indices in the range". Coming back to our example:
+However, not only is this not very practical to write, it is error prone and not very clear. If someday we decide to add an element to ``v``, we also have to modify ``id``. Not only this, but it will most likely be slower than writing the loop directly, because the compiler may not realize that you are accessing all the elements contiguously, and will fail to optimize it properly.
+
+The optimal way to do this in phy++ is to use the "placeholder" symbol, defined as a single underscore ``_``. When used as an index, it means "all the indices in the range". Coming back to our example:
 
 .. code-block:: c++
 
@@ -81,6 +83,12 @@ This placeholder index can be used in all situations, with both flat and multidi
     // Any combination is allowed
     vec4f crazy(5,4,12,8);
     crazy(5,_,2,_) = 5.0; // this creates a 2D view of shape 4x8
+
+    // The above is equivalent to:
+    for (uint_t i : range(crazy.dims[1]))
+    for (uint_t j : range(crazy.dims[3])) {
+        crazy(5,i,2,j) = 5.0;
+    }
 
 This can be further refined to only encompass a fraction of the whole range, using a specific syntax:
 
