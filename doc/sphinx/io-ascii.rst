@@ -145,7 +145,7 @@ ascii::write_table, ascii::write_table_csv, ascii::write_table_hdr
 
     void ascii::write_table_hdr(std::string f, uint_t w, ftable(...)); // [4]
 
-These functions will write the data of the vectors listed in ``args`` into the file whose path is given in ``f``. The data will be formated in a human-readable form, commonly called ``ASCII'' format. With function [1], the data is written in separate columns of fixed width of ``w`` characters, and white spaces are used to fill the empty space between columns. With function [2], the columns will be separated by commas (`','`), as "CSV" stands for "comma-separated values". In all cases, all columns must have the same number of rows.
+These functions will write the data of the vectors listed in ``args`` into the file whose path is given in ``f``. The data will be formated in a human-readable form, commonly called "ASCII" format. With function [1], the data is written in separate columns of fixed width of ``w`` characters, and white spaces are used to fill the empty space between columns. With function [2], the columns will be separated by commas (``','``), as "CSV" stands for "comma-separated values". In all cases, all columns must have the same number of rows.
 
 **Example:**
 
