@@ -11,44 +11,50 @@
 
 namespace phypp {
 namespace ascii {
+    // ASCII exception type
     struct exception : std::runtime_error {
         exception(const std::string& w) : std::runtime_error(w) {}
     };
 
-    namespace input_format {
-        struct options {
-            bool auto_skip    = true;
-            char skip_pattern = '#';
-            uint_t skip_first = 0;
-            std::string delim = " \t";
-            bool delim_single = false;
+    // Control table layout for read_table()
+    struct input_format {
+        bool auto_skip    = true;
+        char skip_pattern = '#';
+        uint_t skip_first = 0;
+        std::string delim = " \t";
+        bool delim_single = false;
 
-            options() = default;
-            options(bool sk, char sp, uint_t sf, const std::string& d, bool ds) :
-                auto_skip(sk), skip_pattern(sp), skip_first(sf), delim(d), delim_single(ds) {}
-        };
+        input_format() = default;
+        input_format(bool sk, char sp, uint_t sf, const std::string& d, bool ds) :
+            auto_skip(sk), skip_pattern(sp), skip_first(sf), delim(d), delim_single(ds) {}
 
-        static const options standard = options{};
-        static const options csv      = options{true, '#', 0, ",", true};
-    }
+        static const input_format standard;
+        static const input_format csv;
+    };
 
-    namespace output_format {
-        struct options {
-            bool auto_width   = true;
-            uint_t min_width  = 0;
-            std::string delim = " ";
-            std::string header_chars = "# ";
-            vec1s header;
+    const input_format input_format::standard = input_format{};
+    const input_format input_format::csv      = input_format{true, '#', 0, ",", true};
 
-            options() = default;
-            options(bool aw, uint_t mw, const std::string& d) :
-                auto_width(aw), min_width(mw), delim(d) {}
-        };
+    // Control table layout for write_table()
+    struct output_format {
+        bool auto_width   = true;
+        uint_t min_width  = 0;
+        std::string delim = " ";
+        std::string header_chars = "# ";
+        vec1s header;
 
-        static const options standard = options{};
-        static const options csv      = options{false, 0, ","};
-    }
+        output_format() = default;
+        output_format(bool aw, uint_t mw, const std::string& d) :
+            auto_width(aw), min_width(mw), delim(d) {}
 
+        static const output_format standard;
+        static const output_format csv;
+    };
+
+    const output_format output_format::standard = output_format{};
+    const output_format output_format::csv      = output_format{false, 0, ","};
+
+    // Helper function to merge multiple columns into one vector
     template<typename T, typename ... Args>
     auto columns(uint_t n, T& t, Args& ... args) ->
         decltype(std::tuple_cat(std::make_tuple(n), std::tie(t, args...))) {
@@ -300,7 +306,7 @@ namespace impl {
 
 namespace ascii {
     template<typename ... Args>
-    void read_table(const std::string& name, const input_format::options& opts, Args&& ... args) {
+    void read_table(const std::string& name, const input_format& opts, Args&& ... args) {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
 
         try {
@@ -359,7 +365,7 @@ namespace ascii {
     }
 
     template<typename T, typename ... Args, typename enable = typename std::enable_if<
-        !std::is_same<typename std::decay<T>::type, input_format::options>::value
+        !std::is_same<typename std::decay<T>::type, input_format>::value
     >::type>
     void read_table(const std::string& name, T&& t, Args&& ... args) {
         read_table(name, input_format::standard, std::forward<T>(t), std::forward<Args>(args)...);
@@ -602,7 +608,7 @@ namespace impl {
 
 namespace ascii {
     template<typename ... Args>
-    void write_table(const std::string& filename, const output_format::options& opts,
+    void write_table(const std::string& filename, const output_format& opts,
         const Args& ... args) {
 
         impl::ascii_impl::file_writer file;
@@ -684,7 +690,7 @@ namespace ascii {
     }
 
     template<typename T, typename ... Args, typename enable = typename std::enable_if<
-        !std::is_same<typename std::decay<T>::type, output_format::options>::value
+        !std::is_same<typename std::decay<T>::type, output_format>::value
     >::type>
     void write_table(const std::string& filename, const T& t,
         const Args& ... args) {
@@ -786,7 +792,7 @@ namespace impl {
 
 namespace ascii {
     template<typename ... Args>
-    void write_table(const std::string& filename, output_format::options opts, impl::ascii_impl::macroed_t,
+    void write_table(const std::string& filename, output_format opts, impl::ascii_impl::macroed_t,
         const char* names, const Args& ... args) {
 
         opts.header = impl::ascii_impl::split_macroed_names(names);
