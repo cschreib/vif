@@ -2,7 +2,6 @@
 #define PHYPP_IO_ASCII_HPP
 
 #include <fstream>
-#include <sstream>
 #include <tuple>
 #include <stdexcept>
 #include "phypp/core/vec.hpp"
@@ -16,12 +15,17 @@ namespace ascii {
         exception(const std::string& w) : std::runtime_error(w) {}
     };
 
-    struct auto_find_skip_tag {
-        char pattern;
-    };
+    namespace input_format {
+        struct options {
+            bool auto_skip    = true;
+            char skip_pattern = '#';
+            std::string delim = " \t";
+            bool delim_single = false;
 
-    inline auto_find_skip_tag auto_skip(char pattern = '#') {
-        return auto_find_skip_tag{pattern};
+            options() = default;
+            options(bool sk, char sp, const std::string& d, bool ds) :
+                auto_skip(sk), skip_pattern(sp), delim(d), delim_single(ds) {}
+        };
     }
 
     template<typename T, typename ... Args>
@@ -40,6 +44,77 @@ namespace ascii {
 namespace impl {
     namespace ascii_impl {
         using placeholder_t = phypp::impl::placeholder_t;
+
+        struct line_splitter_t {
+            std::string line;
+            uint_t pos = 0;
+
+            std::string delim = " \t";
+            bool delim_single = false;
+
+            bool skip_word() {
+                if (delim_single) {
+                    if (pos == line.npos) return false;
+
+                    if (pos != 0) {
+                        pos += delim.size();
+                    }
+
+                    uint_t p1 = line.find(delim, pos);
+                    if (p1 == line.npos) {
+                        pos = p1;
+                    } else {
+                        pos = p1 + delim.size();
+                    }
+
+                    pos = p1;
+                } else {
+                    uint_t p0 = line.find_first_not_of(delim, pos);
+                    if (p0 == line.npos) return false;
+
+                    pos = line.find_first_of(delim, p0);
+                }
+
+                return true;
+            }
+
+            bool next_word(std::string& sub) {
+                if (delim_single) {
+                    if (pos == line.npos) return false;
+
+                    if (pos != 0) {
+                        pos += delim.size();
+                    }
+
+                    uint_t p1 = line.find(delim, pos);
+                    if (p1 == line.npos) {
+                        sub = line.substr(pos);
+                        pos = p1;
+                    } else {
+                        sub = line.substr(pos, p1-pos);
+                        pos = p1 + delim.size();
+                    }
+
+                    pos = p1;
+                } else {
+                    uint_t p0 = line.find_first_not_of(delim, pos);
+                    if (p0 == line.npos) return false;
+
+                    pos = line.find_first_of(delim, p0);
+                    if (pos == line.npos) {
+                        sub = line.substr(p0);
+                    } else {
+                        sub = line.substr(p0, pos-p0);
+                    }
+                }
+
+                return true;
+            }
+
+            void reset() {
+                pos = 0;
+            }
+        };
 
         template<typename T>
         struct is_tuple : std::false_type {};
@@ -108,181 +183,162 @@ namespace impl {
             read_table_resize_(n, args...);
         }
 
-        template<typename I, typename T>
-        void read_value_(I& in, std::size_t i, std::size_t j, T& v) {
-            auto pos = in.tellg();
+        template<typename T>
+        void read_value_(line_splitter_t& spl, std::size_t i, std::size_t j, T& v) {
             std::string fallback;
-            in >> fallback;
-
-            if (fallback.empty()) {
-                in.clear();
-                in.seekg(pos);
-
+            if (!spl.next_word(fallback)) {
                 throw ascii::exception("cannot extract value from file, too few columns on line l."+
                     to_string(i+1));
             }
 
             if (!from_string(fallback, v)) {
-                in.clear();
-                in.seekg(pos);
-
                 throw ascii::exception("cannot extract value '"+fallback+"' from file, wrong type for l."+
-                    to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+in.str());
+                    to_string(i+1)+":"+to_string(j+1)+" (expected '"+pretty_type(T())+"'):\n"+spl.line);
             }
         }
 
-        inline void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j) {}
+        void read_value_(line_splitter_t& spl, std::size_t i, std::size_t j, std::string& v) {
+            if (!spl.next_word(v)) {
+                throw ascii::exception("cannot extract value from file, too few columns on line l."+
+                    to_string(i+1));
+            }
+        }
+
+        inline void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j) {}
 
         template<typename T, typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args);
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args);
         template<typename U, typename ... VArgs, typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args);
         template<typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args);
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args);
         template<typename T, typename ... Args, typename enable = typename std::enable_if<is_other<T>::value>::type>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, T& v, Args& ... args);
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, T& v, Args& ... args);
 
         template<typename T, typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
-            read_value_(fs, i, j, v.safe[i]);
-            read_table_(fs, i, ++j, args...);
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, vec<1,T>& v, Args& ... args) {
+            read_value_(spl, i, j, v.safe[i]);
+            read_table_(spl, i, ++j, args...);
         }
 
-        inline void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k) {}
+        inline void read_table_cols_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::size_t k) {}
 
         template<typename T, typename ... VArgs>
-        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
+        void read_table_cols_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args);
         template<typename ... VArgs>
-        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args);
+        void read_table_cols_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args);
 
         template<typename T, typename ... VArgs>
-        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
-            read_value_(fs, i, j, v.safe(i,k));
-            read_table_cols_(fs, i, ++j, k, args...);
+        void read_table_cols_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::size_t k, vec<2,T>& v, VArgs&... args) {
+            read_value_(spl, i, j, v.safe(i,k));
+            read_table_cols_(spl, i, ++j, k, args...);
         }
 
         template<typename ... VArgs>
-        void read_table_cols_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args) {
-            std::string s;
-            if (!(fs >> s) && fs.eof()) {
+        void read_table_cols_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::size_t k, impl::placeholder_t, VArgs&... args) {
+            if (!spl.skip_word()) {
                 throw ascii::exception("cannot extract value from file, too few columns on line l."+
                     to_string(i+1));
             }
 
-            read_table_cols_(fs, i, ++j, k, args...);
+            read_table_cols_(spl, i, ++j, k, args...);
         }
 
         template<typename U, typename ... VArgs, std::size_t ... S>
-        void read_table_cols_i_(std::istringstream& fs, std::size_t i, std::size_t& j, std::size_t k, std::tuple<U,VArgs&...>& v, meta::seq_t<S...>) {
-            read_table_cols_(fs, i, j, k, std::get<S>(v)...);
+        void read_table_cols_i_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::size_t k, std::tuple<U,VArgs&...>& v, meta::seq_t<S...>) {
+            read_table_cols_(spl, i, j, k, std::get<S>(v)...);
         }
 
         template<typename U, typename ... VArgs, typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args) {
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, std::tuple<U,VArgs&...> v, Args& ... args) {
             std::size_t n = std::get<0>(v);
             for (std::size_t k : range(n)) {
-                read_table_cols_i_(fs, i, j, k, v, typename meta::gen_seq<1, sizeof...(VArgs)>::type());
+                read_table_cols_i_(spl, i, j, k, v, typename meta::gen_seq<1, sizeof...(VArgs)>::type());
             }
 
-            read_table_(fs, i, j, args...);
+            read_table_(spl, i, j, args...);
         }
 
         template<typename ... Args>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args) {
-            if (fs.eof()) {
-                throw ascii::exception("cannot extract value at l."+to_string(i+1)+":"+to_string(j+1)+" from file, "
-                    "too few columns on line l."+to_string(i+1));
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, impl::placeholder_t, Args& ... args) {
+            if (!spl.skip_word()) {
+                throw ascii::exception("cannot extract value from file, too few columns on line l."+
+                    to_string(i+1));
             }
 
-            std::string s;
-            fs >> s;
-            read_table_(fs, i, ++j, args...);
+            read_table_(spl, i, ++j, args...);
         }
 
         template<typename T, typename ... Args, typename enable>
-        void read_table_(std::istringstream& fs, std::size_t i, std::size_t& j, T& v, Args& ... args) {
-            if (fs.eof()) {
-                throw ascii::exception("cannot extract value at l."+to_string(i+1)+":"+to_string(j+1)+" from file, "
-                    "too few columns on line l."+to_string(i+1));
-            }
-
-            read_value_(fs, i, j, v);
-            read_table_(fs, i, ++j, args...);
+        void read_table_(line_splitter_t& spl, std::size_t i, std::size_t& j, T& v, Args& ... args) {
+            read_value_(spl, i, j, v);
+            read_table_(spl, i, ++j, args...);
         }
     }
 }
 
 namespace ascii {
     template<typename ... Args>
-    void read_table(const std::string& name, std::size_t skip, Args&& ... args) {
+    void read_table(const std::string& name, const input_format::options& opts, Args&& ... args) {
         phypp_check(file::exists(name), "cannot open file '"+name+"'");
 
         try {
-            std::string line;
+            impl::ascii_impl::line_splitter_t spl;
+            spl.delim = opts.delim;
+            spl.delim_single = opts.delim_single;
 
-            // Count number of lines and, if asked, skip first lines
-            std::size_t n = 0;
-            std::size_t rpos = 0;
-            {
-                std::ifstream file(name);
+            std::ifstream file(name);
+
+            // Count number of lines
+            std::size_t n = 0; {
                 while (!file.eof()) {
-                    std::getline(file, line);
+                    std::getline(file, spl.line);
 
-                    if (n < skip) {
-                        ++n;
-                        if (n == skip) {
-                            rpos = file.tellg();
-                        }
-                    } else {
-                        if (line.find_first_not_of(" \t") != line.npos) {
-                            ++n;
-                        }
+                    auto p = spl.line.find_first_not_of(" \t");
+                    if (p == spl.line.npos || (opts.auto_skip && spl.line[p] == opts.skip_pattern)) {
+                        continue;
                     }
+
+                    ++n;
                 }
-
-                if (skip > n) return;
-
-                n -= skip;
             }
 
-            // Read data
-            std::ifstream file(name);
-            file.seekg(rpos);
-
+            // Resize all vectors
             impl::ascii_impl::read_table_resize_(n, args...);
 
-            for (uint_t i : range(n)) {
-                do {
-                    std::getline(file, line);
-                } while (line.find_first_not_of(" \t") == line.npos);
+            // Read data
+            file.clear();
+            file.seekg(0);
 
-                std::istringstream fs(line);
+            uint_t i = 0;
+            while (!file.eof()) {
+                spl.reset();
+                std::getline(file, spl.line);
+
+                auto p = spl.line.find_first_not_of(" \t");
+                if (p == spl.line.npos || (opts.auto_skip && spl.line[p] == opts.skip_pattern)) {
+                    continue;
+                }
+
                 std::size_t j = 0;
-                impl::ascii_impl::read_table_(fs, i, j, args...);
+                impl::ascii_impl::read_table_(spl, i, j, args...);
+                ++i;
             }
         } catch (ascii::exception& e) {
             phypp_check(false, std::string(e.what())+" (reading "+name+")");
         }
     }
 
-    template <typename ... Args>
-    void read_table(const std::string& name, auto_find_skip_tag t, Args&& ... args) {
-        phypp_check(file::exists(name), "cannot open file '"+name+"'");
+    namespace input_format {
+        static const options standard = options{};
+        static const options csv      = options{true, '#', ",", true};
+    }
 
-        // Automatically find number of lines to skip
-        std::string line;
-        std::size_t n = 0;
-        std::ifstream file(name);
-        while (std::getline(file, line)) {
-            auto p = line.find_first_not_of(" \t");
-            if (p != line.npos && line[p] != t.pattern) {
-                break;
-            }
-
-            ++n;
-        }
-
-        read_table(name, n, std::forward<Args>(args)...);
+    template<typename T, typename ... Args, typename enable = typename std::enable_if<
+        !std::is_same<typename std::decay<T>::type, input_format::options>::value
+    >::type>
+    void read_table(const std::string& name, T&& t, Args&& ... args) {
+        read_table(name, input_format::standard, std::forward<T>(t), std::forward<Args>(args)...);
     }
 }
 
