@@ -1519,7 +1519,7 @@ namespace astro {
             if (ends_with(filename, ".fits")) {
                 fits::input_table(filename).read_columns(fits::narrow, ftable(tf.lam, tf.res));
             } else {
-                ascii::read_table(filename, ascii::find_skip(filename), tf.lam, tf.res);
+                ascii::read_table(filename, tf.lam, tf.res);
             }
         };
 

@@ -123,7 +123,7 @@ int phypp_main(int argc, char* argv[]) {
         cat.flux = flux[id];
     } else {
         vec1f flx;
-        ascii::read_table(cat_file, ascii::find_skip(cat_file), cat.ra, cat.dec, cat.flux);
+        ascii::read_table(cat_file, cat.ra, cat.dec, cat.flux);
     }
 
     print(cat.ra.size(), " sources to subtract from the image");

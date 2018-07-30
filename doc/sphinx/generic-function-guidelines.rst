@@ -284,7 +284,9 @@ The optimal version would avoid the extra loop:
 
     vec1d v2 = std::move(tmp);
 
-This is only possible using expression templates, which currently phy++ does not support for the sake of simplicity. Therefore, if performances are critical you may want to write the loop explicitly (following the guidelines in :ref:`Indexing` for optimal performance). An cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a lambda function into a functor with overloaded call operator that works on both vector and scalar values. It also supports the optimization for chained calls. Contrary to the ``PHYPP_VECTORIZE()`` macro, ``vectorize_lambda_first()`` can be called in any scope, including inside other functions:
+This is only possible using expression templates, which currently phy++ does not support for the sake of simplicity. Therefore, if performances are critical you may want to write the loop explicitly (following the guidelines in :ref:`Indexing` for optimal performance).
+
+A cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a lambda function into a functor with overloaded call operator that works on both vector and scalar values. It also supports the optimization for chained calls. Contrary to the ``PHYPP_VECTORIZE()`` macro, ``vectorize_lambda_first()`` can be called in any scope, including inside other functions:
 
 .. code-block:: c++
 

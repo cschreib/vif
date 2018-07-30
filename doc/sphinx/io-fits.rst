@@ -1,3 +1,5 @@
+.. _FITS files:
+
 FITS files
 ==========
 
