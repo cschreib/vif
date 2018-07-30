@@ -258,7 +258,7 @@ namespace meta {
         return {{1u}};
     }
 
-    // Count the total number of elements in a vector.or scalar
+    // Count the total number of elements in a vector or scalar
     template<std::size_t Dim, typename T>
     uint_t size(const vec<Dim,T>& v) {
         return v.size();
@@ -272,12 +272,12 @@ namespace meta {
     // Check if all arguments have same size
     template<typename T, typename U, typename ... Args>
     bool same_size(const T& v1, const U& v2) {
-        return n_elements(v1) && n_elements(v2);
+        return size(v1) && size(v2);
     }
 
     template<typename T, typename U, typename ... Args>
     bool same_size(const T& v1, const U& v2, const Args& ... args) {
-        return n_elements(v1) && n_elements(v2) && same_size(v1, args...);
+        return size(v1) && size(v2) && same_size(v1, args...);
     }
 }
 
