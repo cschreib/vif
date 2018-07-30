@@ -8,7 +8,6 @@ namespace phypp {
     struct vec;
 
 namespace meta {
-
     // Helper to get the vector internal storage type.
     // This is used to avoid std::vector<bool>.
     template<typename T>
@@ -44,6 +43,12 @@ namespace impl {
         struct is_vec_<vec<Dim,Type>> : public std::true_type {};
 
         template<typename T>
+        struct is_view_ : public std::false_type {};
+
+        template<std::size_t Dim, typename Type>
+        struct is_view_<vec<Dim,Type*>> : public std::true_type {};
+
+        template<typename T>
         struct vec_dim_ : std::integral_constant<std::size_t,0> {};
 
         template<std::size_t Dim, typename T>
@@ -55,6 +60,10 @@ namespace meta {
     // Helper to check if a given type is a generic vector.
     template<typename T>
     using is_vec = impl::meta_impl::is_vec_<typename std::decay<T>::type>;
+
+    // Helper to check if a given type is a view.
+    template<typename T>
+    using is_view = impl::meta_impl::is_view_<typename std::decay<T>::type>;
 
     // Return the data type of the provided type
     template<typename T>
