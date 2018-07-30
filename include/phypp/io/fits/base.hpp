@@ -559,6 +559,11 @@ namespace impl {
                 fits::phypp_check_cfitsio(status_, "could not reach HDU "+to_string(hdu));
             }
 
+            void remove_hdu() {
+                fits_delete_hdu(fptr_, nullptr, &status_);
+                fits::phypp_check_cfitsio(status_, "could not remove the current HDU");
+            }
+
             // Return the number of dimensions of a FITS file
             // Note: will return 0 for FITS tables
             uint_t axis_count() const {
@@ -611,19 +616,6 @@ namespace impl {
             const std::string filename_;
             fitsfile* fptr_ = nullptr;
             mutable int status_ = 0;
-        };
-
-        class output_file_base : virtual public file_base {
-        public :
-            output_file_base(file_type type, const std::string& filename, access_right rights) :
-                file_base(type, filename, rights) {}
-
-            output_file_base(output_file_base&& in) noexcept : file_base(std::move(in)) {}
-
-            void remove_hdu() {
-                fits_delete_hdu(fptr_, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not remove the current HDU");
-            }
         };
 
         static struct readwrite_tag_t {} readwrite_tag;

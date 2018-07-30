@@ -190,18 +190,16 @@ namespace fits {
     };
 
     // Output FITS table (write only, overwrites existing files)
-    class output_image : public impl::fits_impl::output_file_base {
+    class output_image : public virtual impl::fits_impl::file_base {
     protected :
 
         explicit output_image(const std::string& filename, impl::fits_impl::readwrite_tag_t) :
-            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
-            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
     public :
 
         explicit output_image(const std::string& filename) :
-            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only),
-            impl::fits_impl::output_file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
 
         output_image(output_image&&) noexcept = default;
         output_image(const output_image&) = delete;

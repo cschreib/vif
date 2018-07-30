@@ -74,6 +74,12 @@ namespace fits {
         opts.last_row = r2;
         return opts;
     };
+
+    // Format of FITS table (row/column oriented)
+    enum class table_format {
+        column_oriented,
+        row_oriented
+    };
 }
 
 namespace impl {
@@ -123,6 +129,47 @@ namespace impl {
 
         template<typename T>
         struct is_readable_column_type<impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
+
+        // FITS table (base class)
+        class table_base : public impl::fits_impl::file_base {
+        public :
+            table_base(const std::string& filename, access_right rights) :
+                impl::fits_impl::file_base(file_type::table_file, filename, rights) {
+                get_format_();
+            }
+
+            void read_hdu(uint_t hdu) {
+                impl::fits_impl::file_base::reach_hdu(hdu);
+                get_format_();
+            }
+
+        protected :
+
+            void get_format_() {
+                // Check if data exists
+                uint_t nhdu = hdu_count();
+                if (nhdu != 0) {
+                    int ncols = 0;
+                    fits_get_num_cols(fptr_, &ncols, &status_);
+                    fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+                    if (ncols != 0) {
+                        // Data exists, see if row or column-oriented
+                        uint_t nrow;
+                        if (read_keyword("NAXIS2", nrow)) {
+                            if (nrow > 1) {
+                                format_ = fits::table_format::row_oriented;
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Default
+                format_ = fits::table_format::column_oriented;
+            }
+
+            fits::table_format format_ = fits::table_format::column_oriented;
+        };
     }
 }
 
@@ -140,12 +187,12 @@ namespace fits {
     };
 
     // FITS input table (read only)
-    class input_table : public virtual impl::fits_impl::file_base {
+    class input_table : public virtual impl::fits_impl::table_base {
     public :
         explicit input_table(const std::string& filename) :
-            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_only) {}
+            impl::fits_impl::table_base(filename, impl::fits_impl::read_only) {}
         explicit input_table(const std::string& filename, uint_t hdu) :
-            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_only) {
+            impl::fits_impl::table_base(filename, impl::fits_impl::read_only) {
             reach_hdu(hdu);
         }
 
@@ -262,6 +309,13 @@ namespace fits {
                 ci.dims.push_back(axes[i]);
             }
 
+            // Handle row-oriented tables
+            if (format_ == table_format::row_oriented) {
+                uint_t nrow = 0;
+                read_keyword("NAXIS2", nrow);
+                ci.dims.push_back(nrow);
+            }
+
             ci.dims = reverse(ci.dims);
 
             return true;
@@ -371,12 +425,12 @@ namespace fits {
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
         void read_column_impl_(const table_read_options& opts, vec<Dim,Type>& v,
             const std::string& cname, int cid, long naxis, const std::array<long,max_column_dims>& naxes,
-            long repeat, long nrow, bool colfits) const {
+            long repeat, long nrow) const {
 
             if (v.empty()) return;
 
             long firstrow = 1, firstelem = 1;
-            if (colfits) {
+            if (format_ == table_format::column_oriented) {
                 firstelem = opts.first_row*(repeat/naxes[naxis-1]) + 1;
             } else {
                 firstrow = opts.first_row + 1;
@@ -393,8 +447,8 @@ namespace fits {
         }
 
         template<typename Type>
-        void read_column_impl_(const table_read_options&, Type& v, const std::string& cname,  int cid,
-            long naxis, const std::array<long,max_column_dims>& naxes, long, long, bool) const {
+        void read_column_impl_(const table_read_options&, Type& v, const std::string& cname, int cid,
+            long naxis, const std::array<long,max_column_dims>& naxes, long, long) const {
 
             Type def = impl::fits_impl::traits<Type>::def();
             int null;
@@ -408,7 +462,7 @@ namespace fits {
         template<std::size_t Dim>
         void read_column_impl_(const table_read_options& opts, vec<Dim,std::string>& v,
             const std::string& cname, int cid, long naxis, const std::array<long,max_column_dims>& naxes,
-            long repeat, long nrow, bool colfits) const {
+            long repeat, long nrow) const {
 
             if (v.empty()) return;
 
@@ -418,7 +472,7 @@ namespace fits {
             }
 
             long firstrow = 1, firstelem = 1;
-            if (colfits) {
+            if (format_ == table_format::column_oriented) {
                 firstelem = opts.first_row*(repeat/naxes[naxis-1]/naxes[0]) + 1;
             } else {
                 firstrow = opts.first_row + 1;
@@ -448,8 +502,8 @@ namespace fits {
         }
 
         void read_column_impl_(const table_read_options&, std::string& v, const std::string& cname,
-            int cid,long naxis, const std::array<long,max_column_dims>& naxes, long repeat, long nrow,
-            bool colfits) const {
+            int cid, long naxis, const std::array<long,max_column_dims>& naxes, long repeat,
+            long nrow) const {
 
             // NB: cfitsio doesn't seem to like reading empty strings
             if (repeat == 0) {
@@ -665,9 +719,8 @@ namespace fits {
 
             // Support loading row-oriented FITS tables (and ASCII)
             uint_t nrow = 1;
-            bool colfits = true;
-            if (read_keyword("NAXIS2", nrow) && nrow > 1) {
-                colfits = false;
+            if (format_ == table_format::row_oriented) {
+                read_keyword("NAXIS2", nrow);
                 if (naxis == 1 && axes[naxis-1] == 1) {
                     axes[naxis-1] = nrow;
                 } else {
@@ -704,7 +757,7 @@ namespace fits {
 
             // Read
             if (nrow != 0) {
-                read_column_impl_(opts, value, tcolname, cid, naxis, axes, repeat, nrow, colfits);
+                read_column_impl_(opts, value, tcolname, cid, naxis, axes, repeat, nrow);
             }
 
             return read_sentry{};
@@ -906,30 +959,20 @@ namespace impl {
 }
 
 namespace fits {
-    // Output format of FITS table (row/column oriented)
-    enum class output_format {
-        column_oriented,
-        row_oriented
-    };
 
     // Output FITS table (write only, overwrites existing files)
-    class output_table : public impl::fits_impl::output_file_base {
-    protected :
-
-        fits::output_format format_ = fits::output_format::column_oriented;
-
+    class output_table : public virtual impl::fits_impl::table_base {
     public :
 
         explicit output_table(const std::string& filename) :
-            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only),
-            impl::fits_impl::output_file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::table_base(filename, impl::fits_impl::write_only) {}
 
         output_table(output_table&&) noexcept = default;
         output_table(const output_table&) = delete;
         output_table& operator = (output_table&&) noexcept = delete;
         output_table& operator = (const output_table&&) = delete;
 
-        void set_format(fits::output_format fmt) {
+        void set_format(fits::table_format fmt) {
             // Check if data already exists, in which case we cannot change format
             uint_t nhdu = hdu_count();
             if (nhdu != 0) {
@@ -1062,7 +1105,7 @@ namespace fits {
         template<std::size_t Dim, typename Type>
         vec<1,long> write_column_get_dims_(const vec<Dim,Type>& value, uint_t& nrow) {
             vec<1,long> dims;
-            if (format_ == fits::output_format::column_oriented) {
+            if (format_ == fits::table_format::column_oriented) {
                 nrow = 1;
                 dims.resize(Dim);
                 for (uint_t i : range(Dim)) {
@@ -1096,7 +1139,7 @@ namespace fits {
                 }
             }
 
-            if (format_ == fits::output_format::column_oriented) {
+            if (format_ == fits::table_format::column_oriented) {
                 nrow = 1;
                 dims.resize(Dim+1);
                 dims[0] = nmax;
@@ -1183,7 +1226,7 @@ namespace fits {
 
             // If row-oriented and data already exists, check we have
             // the right number of rows before writing
-            if (cid > 1 && format_ == output_format::row_oriented) {
+            if (cid > 1 && format_ == table_format::row_oriented) {
                 long nrow;
                 fits_get_num_rows(fptr_, &nrow, &status_);
                 fits::phypp_check_cfitsio(status_, "could not get number of rows in HDU");
@@ -1362,6 +1405,15 @@ namespace fits {
             // Create column (allocate space on disk)
             vec<1,long> dims;
             write_column_create_(tcolname, cid, value, dims);
+
+            // Handle row-oriented tables
+            // Need to set number of rows, because this is usually done
+            // when writing the actual data.
+            if (format_ == table_format::row_oriented && cid == 1) {
+                fits_insert_rows(fptr_, 0, value.dims[0], &status_);
+                fits::phypp_check_cfitsio(status_,
+                    "could not create all rows of columns '"+tcolname+"'");
+            }
         }
     };
 
@@ -1369,47 +1421,19 @@ namespace fits {
     class table : public output_table, public input_table {
     public :
         explicit table(const std::string& filename) :
-            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
-            output_table(filename), input_table(filename) {
-                get_format_();
-            }
+            impl::fits_impl::table_base(filename, impl::fits_impl::read_write),
+            output_table(filename), input_table(filename) {}
 
         explicit table(const std::string& filename, uint_t hdu) :
-            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
+            impl::fits_impl::table_base(filename, impl::fits_impl::read_write),
             output_table(filename), input_table(filename) {
             reach_hdu(hdu);
-            get_format_();
         }
 
         table(table&&) noexcept = default;
         table(const table&) = delete;
         table& operator = (table&&) noexcept = delete;
         table& operator = (const table&&) = delete;
-
-    private :
-
-        void get_format_() {
-            // Check if data exists
-            uint_t nhdu = hdu_count();
-            if (nhdu != 0) {
-                int ncols = 0;
-                fits_get_num_cols(fptr_, &ncols, &status_);
-                fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
-                if (ncols != 0) {
-                    // Data exists, see if row or column-oriented
-                    uint_t nrow;
-                    if (read_keyword("NAXIS2", nrow)) {
-                        if (nrow > 1) {
-                            format_ = output_format::row_oriented;
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // Default
-            format_ = output_format::column_oriented;
-        }
 
     public :
 
@@ -1534,38 +1558,53 @@ namespace fits {
     private :
 
         template<typename ... Args>
-        uint_t update_elements_first_element__(const vec1u& pitch, uint_t i) {
-            return 1;
+        void update_elements_first_element__(const vec1u& pitch, uint_t i,
+            long& firstrow, long& firstelem) {
+            ++firstrow;
+            ++firstelem;
         }
 
         template<typename ... Args>
-        uint_t update_elements_first_element__(const vec1u& pitch, uint_t i, uint_t id,
-            Args&& ... args) {
+        void update_elements_first_element__(const vec1u& pitch, uint_t i,
+            long& firstrow, long& firstelem, uint_t id, Args&& ... args) {
 
-            return id*pitch[i] +
-                update_elements_first_element__(pitch, i+1, std::forward<Args>(args)...);
+            if (format_ == table_format::column_oriented) {
+                firstelem += id*pitch[i];
+            } else {
+                if (i == 0) {
+                    firstrow = id;
+                } else {
+                    firstelem += id*pitch[i];
+                }
+            }
+
+            update_elements_first_element__(pitch, i+1,
+                    firstrow, firstelem, std::forward<Args>(args)...);
         }
 
         template<typename ... Args>
-        uint_t update_elements_first_element_(const vec1u& dims, Args&& ... args) {
+        void update_elements_first_element_(const vec1u& dims,
+            long& firstrow, long& firstelem, Args&& ... args) {
+
             vec1u pitch(dims.size());
             pitch[dims.size()-1] = 1;
             for (uint_t i : range(1, dims.size())) {
                 pitch[dims.size()-1-i] = pitch[dims.size()-i]*dims[dims.size()-i];
             }
 
-            return update_elements_first_element__(pitch, 0, std::forward<Args>(args)...);
+            return update_elements_first_element__(pitch, 0,
+                firstrow, firstelem, std::forward<Args>(args)...);
         }
 
 
         template<std::size_t Dim, typename Type>
         void update_elements_impl_(const std::string& tcolname, int cid,
-            const vec<Dim,Type>& value, long first_elem) {
+            const vec<Dim,Type>& value, long firstrow, long firstelem) {
 
             // cfitsio doesn't like writing empty columns
             if (value.empty()) return;
 
-            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, first_elem,
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem,
                 value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()),
                 &status_);
             fits::phypp_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
@@ -1573,18 +1612,18 @@ namespace fits {
 
         template<typename Type>
         void update_elements_impl_(const std::string& tcolname, int cid,
-            const Type& value, long first_elem) {
+            const Type& value, long firstrow, long firstelem) {
 
             using dtype = typename impl::fits_impl::traits<Type>::dtype;
-            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, first_elem, 1,
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
             fits::phypp_check_cfitsio(status_, "could not update element in column '"+tcolname+"'");
         }
 
         template<std::size_t Dim, typename Type>
         void update_elements_impl_(const std::string& tcolname, int cid,
-            const vec<Dim,Type*>& value, long first_elem) {
-            update_elements_impl_(tcolname, cid, value.concretise(), first_elem);
+            const vec<Dim,Type*>& value, long firstrow, long firstelem) {
+            update_elements_impl_(tcolname, cid, value.concretise(), firstrow, firstelem);
         }
 
     public :
@@ -1621,10 +1660,11 @@ namespace fits {
                 impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Compute ID of first element to be updated
-            long first_elem = update_elements_first_element_(ci.dims, std::forward<Args>(args)...);
+            long firstrow = 0, firstelem = 0;
+            update_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
 
             // Write data
-            update_elements_impl_(tcolname, ci.column_id, value, first_elem);
+            update_elements_impl_(tcolname, ci.column_id, value, firstrow, firstelem);
         }
 
         template<typename Type, typename ... Args, typename enable =
@@ -1646,10 +1686,11 @@ namespace fits {
                 impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Compute ID of first element to be updated
-            long first_elem = update_elements_first_element_(ci.dims, std::forward<Args>(args)...);
+            long firstrow = 0, firstelem = 0;
+            update_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
 
             // Write data
-            update_elements_impl_(tcolname, ci.column_id, value, first_elem);
+            update_elements_impl_(tcolname, ci.column_id, value, firstrow, firstelem);
         }
     };
 }
