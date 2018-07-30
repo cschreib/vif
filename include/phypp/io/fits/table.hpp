@@ -939,8 +939,9 @@ namespace fits {
         template<std::size_t Dim, typename Type,
             typename enable = typename std::enable_if<
                 !std::is_same<Type,std::string>::value && !std::is_pointer<Type>::value>::type>
-        void write_column_impl_(const vec<Dim,Type>& value, const vec<1,long>&,
-            const std::string& tcolname, int cid) {
+        void write_column_impl_(const std::string& tcolname, int cid,
+            const vec<Dim,Type>& value, const vec<1,long>&) {
+
             // cfitsio doesn't like writing empty columns
             if (value.empty()) return;
 
@@ -950,8 +951,9 @@ namespace fits {
         }
 
         template<typename Type>
-        void write_column_impl_(const Type& value, const vec<1,long>&,
-            const std::string& tcolname, int cid) {
+        void write_column_impl_(const std::string& tcolname, int cid,
+            const Type& value, const vec<1,long>&) {
+
             using dtype = typename impl::fits_impl::traits<Type>::dtype;
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
@@ -959,8 +961,8 @@ namespace fits {
         }
 
         template<std::size_t Dim>
-        void write_column_impl_(const vec<Dim,std::string>& value,
-            const vec<1,long>& dims, const std::string& tcolname, int cid) {
+        void write_column_impl_(const std::string& tcolname, int cid,
+            const vec<Dim,std::string>& value, const vec<1,long>& dims) {
 
             const uint_t nmax = dims[0];
 
@@ -986,8 +988,8 @@ namespace fits {
             delete[] buffer;
         }
 
-        void write_column_impl_(const std::string& value, const vec<1,long>&,
-            const std::string& tcolname, int cid) {
+        void write_column_impl_(const std::string& tcolname, int cid,
+            const std::string& value, const vec<1,long>&) {
 
             // NB: for some reason cfitsio crashes on empty string
             if (value.empty()) return;
@@ -1002,9 +1004,9 @@ namespace fits {
         }
 
         template<std::size_t Dim, typename Type>
-        void write_column_impl_(const vec<Dim,Type*>& value, const vec<1,long>& dims,
-            const std::string& tcolname, int cid) {
-            write_column_impl_(value.concretise(), dims, tcolname, cid);
+        void write_column_impl_(const std::string& tcolname, int cid,
+            const vec<Dim,Type*>& value, const vec<1,long>& dims) {
+            write_column_impl_(tcolname, cid, value.concretise(), dims);
         }
 
         template<std::size_t Dim, typename Type>
@@ -1099,9 +1101,7 @@ namespace fits {
             return to_string(size)+impl::fits_impl::traits<std::string>::tform+to_string(dims[0]);
         }
 
-        void write_column_write_tdim_(const vec<1,long>& dims, const std::string& tcolname,
-            int cid) {
-
+        void write_column_write_tdim_(const std::string& tcolname, int cid, const vec<1,long>& dims) {
             if (dims.empty()) {
                 // Nothing to do
                 return;
@@ -1123,19 +1123,13 @@ namespace fits {
         };
 
         template<typename T>
-        void write_column_(const std::string& tcolname, const T& value, std::false_type) {
-            static_assert(impl::fits_impl::is_writable_column_type<typename std::decay<T>::type>::value,
-                "this variable cannot be written into a FITS file");
-
-            int cid;
-            fits_get_num_cols(fptr_, &cid, &status_);
-            fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
-            ++cid;
+        void write_column_create_(const std::string& tcolname, int cid,
+            const T& value, vec<1,long>& dims) {
 
             // Collect data on the input type
-            using vtype = typename impl::fits_impl::data_type<T>::type;
             uint_t ndrow = 1;
-            const vec<1,long> dims = write_column_get_dims_(value, ndrow);
+            dims = write_column_get_dims_(value, ndrow);
+            using vtype = typename impl::fits_impl::data_type<T>::type;
 
             // If row-oriented and data already exists, check we have
             // the right number of rows before writing
@@ -1157,10 +1151,26 @@ namespace fits {
             fits::phypp_check_cfitsio(status_, "could not create column '"+tcolname+"'");
 
             // Set TDIM keyword (if needed)
-            write_column_write_tdim_(dims, tcolname, cid);
+            write_column_write_tdim_(tcolname, cid, dims);
+        }
 
-            // Write
-            write_column_impl_(value, dims, tcolname, cid);
+        template<typename T>
+        void write_column_(const std::string& tcolname, const T& value, std::false_type) {
+            static_assert(impl::fits_impl::is_writable_column_type<typename std::decay<T>::type>::value,
+                "this variable cannot be written into a FITS file");
+
+            // Create ID of last column
+            int cid;
+            fits_get_num_cols(fptr_, &cid, &status_);
+            fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+            ++cid;
+
+            // Create column
+            vec<1,long> dims;
+            write_column_create_(tcolname, cid, value, dims);
+
+            // Write data
+            write_column_impl_(tcolname, cid, value, dims);
         }
 
         template<typename T>
@@ -1276,6 +1286,31 @@ namespace fits {
         void write_columns(T& t) {
             create_table_();
             reflex::foreach_member(reflex::wrap(t), do_write_struct_{this, ""});
+        }
+
+    public :
+
+        template<typename Type, typename ... Args, typename enable =
+            typename std::enable_if<meta::is_dim_list<Args...>::value>::type>
+        void allocate_column(const std::string& tcolname, Args&& ... args) {
+            static_assert(!std::is_same<Type, std::string>::value,
+                "cannot pre-allocate string columns");
+
+            create_table_();
+
+            int cid;
+            fits_get_num_cols(fptr_, &cid, &status_);
+            fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+            ++cid;
+
+            // Make fake data (do not actually allocate memory)
+            constexpr const uint_t Dim = meta::dim_total<Args...>::value;
+            vec<Dim,Type> value;
+            impl::set_array(value.dims, std::forward<Args>(args)...);
+
+            // Create column (allocate space on disk)
+            vec<1,long> dims;
+            write_column_create_(tcolname, cid, value, dims);
         }
     };
 
