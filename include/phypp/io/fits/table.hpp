@@ -1348,6 +1348,7 @@ namespace fits {
 
             create_table_();
 
+            // Create ID of last column
             int cid;
             fits_get_num_cols(fptr_, &cid, &status_);
             fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
@@ -1522,10 +1523,133 @@ namespace fits {
 
     public :
 
-        template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
+        template<typename T, typename enable = typename std::enable_if<
+            reflex::enabled<T>::value
+        >::type>
         void update_columns(T& t) {
             create_table_();
             reflex::foreach_member(reflex::wrap(t), do_update_struct_{this});
+        }
+
+    private :
+
+        template<typename ... Args>
+        uint_t update_elements_first_element__(const vec1u& pitch, uint_t i) {
+            return 1;
+        }
+
+        template<typename ... Args>
+        uint_t update_elements_first_element__(const vec1u& pitch, uint_t i, uint_t id,
+            Args&& ... args) {
+
+            return id*pitch[i] +
+                update_elements_first_element__(pitch, i+1, std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        uint_t update_elements_first_element_(const vec1u& dims, Args&& ... args) {
+            vec1u pitch(dims.size());
+            pitch[dims.size()-1] = 1;
+            for (uint_t i : range(1, dims.size())) {
+                pitch[dims.size()-1-i] = pitch[dims.size()-i]*dims[dims.size()-i];
+            }
+
+            return update_elements_first_element__(pitch, 0, std::forward<Args>(args)...);
+        }
+
+
+        template<std::size_t Dim, typename Type>
+        void update_elements_impl_(const std::string& tcolname, int cid,
+            const vec<Dim,Type>& value, long first_elem) {
+
+            // cfitsio doesn't like writing empty columns
+            if (value.empty()) return;
+
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, first_elem,
+                value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()),
+                &status_);
+            fits::phypp_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
+        }
+
+        template<typename Type>
+        void update_elements_impl_(const std::string& tcolname, int cid,
+            const Type& value, long first_elem) {
+
+            using dtype = typename impl::fits_impl::traits<Type>::dtype;
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, first_elem, 1,
+                const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
+            fits::phypp_check_cfitsio(status_, "could not update element in column '"+tcolname+"'");
+        }
+
+        template<std::size_t Dim, typename Type>
+        void update_elements_impl_(const std::string& tcolname, int cid,
+            const vec<Dim,Type*>& value, long first_elem) {
+            update_elements_impl_(tcolname, cid, value.concretise(), first_elem);
+        }
+
+    public :
+
+        template<std::size_t Dim, typename Type, typename ... Args>
+        void update_elements(const std::string& tcolname,
+            const vec<Dim,Type>& value, Args&& ... args) {
+
+            // Check we have the right dimensions and type
+            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value + Dim;
+
+            column_info ci;
+            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
+                tcolname, "'");
+
+            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
+                "compared to what is present in the file (", naccessed, " vs. ",
+                ci.dims.size(), ")");
+
+            bool bad = false;
+            for (uint_t i : range(Dim)) {
+                if (value.dims[i] != ci.dims[ci.dims.size()-Dim+i]) {
+                    bad = true;
+                    break;
+                }
+            }
+
+            phypp_check(!bad, "incompatible dimensions of data "
+                "compared to what is present in the file (", value.dims, " vs. ", ci.dims, ")");
+
+            using traits = impl::fits_impl::traits<meta::rtype_t<Type>>;
+            phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
+                "wrong column type (expected ", pretty_type_t(meta::rtype_t<Type>), ", got ",
+                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
+
+            // Compute ID of first element to be updated
+            long first_elem = update_elements_first_element_(ci.dims, std::forward<Args>(args)...);
+
+            // Write data
+            update_elements_impl_(tcolname, ci.column_id, value, first_elem);
+        }
+
+        template<typename Type, typename ... Args, typename enable =
+            typename std::enable_if<!meta::is_vec<Type>::value>::type>
+        void update_element(const std::string& tcolname, const Type& value, Args&& ... args) {
+            // Check we have the right dimensions and type
+            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
+
+            column_info ci;
+            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
+                tcolname, "'");
+
+            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
+                "compared to what is present in the file (", naccessed, " vs. ", ci.dims.size(), ")");
+
+            using traits = impl::fits_impl::traits<meta::rtype_t<Type>>;
+            phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
+                "wrong column type (expected ", pretty_type_t(meta::rtype_t<Type>), ", got ",
+                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
+
+            // Compute ID of first element to be updated
+            long first_elem = update_elements_first_element_(ci.dims, std::forward<Args>(args)...);
+
+            // Write data
+            update_elements_impl_(tcolname, ci.column_id, value, first_elem);
         }
     };
 }
