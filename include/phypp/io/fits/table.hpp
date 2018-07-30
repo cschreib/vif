@@ -134,6 +134,7 @@ namespace fits {
         enum type_t {
             string, boolean, byte, integer, float_simple, float_double
         } type;
+        int cfitsio_type = 0;
         vec1u dims;
         uint_t length = 1;
     };
@@ -180,6 +181,7 @@ namespace fits {
             switch (type) {
             case 'A' : {
                 ci.type = column_info::string;
+                ci.cfitsio_type = TSTRING;
                 break;
             }
             case 'B' : {
@@ -192,27 +194,51 @@ namespace fits {
 
                 if (min(v) == 0 && max(v) <= 1) {
                     ci.type = column_info::boolean;
+                    ci.cfitsio_type = TLOGICAL;
                 } else {
                     ci.type = column_info::byte;
+                    ci.cfitsio_type = TBYTE;
                 }
                 break;
             }
             case 'S' : {
                 ci.type = column_info::byte;
+                ci.cfitsio_type = TBYTE;
                 break;
             }
-            case 'K' :
-            case 'J' :
+            case 'K' : {
+                ci.type = column_info::integer;
+                ci.cfitsio_type = TLONGLONG;
+                break;
+            }
+            case 'J' : {
+                ci.type = column_info::integer;
+                ci.cfitsio_type = TINT32BIT;
+                break;
+            }
             case 'I' : {
                 ci.type = column_info::integer;
+                ci.cfitsio_type = TSHORT;
+                break;
+            }
+            case 'V' : {
+                ci.type = column_info::integer;
+                ci.cfitsio_type = TUINT;
+                break;
+            }
+            case 'U' : {
+                ci.type = column_info::integer;
+                ci.cfitsio_type = TUSHORT;
                 break;
             }
             case 'E' : {
                 ci.type = column_info::float_simple;
+                ci.cfitsio_type = TFLOAT;
                 break;
             }
             case 'D' : {
                 ci.type = column_info::float_double;
+                ci.cfitsio_type = TDOUBLE;
                 break;
             }
             default : {
