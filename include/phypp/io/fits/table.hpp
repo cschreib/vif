@@ -129,6 +129,7 @@ namespace impl {
 namespace fits {
     // Data type to describe the content of a column
     struct column_info {
+        int column_id = -1;
         std::string name;
         enum type_t {
             string, boolean, byte, integer, float_simple, float_double
@@ -152,10 +153,108 @@ namespace fits {
         input_table& operator = (input_table&&) noexcept = delete;
         input_table& operator = (const input_table&&) noexcept = delete;
 
-        vec<1,column_info> read_column_info() const {
-            vec<1,column_info> cols;
+    private :
 
-            fits::header hdr = read_header();
+        bool read_column_info_(int c, column_info& ci) const {
+            ci.column_id = c;
+
+            char name[80];
+            char type = 0;
+            long repeat = 0;
+            fits_get_bcolparms(fptr_, c, name, nullptr, &type, &repeat,
+                nullptr, nullptr, nullptr, nullptr, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read parameters of column "+to_string(c)+" in HDU");
+
+            const uint_t max_dim = 256;
+            long axes[max_dim];
+            int naxis = 0;
+            fits_read_tdim(fptr_, c, max_dim, &naxis, axes, &status_);
+            fits::phypp_check_cfitsio(status_, "could not read parameters of column '"+std::string(name)+"'");
+
+            if (!read_keyword("TTYPE"+to_string(c), ci.name)) {
+                return false;
+            }
+
+            ci.name = trim(ci.name);
+
+            switch (type) {
+            case 'A' : {
+                ci.type = column_info::string;
+                break;
+            }
+            case 'B' : {
+                vec<1,char> v(repeat);
+                char def = impl::fits_impl::traits<char>::def();
+                int null;
+                fits_read_col(fptr_, impl::fits_impl::traits<char>::ttype, c, 1, 1, repeat,
+                    &def, v.data.data(), &null, &status_);
+                fits::phypp_check_cfitsio(status_, "could not read column '"+std::string(name)+"'");
+
+                if (min(v) == 0 && max(v) <= 1) {
+                    ci.type = column_info::boolean;
+                } else {
+                    ci.type = column_info::byte;
+                }
+                break;
+            }
+            case 'S' : {
+                ci.type = column_info::byte;
+                break;
+            }
+            case 'K' :
+            case 'J' :
+            case 'I' : {
+                ci.type = column_info::integer;
+                break;
+            }
+            case 'E' : {
+                ci.type = column_info::float_simple;
+                break;
+            }
+            case 'D' : {
+                ci.type = column_info::float_double;
+                break;
+            }
+            default : {
+                warning("unhandled column type '", type, "' for ", ci.name);
+                return false;
+            }
+            }
+
+            for (uint_t i : range(naxis)) {
+                // First dimension for string is the string length
+                if (i == 0 && ci.type == column_info::string) {
+                    ci.length = axes[i];
+                    if (naxis == 1) {
+                        ci.dims.push_back(1);
+                        break;
+                    }
+
+                    continue;
+                }
+
+                ci.dims.push_back(axes[i]);
+            }
+
+            ci.dims = reverse(ci.dims);
+
+            return true;
+        }
+
+    public :
+
+        bool read_column_info(const std::string& tcolname, column_info& ci) const {
+            // Check if column exists
+            std::string colname = to_upper(tcolname);
+            int cid;
+            fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
+            fits::phypp_check_cfitsio(status_, "cannot find collumn '"+colname+"'");
+
+            return read_column_info_(cid, ci);
+        }
+
+        vec<1,column_info> read_columns_info() const {
+            vec<1,column_info> cols;
 
             int ncol;
             fits_get_num_cols(fptr_, &ncol, &status_);
@@ -163,88 +262,9 @@ namespace fits {
 
             for (uint_t c : range(ncol)) {
                 column_info ci;
-
-                char name[80];
-                char type = 0;
-                long repeat = 0;
-                fits_get_bcolparms(fptr_, c+1, name, nullptr, &type, &repeat,
-                    nullptr, nullptr, nullptr, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not read parameters of column "+to_string(c+1)+" in HDU");
-
-                const uint_t max_dim = 256;
-                long axes[max_dim];
-                int naxis = 0;
-                fits_read_tdim(fptr_, c+1, max_dim, &naxis, axes, &status_);
-                fits::phypp_check_cfitsio(status_, "could not read parameters of column '"+std::string(name)+"'");
-
-                if (!getkey(hdr, "TTYPE"+to_string(c+1), ci.name)) {
-                    continue;
+                if (read_column_info_(c+1, ci)) {
+                    cols.push_back(ci);
                 }
-
-                ci.name = trim(ci.name);
-
-                switch (type) {
-                case 'A' : {
-                    ci.type = column_info::string;
-                    break;
-                }
-                case 'B' : {
-                    vec<1,char> v(repeat);
-                    char def = impl::fits_impl::traits<char>::def();
-                    int null;
-                    fits_read_col(fptr_, impl::fits_impl::traits<char>::ttype, c+1, 1, 1, repeat,
-                        &def, v.data.data(), &null, &status_);
-                    fits::phypp_check_cfitsio(status_, "could not read column '"+std::string(name)+"'");
-
-                    if (min(v) == 0 && max(v) <= 1) {
-                        ci.type = column_info::boolean;
-                    } else {
-                        ci.type = column_info::byte;
-                    }
-                    break;
-                }
-                case 'S' : {
-                    ci.type = column_info::byte;
-                    break;
-                }
-                case 'K' :
-                case 'J' :
-                case 'I' : {
-                    ci.type = column_info::integer;
-                    break;
-                }
-                case 'E' : {
-                    ci.type = column_info::float_simple;
-                    break;
-                }
-                case 'D' : {
-                    ci.type = column_info::float_double;
-                    break;
-                }
-                default : {
-                    warning("unhandled column type '", type, "' for ", ci.name);
-                    continue;
-                }
-                }
-
-                for (uint_t i : range(naxis)) {
-                    // First dimension for string is the string length
-                    if (i == 0 && ci.type == column_info::string) {
-                        ci.length = axes[i];
-                        if (naxis == 1) {
-                            ci.dims.push_back(1);
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    ci.dims.push_back(axes[i]);
-                }
-
-                ci.dims = reverse(ci.dims);
-
-                cols.push_back(ci);
             }
 
             return cols;
