@@ -248,7 +248,11 @@ namespace fits {
             std::string colname = to_upper(tcolname);
             int cid;
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
-            fits::phypp_check_cfitsio(status_, "cannot find collumn '"+colname+"'");
+            if (status_ != 0) {
+                status_ = 0;
+                fits_clear_errmsg();
+                return false;
+            }
 
             return read_column_info_(cid, ci);
         }
