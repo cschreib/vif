@@ -1653,11 +1653,11 @@ namespace fits {
             phypp_check(!bad, "wrong dimensions for column '", tcolname, "' "
                 "(expected ending with ", value.dims, ", got ", ci.dims, ")");
 
-            using traits = impl::fits_impl::traits<meta::rtype_t<Type>>;
+            using vtype = meta::rtype_t<Type>;
+            using traits = impl::fits_impl::traits<vtype>;
             phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
-                "wrong type for column '", tcolname, "' (expected ",
-                pretty_type_t(meta::rtype_t<Type>), ", got ",
-                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
+                "wrong type for column '", tcolname, "' (expected ", pretty_type_t(vtype),
+                ", got ", impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Compute ID of first element to be updated
             long firstrow = 0, firstelem = 0;
@@ -1680,11 +1680,11 @@ namespace fits {
             phypp_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
                 tcolname, "' (expected ", naccessed, ", got ", ci.dims.size(), ")");
 
-            using traits = impl::fits_impl::traits<meta::rtype_t<Type>>;
+            using vtype = typename std::decay<Type>::type;
+            using traits = impl::fits_impl::traits<vtype>;
             phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
-                "wrong type for column '", tcolname, "' (expected ",
-                pretty_type_t(meta::rtype_t<Type>), ", got ",
-                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
+                "wrong type for column '", tcolname, "' (expected ", pretty_type_t(vtype),
+                ", got ", impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Compute ID of first element to be updated
             long firstrow = 0, firstelem = 0;
