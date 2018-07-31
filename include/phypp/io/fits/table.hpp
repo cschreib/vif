@@ -934,6 +934,170 @@ namespace fits {
         void read_columns(T& t) {
             read_columns(table_read_options{}, t);
         }
+
+    private :
+
+        template<typename ... Args>
+        void read_elements_first_element__(const vec1u& pitch, uint_t i,
+            long& firstrow, long& firstelem) {
+            ++firstrow;
+            ++firstelem;
+        }
+
+        template<typename ... Args>
+        void read_elements_first_element__(const vec1u& pitch, uint_t i,
+            long& firstrow, long& firstelem, uint_t id, Args&& ... args) {
+
+            if (format_ == table_format::column_oriented) {
+                firstelem += id*pitch[i];
+            } else {
+                if (i == 0) {
+                    firstrow = id;
+                } else {
+                    firstelem += id*pitch[i];
+                }
+            }
+
+            read_elements_first_element__(pitch, i+1,
+                    firstrow, firstelem, std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        void read_elements_first_element_(const vec1u& dims,
+            long& firstrow, long& firstelem, Args&& ... args) {
+
+            vec1u pitch(dims.size());
+            pitch[dims.size()-1] = 1;
+            for (uint_t i : range(1, dims.size())) {
+                pitch[dims.size()-1-i] = pitch[dims.size()-i]*dims[dims.size()-i];
+            }
+
+            return read_elements_first_element__(pitch, 0,
+                firstrow, firstelem, std::forward<Args>(args)...);
+        }
+
+        template<std::size_t Dim, typename Type,
+            typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
+        void read_elements_impl_(const table_read_options& opts, vec<Dim,Type>& v,
+            const std::string& cname, int cid, long firstrow, long firstelem) const {
+
+            if (v.empty()) return;
+
+            long nelem = v.size();
+            Type def = impl::fits_impl::traits<Type>::def();
+            int null;
+            fits_read_col(
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
+                v.data.data(), &null, &status_
+            );
+            fits::phypp_check_cfitsio(status_, "could not read elements from column '"+cname+"'");
+        }
+
+        template<typename Type>
+        void read_elements_impl_(const table_read_options&, Type& v, const std::string& cname,
+            int cid, long firstrow, long firstelem) const {
+
+            Type def = impl::fits_impl::traits<Type>::def();
+            int null;
+            fits_read_col(
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, 1, &def,
+                reinterpret_cast<typename impl::fits_impl::traits<Type>::dtype*>(&v), &null, &status_
+            );
+            fits::phypp_check_cfitsio(status_, "could not read element from column '"+cname+"'");
+        }
+
+    public :
+
+        template<std::size_t Dim, typename Type, typename ... Args>
+        void read_elements(const table_read_options& opts, const std::string& tcolname,
+            vec<Dim,Type>& value, Args&& ... args) {
+
+            // Check we have the right dimensions and type
+            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value + Dim;
+
+            column_info ci;
+            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
+                tcolname, "'");
+
+            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
+                "compared to what is present in the file (", naccessed, " vs. ",
+                ci.dims.size(), ")");
+
+            using vtype = meta::rtype_t<Type>;
+            using traits = impl::fits_impl::traits<vtype>;
+            bool convertible = false;
+            if (opts.allow_narrow) {
+                convertible = traits::is_convertible_narrow(ci.cfitsio_type);
+            } else {
+                convertible = traits::is_convertible(ci.cfitsio_type);
+            }
+
+            phypp_check(convertible, "wrong type for column '", tcolname,
+                "' (expected ", pretty_type_t(vtype), ", got ",
+                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
+
+            // Resize vector
+            for (uint_t i : range(Dim)) {
+                value.dims[i] = ci.dims[ci.dims.size()-Dim+i];
+            }
+
+            value.resize();
+
+            // Compute ID of first element to be read
+            long firstrow = 0, firstelem = 0;
+            read_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
+
+            // Read data
+            read_elements_impl_(opts, value, tcolname, ci.column_id, firstrow, firstelem);
+        }
+
+        template<std::size_t Dim, typename Type, typename ... Args>
+        void read_elements(const std::string& tcolname, vec<Dim,Type>& value, Args&& ... args) {
+            read_elements(table_read_options{}, tcolname, value, std::forward<Args>(args)...);
+        }
+
+        template<typename Type, typename ... Args, typename enable =
+            typename std::enable_if<!meta::is_vec<Type>::value>::type>
+        void read_element(const table_read_options& opts, const std::string& tcolname,
+            Type& value, Args&& ... args) {
+
+            // Check we have the right dimensions and type
+            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
+
+            column_info ci;
+            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
+                tcolname, "'");
+
+            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
+                "compared to what is present in the file (", naccessed, " vs. ",
+                ci.dims.size(), ")");
+
+            using vtype = typename std::decay<Type>::type;
+            using traits = impl::fits_impl::traits<vtype>;
+            bool convertible = false;
+            if (opts.allow_narrow) {
+                convertible = traits::is_convertible_narrow(ci.cfitsio_type);
+            } else {
+                convertible = traits::is_convertible(ci.cfitsio_type);
+            }
+
+            phypp_check(convertible, "wrong type for column '", tcolname,
+                "' (expected ", pretty_type_t(vtype), ", got ",
+                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
+
+            // Compute ID of first element to be read
+            long firstrow = 0, firstelem = 0;
+            read_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
+
+            // Read data
+            read_elements_impl_(opts, value, tcolname, ci.column_id, firstrow, firstelem);
+        }
+
+        template<typename Type, typename ... Args, typename enable =
+            typename std::enable_if<!meta::is_vec<Type>::value>::type>
+        void read_element(const std::string& tcolname, Type& value, Args&& ... args) {
+            read_element(table_read_options{}, tcolname, value, std::forward<Args>(args)...);
+        }
     };
 }
 
@@ -1595,7 +1759,6 @@ namespace fits {
             return update_elements_first_element__(pitch, 0,
                 firstrow, firstelem, std::forward<Args>(args)...);
         }
-
 
         template<std::size_t Dim, typename Type>
         void update_elements_impl_(const std::string& tcolname, int cid,
