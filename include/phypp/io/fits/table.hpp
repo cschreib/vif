@@ -13,8 +13,6 @@ namespace fits {
         bool allow_missing = false;
         bool allow_dim_promote = false;
         bool allow_flatten = false;
-        uint_t first_row = 0;
-        uint_t last_row = npos;
 
         table_read_options operator | (const table_read_options& o) const {
             table_read_options n = *this;
@@ -22,8 +20,6 @@ namespace fits {
             if (o.allow_missing)     n.allow_missing = true;
             if (o.allow_dim_promote) n.allow_dim_promote = true;
             if (o.allow_flatten)     n.allow_flatten = true;
-            n.first_row = std::min(first_row, o.first_row);
-            n.last_row = std::max(last_row, o.last_row);
             return n;
         }
     };
@@ -60,20 +56,6 @@ namespace fits {
         opts.allow_flatten = true;
         return opts;
     }();
-
-    const auto row = [](uint_t r) {
-        table_read_options opts;
-        opts.first_row = r;
-        opts.last_row = r+1;
-        return opts;
-    };
-
-    const auto rows = [](uint_t r1, uint_t r2) {
-        table_read_options opts;
-        opts.first_row = r1;
-        opts.last_row = r2;
-        return opts;
-    };
 
     // Format of FITS table (row/column oriented)
     enum class table_format {
@@ -429,18 +411,11 @@ namespace fits {
 
             if (v.empty()) return;
 
-            long firstrow = 1, firstelem = 1;
-            if (format_ == table_format::column_oriented) {
-                firstelem = opts.first_row*(repeat/naxes[naxis-1]) + 1;
-            } else {
-                firstrow = opts.first_row + 1;
-            }
-
             long nelem = v.size();
             Type def = impl::fits_impl::traits<Type>::def();
             int null;
             fits_read_col(
-                fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
                 v.data.data(), &null, &status_
             );
             fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
@@ -471,13 +446,6 @@ namespace fits {
                 return;
             }
 
-            long firstrow = 1, firstelem = 1;
-            if (format_ == table_format::column_oriented) {
-                firstelem = opts.first_row*(repeat/naxes[naxis-1]/naxes[0]) + 1;
-            } else {
-                firstrow = opts.first_row + 1;
-            }
-
             char** buffer = new char*[v.size()];
             for (uint_t i : range(v)) {
                 buffer[i] = new char[naxes[0]+1];
@@ -488,7 +456,7 @@ namespace fits {
             char def = '\0';
             int null;
             fits_read_col(
-                fptr_, impl::fits_impl::traits<std::string>::ttype, cid, firstrow, firstelem, nelem, &def,
+                fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1, nelem, &def,
                 buffer, &null, &status_
             );
             fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
@@ -634,28 +602,6 @@ namespace fits {
             return read_column_check_dim_impl_(opts, naxis, vdim);
         }
 
-        bool read_column_check_rows_(table_read_options& opts,
-            std::array<long,max_column_dims>& axes, long naxis) const {
-            if (opts.last_row == npos) {
-                opts.last_row = axes[naxis-1];
-            }
-
-            if (opts.first_row == npos) {
-                opts.first_row = 0;
-            }
-
-            if (opts.last_row < opts.first_row) {
-                std::swap(opts.last_row, opts.first_row);
-            }
-
-            if (opts.last_row <= uint_t(axes[naxis-1])) {
-                axes[naxis-1] = opts.last_row - opts.first_row;
-                return true;
-            } else {
-                return false;
-            }
-        }
-
         struct do_read_struct_ {
             const input_table* tbl;
             const table_read_options& opts;
@@ -734,26 +680,8 @@ namespace fits {
                     "(expected "+to_string(vdim)+", got "+to_string(naxis)+")"};
             }
 
-            auto raxes = axes;
-            if (!read_column_check_rows_(opts, raxes, naxis)) {
-                std::string saxes = "{";
-                for (uint_t i : range(naxis)) {
-                    saxes += (i != 0 ? ", " : "") + to_string(axes[i]);
-                }
-                saxes += "}";
-
-                return read_sentry{this, "wrong dimensions for column '"+colname+"' "
-                    "(asking for "+(opts.first_row == opts.last_row ?
-                        "row "+to_string(opts.first_row) :
-                        "rows "+
-                        (opts.first_row == npos ? "0" : to_string(opts.first_row))
-                        +" to "+
-                        (opts.last_row == npos ? to_string(axes[naxis-1]) : to_string(opts.last_row))
-                    )+", in dimensions "+saxes+")"};
-            }
-
             // Resize vector
-            read_column_resize_(value, naxis, raxes);
+            read_column_resize_(value, naxis, axes);
 
             // Read
             if (nrow != 0) {
