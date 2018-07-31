@@ -730,7 +730,7 @@ namespace fits {
             }
 
             if (!read_column_check_dim_(opts, value, vdim, naxis, repeat)) {
-                return read_sentry{this, "wrong dimension for column '"+colname+"' "
+                return read_sentry{this, "wrong number of dimensions for column '"+colname+"' "
                     "(expected "+to_string(vdim)+", got "+to_string(naxis)+")"};
             }
 
@@ -742,7 +742,7 @@ namespace fits {
                 }
                 saxes += "}";
 
-                return read_sentry{this, "wrong dimension for column '"+colname+"' "
+                return read_sentry{this, "wrong dimensions for column '"+colname+"' "
                     "(asking for "+(opts.first_row == opts.last_row ?
                         "row "+to_string(opts.first_row) :
                         "rows "+
@@ -1639,9 +1639,8 @@ namespace fits {
             phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
                 tcolname, "'");
 
-            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
-                "compared to what is present in the file (", naccessed, " vs. ",
-                ci.dims.size(), ")");
+            phypp_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
+                tcolname, "' (expected ", naccessed, ", got ", ci.dims.size(), ")");
 
             bool bad = false;
             for (uint_t i : range(Dim)) {
@@ -1651,12 +1650,13 @@ namespace fits {
                 }
             }
 
-            phypp_check(!bad, "incompatible dimensions of data "
-                "compared to what is present in the file (", value.dims, " vs. ", ci.dims, ")");
+            phypp_check(!bad, "wrong dimensions for column '", tcolname, "' "
+                "(expected ending with ", value.dims, ", got ", ci.dims, ")");
 
             using traits = impl::fits_impl::traits<meta::rtype_t<Type>>;
             phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
-                "wrong column type (expected ", pretty_type_t(meta::rtype_t<Type>), ", got ",
+                "wrong type for column '", tcolname, "' (expected ",
+                pretty_type_t(meta::rtype_t<Type>), ", got ",
                 impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Compute ID of first element to be updated
@@ -1677,12 +1677,13 @@ namespace fits {
             phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
                 tcolname, "'");
 
-            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
-                "compared to what is present in the file (", naccessed, " vs. ", ci.dims.size(), ")");
+            phypp_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
+                tcolname, "' (expected ", naccessed, ", got ", ci.dims.size(), ")");
 
             using traits = impl::fits_impl::traits<meta::rtype_t<Type>>;
             phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
-                "wrong column type (expected ", pretty_type_t(meta::rtype_t<Type>), ", got ",
+                "wrong type for column '", tcolname, "' (expected ",
+                pretty_type_t(meta::rtype_t<Type>), ", got ",
                 impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Compute ID of first element to be updated
