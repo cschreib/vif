@@ -979,14 +979,9 @@ namespace fits {
             read_elements_impl_(opts, value, tcolname, ci.column_id, firstrow, firstelem);
         }
 
-        template<std::size_t Dim, typename Type, typename ... Args>
-        void read_elements(const std::string& tcolname, vec<Dim,Type>& value, Args&& ... args) {
-            read_elements(table_read_options{}, tcolname, value, std::forward<Args>(args)...);
-        }
-
         template<typename Type, typename ... Args, typename enable =
             typename std::enable_if<!meta::is_vec<Type>::value>::type>
-        void read_element(const table_read_options& opts, const std::string& tcolname,
+        void read_elements(const table_read_options& opts, const std::string& tcolname,
             Type& value, Args&& ... args) {
 
             // Check we have the right dimensions and type
@@ -1021,10 +1016,9 @@ namespace fits {
             read_elements_impl_(opts, value, tcolname, ci.column_id, firstrow, firstelem);
         }
 
-        template<typename Type, typename ... Args, typename enable =
-            typename std::enable_if<!meta::is_vec<Type>::value>::type>
-        void read_element(const std::string& tcolname, Type& value, Args&& ... args) {
-            read_element(table_read_options{}, tcolname, value, std::forward<Args>(args)...);
+        template<typename Type, typename ... Args>
+        void read_elements(const std::string& tcolname, Type& value, Args&& ... args) {
+            read_elements(table_read_options{}, tcolname, value, std::forward<Args>(args)...);
         }
     };
 }
@@ -1760,7 +1754,7 @@ namespace fits {
 
         template<typename Type, typename ... Args, typename enable =
             typename std::enable_if<!meta::is_vec<Type>::value>::type>
-        void update_element(const std::string& tcolname, const Type& value, Args&& ... args) {
+        void update_elements(const std::string& tcolname, const Type& value, Args&& ... args) {
             // Check we have the right dimensions and type
             uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
 
