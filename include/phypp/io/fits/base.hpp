@@ -679,8 +679,6 @@ namespace impl {
             fitsfile* fptr_ = nullptr;
             mutable int status_ = 0;
         };
-
-        static struct readwrite_tag_t {} readwrite_tag;
     }
 }
 

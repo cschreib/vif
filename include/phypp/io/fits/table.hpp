@@ -436,7 +436,7 @@ namespace fits {
             typename enable = typename std::enable_if<!std::is_same<Type,std::string>::value>::type>
         void read_column_impl_(const table_read_options& opts, vec<Dim,Type>& v,
             const std::string& cname, int cid, long naxis, const std::array<long,max_column_dims>& naxes,
-            long repeat, long nrow) const {
+            long, long) const {
 
             if (v.empty()) return;
 
@@ -444,7 +444,7 @@ namespace fits {
             Type def = impl::fits_impl::traits<Type>::def();
             int null;
             fits_read_col(
-                fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, nrow*repeat, &def,
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, nelem, &def,
                 v.raw_data(), &null, &status_
             );
             fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
@@ -466,7 +466,7 @@ namespace fits {
         template<std::size_t Dim>
         void read_column_impl_(const table_read_options& opts, vec<Dim,std::string>& v,
             const std::string& cname, int cid, long naxis, const std::array<long,max_column_dims>& naxes,
-            long repeat, long nrow) const {
+            long, long) const {
 
             if (v.empty()) return;
 
@@ -500,7 +500,7 @@ namespace fits {
 
         void read_column_impl_(const table_read_options&, std::string& v, const std::string& cname,
             int cid, long naxis, const std::array<long,max_column_dims>& naxes, long repeat,
-            long nrow) const {
+            long) const {
 
             // NB: cfitsio doesn't seem to like reading empty strings
             if (repeat == 0) {
