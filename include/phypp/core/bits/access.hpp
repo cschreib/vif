@@ -289,6 +289,7 @@ namespace vec_access {
 
     template<typename T>
     uint_t to_idx_(uint_t size, T i, meta::cte_t<true>) {
+        phypp_check(size > 0, "operator[]: index out of bounds (", i, " vs. ", size, ")");
         while (i < 0) i += size;
         uint_t ui(i);
         phypp_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
@@ -303,6 +304,7 @@ namespace vec_access {
 
     template<std::size_t I, std::size_t D, typename T>
     uint_t to_idx_(std::array<uint_t,D> dims, T i, meta::cte_t<true>) {
+        phypp_check(dims[I] > 0, "operator[]: index out of bounds (", i, " vs. ", dims[I], ")");
         while (i < 0) i += dims[I];
         uint_t ui(i);
         phypp_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[I], ")");
