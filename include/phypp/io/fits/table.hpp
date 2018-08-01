@@ -62,6 +62,19 @@ namespace fits {
         column_oriented,
         row_oriented
     };
+
+    // Build an indexing range or point
+    template<typename ... Args>
+    std::tuple<typename std::decay<Args>::type...> at(const Args& ... args) {
+        using blist = meta::binary_first_apply_type_to_bool_list<
+            meta::type_list<typename std::decay<Args>::type...>,
+            std::is_same, impl::range_impl::full_range_t>;
+
+        static_assert(meta::last_false<blist>::value < meta::first_true<blist>::value,
+            "ranges can only be placed at the end in fits::at()");
+
+        return std::tuple<typename std::decay<Args>::type...>{args...};
+    }
 }
 
 namespace impl {
@@ -863,7 +876,7 @@ namespace fits {
             read_columns(table_read_options{}, t);
         }
 
-    private :
+    protected :
 
         template<typename ... Args>
         void read_elements_first_element__(const vec1u& pitch, uint_t i,
@@ -874,7 +887,7 @@ namespace fits {
 
         template<typename ... Args>
         void read_elements_first_element__(const vec1u& pitch, uint_t i,
-            long& firstrow, long& firstelem, uint_t id, Args&& ... args) {
+            long& firstrow, long& firstelem, uint_t id, const Args& ... args) {
 
             if (format_ == table_format::column_oriented) {
                 firstelem += id*pitch[i];
@@ -886,13 +899,19 @@ namespace fits {
                 }
             }
 
-            read_elements_first_element__(pitch, i+1,
-                    firstrow, firstelem, std::forward<Args>(args)...);
+            read_elements_first_element__(pitch, i+1, firstrow, firstelem, args...);
         }
 
         template<typename ... Args>
+        void read_elements_first_element__(const vec1u& pitch, uint_t i,
+            long& firstrow, long& firstelem, impl::range_impl::full_range_t, const Args& ... args) {
+
+            read_elements_first_element__(pitch, i+1, firstrow, firstelem, args...);
+        }
+
+        template<typename ... Args, uint_t ... S>
         void read_elements_first_element_(const vec1u& dims,
-            long& firstrow, long& firstelem, Args&& ... args) {
+            long& firstrow, long& firstelem, const std::tuple<Args...>& args, meta::seq_t<S...>) {
 
             vec1u pitch(dims.size());
             pitch[dims.size()-1] = 1;
@@ -901,7 +920,7 @@ namespace fits {
             }
 
             return read_elements_first_element__(pitch, 0,
-                firstrow, firstelem, std::forward<Args>(args)...);
+                firstrow, firstelem, std::get<S>(args)...);
         }
 
         template<std::size_t Dim, typename Type,
@@ -934,14 +953,27 @@ namespace fits {
             fits::phypp_check_cfitsio(status_, "could not read element from column '"+cname+"'");
         }
 
+        template<std::size_t Dim, typename Type>
+        void read_elements_resize_(vec<Dim,Type>& v, const vec1u& dims) const {
+            for (uint_t i : range(Dim)) {
+                v.dims[i] = dims[dims.size()-Dim+i];
+            }
+
+            v.resize();
+        }
+
+        template<typename Type, typename enable =
+            typename std::enable_if<!meta::is_vec<Type>::value>::type>
+        void read_elements_resize_(Type&, const vec1u&) const {}
+
     public :
 
-        template<std::size_t Dim, typename Type, typename ... Args>
+        template<typename Type, typename ... Args>
         void read_elements(const table_read_options& opts, const std::string& tcolname,
-            vec<Dim,Type>& value, Args&& ... args) {
+            Type& value, const std::tuple<Args...>& args) {
 
             // Check we have the right dimensions and type
-            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value + Dim;
+            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
 
             column_info ci;
             phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
@@ -951,7 +983,7 @@ namespace fits {
                 "compared to what is present in the file (", naccessed, " vs. ",
                 ci.dims.size(), ")");
 
-            using vtype = meta::rtype_t<Type>;
+            using vtype = typename impl::fits_impl::data_type<Type>::type;
             using traits = impl::fits_impl::traits<vtype>;
             bool convertible = false;
             if (opts.allow_narrow) {
@@ -965,60 +997,22 @@ namespace fits {
                 impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
             // Resize vector
-            for (uint_t i : range(Dim)) {
-                value.dims[i] = ci.dims[ci.dims.size()-Dim+i];
-            }
-
-            value.resize();
+            read_elements_resize_(value, ci.dims);
 
             // Compute ID of first element to be read
             long firstrow = 0, firstelem = 0;
-            read_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
-
-            // Read data
-            read_elements_impl_(opts, value, tcolname, ci.column_id, firstrow, firstelem);
-        }
-
-        template<typename Type, typename ... Args, typename enable =
-            typename std::enable_if<!meta::is_vec<Type>::value>::type>
-        void read_elements(const table_read_options& opts, const std::string& tcolname,
-            Type& value, Args&& ... args) {
-
-            // Check we have the right dimensions and type
-            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
-
-            column_info ci;
-            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
-                tcolname, "'");
-
-            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
-                "compared to what is present in the file (", naccessed, " vs. ",
-                ci.dims.size(), ")");
-
-            using vtype = typename std::decay<Type>::type;
-            using traits = impl::fits_impl::traits<vtype>;
-            bool convertible = false;
-            if (opts.allow_narrow) {
-                convertible = traits::is_convertible_narrow(ci.cfitsio_type);
-            } else {
-                convertible = traits::is_convertible(ci.cfitsio_type);
-            }
-
-            phypp_check(convertible, "wrong type for column '", tcolname,
-                "' (expected ", pretty_type_t(vtype), ", got ",
-                impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
-
-            // Compute ID of first element to be read
-            long firstrow = 0, firstelem = 0;
-            read_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
+            read_elements_first_element_(ci.dims, firstrow, firstelem,
+                args, typename meta::gen_seq<0, sizeof...(Args)-1>::type());
 
             // Read data
             read_elements_impl_(opts, value, tcolname, ci.column_id, firstrow, firstelem);
         }
 
         template<typename Type, typename ... Args>
-        void read_elements(const std::string& tcolname, Type& value, Args&& ... args) {
-            read_elements(table_read_options{}, tcolname, value, std::forward<Args>(args)...);
+        void read_elements(const std::string& tcolname, Type& value,
+            const std::tuple<Args...>& args) {
+
+            read_elements(table_read_options{}, tcolname, value, args);
         }
     };
 }
@@ -1643,58 +1637,6 @@ namespace fits {
 
     private :
 
-        template<typename ... Args>
-        void update_elements_first_element__(const vec1u& pitch, uint_t i,
-            long& firstrow, long& firstelem) {
-            ++firstrow;
-            ++firstelem;
-        }
-
-        template<typename ... Args>
-        void update_elements_first_element__(const vec1u& pitch, uint_t i,
-            long& firstrow, long& firstelem, uint_t id, Args&& ... args) {
-
-            if (format_ == table_format::column_oriented) {
-                firstelem += id*pitch[i];
-            } else {
-                if (i == 0) {
-                    firstrow = id;
-                } else {
-                    firstelem += id*pitch[i];
-                }
-            }
-
-            update_elements_first_element__(pitch, i+1,
-                    firstrow, firstelem, std::forward<Args>(args)...);
-        }
-
-        template<typename ... Args>
-        void update_elements_first_element_(const vec1u& dims,
-            long& firstrow, long& firstelem, Args&& ... args) {
-
-            vec1u pitch(dims.size());
-            pitch[dims.size()-1] = 1;
-            for (uint_t i : range(1, dims.size())) {
-                pitch[dims.size()-1-i] = pitch[dims.size()-i]*dims[dims.size()-i];
-            }
-
-            return update_elements_first_element__(pitch, 0,
-                firstrow, firstelem, std::forward<Args>(args)...);
-        }
-
-        template<std::size_t Dim, typename Type>
-        void update_elements_impl_(const std::string& tcolname, int cid,
-            const vec<Dim,Type>& value, long firstrow, long firstelem) {
-
-            // cfitsio doesn't like writing empty columns
-            if (value.empty()) return;
-
-            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem,
-                value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()),
-                &status_);
-            fits::phypp_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
-        }
-
         template<typename Type>
         void update_elements_impl_(const std::string& tcolname, int cid,
             const Type& value, long firstrow, long firstelem) {
@@ -1711,50 +1653,46 @@ namespace fits {
             update_elements_impl_(tcolname, cid, value.concretise(), firstrow, firstelem);
         }
 
-    public :
+        template<std::size_t Dim, typename Type>
+        void update_elements_impl_(const std::string& tcolname, int cid,
+            const vec<Dim,Type>& value, long firstrow, long firstelem) {
 
-        template<std::size_t Dim, typename Type, typename ... Args>
-        void update_elements(const std::string& tcolname,
-            const vec<Dim,Type>& value, Args&& ... args) {
+            // cfitsio doesn't like writing empty columns
+            if (value.empty()) return;
 
-            // Check we have the right dimensions and type
-            uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value + Dim;
+            fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem,
+                value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()),
+                &status_);
+            fits::phypp_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
+        }
 
-            column_info ci;
-            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
-                tcolname, "'");
+        template<typename Type, typename enable = typename std::enable_if<
+            !meta::is_vec<Type>::value>::type
+        >
+        void update_elements_check_dims_(const std::string&, const Type&, const vec1u&) {}
 
-            phypp_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
-                tcolname, "' (expected ", naccessed, ", got ", ci.dims.size(), ")");
+        template<std::size_t Dim, typename Type>
+        void update_elements_check_dims_(const std::string& tcolname, const vec<Dim,Type>& value,
+            const vec1u& dims) {
 
             bool bad = false;
             for (uint_t i : range(Dim)) {
-                if (value.dims[i] != ci.dims[ci.dims.size()-Dim+i]) {
+                if (value.dims[i] != dims[dims.size()-Dim+i]) {
                     bad = true;
                     break;
                 }
             }
 
             phypp_check(!bad, "wrong dimensions for column '", tcolname, "' "
-                "(expected ending with ", value.dims, ", got ", ci.dims, ")");
-
-            using vtype = meta::rtype_t<Type>;
-            using traits = impl::fits_impl::traits<vtype>;
-            phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
-                "wrong type for column '", tcolname, "' (expected ", pretty_type_t(vtype),
-                ", got ", impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
-
-            // Compute ID of first element to be updated
-            long firstrow = 0, firstelem = 0;
-            update_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
-
-            // Write data
-            update_elements_impl_(tcolname, ci.column_id, value, firstrow, firstelem);
+                "(expected ending with ", value.dims, ", got ", dims, ")");
         }
 
-        template<typename Type, typename ... Args, typename enable =
-            typename std::enable_if<!meta::is_vec<Type>::value>::type>
-        void update_elements(const std::string& tcolname, const Type& value, Args&& ... args) {
+    public :
+
+        template<typename Type, typename ... Args>
+        void update_elements(const std::string& tcolname,
+            const Type& value, const std::tuple<Args...>& args) {
+
             // Check we have the right dimensions and type
             uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
 
@@ -1765,7 +1703,9 @@ namespace fits {
             phypp_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
                 tcolname, "' (expected ", naccessed, ", got ", ci.dims.size(), ")");
 
-            using vtype = typename std::decay<Type>::type;
+            update_elements_check_dims_(tcolname, value, ci.dims);
+
+            using vtype = typename impl::fits_impl::data_type<Type>::type;
             using traits = impl::fits_impl::traits<vtype>;
             phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
                 "wrong type for column '", tcolname, "' (expected ", pretty_type_t(vtype),
@@ -1773,7 +1713,8 @@ namespace fits {
 
             // Compute ID of first element to be updated
             long firstrow = 0, firstelem = 0;
-            update_elements_first_element_(ci.dims, firstrow, firstelem, std::forward<Args>(args)...);
+            read_elements_first_element_(ci.dims, firstrow, firstelem,
+                args, typename meta::gen_seq<0, sizeof...(Args)-1>::type());
 
             // Write data
             update_elements_impl_(tcolname, ci.column_id, value, firstrow, firstelem);
