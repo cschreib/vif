@@ -7,15 +7,69 @@
 #include <cassert>
 
 namespace phypp {
+namespace impl {
+    namespace meta_impl {
+        template<typename L1, typename L2>
+        struct reverse_types_;
+
+        template<template<typename ...> class wrapper, typename L2>
+        struct reverse_types_<wrapper<>, L2> {
+            using type = L2;
+        };
+
+        template<template<typename ...> class wrapper, typename ... Args1, typename T, typename L2>
+        struct reverse_types_<wrapper<T, Args1...>, L2> :
+            reverse_types_<wrapper<Args1...>, typename L2::template prepend<T>> {};
+
+        template<typename TV, typename L1, typename L2>
+        struct reverse_values_;
+
+        template<typename TV, template<typename, TV ...> class wrapper, typename L2>
+        struct reverse_values_<TV, wrapper<TV>, L2> {
+            using type = L2;
+        };
+
+        template<typename TV, template<typename, TV ...> class wrapper, TV ... Args1, TV T, typename L2>
+        struct reverse_values_<TV, wrapper<TV, T, Args1...>, L2> :
+            reverse_values_<TV, wrapper<TV, Args1...>, typename L2::template prepend<T>> {};
+    }
+}
+
 namespace meta {
     // Simple type list
     template<typename ... Args>
-    struct type_list {};
+    struct type_list {
+        template<typename T>
+        using append = type_list<Args..., T>;
+
+        template<typename T>
+        using prepend = type_list<T, Args...>;
+
+        using empty = type_list<>;
+
+        using reverse = typename impl::meta_impl::reverse_types_<type_list<Args...>, empty>::type;
+
+        static const std::size_t size = sizeof...(Args);
+    };
 
     // Simple value list
     // C++14: replace with std::integer_sequence<T, V...>
     template<typename T, T ... V>
-    struct value_list {};
+    struct value_list {
+        template<T v>
+        using append = value_list<T, V..., v>;
+
+        template<T v>
+        using prepend = value_list<T, v, V...>;
+
+        using empty = value_list<T>;
+
+        using type = T;
+
+        using reverse = typename impl::meta_impl::reverse_values_<T, value_list<T, V...>, empty>::type;
+
+        static const std::size_t size = sizeof...(V);
+    };
 
     // Simple boolean list
     template<bool ... B>
