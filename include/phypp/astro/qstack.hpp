@@ -34,7 +34,7 @@ namespace impl {
                 int naxis = 0;
                 fits_get_img_dim(fptr, &naxis, &status);
                 vec<1,long> naxes(naxis);
-                fits_get_img_size(fptr, naxis, naxes.data.data(), &status);
+                fits_get_img_size(fptr, naxis, naxes.raw_data(), &status);
                 bool is2D = naxis == 2;
                 if (is2D) {
                     width = naxes[0];
@@ -160,7 +160,7 @@ namespace astro {
                     int anynul = 0;
                     long inc[2] = {1, 1};
                     fits_read_subset(img.fptr, impl::fits_impl::traits<Type>::ttype, p0b, p1b, inc, &null,
-                        subcut.data.data(), &anynul, &img.status);
+                        subcut.raw_data(), &anynul, &img.status);
 
                     long x0 = p0b[0]-p0[0];
                     long x1 = p1b[0]-p0[0];
@@ -173,7 +173,7 @@ namespace astro {
                     int anynul = 0;
                     long inc[2] = {1, 1};
                     fits_read_subset(img.fptr, impl::fits_impl::traits<Type>::ttype, p0, p1, inc, &null,
-                        cut.data.data(), &anynul, &img.status);
+                        cut.raw_data(), &anynul, &img.status);
                 }
 
                 // Discard any source that contains a bad pixel (either infinite or NaN)
@@ -265,7 +265,7 @@ namespace astro {
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         vec<1,long> naxes(naxis);
-        fits_get_img_size(fptr, naxis, naxes.data.data(), &status);
+        fits_get_img_size(fptr, naxis, naxes.raw_data(), &status);
         bool is2D = naxis == 2;
         long width, height;
         if (is2D) {
@@ -287,7 +287,7 @@ namespace astro {
         phypp_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
 
         vec<1,long> wnaxes(naxis);
-        fits_get_img_size(wfptr, naxis, wnaxes.data.data(), &status);
+        fits_get_img_size(wfptr, naxis, wnaxes.raw_data(), &status);
         phypp_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
 
         // Convert ra/dec to x/y
@@ -324,9 +324,9 @@ namespace astro {
             long inc[2] = {1, 1};
 
             fits_read_subset(fptr,  impl::fits_impl::traits<Type>::ttype, p0, p1, inc, &null,
-                cut.data.data(),  &anynul, &status);
+                cut.raw_data(),  &anynul, &status);
             fits_read_subset(wfptr, impl::fits_impl::traits<Type>::ttype, p0, p1, inc, &null,
-                wcut.data.data(), &anynul, &status);
+                wcut.raw_data(), &anynul, &status);
 
             // Discard any source that contains a bad pixel (either infinite or NaN)
             if (!params.keep_nan && count(!is_finite(cut) || !is_finite(wcut)) != 0) {

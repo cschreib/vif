@@ -130,7 +130,7 @@ namespace fits {
 
             Type def = impl::fits_impl::traits<Type>::def();
             int anynul;
-            fits_read_img(fptr_, type, 1, v.size(), &def, v.data.data(), &anynul, &status_);
+            fits_read_img(fptr_, type, 1, v.size(), &def, v.raw_data(), &anynul, &status_);
             fits::phypp_check_cfitsio(status_, "could not read image from HDU");
         }
 
@@ -157,7 +157,7 @@ namespace fits {
             int anynul;
             std::vector<long> inc(Dim, 1);
             fits_read_subset(fptr_, type, fpixel.data(), lpixel.data(), inc.data(),
-                &def, v.data.data(), &anynul, &status_);
+                &def, v.raw_data(), &anynul, &status_);
             fits::phypp_check_cfitsio(status_, "could not read subset image from HDU");
         }
 
@@ -217,7 +217,7 @@ namespace fits {
         template<std::size_t Dim, typename Type>
         void write_impl_(const vec<Dim,Type>& v) {
             fits_write_img(fptr_, impl::fits_impl::traits<Type>::ttype, 1, v.size(),
-                const_cast<typename vec<Dim,Type>::dtype*>(v.data.data()), &status_);
+                const_cast<typename vec<Dim,Type>::dtype*>(v.raw_data()), &status_);
             fits::phypp_check_cfitsio(status_, "could not write image to HDU");
         }
 

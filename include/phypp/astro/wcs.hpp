@@ -459,8 +459,8 @@ namespace astro {
             vec1d itmp(w->naxis);
             double phi, theta;
 
-            int ret = wcsp2s(w, 1, w->naxis, map.data.data(), itmp.data.data(), &phi, &theta,
-                world.data.data(), &status);
+            int ret = wcsp2s(w, 1, w->naxis, map.raw_data(), itmp.raw_data(), &phi, &theta,
+                world.raw_data(), &status);
 
             if (ret != 0) {
                 error("WCS data in header is invalid");
@@ -662,8 +662,8 @@ namespace impl {
             std::vector<double> itmp(naxis*npt);
             std::vector<int>    stat(npt);
 
-            int status = wcss2p(w.w, npt, naxis, world.data.data(), phi.data(), theta.data(),
-                itmp.data(), pix.data.data(), stat.data());
+            int status = wcss2p(w.w, npt, naxis, world.raw_data(), phi.data(), theta.data(),
+                itmp.data(), pix.raw_data(), stat.data());
 
             if (status != 0) {
                 error("could not perform WCS conversion");
@@ -689,8 +689,8 @@ namespace impl {
             std::vector<double> itmp(naxis*npt);
             std::vector<int>    stat(npt);
 
-            int status = wcsp2s(w.w, npt, naxis, pix.data.data(), itmp.data(),
-                phi.data(), theta.data(), world.data.data(), stat.data());
+            int status = wcsp2s(w.w, npt, naxis, pix.raw_data(), itmp.data(),
+                phi.data(), theta.data(), world.raw_data(), stat.data());
 
             if (status != 0) {
                 error("could not perform WCS conversion");

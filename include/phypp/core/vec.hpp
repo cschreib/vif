@@ -284,6 +284,14 @@ namespace phypp {
             return *this;
         }
 
+        dtype* raw_data() {
+            return data.data();
+        }
+
+        const dtype* raw_data() const {
+            return data.data();
+        }
+
         template<typename T>
         uint_t to_idx(T ix) const {
             return impl::vec_access::to_idx(data.size(), ix);

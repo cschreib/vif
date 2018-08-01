@@ -23,8 +23,8 @@ namespace phypp {
         {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
             p = fftw_plan_dft_r2c_2d(v.dims[0], v.dims[1],
-                const_cast<double*>(v.data.data()),
-                reinterpret_cast<fftw_complex*>(r.data.data()), FFTW_ESTIMATE);
+                const_cast<double*>(v.raw_data()),
+                reinterpret_cast<fftw_complex*>(r.raw_data()), FFTW_ESTIMATE);
         }
 
         fftw_execute(p);
@@ -50,8 +50,8 @@ namespace phypp {
         {
             std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
             p = fftw_plan_dft_c2r_2d(v.dims[0], v.dims[1],
-                reinterpret_cast<fftw_complex*>(v.data.data()),
-                r.data.data(), FFTW_ESTIMATE);
+                reinterpret_cast<fftw_complex*>(v.raw_data()),
+                r.raw_data(), FFTW_ESTIMATE);
         }
 
         fftw_execute(p);

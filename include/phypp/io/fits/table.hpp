@@ -243,7 +243,7 @@ namespace fits {
                 char def = impl::fits_impl::traits<char>::def();
                 int null;
                 fits_read_col(fptr_, impl::fits_impl::traits<char>::ttype, c, 1, 1, repeat,
-                    &def, v.data.data(), &null, &status_);
+                    &def, v.raw_data(), &null, &status_);
                 fits::phypp_check_cfitsio(status_, "could not read column '"+std::string(name)+"'");
 
                 if (min(v) == 0 && max(v) <= 1) {
@@ -445,7 +445,7 @@ namespace fits {
             int null;
             fits_read_col(
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, nrow*repeat, &def,
-                v.data.data(), &null, &status_
+                v.raw_data(), &null, &status_
             );
             fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
         }
@@ -964,7 +964,7 @@ namespace fits {
             int null;
             fits_read_col(
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
-                v.data.data(), &null, &status_
+                v.raw_data(), &null, &status_
             );
             fits::phypp_check_cfitsio(status_, "could not read elements from column '"+cname+"'");
         }
@@ -1155,7 +1155,7 @@ namespace fits {
             if (value.empty()) return;
 
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, value.size(),
-                const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()), &status_);
+                const_cast<typename vec<Dim,Type>::dtype*>(value.raw_data()), &status_);
             fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
         }
 
@@ -1316,7 +1316,7 @@ namespace fits {
                 return;
             }
 
-            fits_write_tdim(fptr_, cid, dims.size(), const_cast<long*>(dims.data.data()), &status_);
+            fits_write_tdim(fptr_, cid, dims.size(), const_cast<long*>(dims.raw_data()), &status_);
             fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+
                 "' (dims "+to_string(dims)+")");
         }
@@ -1711,7 +1711,7 @@ namespace fits {
             if (value.empty()) return;
 
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem,
-                value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.data.data()),
+                value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.raw_data()),
                 &status_);
             fits::phypp_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
         }
