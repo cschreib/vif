@@ -37,16 +37,34 @@ namespace meta {
 namespace impl {
     namespace meta_impl {
         template<typename T>
-        struct is_vec_ : public std::false_type {};
+        struct is_vec_ : std::false_type {};
 
         template<std::size_t Dim, typename Type>
-        struct is_vec_<vec<Dim,Type>> : public std::true_type {};
+        struct is_vec_<vec<Dim,Type>> : std::true_type {};
 
         template<typename T>
-        struct is_view_ : public std::false_type {};
+        struct is_view_ : std::false_type {};
 
         template<std::size_t Dim, typename Type>
-        struct is_view_<vec<Dim,Type*>> : public std::true_type {};
+        struct is_view_<vec<Dim,Type*>> : std::true_type {};
+
+        template<typename T>
+        struct is_scalar_ : std::is_arithmetic<T> {};
+
+        template<>
+        struct is_scalar_<std::string> : std::true_type {};
+
+        template<>
+        struct is_scalar_<const char*> : std::true_type {};
+
+        template<>
+        struct is_scalar_<const char[]> : std::true_type {};
+
+        template<>
+        struct is_scalar_<char*> : std::true_type {};
+
+        template<>
+        struct is_scalar_<char[]> : std::true_type {};
 
         template<typename T>
         struct vec_dim_ : std::integral_constant<std::size_t,0> {};
@@ -64,6 +82,10 @@ namespace meta {
     // Helper to check if a given type is a view.
     template<typename T>
     using is_view = impl::meta_impl::is_view_<typename std::decay<T>::type>;
+
+    // Helper to check if a given type is a scalar (not a vector nor a view).
+    template<typename T>
+    using is_scalar = impl::meta_impl::is_scalar_<typename std::decay<T>::type>;
 
     // Return the data type of the provided type
     template<typename T>

@@ -566,8 +566,10 @@ namespace phypp {
                 } \
                 return *this; \
             } \
-            template<typename U> \
-            vec& operator op (U u) { \
+            template<typename U, typename enable = typename std::enable_if< \
+                meta::is_scalar<U>::value \
+            >::type> \
+            vec& operator op (const U& u) { \
                 for (auto& v : data) { \
                     v op u; \
                 } \

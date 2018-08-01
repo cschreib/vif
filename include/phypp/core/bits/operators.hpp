@@ -85,7 +85,7 @@ namespace phypp {
             return tv; \
         } \
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
-            !meta::is_vec<U>::value>::type> \
+            meta::is_scalar<U>::value>::type> \
         vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> operator op (const vec<Dim,T>& v, const U& u) { \
             vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> tv; tv.dims = v.dims; tv.reserve(v.size()); \
             for (uint_t i : range(v)) { \
@@ -104,7 +104,8 @@ namespace phypp {
             return std::move(v); \
         } \
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
-            std::is_same<typename impl::op_res_t<OP_TYPE(op),T,U>::type, T>::value>::type> \
+            std::is_same<typename impl::op_res_t<OP_TYPE(op),T,U>::type, T>::value && \
+            meta::is_scalar<U>::value>::type> \
         vec<Dim,T> operator op (vec<Dim,T>&& v, const U& u) { \
             for (auto& t : v) { \
                 t sop u; \
@@ -112,7 +113,7 @@ namespace phypp {
             return std::move(v); \
         } \
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
-            !meta::is_vec<U>::value>::type> \
+            meta::is_scalar<U>::value>::type> \
         vec<Dim,typename impl::op_res_t<OP_TYPE(op),U,T>::type> operator op (const U& u, const vec<Dim,T>& v) { \
             vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> tv; tv.dims = v.dims; tv.reserve(v.size()); \
             for (uint_t i : range(v)) { \
@@ -131,7 +132,8 @@ namespace phypp {
             return std::move(v); \
         } \
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
-            std::is_same<typename impl::op_res_t<OP_TYPE(op),U,T>::type, T>::value>::type> \
+            std::is_same<typename impl::op_res_t<OP_TYPE(op),U,T>::type, T>::value && \
+            meta::is_scalar<U>::value>::type> \
         vec<Dim,T> operator op (const U& u, vec<Dim,T>&& v) { \
             for (auto& t : v) { \
                 t = u op t; \
