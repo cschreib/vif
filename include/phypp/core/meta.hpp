@@ -415,6 +415,106 @@ namespace meta {
 
     //////////////////////////////////////
     //
+    // first_true<List>
+    //
+    // Return an integer constant giving the position of the first 'true' value in
+    // the list 'List=bool_list<...>'. If no value is 'true', returns 'N' for a list
+    // of length 'N'.
+    //
+    // Examples:
+    // first_true<bool_list<false, false, false>>
+    // -> cte_t<3>
+    //
+    // first_true<bool_list<true, false, true>>
+    // -> cte_t<0>
+    //
+    //////////////////////////////////////
+
+    template<typename List>
+    struct first_true;
+
+    template<>
+    struct first_true<bool_list<>> : cte_t<1> {};
+
+    template<bool B1, bool ... B>
+    struct first_true<bool_list<B1, B...>> :
+        cte_t<B1 ? 0 : 1 + first_true<bool_list<B...>>::value> {};
+
+    //////////////////////////////////////
+    //
+    // last_true<List>
+    //
+    // Return an integer constant giving the position of the last 'true' value in
+    // the list 'List=bool_list<...>'. If no value is 'true', returns 'N' for a list
+    // of length 'N'.
+    //
+    // Examples:
+    // last_true<bool_list<false, false, false>>
+    // -> cte_t<3>
+    //
+    // last_true<bool_list<true, false, true>>
+    // -> cte_t<2>
+    //
+    //////////////////////////////////////
+
+    template<typename List>
+    struct last_true {
+        static const std::size_t tmp = first_true<typename List::reverse>::value;
+        static const std::size_t value = tmp == List::size ? tmp : List::size-1 - tmp;
+    };
+
+    //////////////////////////////////////
+    //
+    // first_false<List>
+    //
+    // Return an integer constant giving the position of the first 'false' value in
+    // the list 'List=bool_list<...>'. If no value is 'false', returns 'N' for a list
+    // of length 'N'.
+    //
+    // Examples:
+    // first_false<bool_list<true, true, true>>
+    // -> cte_t<3>
+    //
+    // first_false<bool_list<false, true, false>>
+    // -> cte_t<0>
+    //
+    //////////////////////////////////////
+
+    template<typename List>
+    struct first_false;
+
+    template<>
+    struct first_false<bool_list<>> : cte_t<1> {};
+
+    template<bool B1, bool ... B>
+    struct first_false<bool_list<B1, B...>> :
+        cte_t<B1 ? 1 + first_false<bool_list<B...>>::value : 0> {};
+
+    //////////////////////////////////////
+    //
+    // last_false<List>
+    //
+    // Return an integer constant giving the position of the last 'false' value in
+    // the list 'List=bool_list<...>'. If no value is 'false', returns 'N' for a list
+    // of length 'N'.
+    //
+    // Examples:
+    // last_false<bool_list<true, true, true>>
+    // -> cte_t<3>
+    //
+    // last_false<bool_list<false, true, false>>
+    // -> cte_t<2>
+    //
+    //////////////////////////////////////
+
+    template<typename List>
+    struct last_false {
+        static const std::size_t tmp = first_false<typename List::reverse>::value;
+        static const std::size_t value = tmp == List::size ? tmp : List::size-1 - tmp;
+    };
+
+    //////////////////////////////////////
+    //
     // count<List>
     //
     // Return an integer constant holding the number of 'true' values in a boolean list
@@ -676,4 +776,3 @@ namespace meta {
 }
 
 #endif
-
