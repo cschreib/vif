@@ -879,15 +879,20 @@ namespace fits {
     protected :
 
         template<typename ... Args>
-        void read_elements_first_element__(const vec1u& pitch, uint_t i,
-            long& firstrow, long& firstelem) {
+        void read_elements_first_element__(const std::string& tcolname,
+            const vec1u& dims, const vec1u& pitch, uint_t i, long& firstrow, long& firstelem) {
             ++firstrow;
             ++firstelem;
         }
 
         template<typename ... Args>
-        void read_elements_first_element__(const vec1u& pitch, uint_t i,
-            long& firstrow, long& firstelem, uint_t id, const Args& ... args) {
+        void read_elements_first_element__(const std::string& tcolname,
+            const vec1u& dims, const vec1u& pitch, uint_t i, long& firstrow, long& firstelem,
+            uint_t id, const Args& ... args) {
+
+            phypp_check(id < dims[i], "fits::at(): index out of bounds (",
+                id, " vs. ", dims[i], ") when accessing column '", tcolname,
+                "' (dimensions ", dims, ")");
 
             if (format_ == table_format::column_oriented) {
                 firstelem += id*pitch[i];
@@ -899,18 +904,19 @@ namespace fits {
                 }
             }
 
-            read_elements_first_element__(pitch, i+1, firstrow, firstelem, args...);
+            read_elements_first_element__(tcolname, dims, pitch, i+1, firstrow, firstelem, args...);
         }
 
         template<typename ... Args>
-        void read_elements_first_element__(const vec1u& pitch, uint_t i,
-            long& firstrow, long& firstelem, impl::range_impl::full_range_t, const Args& ... args) {
+        void read_elements_first_element__(const std::string& tcolname,
+            const vec1u& dims, const vec1u& pitch, uint_t i, long& firstrow, long& firstelem,
+            impl::range_impl::full_range_t, const Args& ... args) {
 
-            read_elements_first_element__(pitch, i+1, firstrow, firstelem, args...);
+            read_elements_first_element__(tcolname, dims, pitch, i+1, firstrow, firstelem, args...);
         }
 
         template<typename ... Args, uint_t ... S>
-        void read_elements_first_element_(const vec1u& dims,
+        void read_elements_first_element_(const std::string& tcolname, const vec1u& dims,
             long& firstrow, long& firstelem, const std::tuple<Args...>& args, meta::seq_t<S...>) {
 
             vec1u pitch(dims.size());
@@ -919,7 +925,7 @@ namespace fits {
                 pitch[dims.size()-1-i] = pitch[dims.size()-i]*dims[dims.size()-i];
             }
 
-            return read_elements_first_element__(pitch, 0,
+            return read_elements_first_element__(tcolname, dims, pitch, 0,
                 firstrow, firstelem, std::get<S>(args)...);
         }
 
@@ -1001,7 +1007,7 @@ namespace fits {
 
             // Compute ID of first element to be read
             long firstrow = 0, firstelem = 0;
-            read_elements_first_element_(ci.dims, firstrow, firstelem,
+            read_elements_first_element_(tcolname, ci.dims, firstrow, firstelem,
                 args, typename meta::gen_seq<0, sizeof...(Args)-1>::type());
 
             // Read data
@@ -1713,7 +1719,7 @@ namespace fits {
 
             // Compute ID of first element to be updated
             long firstrow = 0, firstelem = 0;
-            read_elements_first_element_(ci.dims, firstrow, firstelem,
+            read_elements_first_element_(tcolname, ci.dims, firstrow, firstelem,
                 args, typename meta::gen_seq<0, sizeof...(Args)-1>::type());
 
             // Write data
