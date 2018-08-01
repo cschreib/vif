@@ -330,16 +330,32 @@ namespace impl {
 
         class file_base {
         public :
+            file_base(file_type type, access_right rights) :
+                type_(type), rights_(rights) {}
+
             file_base(file_type type, const std::string& filename, access_right rights) :
                 type_(type), rights_(rights), filename_(filename) {
 
-                if (rights == write_only || (rights == read_write && !file::exists(filename))) {
+                open(filename);
+            }
+
+            file_base(file_base&& in) noexcept : type_(in.type_), rights_(in.rights_),
+                filename_(in.filename_), fptr_(in.fptr_), status_(in.status_) {
+                in.fptr_ = nullptr;
+            }
+
+            void open(const std::string& filename) {
+                close();
+
+                filename_ = filename;
+
+                if (rights_ == write_only || (rights_ == read_write && !file::exists(filename))) {
                     fits_create_file(&fptr_, ("!"+filename).c_str(), &status_);
                     fits::phypp_check_cfitsio(status_, "cannot create file '"+filename+"'");
                 } else {
-                    int trights = (rights == read_only ? READONLY : READWRITE);
+                    int trights = (rights_ == read_only ? READONLY : READWRITE);
 
-                    switch (type) {
+                    switch (type_) {
                         case generic_file :
                             fits_open_file(&fptr_, filename.c_str(), trights, &status_);
                             break;
@@ -355,15 +371,16 @@ namespace impl {
                 }
             }
 
-            file_base(file_base&& in) noexcept : type_(in.type_), rights_(in.rights_),
-                filename_(in.filename_), fptr_(in.fptr_), status_(in.status_) {
-                in.fptr_ = nullptr;
-            }
-
             void close() {
+                if (!fptr_) return;
+
                 status_ = 0;
                 fits_close_file(fptr_, &status_);
                 fptr_ = nullptr;
+            }
+
+            bool is_open() const {
+                return fptr_ != nullptr;
             }
 
             const std::string& filename() const {
@@ -382,7 +399,19 @@ namespace impl {
                 return fptr_;
             }
 
+        protected :
+
+            void check_is_open_() const {
+                if (!is_open()) {
+                    throw fits::exception("no FITS file opened, cannot proceed");
+                }
+            }
+
+        public :
+
             fits::header read_header() const {
+                check_is_open_();
+
                 status_ = 0;
                 fits::header hdr;
                 char* hstr = nullptr;
@@ -395,6 +424,8 @@ namespace impl {
             }
 
             bool has_keyword(const std::string& name) const {
+                check_is_open_();
+
                 char comment[80];
                 char content[80];
                 int status = 0;
@@ -403,6 +434,8 @@ namespace impl {
             }
 
             bool read_keyword(const std::string& name, std::string& value) const {
+                check_is_open_();
+
                 char comment[80];
                 char content[80];
                 int status = 0;
@@ -414,6 +447,8 @@ namespace impl {
 
             template <typename T>
             bool read_keyword(const std::string& name, T& value) const {
+                check_is_open_();
+
                 std::string content;
                 if (!read_keyword(name, content)) return false;
 
@@ -428,6 +463,8 @@ namespace impl {
             }
 
             void write_header(const fits::header& hdr) {
+                check_is_open_();
+
                 std::size_t nentry = hdr.size()/80 + 1;
                 fits_set_hdrsize(fptr_, nentry, &status_);
 
@@ -455,6 +492,8 @@ namespace impl {
                 std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void write_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
+                check_is_open_();
+
                 fits_update_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
@@ -465,6 +504,8 @@ namespace impl {
                 std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
             void add_keyword(const std::string& name, const T& value,
                 const std::string& com = "") {
+                check_is_open_();
+
                 fits_write_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
@@ -473,6 +514,8 @@ namespace impl {
 
             void write_keyword(const std::string& name, const std::string& value,
                 const std::string& com = "") {
+                check_is_open_();
+
                 fits_update_key(fptr_, TSTRING, name.c_str(),
                     const_cast<char*>(value.c_str()),
                     const_cast<char*>(com.c_str()), &status_);
@@ -481,6 +524,8 @@ namespace impl {
 
             void add_keyword(const std::string& name, const std::string& value,
                 const std::string& com = "") {
+                check_is_open_();
+
                 fits_write_key(fptr_, TSTRING, name.c_str(),
                     const_cast<char*>(value.c_str()),
                     const_cast<char*>(com.c_str()), &status_);
@@ -488,11 +533,15 @@ namespace impl {
             }
 
             void remove_keyword(const std::string& name) {
+                check_is_open_();
+
                 fits_delete_key(fptr_, name.c_str(), &status_);
                 status_ = 0; // don't care if the keyword doesn't exist or other errors
             }
 
             uint_t hdu_count() const {
+                check_is_open_();
+
                 int nhdu = 0;
                 fits_get_num_hdus(fptr_, &nhdu, &status_);
                 fits::phypp_check_cfitsio(status_, "could not get the number of HDUs");
@@ -500,12 +549,16 @@ namespace impl {
             }
 
             uint_t current_hdu() const {
+                check_is_open_();
+
                 int hdu = 1;
                 fits_get_hdu_num(fptr_, &hdu);
                 return hdu-1;
             }
 
             fits::hdu_type hdu_type() const {
+                check_is_open_();
+
                 bool simple = false;
                 if (read_keyword("SIMPLE", simple)) {
                     if (axis_count() == 0) {
@@ -534,6 +587,8 @@ namespace impl {
             }
 
             void reach_hdu(uint_t hdu) {
+                check_is_open_();
+
                 uint_t nhdu = hdu_count();
                 if (rights_ == read_only) {
                     phypp_check(hdu < nhdu, "requested HDU does not exists in this "
@@ -560,6 +615,8 @@ namespace impl {
             }
 
             void remove_hdu() {
+                check_is_open_();
+
                 fits_delete_hdu(fptr_, nullptr, &status_);
                 fits::phypp_check_cfitsio(status_, "could not remove the current HDU");
             }
@@ -567,6 +624,8 @@ namespace impl {
             // Return the number of dimensions of a FITS file
             // Note: will return 0 for FITS tables
             uint_t axis_count() const {
+                check_is_open_();
+
                 int naxis;
                 fits_get_img_dim(fptr_, &naxis, &status_);
                 fits::phypp_check_cfitsio(status_, "could not get the number of axis in HDU");
@@ -592,6 +651,8 @@ namespace impl {
             // Return the dimensions of a FITS image
             // Note: will return an empty array for FITS tables
             vec1u image_dims() const {
+                check_is_open_();
+
                 uint_t naxis = axis_count();
                 vec1u dims(naxis);
                 if (naxis != 0) {
@@ -613,7 +674,8 @@ namespace impl {
         protected :
             const file_type type_ = generic_file;
             const access_right rights_ = read_write;
-            const std::string filename_;
+
+            std::string filename_;
             fitsfile* fptr_ = nullptr;
             mutable int status_ = 0;
         };

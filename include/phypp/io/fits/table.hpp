@@ -128,6 +128,9 @@ namespace impl {
         // FITS table (base class)
         class table_base : public impl::fits_impl::file_base {
         public :
+            table_base(access_right rights) :
+                impl::fits_impl::file_base(file_type::table_file, rights) {}
+
             table_base(const std::string& filename, access_right rights) :
                 impl::fits_impl::file_base(file_type::table_file, filename, rights) {
                 get_format_();
@@ -164,6 +167,13 @@ namespace impl {
             }
 
             fits::table_format format_ = fits::table_format::column_oriented;
+
+        public :
+
+            void open(const std::string& filename) {
+                impl::fits_impl::file_base::open(filename);
+                get_format_();
+            }
         };
     }
 }
@@ -184,6 +194,8 @@ namespace fits {
     // FITS input table (read only)
     class input_table : public virtual impl::fits_impl::table_base {
     public :
+        input_table() : impl::fits_impl::table_base(impl::fits_impl::read_only) {}
+
         explicit input_table(const std::string& filename) :
             impl::fits_impl::table_base(filename, impl::fits_impl::read_only) {}
         explicit input_table(const std::string& filename, uint_t hdu) :
@@ -319,6 +331,8 @@ namespace fits {
     public :
 
         bool read_column_info(const std::string& tcolname, column_info& ci) const {
+            check_is_open_();
+
             // Check if column exists
             std::string colname = to_upper(tcolname);
             int cid;
@@ -333,6 +347,8 @@ namespace fits {
         }
 
         vec<1,column_info> read_columns_info() const {
+            check_is_open_();
+
             vec<1,column_info> cols;
 
             int ncol;
@@ -428,7 +444,7 @@ namespace fits {
             Type def = impl::fits_impl::traits<Type>::def();
             int null;
             fits_read_col(
-                fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
+                fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, nrow*repeat, &def,
                 v.data.data(), &null, &status_
             );
             fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
@@ -739,11 +755,13 @@ namespace fits {
         template<typename T>
         read_sentry read_column(const table_read_options& opts,
             const std::string& tcolname, T&& value) const {
+            check_is_open_();
             return read_column_(opts, tcolname, std::forward<T>(value), reflex::enabled<meta::decay_t<T>>{});
         }
 
         template<typename T>
         read_sentry read_column(const std::string& tcolname, T&& value) const {
+            check_is_open_();
             return read_column(table_read_options{}, tcolname, std::forward<T>(value));
         }
 
@@ -780,6 +798,7 @@ namespace fits {
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
+            check_is_open_();
             read_columns_impl_(opts, std::forward<Args>(args)...);
         }
 
@@ -801,6 +820,7 @@ namespace fits {
                 "arguments must be a sequence of 'column name', 'readable value'");
 
             // Read
+            check_is_open_();
             read_columns_impl_(table_read_options{}, std::forward<Args>(args)...);
         }
 
@@ -847,6 +867,7 @@ namespace fits {
                 "arguments must be a sequence of readable values");
 
             // Read
+            check_is_open_();
             read_columns_impl_(opts, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
@@ -861,6 +882,7 @@ namespace fits {
                 "arguments must be a sequence of readable values");
 
             // Read
+            check_is_open_();
             read_columns_impl_(table_read_options{}, impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
 
@@ -868,6 +890,7 @@ namespace fits {
 
         template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
         void read_columns(const table_read_options& opts, T& t) {
+            check_is_open_();
             reflex::foreach_member(reflex::wrap(t), do_read_struct_{this, opts, ""});
         }
 
@@ -978,6 +1001,8 @@ namespace fits {
         void read_elements(const table_read_options& opts, const std::string& tcolname,
             Type& value, const std::tuple<Args...>& args) {
 
+            check_is_open_();
+
             // Check we have the right dimensions and type
             uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
 
@@ -1050,6 +1075,8 @@ namespace fits {
     class output_table : public virtual impl::fits_impl::table_base {
     public :
 
+        output_table() : impl::fits_impl::table_base(impl::fits_impl::write_only) {}
+
         explicit output_table(const std::string& filename) :
             impl::fits_impl::table_base(filename, impl::fits_impl::write_only) {}
 
@@ -1059,13 +1086,16 @@ namespace fits {
         output_table& operator = (const output_table&&) = delete;
 
         void set_format(fits::table_format fmt) {
-            // Check if data already exists, in which case we cannot change format
-            uint_t nhdu = hdu_count();
-            if (nhdu != 0) {
-                int ncols = 0;
-                fits_get_num_cols(fptr_, &ncols, &status_);
-                fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
-                phypp_check(ncols == 0, "cannot change table format when data exists in the table");
+            if (fptr_) {
+                // File is already open.
+                // Check if data already exists, in which case we cannot change format
+                uint_t nhdu = hdu_count();
+                if (nhdu != 0) {
+                    int ncols = 0;
+                    fits_get_num_cols(fptr_, &ncols, &status_);
+                    fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+                    phypp_check(ncols == 0, "cannot change table format when data exists in the table");
+                }
             }
 
             format_ = fmt;
@@ -1385,6 +1415,7 @@ namespace fits {
 
         template<typename T>
         void write_column(const std::string& colname, T&& value) {
+            check_is_open_();
             create_table_();
             write_column_(colname, std::forward<T>(value));
         }
@@ -1440,6 +1471,7 @@ namespace fits {
                 "arguments must be a sequence of 'column name', 'writable value'");
 
             // Write
+            check_is_open_();
             create_table_();
             write_columns_impl_(std::forward<Args>(args)...);
         }
@@ -1455,6 +1487,7 @@ namespace fits {
                 "arguments must be a sequence of writable values");
 
             // Write
+            check_is_open_();
             create_table_();
             write_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
@@ -1463,6 +1496,7 @@ namespace fits {
 
         template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
         void write_columns(T& t) {
+            check_is_open_();
             create_table_();
             reflex::foreach_member(reflex::wrap(t), do_write_struct_{this, ""});
         }
@@ -1475,6 +1509,7 @@ namespace fits {
             static_assert(!std::is_same<Type, std::string>::value,
                 "cannot pre-allocate string columns");
 
+            check_is_open_();
             create_table_();
 
             // Create ID of last column
@@ -1506,6 +1541,9 @@ namespace fits {
     // Input/output FITS table (read & write, modifies existing files)
     class table : public output_table, public input_table {
     public :
+        table() : impl::fits_impl::table_base(impl::fits_impl::read_write),
+            output_table(), input_table() {}
+
         explicit table(const std::string& filename) :
             impl::fits_impl::table_base(filename, impl::fits_impl::read_write),
             output_table(filename), input_table(filename) {}
@@ -1524,6 +1562,8 @@ namespace fits {
     public :
 
         void remove_column(const std::string& tcolname) {
+            check_is_open_();
+
             int cid;
             std::string colname = to_upper(tcolname);
             fits_get_colnum(fptr_, CASEINSEN, const_cast<char*>(colname.c_str()), &cid, &status_);
@@ -1549,6 +1589,7 @@ namespace fits {
 
         template<typename T>
         void update_column(const std::string& tcolname, const T& value) {
+            check_is_open_();
             create_table_();
             remove_column(tcolname);
             write_column_(tcolname, value);
@@ -1602,6 +1643,7 @@ namespace fits {
                 filtered_second, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
+            check_is_open_();
             create_table_();
             update_columns_impl_(std::forward<Args>(args)...);
         }
@@ -1616,6 +1658,7 @@ namespace fits {
                 arg_list, impl::fits_impl::is_writable_column_type>>::value,
                 "arguments must be a sequence of 'column name', 'readable value'");
 
+            check_is_open_();
             create_table_();
             update_columns_impl_(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
         }
@@ -1637,6 +1680,7 @@ namespace fits {
             reflex::enabled<T>::value
         >::type>
         void update_columns(T& t) {
+            check_is_open_();
             create_table_();
             reflex::foreach_member(reflex::wrap(t), do_update_struct_{this});
         }
@@ -1698,6 +1742,8 @@ namespace fits {
         template<typename Type, typename ... Args>
         void update_elements(const std::string& tcolname,
             const Type& value, const std::tuple<Args...>& args) {
+
+            check_is_open_();
 
             // Check we have the right dimensions and type
             uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;

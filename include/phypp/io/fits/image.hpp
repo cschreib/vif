@@ -8,6 +8,9 @@ namespace fits {
     // FITS input table (read only)
     class input_image : public virtual impl::fits_impl::file_base {
     public :
+        input_image() :
+            impl::fits_impl::file_base(impl::fits_impl::image_file, impl::fits_impl::read_only) {}
+
         explicit input_image(const std::string& filename) :
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_only) {}
         explicit input_image(const std::string& filename, uint_t hdu) :
@@ -113,6 +116,8 @@ namespace fits {
     public:
         template<std::size_t Dim, typename Type>
         void read(vec<Dim,Type>& v) const {
+            check_is_open_();
+
             int naxis, type;
             std::vector<long> naxes;
             read_prep_<Type>(Dim, naxis, naxes, type);
@@ -132,6 +137,8 @@ namespace fits {
         template<std::size_t Dim, typename Type, typename ... Args>
         void read_subset(vec<Dim,Type>& v, const Args& ... args) const {
             static_assert(Dim == sizeof...(Args), "incompatible subset and vector dimensions");
+
+            check_is_open_();
 
             int naxis, type;
             std::vector<long> naxes;
@@ -156,6 +163,8 @@ namespace fits {
 
         template<typename Type = double>
         Type read_pixel(vec1u p) const {
+            check_is_open_();
+
             int naxis, type;
             std::vector<long> naxes;
             read_prep_<Type>(p.size(), naxis, naxes, type);
@@ -191,12 +200,9 @@ namespace fits {
 
     // Output FITS table (write only, overwrites existing files)
     class output_image : public virtual impl::fits_impl::file_base {
-    protected :
-
-        explicit output_image(const std::string& filename, impl::fits_impl::readwrite_tag_t) :
-            impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
-
     public :
+        output_image() :
+            impl::fits_impl::file_base(impl::fits_impl::image_file, impl::fits_impl::write_only) {}
 
         explicit output_image(const std::string& filename) :
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::write_only) {}
@@ -219,6 +225,8 @@ namespace fits {
 
         template<std::size_t Dim, typename Type>
         void write(const vec<Dim,Type>& v) {
+            check_is_open_();
+
             std::array<long,Dim> naxes;
             for (uint_t i : range(Dim)) {
                 naxes[i] = v.dims[Dim-1-i];
@@ -246,6 +254,8 @@ namespace fits {
         }
 
         void write_empty() {
+            check_is_open_();
+
             long naxes = 0;
 
             if (hdu_count() > 0) {
@@ -272,13 +282,17 @@ namespace fits {
     // Input/output FITS table (read & write, modifies existing files)
     class image : public output_image, public input_image {
     public :
+        image() :
+            impl::fits_impl::file_base(impl::fits_impl::image_file, impl::fits_impl::read_write),
+            output_image(), input_image() {}
+
         explicit image(const std::string& filename) :
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_write),
-            output_image(filename, impl::fits_impl::readwrite_tag), input_image(filename) {}
+            output_image(filename), input_image(filename) {}
 
         explicit image(const std::string& filename, uint_t hdu) :
             impl::fits_impl::file_base(impl::fits_impl::image_file, filename, impl::fits_impl::read_write),
-            output_image(filename, impl::fits_impl::readwrite_tag), input_image(filename) {
+            output_image(filename), input_image(filename) {
             reach_hdu(hdu);
         }
 
@@ -289,6 +303,8 @@ namespace fits {
 
         template<std::size_t Dim, typename Type>
         void update(const vec<Dim,Type>& v) {
+            check_is_open_();
+
             int naxis;
             fits_get_img_dim(fptr_, &naxis, &status_);
             fits::phypp_check_cfitsio(status_, "could not read dimensions of HDU");
