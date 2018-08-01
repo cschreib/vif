@@ -576,7 +576,7 @@ int phypp_main(int argc, char* argv[]) {
 
         uint_t nelem = nobs + (free_bg ? 1 : 0);
 
-        vec2d alpha(nelem, nelem);
+        matrix::mat2d alpha(nelem, nelem);
         vec1d beta(nelem);
 
         // Alpha is symmetric, so only compute one side
@@ -692,10 +692,10 @@ int phypp_main(int argc, char* argv[]) {
             ));
         };
 
-        vec2d covar;
+        matrix::mat2d covar;
         if (has_groups) {
             covar = alpha;
-            matrix::symmetrize(covar);
+            inplace_symmetrize(covar);
         }
 
         if (cell_approx) {
@@ -719,7 +719,7 @@ int phypp_main(int argc, char* argv[]) {
 
                 uint_t neib = idn.size();
                 uint_t ntelem = neib + (free_bg ? 1 : 0);
-                vec2d talpha(ntelem, ntelem);
+                matrix::mat2d talpha(ntelem, ntelem);
                 for (uint_t ti : range(neib)) {
                     if (free_bg) {
                         talpha(ti,neib) = talpha(neib,ti) = alpha(nobs,idn[ti]);
@@ -737,7 +737,7 @@ int phypp_main(int argc, char* argv[]) {
                     talpha(neib,neib) += alpha(nobs,nobs);
                 }
 
-                if (!matrix::inplace_invert_symmetric(talpha)) {
+                if (!inplace_invert_symmetric(talpha)) {
                     error("could not invert sub-matrix for source ", idin[i]);
                     note("there are probably some prior source positions which are too "
                         "close and cannot be deblended");
@@ -754,7 +754,7 @@ int phypp_main(int argc, char* argv[]) {
                 print("solve system...");
             }
 
-            if (!matrix::inplace_solve_symmetric(alpha, beta)) {
+            if (!inplace_solve_symmetric(alpha, beta)) {
                 error("could not solve the linear problem");
                 note("there are probably some prior source positions which are too close and "
                     "cannot be deblended");
@@ -783,7 +783,7 @@ int phypp_main(int argc, char* argv[]) {
                 print("invert matrix...");
             }
 
-            if (!matrix::inplace_invert_symmetric(alpha)) {
+            if (!inplace_invert_symmetric(alpha)) {
                 error("could not invert covariance matrix, it is singular");
                 note("there are probably some prior source positions which are too close and "
                     "cannot be deblended");
@@ -791,11 +791,11 @@ int phypp_main(int argc, char* argv[]) {
             }
 
             // Compute covariance matrix to get the errors
-            matrix::symmetrize(alpha);
+            inplace_symmetrize(alpha);
 
             // Multiply the inverted alpha with beta to get the best fit values
-            best_fit = matrix::product(alpha, beta);
-            best_fit_err = sqrt(matrix::diagonal(alpha));
+            best_fit = alpha*beta;
+            best_fit_err = sqrt(diagonal(alpha));
 
             // Extract the background value if needed
             if (free_bg) {

@@ -503,7 +503,7 @@ int phypp_main(int argc, char* argv[]) {
         }
 
         // Build matrix
-        vec2d alpha(np,np);
+        matrix::mat2d alpha(np,np);
         vec1d beta(np);
 
         auto tmp = f.measures/f.errors;
@@ -547,18 +547,18 @@ int phypp_main(int argc, char* argv[]) {
             }
         }
 
-        matrix::symmetrize(alpha);
+        inplace_symmetrize(alpha);
 
         // Invert
-        if (!matrix::inplace_invert_symmetric(alpha)) {
+        if (!inplace_invert_symmetric(alpha)) {
             return dnan;
         }
 
         // Extract fit parameters and errors
-        matrix::symmetrize(alpha);
+        inplace_symmetrize(alpha);
 
-        vec2d bfit = reform(matrix::product(alpha, beta), tnfit, nparam);
-        vec2d berr = reform(sqrt(matrix::diagonal(alpha)), tnfit, nparam);
+        vec2d bfit = reform(alpha*beta, tnfit, nparam);
+        vec2d berr = reform(sqrt(diagonal(alpha)), tnfit, nparam);
 
         vec1u idf = where(fixpah);
         mdust[idf] = bfit(idf,0);
@@ -749,7 +749,7 @@ int phypp_main(int argc, char* argv[]) {
             auto doloop = [&](uint_t r) {
                 auto pg = progress_start(niter);
                 for (uint_t i : range(niter)) {
-                    vec1d ttdust = matrix::diagonal(tdust_grid(_,tlib_id));
+                    vec1d ttdust = diagonal(matrix::as_matrix(tdust_grid(_,tlib_id)));
 
                     // Check this does not violate Tdust constraints
                     bool bad = false;

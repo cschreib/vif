@@ -43,7 +43,7 @@ namespace phypp {
         uint_t iter;
         vec1d params;
         vec1d errors;
-        vec2d covar;
+        matrix::mat2d covar;
     };
 
     struct mpfit_options {
@@ -860,7 +860,7 @@ namespace phypp {
             res.covar(ifree,ifree) = cv;
 
             // Compute errors in parameters
-            res.errors = matrix::diagonal(res.covar);
+            res.errors = diagonal(res.covar);
             vec1u wh = where(res.errors >= 0.0);
             res.errors[wh] = sqrt(res.errors[wh]);
         }

@@ -477,24 +477,24 @@ namespace astro {
             vec1u ilib = replicate(0, nlib);
             for (uint_t i : range(nseds)) {
                 if (constraints(ilib)) {
-                    vec2d alpha(nlib, nlib);
+                    matrix::mat2d alpha(nlib, nlib);
                     for (uint_t k1 : range(nlib))
                     for (uint_t k2 : range(k1, nlib)) {
                         alpha(k2,k1) = total(convflux[k1](ilib[k1],_)*convflux[k2](ilib[k2],_));
                     }
 
-                    if (!matrix::inplace_invert_symmetric(alpha)) {
+                    if (!inplace_invert_symmetric(alpha)) {
                         continue;
                     }
 
-                    matrix::symmetrize(alpha);
+                    inplace_symmetrize(alpha);
 
                     vec1d beta(nlib);
                     for (uint_t k1 : range(nlib)) {
                         beta[k1] = total(flux*convflux[k1](ilib[k1],_));
                     }
 
-                    vec1d amp = matrix::product(alpha, beta);
+                    vec1d amp = alpha*beta;
 
                     vec1d model(nfilter);
                     for (uint_t k1 : range(nlib)) {
@@ -513,7 +513,7 @@ namespace astro {
                             beta[k1] = total(rflux(s,_)*convflux[k1](ilib[k1],_));
                         }
 
-                        amp = matrix::product(alpha, beta);
+                        amp = alpha*beta;
 
                         model[_] = 0;
                         for (uint_t k1 : range(nlib)) {

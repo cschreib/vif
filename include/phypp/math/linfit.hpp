@@ -10,12 +10,11 @@
 
 namespace phypp {
     struct linfit_result {
-        bool success;
-
-        double chi2;
-        vec1d  params;
-        vec1d  errors;
-        vec2d  cov;
+        bool          success = false;
+        double        chi2 = dnan;
+        vec1d         params;
+        vec1d         errors;
+        matrix::mat2d cov;
 
         // Reflection data
         MEMBERS1(success, chi2, params, errors, cov);
@@ -43,7 +42,7 @@ namespace phypp {
             uint_t nm = cache.dims[1];
 
             // Solving 'y +/- e = sum over i of a[i]*x[i]' to get all a[i]'s
-            vec2d alpha(np,np);
+            matrix::mat2d alpha(np,np);
             vec1d beta(np);
             auto tmp = flatten(y/ye);
             for (uint_t i : range(np)) {
@@ -66,20 +65,20 @@ namespace phypp {
                 }
             }
 
-            if (!matrix::inplace_invert_symmetric(alpha)) {
+            if (!inplace_invert_symmetric(alpha)) {
                 fr.success = false;
                 fr.chi2 = dnan;
                 fr.params = replicate(dnan, np);
                 fr.errors = replicate(dnan, np);
-                matrix::symmetrize(alpha);
+                inplace_symmetrize(alpha);
                 fr.cov = alpha;
                 return fr;
             }
 
-            matrix::symmetrize(alpha);
+            inplace_symmetrize(alpha);
             fr.success = true;
-            fr.params = matrix::product(alpha, beta);
-            fr.errors = sqrt(matrix::diagonal(alpha));
+            fr.params = alpha*beta;
+            fr.errors = sqrt(diagonal(alpha));
             fr.cov = alpha;
 
             vec1d model(nm);
@@ -154,10 +153,10 @@ namespace phypp {
 
     template<typename TypeE>
     struct linfit_batch_t {
-        TypeE ye;
-        vec2d cache;
-        vec1d beta;
-        vec2d alpha;
+        TypeE         ye;
+        vec2d         cache;
+        vec1d         beta;
+        matrix::mat2d alpha;
         linfit_result fr;
 
         struct pack_tag {};
@@ -202,7 +201,7 @@ namespace phypp {
             uint_t np = cache.dims[0];
             uint_t nm = cache.dims[1];
 
-            if (!matrix::invert_symmetric(alpha, fr.cov)) {
+            if (!invert_symmetric(alpha, fr.cov)) {
                 fr.success = false;
                 fr.chi2 = dnan;
                 fr.params = replicate(dnan, np);
@@ -212,7 +211,7 @@ namespace phypp {
                 fr.errors = sqrt(matrix::diagonal(fr.cov));
             }
 
-            matrix::symmetrize(fr.cov);
+            inplace_symmetrize(fr.cov);
         }
 
         template<typename TypeX>
@@ -292,7 +291,7 @@ namespace phypp {
                 }
             }
 
-            fr.params = matrix::product(fr.cov, beta);
+            fr.params = fr.cov*beta;
         }
 
         template<typename TypeY>
