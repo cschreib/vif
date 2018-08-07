@@ -326,7 +326,9 @@ namespace astro {
             case axis_type::wave :    return "wavelength";
             case axis_type::freq :    return "frequency";
             case axis_type::unknown : return "unknown";
+            default: __builtin_unreachable();
         }
+
     }
 
 }
@@ -958,6 +960,7 @@ namespace impl {
 
                 case astro::axis_unit::sky_deg:        return 1.0;
                 case astro::axis_unit::sky_rad:        return dpi/180.0;
+                default: __builtin_unreachable();
             }
         }
 
