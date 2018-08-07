@@ -182,7 +182,6 @@ namespace astro {
                 res.amp_sim.resize(params.nsim);
                 res.sed_sim.resize(params.nsim);
 
-                const uint_t nflux = flux.size();
                 for (uint_t i = 0; i < params.nsim; ++i) {
                     auto fsim = flux;
                     fsim[idm] += randomn(seed, idm.size());
@@ -238,7 +237,6 @@ namespace astro {
                 res.amp_sim.resize(params.nsim);
                 res.sed_sim.resize(params.nsim);
 
-                const uint_t nflux = flux.size();
                 for (uint_t i = 0; i < params.nsim; ++i) {
                     auto fsim = flux;
                     fsim[idm] += randomn(seed, idm.size());
@@ -387,8 +385,6 @@ namespace astro {
         }
 
         const uint_t nfilter = filters.size();
-
-        using ttype = decltype(err[0]*flux[0]*res.flux[0]);
 
         if (params.ulim) {
             vec1u idu = where(err < 0);
