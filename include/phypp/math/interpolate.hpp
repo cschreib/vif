@@ -267,12 +267,91 @@ namespace phypp {
         return v;
     }
 
+    namespace impl {
+        template <typename TX, typename TY>
+        void interpolate_3spline_make_coefs(const vec<1,TY>& y, const vec<1,TX>& x,
+            vec1d& b, vec1d& c, vec1d& d) {
+
+            const uint_t n = y.size()-1;
+            b.resize(n+1);
+            c.resize(n+1);
+            d.resize(n+1);
+
+            vec1d h(n);
+            for (uint_t i : range(h)) {
+                h.safe[i] = x.safe[i+1]-x.safe[i];
+            }
+
+            vec1d al(n);
+            for (uint_t i : range(1, n)) {
+                al.safe[i] = 3.0*(y.safe[i+1] - y.safe[i])/h.safe[i]
+                           - 3.0*(y.safe[i] - y.safe[i-1])/h.safe[i];
+            }
+
+            vec1d l(n+1), mu(n+1), z(n+1);
+            l.safe[0] = 1;
+            for (uint_t i : range(1, n)) {
+                l.safe[i] = 2.0*(x.safe[i+1] - x.safe[i-1]) - h.safe[i-1]*mu.safe[i-1];
+                mu.safe[i] = h.safe[i]/l.safe[i];
+                z.safe[i] = (al.safe[i] - h.safe[i-1]*z.safe[i-1])/l.safe[i];
+            }
+
+            l.safe[n] = 1; {
+                uint_t i = n;
+                do {
+                    --i;
+                    c.safe[i] = z.safe[i] - mu.safe[i]*c.safe[i+1];
+                    b.safe[i] = (y.safe[i+1]-y.safe[i])/h.safe[i]
+                              - (1.0/3.0)*h.safe[i]*(c.safe[i+1] + 2*c.safe[i]);
+                    d.safe[i] = (1.0/3.0)*(c.safe[i+1] - c.safe[i])/h.safe[i];
+                } while (i != 0);
+            }
+
+            b.safe[n] = b.safe[n-1] + 2*c.safe[n-1]*(x.safe[n]-x.safe[n-1])
+                                    + 3*d.safe[n-1]*sqr(x.safe[n]-x.safe[n-1]);
+        }
+
+        template <typename TX, typename TY>
+        void interpolate_3spline_make_coefs(const vec<1,TY>& y, vec1d& b, vec1d& c, vec1d& d) {
+            const uint_t n = y.size()-1;
+
+            b.resize(n+1);
+            c.resize(n+1);
+            d.resize(n+1);
+
+            vec1d al(n);
+            for (uint_t i : range(1, n)) {
+                al.safe[i] = 3.0*(y.safe[i+1] - y.safe[i]) - 3.0*(y.safe[i] - y.safe[i-1]);
+            }
+
+            vec1d l(n+1), mu(n+1), z(n+1);
+            l.safe[0] = 1;
+            for (uint_t i : range(1, n)) {
+                l.safe[i] = 4.0 - mu.safe[i-1];
+                mu.safe[i] = 1.0/l.safe[i];
+                z.safe[i] = (al.safe[i] - z.safe[i-1])/l.safe[i];
+            }
+
+            l.safe[n] = 1; {
+                uint_t i = n;
+                do {
+                    --i;
+                    c.safe[i] = z.safe[i] - mu.safe[i]*c.safe[i+1];
+                    b.safe[i] = (y.safe[i+1]-y.safe[i]) - (1.0/3.0)*(c.safe[i+1] + 2*c.safe[i]);
+                    d.safe[i] = (1.0/3.0)*(c.safe[i+1] - c.safe[i]);
+                } while (i != 0);
+            }
+
+            b.safe[n] = b.safe[n-1] + 2*c.safe[n-1] + 3*d.safe[n-1];
+        }
+    }
+
     // Perform cubic interpolation of data 'y' of position 'x' at new position 'nx'.
     // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted.
     // If one of the arrays contains special values (NaN, inf, ...), all the points that would use
     // these values will be contaminated. If 'x' is not properly sorted, the result will simply be
     // wrong.
-    template <std::size_t D, typename TN, typename TX, typename TY>
+    template <std::size_t D, typename TN = double, typename TX = double, typename TY = double>
     vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x,
         const vec<D,TN>& xn) {
 
@@ -283,37 +362,8 @@ namespace phypp {
         phypp_check(y.size() >= 2,
             "'x' and 'y' arrays must contain at least 2 elements");
 
-        const uint_t n = y.size()-1;
-        vec1d b(n+1), d(n+1);
-        vec1d h(n);
-        for (uint_t i : range(h)) {
-            h[i] = x[i+1]-x[i];
-        }
-
-        vec1d al(n);
-        for (uint_t i : range(1, n)) {
-            al[i] = 3.0*(y[i+1] - y[i])/h[i] - 3.0*(y[i] - y[i-1])/h[i];
-        }
-
-        vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
-        l[0] = 1;
-        for (uint_t i : range(1, n)) {
-            l[i] = 2.0*(x[i+1] - x[i-1]) - h[i-1]*mu[i-1];
-            mu[i] = h[i]/l[i];
-            z[i] = (al[i] - h[i-1]*z[i-1])/l[i];
-        }
-
-        l[n] = 1; {
-            uint_t i = n;
-            do {
-                --i;
-                c[i] = z[i] - mu[i]*c[i+1];
-                b[i] = (y[i+1]-y[i])/h[i] - (1.0/3.0)*h[i]*(c[i+1] + 2*c[i]);
-                d[i] = (1.0/3.0)*(c[i+1] - c[i])/h[i];
-            } while (i != 0);
-        }
-
-        b[n] = b[n-1] + 2*c[n-1]*(x[n]-x[n-1]) + 3*d[n-1]*sqr(x[n]-x[n-1]);
+        vec1d b, c, d;
+        impl::interpolate_3spline_make_coefs(y, x, b, c, d);
 
         for (uint_t i : range(xn)) {
             uint_t k = lower_bound(x, xn.safe[i]);
@@ -329,6 +379,34 @@ namespace phypp {
         return yn;
     }
 
+    // Perform cubic interpolation of data 'y' of position 'x' at new position 'nx'.
+    // Assumes that the arrays only contain finite elements, and that 'x' is properly sorted.
+    // If one of the arrays contains special values (NaN, inf, ...), all the points that would use
+    // these values will be contaminated. If 'x' is not properly sorted, the result will simply be
+    // wrong.
+    template <typename TX = double, typename TY = double, typename T = double,
+        typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
+    meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x,
+        const T& xn) {
+
+        phypp_check(y.size() == x.size(),
+            "'x' and 'y' arrays must contain the same number of elements");
+        phypp_check(y.size() >= 2,
+            "'x' and 'y' arrays must contain at least 2 elements");
+
+        vec1d b, c, d;
+        impl::interpolate_3spline_make_coefs(y, x, b, c, d);
+
+        uint_t k = lower_bound(x, xn);
+        if (k == npos) {
+            double th = xn - x[0];
+            return y[0] + b[0]*th;
+        } else {
+            double th = xn - x[k];
+            return y[k] + b[k]*th + c[k]*th*th + d[k]*th*th*th;
+        }
+    }
+
     // Perform cubic interpolation of the regularly gridded data 'y' at the new positions 'nx'.
     // Assumes that the data array only contains finite elements. If this is not the case,
     // all the points that would use these values will be contaminated.
@@ -338,34 +416,10 @@ namespace phypp {
 
         phypp_check(y.size() >= 2, "'y' array must contain at least 2 elements");
 
+        vec1d b, c, d;
+        impl::interpolate_3spline_make_coefs(y, b, c, d);
+
         const uint_t n = y.size()-1;
-        vec1d b(n+1), d(n+1);
-
-        vec1d al(n);
-        for (uint_t i : range(1, n)) {
-            al[i] = 3.0*(y[i+1] - y[i]) - 3.0*(y[i] - y[i-1]);
-        }
-
-        vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
-        l[0] = 1;
-        for (uint_t i : range(1, n)) {
-            l[i] = 4.0 - mu[i-1];
-            mu[i] = 1.0/l[i];
-            z[i] = (al[i] - z[i-1])/l[i];
-        }
-
-        l[n] = 1; {
-            uint_t i = n;
-            do {
-                --i;
-                c[i] = z[i] - mu[i]*c[i+1];
-                b[i] = (y[i+1]-y[i]) - (1.0/3.0)*(c[i+1] + 2*c[i]);
-                d[i] = (1.0/3.0)*(c[i+1] - c[i]);
-            } while (i != 0);
-        }
-
-        b[n] = b[n-1] + 2*c[n-1] + 3*d[n-1];
-
         for (uint_t i : range(xn)) {
             int_t k = floor(xn.safe[i]);
             if (k < 0) {
@@ -388,34 +442,10 @@ namespace phypp {
     meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const TN& xn) {
         phypp_check(y.size() >= 2, "'y' array must contain at least 2 elements");
 
+        vec1d b, c, d;
+        impl::interpolate_3spline_make_coefs(y, b, c, d);
+
         const uint_t n = y.size()-1;
-        vec1d b(n+1), d(n+1);
-
-        vec1d al(n);
-        for (uint_t i : range(1, n)) {
-            al[i] = 3.0*(y[i+1] - y[i]) - 3.0*(y[i] - y[i-1]);
-        }
-
-        vec1d c(n+1), l(n+1), mu(n+1), z(n+1);
-        l[0] = 1;
-        for (uint_t i : range(1, n)) {
-            l[i] = 4.0 - mu[i-1];
-            mu[i] = 1.0/l[i];
-            z[i] = (al[i] - z[i-1])/l[i];
-        }
-
-        l[n] = 1; {
-            uint_t i = n;
-            do {
-                --i;
-                c[i] = z[i] - mu[i]*c[i+1];
-                b[i] = (y[i+1]-y[i]) - (1.0/3.0)*(c[i+1] + 2*c[i]);
-                d[i] = (1.0/3.0)*(c[i+1] - c[i]);
-            } while (i != 0);
-        }
-
-        b[n] = b[n-1] + 2*c[n-1] + 3*d[n-1];
-
         int_t k = floor(xn);
         if (k < 0) {
             double th = xn;
