@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 #include <initializer_list>
+#include <limits>
 #include "phypp/core/typedefs.hpp"
 #include "phypp/core/range.hpp"
 #include "phypp/core/meta.hpp"

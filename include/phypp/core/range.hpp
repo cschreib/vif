@@ -1,6 +1,7 @@
 #ifndef PHYPP_CORE_RANGE_HPP
 #define PHYPP_CORE_RANGE_HPP
 
+#include <utility>
 #include "phypp/core/error.hpp"
 #include "phypp/core/typedefs.hpp"
 
