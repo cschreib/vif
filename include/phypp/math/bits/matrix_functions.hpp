@@ -407,7 +407,7 @@ namespace matrix {
         res = d.solve(beta);
         return true;
     #else
-        T a = alpha;
+        mat2d a = alpha;
         res = beta;
         return inplace_solve_symmetric(a, res);
     #endif
