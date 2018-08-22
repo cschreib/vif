@@ -383,6 +383,21 @@ namespace impl {
                 return fptr_ != nullptr;
             }
 
+            void flush() {
+                if (!fptr_) return;
+
+                fits_flush_file(fptr_, &status_);
+                fits::phypp_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
+            }
+
+            void flush_buffer() {
+                if (!fptr_) return;
+
+                // Will be faster than flush(), but only updates data, not all the keywords
+                fits_flush_buffer(fptr_, 0, &status_);
+                fits::phypp_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
+            }
+
             const std::string& filename() const {
                 return filename_;
             }
