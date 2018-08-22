@@ -104,7 +104,7 @@ namespace matrix {
         wrapper(const wrapper& m) = delete;
 
         // Move constructor
-        wrapper(wrapper&& m) = delete;
+        wrapper(wrapper&& m) : base(m.base), dims(base.dims), safe(base.safe) {};
 
         // Import access operators
         template<typename Arg>
@@ -211,7 +211,7 @@ namespace matrix {
         const_wrapper(const const_wrapper& m) = delete;
 
         // Move constructor
-        const_wrapper(const_wrapper&& m) = delete;
+        const_wrapper(const_wrapper&& m) : base(m.base), dims(base.dims), safe(base.safe) {};
 
         // Import access operators
         template<typename Arg>
