@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/vif/badge/?version=latest)](https://vif.readthedocs.io/en/latest/?badge=latest)
+
 # What is vif ?
 
 vif is a C++ library built to provide user friendly data manipulation as offered in interpreted languages like [python], [IDL], [GDL], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
