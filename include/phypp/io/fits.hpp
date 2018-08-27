@@ -105,7 +105,9 @@ namespace fits {
         }
     }
 
-    inline fits::header read_header_sectfits_hdu(const std::string& filename, uint_t sect, uint_t hdu) {
+    inline fits::header read_header_sectfits_hdu(const std::string& filename,
+        uint_t sect, uint_t hdu) {
+
         if (ends_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
             phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
@@ -160,14 +162,15 @@ namespace fits {
     template<typename ... Args>
     void read_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::input_table(filename).read_columns(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::input_table(filename).read_columns(impl::ascii_impl::macroed_t{},
+            names, std::forward<Args>(args)...);
     }
 
     template<typename ... Args>
     void read_table_loose(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::input_table(filename).read_columns(fits::missing, impl::ascii_impl::macroed_t{}, names,
-            std::forward<Args>(args)...);
+        fits::input_table(filename).read_columns(fits::missing, impl::ascii_impl::macroed_t{},
+            names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -189,7 +192,8 @@ namespace fits {
     template<typename ... Args>
     void write_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::output_table(filename).write_columns(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::output_table(filename).write_columns(impl::ascii_impl::macroed_t{},
+            names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
@@ -208,24 +212,13 @@ namespace fits {
     template<typename ... Args>
     void update_table(const std::string& filename, impl::ascii_impl::macroed_t,
         const std::string& names, Args&& ... args) {
-        fits::table(filename).update_columns(impl::ascii_impl::macroed_t{}, names, std::forward<Args>(args)...);
+        fits::table(filename).update_columns(impl::ascii_impl::macroed_t{},
+            names, std::forward<Args>(args)...);
     }
 
     template<typename T, typename enable = typename std::enable_if<reflex::enabled<T>::value>::type>
     void update_table(const std::string& filename, const T& t) {
         fits::table(filename).update_columns(t);
-    }
-
-    inline void display(const std::string& name) {
-        fork("ds9 "+name);
-    }
-
-    inline void display(const std::string& name1, const std::string& name2) {
-        fork("ds9 -rgb -red "+name1+" -green "+name2);
-    }
-
-    inline void display(const std::string& name1, const std::string& name2, const std::string& name3) {
-        fork("ds9 -rgb -red "+name1+" -green "+name2+" -blue "+name3);
     }
 }
 }
