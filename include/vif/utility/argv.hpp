@@ -1,12 +1,12 @@
-#ifndef PHYPP_UTILITY_ARGV_HPP
-#define PHYPP_UTILITY_ARGV_HPP
+#ifndef VIF_UTILITY_ARGV_HPP
+#define VIF_UTILITY_ARGV_HPP
 
 #include <fstream>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/string_conversion.hpp"
-#include "phypp/utility/string.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/string_conversion.hpp"
+#include "vif/utility/string.hpp"
 
-namespace phypp {
+namespace vif {
     #define arg_list(...) #__VA_ARGS__, __VA_ARGS__
 
     namespace impl {

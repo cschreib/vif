@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_CORE_VEC_BITS
-#error this file is not meant to be included separately, include "phypp/core/vec.hpp" instead
+#ifndef VIF_INCLUDING_CORE_VEC_BITS
+#error this file is not meant to be included separately, include "vif/core/vec.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
 namespace impl {
     // Iterator for normal vectors.
     // Note: The default implementation uses native iterators, so these functions are
@@ -169,7 +169,7 @@ namespace impl {
 
 namespace std {
     template<typename T, typename C, typename P>
-    struct iterator_traits<phypp::impl::iterator_adaptor<T,C,P>> {
+    struct iterator_traits<vif::impl::iterator_adaptor<T,C,P>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::decay<decltype(std::declval<P>().get_obj(std::declval<T&>()))>::type;
         using pointer = value_type*;
@@ -178,7 +178,7 @@ namespace std {
     };
 
     template<typename T, typename C, typename P>
-    struct iterator_traits<phypp::impl::const_iterator_adaptor<T,C,P>> {
+    struct iterator_traits<vif::impl::const_iterator_adaptor<T,C,P>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::decay<decltype(std::declval<P>().get_obj(std::declval<T&>()))>::type;
         using pointer = value_type*;
@@ -187,7 +187,7 @@ namespace std {
     };
 
     template<typename T, typename C, typename P>
-    struct iterator_traits<phypp::impl::reverse_iterator_adaptor<T,C,P>> {
+    struct iterator_traits<vif::impl::reverse_iterator_adaptor<T,C,P>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::decay<decltype(std::declval<P>().get_obj(std::declval<T&>()))>::type;
         using pointer = value_type*;
@@ -196,7 +196,7 @@ namespace std {
     };
 
     template<typename T, typename C, typename P>
-    struct iterator_traits<phypp::impl::const_reverse_iterator_adaptor<T,C,P>> {
+    struct iterator_traits<vif::impl::const_reverse_iterator_adaptor<T,C,P>> {
         using difference_type = typename iterator_traits<T>::difference_type;
         using value_type = typename std::decay<decltype(std::declval<P>().get_obj(std::declval<T&>()))>::type;
         using pointer = value_type*;

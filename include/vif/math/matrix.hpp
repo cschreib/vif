@@ -1,17 +1,17 @@
-#ifndef PHYPP_MATH_MATRIX_HPP
-#define PHYPP_MATH_MATRIX_HPP
+#ifndef VIF_MATH_MATRIX_HPP
+#define VIF_MATH_MATRIX_HPP
 
 #ifndef NO_LAPACK
-#include "phypp/math/lapack.hpp"
+#include "vif/math/lapack.hpp"
 #endif
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/math/base.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/range.hpp"
+#include "vif/math/base.hpp"
 
-#define PHYPP_INCLUDING_MATH_MATRIX_BITS
-#include "phypp/math/bits/matrix_types.hpp"
-#include "phypp/math/bits/matrix_functions.hpp"
-#undef PHYPP_INCLUDING_MATH_MATRIX_BITS
+#define VIF_INCLUDING_MATH_MATRIX_BITS
+#include "vif/math/bits/matrix_types.hpp"
+#include "vif/math/bits/matrix_functions.hpp"
+#undef VIF_INCLUDING_MATH_MATRIX_BITS
 
 #endif

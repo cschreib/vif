@@ -1,19 +1,19 @@
-#ifndef PHYPP_IO_FITS_BASE_HPP
-#define PHYPP_IO_FITS_BASE_HPP
+#ifndef VIF_IO_FITS_BASE_HPP
+#define VIF_IO_FITS_BASE_HPP
 
 #include <string>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/print.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/io/filesystem.hpp"
-#include "phypp/io/ascii.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/print.hpp"
+#include "vif/core/error.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/io/filesystem.hpp"
+#include "vif/io/ascii.hpp"
 
 #ifndef NO_CFITSIO
 
 #include <fitsio.h>
 
-namespace phypp {
+namespace vif {
 namespace fits {
     struct exception : std::exception {
         explicit exception(const std::string& m) : msg(m) {}
@@ -24,10 +24,10 @@ namespace fits {
         }
     };
 
-    #define phypp_check_fits(assertion, msg) \
-        do { if (!(assertion)) throw phypp::fits::exception(msg); } while(0)
+    #define vif_check_fits(assertion, msg) \
+        do { if (!(assertion)) throw vif::fits::exception(msg); } while(0)
 
-    inline void phypp_check_cfitsio(int status, const std::string& msg) {
+    inline void vif_check_cfitsio(int status, const std::string& msg) {
         if (status != 0) {
             char txt[FLEN_STATUS];
             fits_get_errstatus(status, txt);
@@ -38,7 +38,7 @@ namespace fits {
                 details += std::string(tdetails);
             }
 
-            phypp_check_fits(status == 0, "error: cfitsio: "+std::string(txt)+"\ncfitsio: "+
+            vif_check_fits(status == 0, "error: cfitsio: "+std::string(txt)+"\ncfitsio: "+
                 details+"\nerror: "+msg);
         }
     }
@@ -354,7 +354,7 @@ namespace impl {
 
                 if (rights_ == write_only || (rights_ == read_write && !file::exists(filename))) {
                     fits_create_file(&fptr_, ("!"+filename).c_str(), &status_);
-                    fits::phypp_check_cfitsio(status_, "cannot create file '"+filename+"'");
+                    fits::vif_check_cfitsio(status_, "cannot create file '"+filename+"'");
                 } else {
                     int trights = (rights_ == read_only ? READONLY : READWRITE);
 
@@ -370,7 +370,7 @@ namespace impl {
                             break;
                     }
 
-                    fits::phypp_check_cfitsio(status_, "cannot open file '"+filename+"'");
+                    fits::vif_check_cfitsio(status_, "cannot open file '"+filename+"'");
                 }
             }
 
@@ -390,7 +390,7 @@ namespace impl {
                 if (!fptr_) return;
 
                 fits_flush_file(fptr_, &status_);
-                fits::phypp_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
+                fits::vif_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
             }
 
             void flush_buffer() {
@@ -398,7 +398,7 @@ namespace impl {
 
                 // Will be faster than flush(), but only updates data, not all the keywords
                 fits_flush_buffer(fptr_, 0, &status_);
-                fits::phypp_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
+                fits::vif_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
             }
 
             const std::string& filename() const {
@@ -435,7 +435,7 @@ namespace impl {
                 char* hstr = nullptr;
                 int nkeys  = 0;
                 fits_hdr2str(fptr_, 0, nullptr, 0, &hstr, &nkeys, &status_);
-                fits::phypp_check_cfitsio(status_, "could not dump header to string");
+                fits::vif_check_cfitsio(status_, "could not dump header to string");
                 hdr = hstr;
                 fits_free_memory(hstr, &status_);
                 return hdr;
@@ -502,7 +502,7 @@ namespace impl {
                     }
 
                     fits_write_record(fptr_, entry.c_str(), &status_);
-                    fits::phypp_check_cfitsio(status_, "could not write header");
+                    fits::vif_check_cfitsio(status_, "could not write header");
                 }
             }
 
@@ -515,7 +515,7 @@ namespace impl {
                 fits_update_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
-                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             template<typename T, typename enable = typename
@@ -527,7 +527,7 @@ namespace impl {
                 fits_write_key(fptr_, traits<meta::decay_t<T>>::ttype,
                     name.c_str(), const_cast<T*>(&value),
                     const_cast<char*>(com.c_str()), &status_);
-                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             void write_keyword(const std::string& name, const std::string& value,
@@ -537,7 +537,7 @@ namespace impl {
                 fits_update_key(fptr_, TSTRING, name.c_str(),
                     const_cast<char*>(value.c_str()),
                     const_cast<char*>(com.c_str()), &status_);
-                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             void add_keyword(const std::string& name, const std::string& value,
@@ -547,7 +547,7 @@ namespace impl {
                 fits_write_key(fptr_, TSTRING, name.c_str(),
                     const_cast<char*>(value.c_str()),
                     const_cast<char*>(com.c_str()), &status_);
-                fits::phypp_check_cfitsio(status_, "could not write keyword '"+name+"'");
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
             }
 
             void remove_keyword(const std::string& name) {
@@ -562,7 +562,7 @@ namespace impl {
 
                 int nhdu = 0;
                 fits_get_num_hdus(fptr_, &nhdu, &status_);
-                fits::phypp_check_cfitsio(status_, "could not get the number of HDUs");
+                fits::vif_check_cfitsio(status_, "could not get the number of HDUs");
                 return nhdu;
             }
 
@@ -596,7 +596,7 @@ namespace impl {
                         } else if (xtension == "BINTABLE" || xtension == "TABLE") {
                             return fits::table_hdu;
                         } else {
-                            phypp_check(false, "unknown XTENSION value '", xtension, "'");
+                            vif_check(false, "unknown XTENSION value '", xtension, "'");
                         }
                     }
                 }
@@ -609,7 +609,7 @@ namespace impl {
 
                 uint_t nhdu = hdu_count();
                 if (rights_ == read_only) {
-                    phypp_check(hdu < nhdu, "requested HDU does not exists in this "
+                    vif_check(hdu < nhdu, "requested HDU does not exists in this "
                         "FITS file (", hdu, " vs. ", nhdu, ")");
                 } else {
                     if (hdu >= nhdu) {
@@ -618,25 +618,25 @@ namespace impl {
                         for (uint_t i = nhdu; i <= hdu; ++i) {
                             fits_insert_img(fptr_, impl::fits_impl::traits<float>::image_type,
                                 0, &naxes, &status_);
-                            fits::phypp_check_cfitsio(status_,
+                            fits::vif_check_cfitsio(status_,
                                 "could not create new HDUs to reach HDU "+to_string(hdu));
                         }
 
                         fits_set_hdustruc(fptr_, &status_);
-                        fits::phypp_check_cfitsio(status_,
+                        fits::vif_check_cfitsio(status_,
                             "could not create new HDUs to reach HDU "+to_string(hdu));
                     }
                 }
 
                 fits_movabs_hdu(fptr_, hdu+1, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not reach HDU "+to_string(hdu));
+                fits::vif_check_cfitsio(status_, "could not reach HDU "+to_string(hdu));
             }
 
             void remove_hdu() {
                 check_is_open_();
 
                 fits_delete_hdu(fptr_, nullptr, &status_);
-                fits::phypp_check_cfitsio(status_, "could not remove the current HDU");
+                fits::vif_check_cfitsio(status_, "could not remove the current HDU");
             }
 
             // Return the number of dimensions of a FITS file
@@ -646,7 +646,7 @@ namespace impl {
 
                 int naxis;
                 fits_get_img_dim(fptr_, &naxis, &status_);
-                fits::phypp_check_cfitsio(status_, "could not get the number of axis in HDU");
+                fits::vif_check_cfitsio(status_, "could not get the number of axis in HDU");
                 return naxis;
             }
 
@@ -676,7 +676,7 @@ namespace impl {
                 if (naxis != 0) {
                     std::vector<long> naxes(naxis);
                     fits_get_img_size(fptr_, naxis, naxes.data(), &status_);
-                    fits::phypp_check_cfitsio(status_, "could not get image size of HDU");
+                    fits::vif_check_cfitsio(status_, "could not get image size of HDU");
                     for (uint_t i : range(naxis)) {
                         dims.safe[i] = naxes[naxis-1-i];
                     }
@@ -963,7 +963,7 @@ namespace fits {
 #else
 
 // Minimal support
-namespace phypp {
+namespace vif {
 namespace fits {
     using header = std::string;
 }

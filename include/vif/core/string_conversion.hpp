@@ -1,5 +1,5 @@
-#ifndef PHYPP_CORE_STRING_CONVERSION_HPP
-#define PHYPP_CORE_STRING_CONVERSION_HPP
+#ifndef VIF_CORE_STRING_CONVERSION_HPP
+#define VIF_CORE_STRING_CONVERSION_HPP
 
 #include <string>
 #include <iostream>
@@ -10,15 +10,15 @@
 #include <cctype>
 #include <limits>
 #include <typeinfo>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/core/meta.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/range.hpp"
+#include "vif/core/meta.hpp"
 
 namespace std {
     template<typename O, typename T, std::size_t N>
     O& operator << (O& o, const std::array<T,N>& v) {
         o << "{";
-        for (phypp::uint_t i : phypp::range(N)) {
+        for (vif::uint_t i : vif::range(N)) {
             if (i != 0) o << ", ";
             o << v[i];
         }
@@ -28,7 +28,7 @@ namespace std {
     }
 }
 
-namespace phypp {
+namespace vif {
     namespace impl {
         template<typename T>
         struct named_t {
@@ -304,8 +304,8 @@ namespace impl {
         };
     }
 
-    #define pretty_type(x) phypp::impl::pretty_type_(meta::type_list<decltype(x)>{})
-    #define pretty_type_t(x) phypp::impl::pretty_type_(meta::type_list<x>{})
+    #define pretty_type(x) vif::impl::pretty_type_(meta::type_list<decltype(x)>{})
+    #define pretty_type_t(x) vif::impl::pretty_type_(meta::type_list<x>{})
 }
 
 #endif

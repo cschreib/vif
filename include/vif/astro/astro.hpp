@@ -1,24 +1,24 @@
-#ifndef PHYPP_ASTRO_ASTRO_HPP
-#define PHYPP_ASTRO_ASTRO_HPP
+#ifndef VIF_ASTRO_ASTRO_HPP
+#define VIF_ASTRO_ASTRO_HPP
 
 #include <map>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/utility/thread.hpp"
-#include "phypp/math/base.hpp"
-#include "phypp/math/linfit.hpp"
-#include "phypp/math/convex_hull.hpp"
-#include "phypp/math/histogram.hpp"
-#include "phypp/math/reduce.hpp"
-#include "phypp/math/random.hpp"
-#include "phypp/io/fits.hpp"
-#include "phypp/io/ascii.hpp"
-#include "phypp/astro/image.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/utility/thread.hpp"
+#include "vif/math/base.hpp"
+#include "vif/math/linfit.hpp"
+#include "vif/math/convex_hull.hpp"
+#include "vif/math/histogram.hpp"
+#include "vif/math/reduce.hpp"
+#include "vif/math/random.hpp"
+#include "vif/io/fits.hpp"
+#include "vif/io/ascii.hpp"
+#include "vif/astro/image.hpp"
 
-namespace phypp {
+namespace vif {
 namespace astro {
-    static std::string data_dir = system_var("PHYPP_DATA_DIR", "./");
-    static std::string temporary_dir = system_var("PHYPP_TMP_DIR", "./");
+    static std::string data_dir = system_var("VIF_DATA_DIR", "./");
+    static std::string temporary_dir = system_var("VIF_TMP_DIR", "./");
 
     // Compute the angular distance between two RA/Dec positions [radian].
     // Assumes that RA & Dec coordinates are in radian.
@@ -43,11 +43,11 @@ namespace astro {
     template<std::size_t N, typename TR1, typename TD1, typename TR2, typename TD2>
     vec<N,double> angdist(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
         const vec<N,TR2>& tra2, const vec<N,TD2>& tdec2) {
-        phypp_check(tra1.dims == tdec1.dims, "first RA and Dec dimensions do not match (",
+        vif_check(tra1.dims == tdec1.dims, "first RA and Dec dimensions do not match (",
             tra1.dims, " vs ", tdec1.dims, ")");
-        phypp_check(tra2.dims == tdec2.dims, "second RA and Dec dimensions do not match (",
+        vif_check(tra2.dims == tdec2.dims, "second RA and Dec dimensions do not match (",
             tra2.dims, " vs ", tdec2.dims, ")");
-        phypp_check(tra1.dims == tra2.dims, "position sets dimensions do not match (",
+        vif_check(tra1.dims == tra2.dims, "position sets dimensions do not match (",
             tra1.dims, " vs ", tra2.dims, ")");
 
         vec<N,double> res(tra1.dims);
@@ -63,7 +63,7 @@ namespace astro {
     template<std::size_t N, typename TR1, typename TD1>
     vec<N,double> angdist(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
         double tra2, double tdec2) {
-        phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
+        vif_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
             tra1.dims, " vs ", tdec1.dims, ")");
 
         vec<N,double> res(tra1.dims);
@@ -79,7 +79,7 @@ namespace astro {
     template<std::size_t N, typename TR1, typename TD1>
     vec<N,bool> angdist_less(const vec<N,TR1>& tra1, const vec<N,TD1>& tdec1,
         double tra2, double tdec2, double radius) {
-        phypp_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
+        vif_check(tra1.dims == tdec1.dims, "RA and Dec dimensions do not match (",
             tra1.dims, " vs ", tdec1.dims, ")");
 
         const double d2r = dpi/180.0;
@@ -117,7 +117,7 @@ namespace astro {
 
     template<std::size_t D, typename T, typename U>
     void move_ra_dec(vec<D,T>& ra, vec<D,U>& dec, double dra, double ddec) {
-        phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
+        vif_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
             ra.dims, " vs ", dec.dims, ")");
 
         dra /= 3600.0;
@@ -155,7 +155,7 @@ namespace astro {
 
     template<std::size_t D, typename T, typename U>
     void normalize_coordinates(vec<D,T>& ra, vec<D,U>& dec) {
-        phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
+        vif_check(ra.dims == dec.dims, "RA and Dec dimensions do not match (",
             ra.dims, " vs ", dec.dims, ")");
 
         for (auto i : range(ra)) {
@@ -185,7 +185,7 @@ namespace astro {
     // It is the 'x' axis in cartesian coordinates.
     template <typename T1, typename T2, typename T3, typename T4>
     void angrot_vernal(const T1& tr1, const T2& td1, double e, T3& r2, T4& d2) {
-        phypp_check(tr1.dims == td1.dims, "incompatible dimensions between RA and Dec "
+        vif_check(tr1.dims == td1.dims, "incompatible dimensions between RA and Dec "
             "(", tr1.dims, " vs. ", td1.dims, ")");
 
         e *= dpi/180.0;
@@ -524,7 +524,7 @@ namespace astro {
     template<typename H>
     double field_area_hull(const convex_hull<H>& hull) {
         hull.validate();
-        phypp_check(hull.closed, "the provided must be closed");
+        vif_check(hull.closed, "the provided must be closed");
 
         double area = 0;
 
@@ -556,7 +556,7 @@ namespace astro {
     // Coordinates are assumed to be given in degrees.
     template<typename TX, typename TY>
     double field_area_h2d(const TX& ra, const TY& dec) {
-        phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+        vif_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
         // Optimal bin size
         // If field is perfectly uniform, then all cells of the field will contain 'optinum' objects
@@ -671,9 +671,9 @@ namespace astro {
         std::size_t N2, typename TR2, typename TD2, typename TB>
     vec1d angcorrel(const vec<N1,TR1>& ra, const vec<N1,TD1>& dec,
         const vec<N2,TR2>& rra, const vec<N2,TD2>& rdec, const vec<2,TB>& bins) {
-        phypp_check(ra.dims == dec.dims, "RA and Dec dimensions do not match for the "
+        vif_check(ra.dims == dec.dims, "RA and Dec dimensions do not match for the "
             "input catalog (", ra.dims, " vs ", dec.dims, ")");
-        phypp_check(rra.dims == rdec.dims, "RA and Dec dimensions do not match for the "
+        vif_check(rra.dims == rdec.dims, "RA and Dec dimensions do not match for the "
             "random catalog (", rra.dims, " vs ", rdec.dims, ")");
 
         uint_t nbin = bins.dims[1];
@@ -961,7 +961,7 @@ namespace astro {
             // is kept constant (i.e.: re-assign the missing objects to other, fully
             // filled cells)
             double mfill = mean(fill);
-            phypp_check(mfill != 0.0, "mean filling factor is zero, not good...");
+            vif_check(mfill != 0.0, "mean filling factor is zero, not good...");
 
             fill /= mfill;
 
@@ -1061,7 +1061,7 @@ namespace astro {
             meta::is_compatible_output_type<vec<Dim,TSR>,TR>::value &&
             meta::is_compatible_output_type<vec<Dim,TSD>,TD>::value>::type>
     vec<Dim,bool> sex2deg(const vec<Dim,TSR>& sra, const vec<Dim,TSD>& sdec, TR&& ra, TD&& dec) {
-        phypp_check(sra.size() == sdec.size(), "RA and Dec dimensions do not match (",
+        vif_check(sra.size() == sdec.size(), "RA and Dec dimensions do not match (",
             sra.dims, " vs ", sdec.dims, ")");
 
         meta::resize_or_check(ra, sra.dims);
@@ -1117,7 +1117,7 @@ namespace astro {
             meta::is_compatible_output_type<vec<Dim,TR>,TSR>::value &&
             meta::is_compatible_output_type<vec<Dim,TR>,TSD>::value>::type>
     void deg2sex(const vec<Dim,TR>& ra, const vec<Dim,TD>& dec, TSR&& sra, TSD&& sdec) {
-        phypp_check(ra.size() == dec.size(), "RA and Dec dimensions do not match (",
+        vif_check(ra.size() == dec.size(), "RA and Dec dimensions do not match (",
             ra.dims, " vs ", dec.dims, ")");
 
         meta::resize_or_check(sra, ra.dims);

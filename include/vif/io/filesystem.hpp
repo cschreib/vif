@@ -1,5 +1,5 @@
-#ifndef PHYPP_IO_FILESYSTEM_HPP
-#define PHYPP_IO_FILESYSTEM_HPP
+#ifndef VIF_IO_FILESYSTEM_HPP
+#define VIF_IO_FILESYSTEM_HPP
 
 #include <dirent.h>
 #include <unistd.h>
@@ -12,11 +12,11 @@
 #include <ctime>
 #include <tuple>
 #include <stdexcept>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/utility/string.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/utility/string.hpp"
 
-namespace phypp {
+namespace vif {
 namespace file {
     inline bool exists(const std::string& path) {
         if (path.empty()) {
@@ -280,16 +280,16 @@ namespace file {
         return true;
     }
 
-    PHYPP_VECTORIZE(directorize)
-    PHYPP_VECTORIZE(is_absolute_path)
-    PHYPP_VECTORIZE(get_basename)
-    PHYPP_VECTORIZE(get_directory)
-    PHYPP_VECTORIZE(remove_extension)
-    PHYPP_VECTORIZE(get_extension)
-    PHYPP_VECTORIZE(split_extension)
-    PHYPP_VECTORIZE(mkdir)
-    PHYPP_VECTORIZE(exists)
-    PHYPP_VECTORIZE(is_older)
+    VIF_VECTORIZE(directorize)
+    VIF_VECTORIZE(is_absolute_path)
+    VIF_VECTORIZE(get_basename)
+    VIF_VECTORIZE(get_directory)
+    VIF_VECTORIZE(remove_extension)
+    VIF_VECTORIZE(get_extension)
+    VIF_VECTORIZE(split_extension)
+    VIF_VECTORIZE(mkdir)
+    VIF_VECTORIZE(exists)
+    VIF_VECTORIZE(is_older)
 }
 }
 

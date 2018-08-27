@@ -1,11 +1,11 @@
-#ifndef PHYPP_CORE_ERROR_HPP
-#define PHYPP_CORE_ERROR_HPP
+#ifndef VIF_CORE_ERROR_HPP
+#define VIF_CORE_ERROR_HPP
 
 #include <string>
 #include <algorithm>
 #include <vector>
-#include "phypp/core/print.hpp"
-#include "phypp/core/typedefs.hpp"
+#include "vif/core/print.hpp"
+#include "vif/core/typedefs.hpp"
 
 #ifndef NO_LIBUNWIND
  #include <vector>
@@ -21,7 +21,7 @@
  #endif
 #endif
 
-namespace phypp {
+namespace vif {
     #ifndef NO_LIBUNWIND
 
     // Store the path to the executable, to get debug information in case of error
@@ -315,22 +315,22 @@ namespace phypp {
         }
     }
 
-    #define phypp_check(value, ...) \
+    #define vif_check(value, ...) \
         if (!(value)) { \
-            phypp::print("\n"); \
-            phypp::error(__VA_ARGS__, "\n"); \
-            phypp::print("backtrace:"); \
-            phypp::backtrace(); \
-            phypp::print("\n"); \
+            vif::print("\n"); \
+            vif::error(__VA_ARGS__, "\n"); \
+            vif::print("backtrace:"); \
+            vif::backtrace(); \
+            vif::print("\n"); \
             exit(EXIT_FAILURE); \
         }
 
     #else
 
-    #define phypp_check(value, ...) \
+    #define vif_check(value, ...) \
         if (!(value)) { \
-            phypp::print("\n"); \
-            phypp::error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__, "\n"); \
+            vif::print("\n"); \
+            vif::error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__, "\n"); \
             exit(EXIT_FAILURE); \
         }
 

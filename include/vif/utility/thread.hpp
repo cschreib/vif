@@ -1,13 +1,13 @@
-#ifndef PHYPP_UTILITY_THREAD_HPP
-#define PHYPP_UTILITY_THREAD_HPP
+#ifndef VIF_UTILITY_THREAD_HPP
+#define VIF_UTILITY_THREAD_HPP
 
 #include <thread>
 #include <atomic>
 #include <mutex>
 #include <functional>
-#include "phypp/core/vec.hpp"
+#include "vif/core/vec.hpp"
 
-namespace phypp {
+namespace vif {
 namespace thread {
     struct thread_t {
         std::unique_ptr<std::thread> impl;

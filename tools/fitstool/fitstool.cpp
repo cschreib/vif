@@ -1,4 +1,4 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
 void print_help();
 
@@ -28,7 +28,7 @@ void print_make2d_help();
 void print_meta_help();
 void print_extract_help();
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;
@@ -135,7 +135,7 @@ bool remove_columns(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1s fcols;
         cols = to_upper(cols);
@@ -170,7 +170,7 @@ bool remove_columns(int argc, char* argv[], const std::string& file) {
             }
 
             fits_delete_col(fptr, id, &status);
-            fits::phypp_check_cfitsio(status, "cannot remove column '"+col+"'");
+            fits::vif_check_cfitsio(status, "cannot remove column '"+col+"'");
         }
 
         fits_close_file(fptr, &status);
@@ -218,7 +218,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1s fcols;
         cols = to_upper(cols);
@@ -235,7 +235,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             char otform[80], comment[80];
             std::string tformn = "TFORM"+to_string(id);
             fits_read_key(fptr, TSTRING, const_cast<char*>(tformn.c_str()), otform, comment, &status);
-            fits::phypp_check_cfitsio(status, "cannot read TFORM for column '"+col+"'");
+            fits::vif_check_cfitsio(status, "cannot read TFORM for column '"+col+"'");
             print(otform);
 
             int type, naxis;
@@ -243,9 +243,9 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             std::array<long,2> naxes;
             fits_get_coltype(fptr, id, &type, &repeat, &width, &status);
             fits_read_tdim(fptr, id, 2, &naxis, naxes.data(), &status);
-            phypp_check(naxis == 2, "wrong dimension for column '"+col+"' (", naxis, "), only "
+            vif_check(naxis == 2, "wrong dimension for column '"+col+"' (", naxis, "), only "
                 "2D columns can be transposed");
-            phypp_check(type != TSTRING, "cannot transpose a string column");
+            vif_check(type != TSTRING, "cannot transpose a string column");
 
             status = 0;
 
@@ -262,22 +262,22 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             );
 
             fits_delete_col(fptr, id, &status);
-            fits::phypp_check_cfitsio(status, "cannot temporarily delete column '"+col+"'");
+            fits::vif_check_cfitsio(status, "cannot temporarily delete column '"+col+"'");
 
             v = transpose(v);
 
             fits_insert_col(fptr, id, const_cast<char*>(col.c_str()), otform, &status);
-            fits::phypp_check_cfitsio(status, "cannot re-insert column '"+col+"'");
+            fits::vif_check_cfitsio(status, "cannot re-insert column '"+col+"'");
 
             std::swap(naxes[0], naxes[1]);
             fits_write_tdim(fptr, id, 2, naxes.data(), &status);
-            fits::phypp_check_cfitsio(status, "cannot re-write TDIM for column '"+col+"'");
+            fits::vif_check_cfitsio(status, "cannot re-write TDIM for column '"+col+"'");
 
             fits_write_col(
                 fptr, impl::fits_impl::traits<double>::ttype, id, 1, 1, n_elements(v),
                 const_cast<vec2d::dtype*>(v.data.data()), &status
             );
-            fits::phypp_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
+            fits::vif_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
         }
 
         fits_close_file(fptr, &status);
@@ -331,7 +331,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_table(&ifptr, file.c_str(), READONLY, &status);
-        fits::phypp_check_cfitsio(status, "cannot open '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open '"+file+"'");
 
         long nrow;
         fits_get_num_rows(ifptr, &nrow, &status);
@@ -346,7 +346,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
         if (!silent) print("col=", ncol, ", row=", nrow);
 
         fits_create_file(&ofptr, out.c_str(), &status);
-        fits::phypp_check_cfitsio(status, "cannot open '"+out+"'");
+        fits::vif_check_cfitsio(status, "cannot open '"+out+"'");
         fits_create_tbl(ofptr, BINARY_TBL, 1, 0, 0, 0, 0, nullptr, &status);
 
         int oc = 1;
@@ -400,7 +400,7 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
 
             // Create the new column
             fits_insert_col(ofptr, oc, name, const_cast<char*>(tform.c_str()), &status);
-            fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+            fits::vif_check_cfitsio(status, "error writing '"+std::string(name)+"'");
             char tdim_com[] = "size of the multidimensional array";
             fits_write_key(ofptr, TSTRING, const_cast<char*>(("TDIM"+to_string(c)).c_str()),
                 const_cast<char*>(tdim.c_str()), tdim_com, &status);
@@ -417,11 +417,11 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 }
 
                 fits_read_col_str(ifptr, c, 1, 1, nrow, nul, data, &nnul, &status);
-                fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
+                fits::vif_check_cfitsio(status, "error reading '"+std::string(name)+"'");
 
                 // Write the output data
                 fits_write_col(ofptr, impl::fits_impl::traits<std::string>::ttype, oc, 1, 1, nrow, data, &status);
-                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+                fits::vif_check_cfitsio(status, "error writing '"+std::string(name)+"'");
 
                 delete[] data;
             } else {
@@ -430,11 +430,11 @@ bool rows_to_columns(int argc, char* argv[], const std::string& file) {
                 int nnul = 0;
                 std::vector<char> data(width*nelem*nrow);
                 fits_read_col(ifptr, type, c, 1, 1, nelem*nrow, &nul, data.data(), &nnul, &status);
-                fits::phypp_check_cfitsio(status, "error reading '"+std::string(name)+"'");
+                fits::vif_check_cfitsio(status, "error reading '"+std::string(name)+"'");
 
                 // Write the output data
                 fits_write_col(ofptr, type, oc, 1, 1, nelem*nrow, data.data(), &status);
-                fits::phypp_check_cfitsio(status, "error writing '"+std::string(name)+"'");
+                fits::vif_check_cfitsio(status, "error writing '"+std::string(name)+"'");
             }
 
             ++oc;
@@ -511,9 +511,9 @@ bool copy_wcs_header(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_image(&fptr1, file.c_str(), READONLY, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
         fits_open_image(&fptr2, out.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+out+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+out+"'");
 
         for (auto& k : keywords) {
             char value[80] = {0};
@@ -582,12 +582,12 @@ bool show_header(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_file(&fptr, file.c_str(), READONLY, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         if (hdu != npos) {
             int nhdu = 0;
             fits_get_num_hdus(fptr, &nhdu, &status);
-            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+            vif_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
                 "FITS file (", hdu, " vs. ", nhdu, ")");
 
             fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
@@ -652,11 +652,11 @@ bool write_keyword_value(fitsfile* fptr, bool newk, std::string name, std::strin
         if (newk) {
             fits_write_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
                 const_cast<char*>(new_value.c_str()), comment, &status);
-            fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+            fits::vif_check_cfitsio(status, "cannot write keyword '"+name+"'");
         } else {
             fits_update_key(fptr, TSTRING, const_cast<char*>(name.c_str()),
                 const_cast<char*>(new_value.c_str()), comment, &status);
-            fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+            fits::vif_check_cfitsio(status, "cannot update keyword '"+name+"'");
         }
     } else {
         if (ends_with(new_value, ".") || find(new_value, ".") == npos) {
@@ -664,21 +664,21 @@ bool write_keyword_value(fitsfile* fptr, bool newk, std::string name, std::strin
             if (newk) {
                 fits_write_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
                     &status);
-                fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                fits::vif_check_cfitsio(status, "cannot write keyword '"+name+"'");
             } else {
                 fits_update_key(fptr, TINT, const_cast<char*>(name.c_str()), &di, comment,
                     &status);
-                fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                fits::vif_check_cfitsio(status, "cannot update keyword '"+name+"'");
             }
         } else {
             if (newk) {
                 fits_write_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
                     &status);
-                fits::phypp_check_cfitsio(status, "cannot write keyword '"+name+"'");
+                fits::vif_check_cfitsio(status, "cannot write keyword '"+name+"'");
             } else {
                 fits_update_key(fptr, TDOUBLE, const_cast<char*>(name.c_str()), &d, comment,
                     &status);
-                fits::phypp_check_cfitsio(status, "cannot update keyword '"+name+"'");
+                fits::vif_check_cfitsio(status, "cannot update keyword '"+name+"'");
             }
         }
     }
@@ -703,14 +703,14 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         if (naxis == 0) {
             fits_close_file(fptr, &status);
             fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
             if (verbose) print("loaded table file");
         } else {
             if (verbose) print("loaded image file");
@@ -719,7 +719,7 @@ bool edit_keyword(int argc, char* argv[], const std::string& file) {
         if (hdu != npos) {
             int nhdu = 0;
             fits_get_num_hdus(fptr, &nhdu, &status);
-            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+            vif_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
                 "FITS file (", hdu, " vs. ", nhdu, ")");
 
             fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
@@ -841,14 +841,14 @@ bool remove_keyword(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         if (naxis == 0) {
             fits_close_file(fptr, &status);
             fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
             if (verbose) print("loaded table file");
         } else {
             if (verbose) print("loaded image file");
@@ -901,14 +901,14 @@ bool read_keyword(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
         if (naxis == 0) {
             fits_close_file(fptr, &status);
             fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-            fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+            fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
             if (verbose) print("loaded table file");
         } else {
             if (verbose) print("loaded image file");
@@ -917,7 +917,7 @@ bool read_keyword(int argc, char* argv[], const std::string& file) {
         if (hdu != npos) {
             int nhdu = 0;
             fits_get_num_hdus(fptr, &nhdu, &status);
-            phypp_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
+            vif_check(hdu < uint_t(nhdu), "requested HDU does not exists in this "
                 "FITS file (", hdu, " vs. ", nhdu, ")");
 
             fits_movabs_hdu(fptr, hdu+1, nullptr, &status);
@@ -983,7 +983,7 @@ bool make_2d(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_image(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         int naxis = 0;
         fits_get_img_dim(fptr, &naxis, &status);
@@ -1076,7 +1076,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_table(&fptr, file.c_str(), READWRITE, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         vec1u dims;
         int ncols;
@@ -1200,7 +1200,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
 
         for (auto i : mcols) {
             fits_copy_col(ofptr, fptr, i, mcols.size(), 1, &status);
-            fits::phypp_check_cfitsio(status, "cannot copy column "+to_string(i));
+            fits::vif_check_cfitsio(status, "cannot copy column "+to_string(i));
         }
 
         for (auto i : reverse(mcols)) {
@@ -1295,14 +1295,14 @@ bool extract_extension(int argc, char* argv[], const std::string& file) {
 
     try {
         fits_open_file(&ifptr, file.c_str(), READONLY, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
         int hdut = 0;
         fits_movabs_hdu(ifptr, hdu+1, &hdut, &status);
-        fits::phypp_check_cfitsio(status, "cannot reach HDU "+to_string(hdu));
+        fits::vif_check_cfitsio(status, "cannot reach HDU "+to_string(hdu));
 
         fits_create_file(&ofptr, out.c_str(), &status);
-        fits::phypp_check_cfitsio(status, "cannot create file '"+out+"'");
+        fits::vif_check_cfitsio(status, "cannot create file '"+out+"'");
 
         fits_copy_hdu(ifptr, ofptr, 0, &status);
 

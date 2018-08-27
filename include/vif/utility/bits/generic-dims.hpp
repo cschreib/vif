@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_GENERIC_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/generic.hpp" instead
+#ifndef VIF_INCLUDING_GENERIC_BITS
+#error this file is not meant to be included separately, include "vif/utilty/generic.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
     T flatten(T&& t) {
         return t;
@@ -49,7 +49,7 @@ namespace phypp {
             nsize *= r.dims[i];
         }
 
-        phypp_check(v.size() == nsize,
+        vif_check(v.size() == nsize,
             "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = v.data;
@@ -66,7 +66,7 @@ namespace phypp {
             nsize *= r.dims[i];
         }
 
-        phypp_check(v.size() == nsize,
+        vif_check(v.size() == nsize,
             "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = std::move(v.data);
@@ -83,7 +83,7 @@ namespace phypp {
             nsize *= r.dims[i];
         }
 
-        phypp_check(v.size() == nsize,
+        vif_check(v.size() == nsize,
             "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = v.data;
@@ -100,7 +100,7 @@ namespace phypp {
             nsize *= r.dims[i];
         }
 
-        phypp_check(v.size() == nsize,
+        vif_check(v.size() == nsize,
             "incompatible dimensions (", v.dims, " vs ", r.dims, ")");
 
         r.data = std::move(v.data);

@@ -1,4 +1,4 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
 bool read_ds9_region_circles(std::string file_name, vec2d& regs, bool& physical, std::string color) {
     std::ifstream file(file_name);
@@ -126,7 +126,7 @@ bool read_ds9_region_circles_physical(std::string file_name,
     return true;
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     std::string img_file = argv[1];
     std::string aper_reg = argv[2];
     std::string out_file = (argc > 3 ? argv[3] : file::remove_extension(img_file)+"_msk.fits");

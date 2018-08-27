@@ -1,5 +1,5 @@
-#ifndef PHYPP_MATH_LAPACK_HPP
-#define PHYPP_MATH_LAPACK_HPP
+#ifndef VIF_MATH_LAPACK_HPP
+#define VIF_MATH_LAPACK_HPP
 
 // LAPACK functions imported from fortran library
 // ----------------------------------------------

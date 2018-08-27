@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_CORE_VEC_BITS
-#error this file is not meant to be included separately, include "phypp/core/vec.hpp" instead
+#ifndef VIF_INCLUDING_CORE_VEC_BITS
+#error this file is not meant to be included separately, include "vif/core/vec.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     ////////////////////////////////////////////
     //               Operators                //
     ////////////////////////////////////////////
@@ -76,7 +76,7 @@ namespace phypp {
     #define VECTORIZE(op, sop) \
         template<std::size_t Dim, typename T, typename U> \
         vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> operator op (const vec<Dim,T>& v, const vec<Dim,U>& u) { \
-            phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' (", v.dims, " vs ", u.dims, ")"); \
             vec<Dim,typename impl::op_res_t<OP_TYPE(op),T,U>::type> tv; tv.dims = v.dims; tv.reserve(v.size()); \
             for (uint_t i : range(v)) { \
@@ -96,7 +96,7 @@ namespace phypp {
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
             std::is_same<typename impl::op_res_t<OP_TYPE(op),T,U>::type, T>::value>::type> \
         vec<Dim,T> operator op (vec<Dim,T>&& v, const vec<Dim,U>& u) { \
-            phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' (", v.dims, " vs ", u.dims, ")"); \
             for (uint_t i : range(v)) { \
                 v.data[i] sop impl::get_element_(u, i); \
@@ -124,7 +124,7 @@ namespace phypp {
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
             std::is_same<typename impl::op_res_t<OP_TYPE(op),U,T>::type, T>::value>::type> \
         vec<Dim,T> operator op (const vec<Dim,U>& u, vec<Dim,T>&& v) { \
-            phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' (", v.dims, " vs ", u.dims, ")"); \
             for (uint_t i : range(v)) { \
                 v.data[i] = impl::get_element_(u, i) op v.data[i]; \
@@ -144,7 +144,7 @@ namespace phypp {
             std::is_same<typename impl::op_res_t<OP_TYPE(op),T,U>::type, T>::value && \
             !std::is_pointer<U>::value>::type> \
         vec<Dim,T> operator op (vec<Dim,T>&& v, vec<Dim,U>&& u) { \
-            phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' (", v.dims, " vs ", u.dims, ")"); \
             for (uint_t i : range(v)) { \
                 v.data[i] sop u.data[i]; \
@@ -182,7 +182,7 @@ namespace phypp {
         \
         template<std::size_t Dim, typename T, typename U> \
         vec<Dim,bool> operator op (const vec<Dim,T>& v, const vec<Dim,U>& u) { \
-            phypp_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v.dims == u.dims, "incompatible dimensions in operator '" #op \
                 "' (", v.dims, " vs ", u.dims, ")"); \
             vec<Dim,bool> tv(v.dims); \
             for (uint_t i : range(v)) { \
@@ -209,7 +209,7 @@ namespace phypp {
         template<std::size_t Dim, typename T, typename U, typename enable = typename std::enable_if< \
             meta::is_bool<T>::value && meta::is_bool<U>::value>::type> \
         vec<Dim,bool> operator op (const vec<Dim,T>& v1, const vec<Dim,U>& v2) { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
                 "' (", v1.dims, " vs ", v2.dims, ")"); \
             vec<Dim,bool> tv = v1; \
             for (uint_t i : range(v1)) { \
@@ -220,7 +220,7 @@ namespace phypp {
         template<std::size_t Dim, typename U, typename enable = typename std::enable_if< \
             meta::is_bool<U>::value>::type> \
         vec<Dim,bool> operator op (vec<Dim,bool>&& v1, const vec<Dim,U>& v2) { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
                 "' (", v1.dims, " vs ", v2.dims, ")"); \
             for (uint_t i : range(v1)) { \
                 v1.safe[i] = v1.safe[i] op v2.safe[i]; \
@@ -230,7 +230,7 @@ namespace phypp {
         template<std::size_t Dim, typename T, typename enable = typename std::enable_if< \
             meta::is_bool<T>::value>::type> \
         vec<Dim,bool> operator op (const vec<Dim,T>& v1, vec<Dim,bool>&& v2) { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
                 "' (", v1.dims, " vs ", v2.dims, ")"); \
             for (uint_t i : range(v2)) { \
                 v2.safe[i] = v1.safe[i] op v2.safe[i]; \
@@ -239,7 +239,7 @@ namespace phypp {
         } \
         template<std::size_t Dim> \
         vec<Dim,bool> operator op (vec<Dim,bool>&& v1, vec<Dim,bool>&& v2) { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions in operator '" #op \
                 "' (", v1.dims, " vs ", v2.dims, ")"); \
             for (uint_t i : range(v1)) { \
                 v1.safe[i] = v1.safe[i] op v2.safe[i]; \

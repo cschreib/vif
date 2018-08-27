@@ -1,12 +1,12 @@
-#ifndef PHYPP_CORE_PRINT_HPP
-#define PHYPP_CORE_PRINT_HPP
+#ifndef VIF_CORE_PRINT_HPP
+#define VIF_CORE_PRINT_HPP
 
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <utility>
 
-namespace phypp {
+namespace vif {
     template<typename T>
     void print(const T& t) {
         std::cout << t << std::endl;

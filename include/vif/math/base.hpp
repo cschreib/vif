@@ -1,16 +1,16 @@
-#ifndef PHYPP_MATH_MATH_HPP
-#define PHYPP_MATH_MATH_HPP
+#ifndef VIF_MATH_MATH_HPP
+#define VIF_MATH_MATH_HPP
 
 #include <cmath>
 #include <limits>
 #ifndef NO_GSL
 #include <gsl/gsl_sf_bessel.h>
 #endif
-#include "phypp/core/vec.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/core/error.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/range.hpp"
+#include "vif/core/error.hpp"
 
-namespace phypp {
+namespace vif {
     static constexpr const double dnan = std::numeric_limits<double>::quiet_NaN();
     static constexpr const float  fnan = std::numeric_limits<float>::quiet_NaN();
     static constexpr const double dinf = std::numeric_limits<double>::infinity();
@@ -124,46 +124,46 @@ namespace phypp {
         return 1.0/(t*t);
     }
 
-    PHYPP_VECTORIZE(sqrt);
-    PHYPP_VECTORIZE(sqr);
-    PHYPP_VECTORIZE(invsqr);
-    PHYPP_VECTORIZE(pow);
-    PHYPP_VECTORIZE(fmod);
-    PHYPP_VECTORIZE(cos);
-    PHYPP_VECTORIZE(sin);
-    PHYPP_VECTORIZE(tan);
-    PHYPP_VECTORIZE(acos);
-    PHYPP_VECTORIZE(asin);
-    PHYPP_VECTORIZE(atan);
-    PHYPP_VECTORIZE2(atan2);
-    PHYPP_VECTORIZE(cosh);
-    PHYPP_VECTORIZE(sinh);
-    PHYPP_VECTORIZE(tanh);
-    PHYPP_VECTORIZE(acosh);
-    PHYPP_VECTORIZE(asinh);
-    PHYPP_VECTORIZE(atanh);
-    PHYPP_VECTORIZE(exp);
-    PHYPP_VECTORIZE(log);
-    PHYPP_VECTORIZE(log2);
-    PHYPP_VECTORIZE(log10);
-    PHYPP_VECTORIZE(erf);
-    PHYPP_VECTORIZE(erfc);
-    PHYPP_VECTORIZE(tgamma);
-    PHYPP_VECTORIZE(ceil);
-    PHYPP_VECTORIZE(floor);
-    PHYPP_VECTORIZE(round);
-    PHYPP_VECTORIZE(abs);
-    PHYPP_VECTORIZE(clamp);
-    PHYPP_VECTORIZE_REN(bessel_j0, j0);
-    PHYPP_VECTORIZE_REN(bessel_j1, j1);
-    PHYPP_VECTORIZE_REN(bessel_y0, y0);
-    PHYPP_VECTORIZE_REN(bessel_y1, y1);
+    VIF_VECTORIZE(sqrt);
+    VIF_VECTORIZE(sqr);
+    VIF_VECTORIZE(invsqr);
+    VIF_VECTORIZE(pow);
+    VIF_VECTORIZE(fmod);
+    VIF_VECTORIZE(cos);
+    VIF_VECTORIZE(sin);
+    VIF_VECTORIZE(tan);
+    VIF_VECTORIZE(acos);
+    VIF_VECTORIZE(asin);
+    VIF_VECTORIZE(atan);
+    VIF_VECTORIZE2(atan2);
+    VIF_VECTORIZE(cosh);
+    VIF_VECTORIZE(sinh);
+    VIF_VECTORIZE(tanh);
+    VIF_VECTORIZE(acosh);
+    VIF_VECTORIZE(asinh);
+    VIF_VECTORIZE(atanh);
+    VIF_VECTORIZE(exp);
+    VIF_VECTORIZE(log);
+    VIF_VECTORIZE(log2);
+    VIF_VECTORIZE(log10);
+    VIF_VECTORIZE(erf);
+    VIF_VECTORIZE(erfc);
+    VIF_VECTORIZE(tgamma);
+    VIF_VECTORIZE(ceil);
+    VIF_VECTORIZE(floor);
+    VIF_VECTORIZE(round);
+    VIF_VECTORIZE(abs);
+    VIF_VECTORIZE(clamp);
+    VIF_VECTORIZE_REN(bessel_j0, j0);
+    VIF_VECTORIZE_REN(bessel_j1, j1);
+    VIF_VECTORIZE_REN(bessel_y0, y0);
+    VIF_VECTORIZE_REN(bessel_y1, y1);
 
     #ifndef NO_GSL
-    PHYPP_VECTORIZE_REN(bessel_i0, gsl_sf_bessel_I0);
-    PHYPP_VECTORIZE_REN(bessel_i1, gsl_sf_bessel_I1);
-    PHYPP_VECTORIZE_REN(bessel_k0, gsl_sf_bessel_K0);
-    PHYPP_VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
+    VIF_VECTORIZE_REN(bessel_i0, gsl_sf_bessel_I0);
+    VIF_VECTORIZE_REN(bessel_i1, gsl_sf_bessel_I1);
+    VIF_VECTORIZE_REN(bessel_k0, gsl_sf_bessel_K0);
+    VIF_VECTORIZE_REN(bessel_k1, gsl_sf_bessel_K1);
     #endif
 
     // Create a range of n steps from i to j (inclusive)
@@ -185,7 +185,7 @@ namespace phypp {
     // Create a range of n logarithmic steps from i to j (inclusive)
     template<typename T, typename U = T>
     vec1d rgen_log(T i, U j, uint_t n) {
-        phypp_check(i > 0 && j > 0, "'rgen_log(a,b,n)' needs a strictly positive value for 'a' and 'b' "
+        vif_check(i > 0 && j > 0, "'rgen_log(a,b,n)' needs a strictly positive value for 'a' and 'b' "
             "(got ", i, " and ", j, ")");
 
         if (n == 1) {
@@ -208,7 +208,7 @@ namespace phypp {
     vec1d rgen_step(T i, U j, V s) {
         vec1d ret;
 
-        phypp_check(s > 0 && is_finite(s),
+        vif_check(s > 0 && is_finite(s),
             "'rgen_step(a,b,s)' needs a strictly positive and finite value for 's' (got ", s, ")");
 
         using ctype = decltype(i*j*s);

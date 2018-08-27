@@ -1,4 +1,4 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
 #define check(t, s) { \
     std::string st = to_string(t); \
@@ -7,7 +7,7 @@
     assert(st == s); \
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     double start = now();
 
     file::mkdir("out");
@@ -414,26 +414,26 @@ int phypp_main(int argc, char* argv[]) {
     {
         print("ASCII table loading");
         vec1i i1, i2;
-        ascii::read_table("data/table.txt", 2, i1, i2);
+        ascii::read_table("data/table.txt", i1, i2);
         check(i1, "{0, 1, 2, 3, 4}");
         check(i2, "{0, 1, 3, 5, 9}");
 
         vec1i i2b;
-        ascii::read_table("data/table.txt", 2, _, i2b);
+        ascii::read_table("data/table.txt", _, i2b);
         check(where(i2 != i2b).empty(), "1");
 
         vec2i ids;
-        ascii::read_table("data/table.txt", 2, ascii::columns(2, ids));
+        ascii::read_table("data/table.txt", ascii::columns(2, ids));
         check(where(i1 != ids(_,0)).empty(), "1");
         check(where(i2 != ids(_,1)).empty(), "1");
 
         vec2i i1c, i2c;
-        ascii::read_table("data/table.txt", 2, ascii::columns(1, i1c, i2c));
+        ascii::read_table("data/table.txt", ascii::columns(1, i1c, i2c));
         check(where(i1 != i1c(_,0)).empty(), "1");
         check(where(i2 != i2c(_,0)).empty(), "1");
 
         vec2i i2d;
-        ascii::read_table("data/table.txt", 2, ascii::columns(1, _, i2d));
+        ascii::read_table("data/table.txt", ascii::columns(1, _, i2d));
         check(where(i2 != i2d(_,0)).empty(), "1");
     }
 
@@ -699,73 +699,70 @@ int phypp_main(int argc, char* argv[]) {
 
     {
         print("Matrix 'invert', 'product', 'make_identity'");
-        vec2d a = {
+        matrix::mat2d a = {
             {1.000, 2.000, 3.000},
             {4.000, 1.000, 6.000},
             {7.000, 8.000, 1.000}
         };
 
-        vec2d id = {{1,0,0},{0,1,0},{0,0,1}};
+        matrix::mat2d id = {{1,0,0},{0,1,0},{0,0,1}};
 
 #ifndef NO_LAPACK
-        vec2d i;
+        matrix::mat2d i;
         check(matrix::invert(a,i), "1");
-        vec2d tid = matrix::product(a,i);
-        check(rms(tid - id) < 1e-10, "1");
+        matrix::mat2d tid = a*i;
+        check(rms((tid - id).base) < 1e-10, "1");
 #endif
 
-        vec2i sq = {{1,1,1},{1,1,1},{1,1,1}};
+        matrix::mat<int_t> sq = {{1,1,1},{1,1,1},{1,1,1}};
         matrix::diagonal(sq) *= 5;
-        check(sq, "{5, 1, 1, 1, 5, 1, 1, 1, 5}");
+        check(sq.base, "{5, 1, 1, 1, 5, 1, 1, 1, 5}");
 
-        vec2d id2 = matrix::make_identity(3);
-        check(rms(id2 - id) < 1e-10, "1");
+        matrix::mat2d id2 = matrix::make_identity(3);
+        check(rms((id2 - id).base) < 1e-10, "1");
 
-        check(count(matrix::product(id, a) != a) == 0, "1");
+        check(rms((id*a - a).base) < 1e-10, "1");
     }
 
     {
         print("Matrix 'make_translation', 'make_scale', 'make_rotation'");
-        double x = 5, y = 2;
-        vec1d p = matrix::make_point(x, y);
-        check(p, "{5, 2, 1}");
+        vec1d p = {5, 2, 1};
 
-        vec2d tm = matrix::make_identity(3);
+        matrix::mat2d tm = matrix::make_identity(3);
 
-        vec2d m = matrix::make_translation(2,3);
-        vec1d tp = matrix::product(m, p);
-        tm = matrix::product(m, tm);
+        matrix::mat2d m = matrix::make_translation(2.0,3.0);
+        vec1d tp = m*p;
+        tm = m*tm;
         check(tp, "{7, 5, 1}");
 
-        m = matrix::make_scale(2,3);
-        tp = matrix::product(m, tp);
-        tm = matrix::product(m, tm);
+        m = matrix::make_scale(2.0,3.0);
+        tp = m*tp;
+        tm = m*tm;
         check(tp, "{14, 15, 1}");
 
         m = matrix::make_rotation(dpi/2);
-        tp = matrix::product(m, tp);
-        tm = matrix::product(m, tm);
+        tp = m*tp;
+        tm = m*tm;
         check(tp, "{-15, 14, 1}");
 
-        check(matrix::product(tm, p), "{-15, 14, 1}");
+        check(tm*p, "{-15, 14, 1}");
     }
 
-#ifndef NO_LAPACK
     {
         print("Matrix 'invert_symmetric' function");
-        vec2d alpha = matrix::make_identity(2);
+        matrix::mat2d alpha = matrix::make_identity(2);
         alpha(1,0) = alpha(0,1) = 2;
-        vec2d talpha = alpha;
+        matrix::mat2d talpha = alpha;
         check(matrix::inplace_invert(talpha), "1");
         check(matrix::inplace_invert_symmetric(alpha), "1");
-        matrix::symmetrize(alpha);
-        check(count(abs(alpha - talpha) > 1e-6), "0");
+        matrix::inplace_symmetrize(alpha);
+        check(count(abs((alpha - talpha).base) > 1e-6), "0");
     }
 
     {
         print("Matrix 'solve_symmetric' function");
         vec1d beta = {1,2,3,4};
-        vec2d alpha = matrix::make_identity(4);
+        matrix::mat2d alpha = matrix::make_identity(4);
         check(matrix::inplace_solve_symmetric(alpha, beta), "1");
         check(beta, "{1, 2, 3, 4}");
 
@@ -777,21 +774,22 @@ int phypp_main(int argc, char* argv[]) {
         vec1d tbeta = beta;
         alpha = matrix::make_identity(2);
         alpha(1,0) = alpha(0,1) = 2;
-        vec2d talpha = alpha;
+        matrix::mat2d talpha = alpha;
         check(matrix::inplace_solve_symmetric(alpha, beta), "1");
         check(count(abs(beta - vec1d{1, 0}) > 1e-6), "0");
 
-        vec1d ubeta = matrix::product(talpha, beta);
+        vec1d ubeta = talpha*beta;
         check(count(abs(ubeta - tbeta) > 1e-6), "0");
 
         matrix::inplace_invert(talpha);
-        tbeta = matrix::product(talpha, tbeta);
+        tbeta = talpha*tbeta;
         check(count(abs(beta - tbeta) > 1e-6), "0");
     }
 
+#ifndef NO_LAPACK
     {
         print("Matrix 'eigen_symmetric' function");
-        vec2d alpha = {
+        matrix::mat2d alpha = {
             {1.0, -0.1, 0.1},
             {-0.1, 1.3, 0.1},
             {0.1,  0.1, 1.5}
@@ -800,17 +798,18 @@ int phypp_main(int argc, char* argv[]) {
         uint_t n = alpha.dims[0];
 
         vec1d vals;
-        vec2d vecs;
+        matrix::mat2d vecs;
         check(matrix::eigen_symmetric(alpha, vals, vecs), "1");
         for (uint_t i : range(n)) {
             vec1d u1 = vecs(i,_);
-            vec1d u2 = matrix::product(alpha, u1)/u1;
+            vec1d u2 = (alpha*u1)/u1;
             for (uint_t j : range(n-1)) {
                 check(abs(u2[j] - u2[j+1]) < 1e-6, "1");
             }
             check(abs(u2[0] - vals[i]) < 1e-6, "1");
         }
     }
+#endif
 
     {
         print("'linfit' function");
@@ -875,7 +874,6 @@ int phypp_main(int argc, char* argv[]) {
         img -= psf*fr.params(1);
         fits::write("out/residual.fits", img);
     }
-#endif
 
     {
         print("'sort' function");

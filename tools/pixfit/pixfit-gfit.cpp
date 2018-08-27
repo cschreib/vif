@@ -1,5 +1,5 @@
-#include <phypp.hpp>
-#include <phypp/astro/template_fit.hpp>
+#include <vif.hpp>
+#include <vif/astro/template_fit.hpp>
 #include "pixfit-common.hpp"
 
 void print_help() {
@@ -50,7 +50,7 @@ void print_help() {
     bullet("verbose", "[flag] show a progress bar to estimate computing time");
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
         return 0;
@@ -160,14 +160,14 @@ int phypp_main(int argc, char* argv[]) {
         }
     }
 
-    phypp_check(fcat.z.size() == fcat.flux.dims[0], "number of redshifts (", fcat.z.size(), ") does "
+    vif_check(fcat.z.size() == fcat.flux.dims[0], "number of redshifts (", fcat.z.size(), ") does "
         "not match number of flux (", fcat.flux.dims, ")");
 
     if (fcat.bands.empty()) {
         error("gfit: no band to fit (missing 'BANDS')");
         return 1;
     } else {
-        phypp_check(fcat.bands.size() == fcat.flux.dims[1], "number of bands (", fcat.bands.size(),
+        vif_check(fcat.bands.size() == fcat.flux.dims[1], "number of bands (", fcat.bands.size(),
             ") does not match number of flux (", fcat.flux.dims, ")");
     }
 

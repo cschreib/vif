@@ -1,13 +1,13 @@
-#ifndef PHYPP_MATH_INTERPOLATE_HPP
-#define PHYPP_MATH_INTERPOLATE_HPP
+#ifndef VIF_MATH_INTERPOLATE_HPP
+#define VIF_MATH_INTERPOLATE_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/math/base.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/range.hpp"
+#include "vif/core/error.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/math/base.hpp"
 
-namespace phypp {
+namespace vif {
     inline double interpolate(double y1, double y2, double x1, double x2, double x) {
         double a = (x - x1)/(x2 - x1);
         return y1 + (y2 - y1)*a;
@@ -30,9 +30,9 @@ namespace phypp {
         using rtypey = meta::rtype_t<TypeY>;
         using rtypex = meta::rtype_t<TypeX1>;
 
-        phypp_check(y.size() == x.size(),
+        vif_check(y.size() == x.size(),
             "interpolate: 'x' and 'y' arrays must contain the same number of elements");
-        phypp_check(y.size() >= 2,
+        vif_check(y.size() >= 2,
             "interpolate: 'x' and 'y' arrays must contain at least 2 elements");
 
         uint_t nmax = x.size();
@@ -75,9 +75,9 @@ namespace phypp {
         using rtypey = meta::rtype_t<TypeY>;
         using rtypex = meta::rtype_t<TypeX>;
 
-        phypp_check(y.dims == x.dims, "incompatible dimensions between X and Y arrays (", x.dims,
+        vif_check(y.dims == x.dims, "incompatible dimensions between X and Y arrays (", x.dims,
             " vs. ", y.dims, ")");
-        phypp_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
+        vif_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
 
         uint_t nmax = x.size();
         uint_t low = lower_bound(x, nx);
@@ -114,9 +114,9 @@ namespace phypp {
         using rtypee = meta::rtype_t<TypeE>;
         using rtypex = meta::rtype_t<TypeX1>;
 
-        phypp_check(y.dims == x.dims, "incompatible dimensions between X and Y arrays (", x.dims,
+        vif_check(y.dims == x.dims, "incompatible dimensions between X and Y arrays (", x.dims,
             " vs. ", y.dims, ")");
-        phypp_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
+        vif_check(y.size() >= 2, "interpolated data must contain at least 2 elements");
 
         uint_t nmax = x.size();
         std::pair<vec<DX,decltype(y[0]*x[0])>,vec<DX,decltype(y[0]*x[0])>> p;
@@ -191,9 +191,9 @@ namespace phypp {
     meta::rtype_t<Type> bilinear(const vec<2,Type>& map, const vec1d& mx,
         const vec1d& my, double x, double y) {
 
-        phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
+        vif_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
             " vs. ", mx.size(), ")");
-        phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
+        vif_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
             " vs. ", my.size(), ")");
 
         double ux = interpolate(dindgen(mx.size()), mx, x);
@@ -205,11 +205,11 @@ namespace phypp {
     vec<D,meta::rtype_t<Type>> bilinear(const vec<2,Type>& map, const vec1d& mx,
         const vec1d& my, const vec<D,TX>& x, const vec<D,TY>& y) {
 
-        phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
+        vif_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
             " vs. ", mx.size(), ")");
-        phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
+        vif_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
             " vs. ", my.size(), ")");
-        phypp_check(x.dims == y.dims, "incompatible dimensions for X and Y (", x.dims,
+        vif_check(x.dims == y.dims, "incompatible dimensions for X and Y (", x.dims,
             " vs. ", y.size(), ")");
 
         vec<D,meta::rtype_t<Type>> v(x.dims);
@@ -249,9 +249,9 @@ namespace phypp {
     vec<2,meta::rtype_t<Type>> rebin(const vec<2,Type>& map, const vec1d& mx,
         const vec1d& my, const vec1d& x, const vec1d& y) {
 
-        phypp_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
+        vif_check(map.dims[0] == mx.size(), "incompatible size of MAP and MX (", map.dims,
             " vs. ", mx.size(), ")");
-        phypp_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
+        vif_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
             " vs. ", my.size(), ")");
 
         vec<2,meta::rtype_t<Type>> v(x.size(), y.size());
@@ -357,9 +357,9 @@ namespace phypp {
 
         vec<D,meta::rtype_t<TY>> yn(xn.dims);
 
-        phypp_check(y.size() == x.size(),
+        vif_check(y.size() == x.size(),
             "'x' and 'y' arrays must contain the same number of elements");
-        phypp_check(y.size() >= 2,
+        vif_check(y.size() >= 2,
             "'x' and 'y' arrays must contain at least 2 elements");
 
         vec1d b, c, d;
@@ -389,9 +389,9 @@ namespace phypp {
     meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x,
         const T& xn) {
 
-        phypp_check(y.size() == x.size(),
+        vif_check(y.size() == x.size(),
             "'x' and 'y' arrays must contain the same number of elements");
-        phypp_check(y.size() >= 2,
+        vif_check(y.size() >= 2,
             "'x' and 'y' arrays must contain at least 2 elements");
 
         vec1d b, c, d;
@@ -414,7 +414,7 @@ namespace phypp {
     vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<D,TN>& xn) {
         vec<D,meta::rtype_t<TY>> yn(xn.dims);
 
-        phypp_check(y.size() >= 2, "'y' array must contain at least 2 elements");
+        vif_check(y.size() >= 2, "'y' array must contain at least 2 elements");
 
         vec1d b, c, d;
         impl::interpolate_3spline_make_coefs(y, b, c, d);
@@ -440,7 +440,7 @@ namespace phypp {
     // all the points that would use these values will be contaminated.
     template <typename TN, typename TY>
     meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const TN& xn) {
-        phypp_check(y.size() >= 2, "'y' array must contain at least 2 elements");
+        vif_check(y.size() >= 2, "'y' array must contain at least 2 elements");
 
         vec1d b, c, d;
         impl::interpolate_3spline_make_coefs(y, b, c, d);

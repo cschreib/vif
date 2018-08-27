@@ -1,7 +1,7 @@
 #include "pixfit-common.hpp"
-#include <phypp/astro/qstack.hpp>
+#include <vif/astro/qstack.hpp>
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     std::vector<map_info> maps;
     if (!read_maps(argv[1], maps)) return 1;
 

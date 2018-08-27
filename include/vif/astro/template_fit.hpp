@@ -1,10 +1,10 @@
-#ifndef PHYPP_ASTRO_TEMPLATE_FIT_HPP
-#define PHYPP_ASTRO_TEMPLATE_FIT_HPP
+#ifndef VIF_ASTRO_TEMPLATE_FIT_HPP
+#define VIF_ASTRO_TEMPLATE_FIT_HPP
 
-#include "phypp/astro/astro.hpp"
-#include "phypp/math/mpfit.hpp"
+#include "vif/astro/astro.hpp"
+#include "vif/math/mpfit.hpp"
 
-namespace phypp {
+namespace vif {
 namespace astro {
     // Convolve each SED with the response curve of the filters
     template<typename TLib, typename TFi>
@@ -34,7 +34,7 @@ namespace astro {
     vec2d template_observed(const TLib& lib, const vec<1,TZ>& z, const vec<1,TD>& d,
         const vec<1,TFi>& filters) {
 
-        phypp_check(z.size() == d.size(),
+        vif_check(z.size() == d.size(),
             "incompatible redshift and distance variables (", z.dims, " vs ", d.dims, ")");
 
         struct {

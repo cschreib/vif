@@ -1,14 +1,14 @@
-#ifndef PHYPP_IO_FITS_HPP
-#define PHYPP_IO_FITS_HPP
+#ifndef VIF_IO_FITS_HPP
+#define VIF_IO_FITS_HPP
 
-#include "phypp/io/fits/base.hpp"
-#include "phypp/io/fits/table.hpp"
-#include "phypp/io/fits/image.hpp"
-#include "phypp/utility/os.hpp"
+#include "vif/io/fits/base.hpp"
+#include "vif/io/fits/table.hpp"
+#include "vif/io/fits/image.hpp"
+#include "vif/utility/os.hpp"
 
 #ifndef NO_CFITSIO
 
-namespace phypp {
+namespace vif {
 namespace fits {
     // Return the number of dimensions of a FITS file
     // Note: will return 0 for FITS tables
@@ -96,7 +96,7 @@ namespace fits {
     inline fits::header read_header_sectfits(const std::string& filename, uint_t sect) {
         if (ends_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
-            phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
+            vif_check(sect < sects.size(), "no section ", sect, " in '", filename,
                 "' (only ", sects.size()," available)");
 
             return read_header(sects[sect]);
@@ -110,7 +110,7 @@ namespace fits {
 
         if (ends_with(filename, ".sectfits")) {
             vec1s sects = read_sectfits(filename);
-            phypp_check(sect < sects.size(), "no section ", sect, " in '", filename,
+            vif_check(sect < sects.size(), "no section ", sect, " in '", filename,
                 "' (only ", sects.size()," available)");
 
             return read_header_hdu(sects[sect], hdu);

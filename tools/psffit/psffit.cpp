@@ -1,8 +1,8 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
 void print_help();
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

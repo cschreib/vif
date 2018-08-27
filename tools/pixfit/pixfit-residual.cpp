@@ -1,6 +1,6 @@
 #include "pixfit-common.hpp"
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     std::string map_file;
     std::string cat_file;
     double snr_min = dnan;

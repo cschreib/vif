@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_STRING_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/string.hpp" instead
+#ifndef VIF_INCLUDING_STRING_BITS
+#error this file is not meant to be included separately, include "vif/utilty/string.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     inline uint_t find(const std::string& ts, const std::string& pattern) {
         auto p = ts.find(pattern);
         if (p != ts.npos) {
@@ -78,14 +78,14 @@ namespace phypp {
     }
 
     inline std::string erase_begin(std::string s, const std::string& pattern) {
-        phypp_check(begins_with(s, pattern), "unexpected string content: '"+s+"', "
+        vif_check(begins_with(s, pattern), "unexpected string content: '"+s+"', "
             "should start with '"+pattern+"'");
         s.erase(0, pattern.size());
         return s;
     }
 
     inline std::string erase_end(std::string s, const std::string& pattern) {
-        phypp_check(ends_with(s, pattern), "unexpected string content: '"+s+"', "
+        vif_check(ends_with(s, pattern), "unexpected string content: '"+s+"', "
             "should end with '"+pattern+"'");
         s.erase(s.size()-pattern.size(), pattern.size());
         return s;
@@ -101,11 +101,11 @@ namespace phypp {
             int nw = 0;
             while (n > nw) {
                 p2 = str.find_last_not_of(chars, p1);
-                phypp_check(p2 != str.npos,
+                vif_check(p2 != str.npos,
                     "not enough words (found ", nw, ", expected ", n, ")");
 
                 p1 = str.find_last_of(chars, p2);
-                phypp_check(p1 != str.npos || nw == n-1,
+                vif_check(p1 != str.npos || nw == n-1,
                     "not enough words (found ", nw+1, ", expected ", n, ")");
 
                 ++nw;
@@ -119,11 +119,11 @@ namespace phypp {
             int nw = 0;
             while (n >= nw) {
                 p1 = str.find_first_not_of(chars, p2);
-                phypp_check(p1 != str.npos,
+                vif_check(p1 != str.npos,
                     "not enough words (found ", nw, ", expected ", n+1, ")");
 
                 p2 = str.find_first_of(chars, p1);
-                phypp_check(p2 != str.npos || nw == n,
+                vif_check(p2 != str.npos || nw == n,
                     "not enough words (found ", nw+1, ", expected ", n+1, ")");
 
                 ++nw;
@@ -148,7 +148,7 @@ namespace phypp {
             p += begin.size();
 
             p0 = os.find(end, p);
-            phypp_check(p0 != npos, "ill formed "+begin+"..."+end+" block");
+            vif_check(p0 != npos, "ill formed "+begin+"..."+end+" block");
 
             s += convert(os.substr(p, p0-p));
             p0 += end.size();
@@ -187,7 +187,7 @@ namespace phypp {
             }
 
             p0 = os.find(end, p);
-            phypp_check(p0 != npos, "ill formed "+begin+"..."+end+" command");
+            vif_check(p0 != npos, "ill formed "+begin+"..."+end+" command");
 
             b.push_back(os.substr(p, p0-p));
             s += convert(std::move(b));
@@ -202,11 +202,11 @@ namespace phypp {
         return s;
     }
 
-    PHYPP_VECTORIZE(find)
-    PHYPP_VECTORIZE(replace)
-    PHYPP_VECTORIZE(trim)
-    PHYPP_VECTORIZE(erase_begin)
-    PHYPP_VECTORIZE(erase_end)
-    PHYPP_VECTORIZE(begins_with)
-    PHYPP_VECTORIZE(ends_with)
+    VIF_VECTORIZE(find)
+    VIF_VECTORIZE(replace)
+    VIF_VECTORIZE(trim)
+    VIF_VECTORIZE(erase_begin)
+    VIF_VECTORIZE(erase_end)
+    VIF_VECTORIZE(begins_with)
+    VIF_VECTORIZE(ends_with)
 }

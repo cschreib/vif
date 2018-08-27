@@ -1,5 +1,5 @@
-#include <phypp.hpp>
-#include <phypp/astro/qstack.hpp>
+#include <vif.hpp>
+#include <vif/astro/qstack.hpp>
 
 void print_help();
 
@@ -74,7 +74,7 @@ bool read_image_list(const std::string& filename, vec<1,image_t>& imgs) {
     return true;
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     vec1s tsrc;
     std::string out = "";
     std::string nbase = "";

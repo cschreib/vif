@@ -1,15 +1,15 @@
-#ifndef PHYPP_MATH_REDUCE_HPP
-#define PHYPP_MATH_REDUCE_HPP
+#ifndef VIF_MATH_REDUCE_HPP
+#define VIF_MATH_REDUCE_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/string_conversion.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/math/base.hpp"
-#include "phypp/math/interpolate.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/range.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/string_conversion.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/math/base.hpp"
+#include "vif/math/interpolate.hpp"
 
-namespace phypp {
+namespace vif {
     namespace meta {
         template<typename T>
         using total_return_type = typename std::conditional<std::is_integral<T>::value,
@@ -56,7 +56,7 @@ namespace phypp {
         std::is_arithmetic<meta::rtype_t<Type>>::value && std::is_arithmetic<meta::rtype_t<TypeW>>::value
     >::type>
     double weighted_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
-        phypp_check(v.dims == w.dims, "incompatible dimensions between values and weights "
+        vif_check(v.dims == w.dims, "incompatible dimensions between values and weights "
             "(", v.dims, " vs. ", w.dims, ")");
 
         double total = 0.0;
@@ -73,7 +73,7 @@ namespace phypp {
         std::is_arithmetic<meta::rtype_t<Type>>::value && std::is_arithmetic<meta::rtype_t<TypeW>>::value
     >::type>
     std::pair<double,double> optimal_mean(const vec<Dim,Type>& v, const vec<Dim,TypeW>& e) {
-        phypp_check(v.dims == e.dims, "incompatible dimensions between values and uncertianties "
+        vif_check(v.dims == e.dims, "incompatible dimensions between values and uncertianties "
             "(", v.dims, " vs. ", e.dims, ")");
 
         double totalv = 0.0;
@@ -97,7 +97,7 @@ namespace phypp {
         typename std::enable_if<std::is_same<meta::rtype_t<T>, bool>::value &&
                                 std::is_same<meta::rtype_t<U>, bool>::value>::type>
     double fraction_of(const vec<Dim,T>& b, const vec<Dim,U>& among) {
-        phypp_check(b.dims == among.dims, "incompatible dimensions between count vector and "
+        vif_check(b.dims == among.dims, "incompatible dimensions between count vector and "
             "among vector (", b.dims, " vs. ", among.dims, ")");
 
         double total = 0.0;
@@ -129,7 +129,7 @@ namespace phypp {
         // Inplace median for non-floating point types (no NaN value)
         template<std::size_t Dim, typename Type>
         meta::rtype_t<Type> inplace_median_(vec<Dim,Type>& v, std::false_type) {
-            phypp_check(!v.empty(), "cannot find the median of an empty vector");
+            vif_check(!v.empty(), "cannot find the median of an empty vector");
 
             return nth_element_(v, v.size()/2);
         }
@@ -149,7 +149,7 @@ namespace phypp {
         // Inplace median for floating point types (can have NaN values)
         template<std::size_t Dim, typename Type>
         meta::rtype_t<Type> inplace_median_(vec<Dim,Type>& v, std::true_type) {
-            phypp_check(!v.empty(), "cannot find the median of an empty vector");
+            vif_check(!v.empty(), "cannot find the median of an empty vector");
 
             uint_t nwrong = count_nans_(v);
             if (nwrong == v.size()) return dnan;
@@ -171,8 +171,8 @@ namespace phypp {
         std::is_arithmetic<meta::rtype_t<TypeW>>::value
     >::type>
     meta::rtype_t<Type> weighted_median(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
-        phypp_check(!v.empty(), "cannot find the weighted median of an empty vector");
-        phypp_check(v.dims == w.dims, "incompatible dimensions between values and weights "
+        vif_check(!v.empty(), "cannot find the weighted median of an empty vector");
+        vif_check(v.dims == w.dims, "incompatible dimensions between values and weights "
             "(", v.dims, " vs. ", w.dims, ")");
 
         double totw = 0;
@@ -202,7 +202,7 @@ namespace phypp {
         std::is_arithmetic<U>::value
     >::type>
     meta::rtype_t<Type> inplace_percentile(vec<Dim,Type>& v, const U& u) {
-        phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
+        vif_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
         uint_t nwrong = impl::count_nans_(v);
         if (nwrong == v.size()) return dnan;
@@ -233,7 +233,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type, typename ... Args>
     vec<1,meta::rtype_t<Type>> inplace_percentiles(vec<Dim,Type>& v, const Args& ... args) {
-        phypp_check(!v.empty(), "cannot find the percentiles of an empty vector");
+        vif_check(!v.empty(), "cannot find the percentiles of an empty vector");
 
         vec<1,meta::rtype_t<Type>> r(sizeof...(Args));
         uint_t nwrong = impl::count_nans_(v);
@@ -260,7 +260,7 @@ namespace phypp {
     namespace impl {
         template<std::size_t Dim, typename Type>
         typename vec<Dim,Type>::const_iterator min_(const vec<Dim,Type>& v) {
-            phypp_check(!v.empty(), "cannot find the minimum of an empty vector");
+            vif_check(!v.empty(), "cannot find the minimum of an empty vector");
 
             auto iter = std::min_element(v.begin(), v.end(),
                 typename vec<Dim,Type>::comparator_less());
@@ -271,7 +271,7 @@ namespace phypp {
 
         template<std::size_t Dim, typename Type>
         typename vec<Dim,Type>::const_iterator max_(const vec<Dim,Type>& v) {
-            phypp_check(!v.empty(), "cannot find the maximum of an empty vector");
+            vif_check(!v.empty(), "cannot find the maximum of an empty vector");
 
             auto iter = std::min_element(v.begin(), v.end(),
                 typename vec<Dim,Type>::comparator_greater());
@@ -283,7 +283,7 @@ namespace phypp {
         template<std::size_t Dim, typename Type>
         std::pair<typename vec<Dim,Type>::const_iterator, typename vec<Dim,Type>::const_iterator>
             minmax_(const vec<Dim,Type>& v) {
-            phypp_check(!v.empty(), "cannot find the maximum/minimum of an empty vector");
+            vif_check(!v.empty(), "cannot find the maximum/minimum of an empty vector");
 
             // We cannot take care of NaN using std::minmax_element and the trick of
             // std::min_element and std::max_element. So we just roll our own...
@@ -383,7 +383,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type1, typename Type2>
     vec<Dim,meta::rtype_t<Type1>> min(const vec<Dim,Type1>& v1, const vec<Dim,Type2>& v2) {
-        phypp_check(v1.dims == v2.dims, "min: incompatible vector dimensions "
+        vif_check(v1.dims == v2.dims, "min: incompatible vector dimensions "
             "(", v1.dims, " vs. ", v2.dims, ")");
 
         vec<Dim,meta::rtype_t<Type1>> r(v1.dims);
@@ -395,7 +395,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type1, typename Type2>
     vec<Dim,meta::rtype_t<Type1>> max(const vec<Dim,Type1>& v1, const vec<Dim,Type2>& v2) {
-        phypp_check(v1.dims == v2.dims, "max: incompatible vector dimensions "
+        vif_check(v1.dims == v2.dims, "max: incompatible vector dimensions "
             "(", v1.dims, " vs. ", v2.dims, ")");
 
         vec<Dim,meta::rtype_t<Type1>> r(v1.dims);
@@ -592,8 +592,8 @@ namespace phypp {
     void run_dim(uint_t dim, Args&& ... args) {
         uint_t Dim;
         bool check = impl::run_dim_check_dims_(Dim, args...);
-        phypp_check(check, "incompatible dimensions of input vectors");
-        phypp_check(dim < Dim, "reduction dimension is incompatible with input vectors");
+        vif_check(check, "incompatible dimensions of input vectors");
+        vif_check(dim < Dim, "reduction dimension is incompatible with input vectors");
 
         impl::run_dim_unroll_<>::run(dim, _, std::forward<Args>(args)...);
     }
@@ -601,7 +601,7 @@ namespace phypp {
     template<typename F, std::size_t Dim, typename Type>
     auto reduce(uint_t dim, const vec<Dim,Type>& v, F&& func) ->
         vec<Dim-1,typename meta::return_type<F>::type> {
-        phypp_check(dim < Dim, "reduction dimension is incompatible with input vector "
+        vif_check(dim < Dim, "reduction dimension is incompatible with input vector "
             "(", dim, " vs. ", v.dims, ")");
 
         vec<Dim-1,typename meta::return_type<F>::type> r;
@@ -633,7 +633,7 @@ namespace phypp {
         template<std::size_t Dim, typename Type, typename ... Args> \
         auto partial_ ## func (uint_t dim, const vec<Dim,Type>& v, Args&& ... args) -> \
         vec<Dim-1, decltype(func(std::declval<vec<1,meta::rtype_t<Type>>>(), std::forward<Args>(args)...))> { \
-            phypp_check(dim < Dim, "reduction dimension is incompatible with input vector " \
+            vif_check(dim < Dim, "reduction dimension is incompatible with input vector " \
                 "(", dim, " vs. ", v.dims, ")"); \
             using wrapper = func ## _run_index_wrapper_<meta::rtype_t<Type>, Args...>; \
             using fptr = decltype(&wrapper::run); \
@@ -675,7 +675,7 @@ namespace phypp {
 
     #define data_info(x) \
         print("data info: ", #x, " (", typeid(x).name(), ")"); \
-        phypp::impl::data_info_(x);
+        vif::impl::data_info_(x);
 
     template<typename TypeX, typename TypeY, typename enable = typename std::enable_if<
         std::is_arithmetic<meta::rtype_t<TypeX>>::value && std::is_arithmetic<meta::rtype_t<TypeY>>::value
@@ -683,9 +683,9 @@ namespace phypp {
     auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y)
         -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
-        phypp_check(x.size() == y.size(),
+        vif_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
-        phypp_check(!y.empty(), "cannot integrate empty array");
+        vif_check(!y.empty(), "cannot integrate empty array");
 
         decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
         for (uint_t i = 0; i < x.size()-1; ++i) {
@@ -701,11 +701,11 @@ namespace phypp {
     auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y)
         -> decltype(y[0]*(x[1]-x[0])) {
 
-        phypp_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
+        vif_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
             "got dim=[", x.dims[0], ",...]");
-        phypp_check(x.dims[1] == y.size(),
+        vif_check(x.dims[1] == y.size(),
             "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
-        phypp_check(!y.empty(), "cannot integrate empty array");
+        vif_check(!y.empty(), "cannot integrate empty array");
 
         decltype(y[0]*(x[1]-x[0])) r = 0;
         for (uint_t i = 0; i < x.dims[1]; ++i) {
@@ -721,12 +721,12 @@ namespace phypp {
     auto integrate(const vec<1,TypeX>& x, const vec<1,TypeY>& y, double x0, double x1)
         -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
-        phypp_check(x.size() == y.size(),
+        vif_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
-        phypp_check(!y.empty(), "cannot integrate empty array");
+        vif_check(!y.empty(), "cannot integrate empty array");
 
-        phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
-        phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
+        vif_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
+        vif_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
 
         uint_t i0 = upper_bound(x, x0);
         uint_t i1 = lower_bound(x, x1);
@@ -761,13 +761,13 @@ namespace phypp {
     auto integrate(const vec<2,TypeX>& x, const vec<1,TypeY>& y, double x0, double x1)
         -> decltype(y[0]*(x[1]-x[0])) {
 
-        phypp_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
+        vif_check(x.dims[0] == 2, "x array must be a binned array (expected dim=[2,...], "
             "got dim=[", x.dims[0], ",...]");
-        phypp_check(x.dims[1] == y.size(),
+        vif_check(x.dims[1] == y.size(),
             "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
-        phypp_check(!y.empty(), "cannot integrate empty array");
+        vif_check(!y.empty(), "cannot integrate empty array");
 
-        phypp_check(x.safe[0] <= x0 && x.safe[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
+        vif_check(x.safe[0] <= x0 && x.safe[x.size()-1] >= x1, "x array must cover the range [x0,x1]");
 
         uint_t i0 = upper_bound(x(0,_), x0);
         uint_t i1 = lower_bound(x(0,_), x1);
@@ -793,12 +793,12 @@ namespace phypp {
     auto integrate_hinted(const vec<1,TypeX>& x, const vec<1,TypeY>& y, uint_t& ihint,
         double x0, double x1) -> decltype(0.5*y[0]*(x[1]-x[0])) {
 
-        phypp_check(x.size() == y.size(),
+        vif_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
-        phypp_check(!y.empty(), "cannot integrate empty array");
+        vif_check(!y.empty(), "cannot integrate empty array");
 
-        phypp_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
-        phypp_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
+        vif_check(x.front() <= x0, "x array does not cover x0 (", x.front(), " vs. ", x0, ")");
+        vif_check(x.back()  >= x1, "x array does not cover x1 (", x.back(),  " vs. ", x1, ")");
 
         uint_t i0, i1;
         if (ihint == npos) {
@@ -861,7 +861,7 @@ namespace phypp {
     auto cumul(const vec<1,TypeX>& x, const vec<1,TypeY>& y) -> vec<1,decltype(integrate(x,y))> {
         vec<1,decltype(integrate(x,y))> dr(y.dims);
 
-        phypp_check(x.size() == y.size(),
+        vif_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
 
         decltype(0.5*y[0]*(x[1]-x[0])) r = 0;

@@ -1,15 +1,15 @@
-#ifndef PHYPP_ASTRO_IMAGE_HPP
-#define PHYPP_ASTRO_IMAGE_HPP
+#ifndef VIF_ASTRO_IMAGE_HPP
+#define VIF_ASTRO_IMAGE_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/math/base.hpp"
-#include "phypp/math/fourier.hpp"
-#include "phypp/astro/wcs.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/range.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/math/base.hpp"
+#include "vif/math/fourier.hpp"
+#include "vif/astro/wcs.hpp"
 
-namespace phypp {
+namespace vif {
 namespace astro {
     template<typename Type>
     vec<2,meta::rtype_t<Type>> enlarge(const vec<2,Type>& v, const std::array<uint_t,4> upix,
@@ -62,7 +62,7 @@ namespace astro {
     // empty if there is no overlap between the image and the requested region.
     template<typename TypeV, typename TypeR = int_t>
     void subregion(const vec<2,TypeV>& v, const vec<1,TypeR>& reg, vec1u& rv, vec1u& rr) {
-        phypp_check(reg.size() == 4, "invalid region parameter "
+        vif_check(reg.size() == 4, "invalid region parameter "
             "(expected 4 components, got ", reg.size(), ")");
 
         int_t nvx = v.dims[0], nvy = v.dims[1];
@@ -358,7 +358,7 @@ namespace astro {
     inline vec2d circular_mask(const std::array<uint_t,2>& dims, double radius, double x, double y) {
         vec2d m(dims);
 
-        phypp_check(radius >= 0, "radius must be a positive number");
+        vif_check(radius >= 0, "radius must be a positive number");
 
         // Identify the needed region
         if (x+radius > 0 && y+radius > 0) {
@@ -430,7 +430,7 @@ namespace astro {
     template<typename TypeY1, typename TypeY2>
     auto convolve2d_naive(const vec<2,TypeY1>& map, const vec<2,TypeY2>& kernel) ->
         vec<2,decltype(map[0]*kernel[0])> {
-        phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+        vif_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
             "kernel must have odd dimensions (", kernel.dims, ")");
 
         uint_t hxsize = kernel.dims[0]/2;
@@ -466,7 +466,7 @@ namespace astro {
             "library");
         return vec2cd();
 #else
-        phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+        vif_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
             "kernel must have odd dimensions (", kernel.dims, ")");
 
         hsx = kernel.dims[0]/2; hsy = kernel.dims[1]/2;
@@ -509,7 +509,7 @@ namespace astro {
 #ifdef NO_FFTW
         return convolve2d_naive(map, kernel);
 #else
-        phypp_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+        vif_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
             "kernel must have odd dimensions (", kernel.dims, ")");
 
         uint_t hsx = kernel.dims[0]/2, hsy = kernel.dims[1]/2;
@@ -554,7 +554,7 @@ namespace astro {
         vec2cd cimg;
 
         explicit convolver2d(const vec2d& k) : kernel_normal(k) {
-            phypp_check(k.dims[0]%2 == 1 && k.dims[1]%2 == 1,
+            vif_check(k.dims[0]%2 == 1 && k.dims[1]%2 == 1,
                 "kernel must have odd dimensions (", k.dims, ")");
         }
 
@@ -871,7 +871,7 @@ namespace astro {
     vec2u segment(vec<2,T> map, segment_output& out, const segment_params& params = segment_params()) {
         vec2u smap(map.dims);
 
-        phypp_check(params.first_id > 0, "first ID must be > 0");
+        vif_check(params.first_id > 0, "first ID must be > 0");
 
         uint_t id = params.first_id;
 
@@ -990,7 +990,7 @@ namespace astro {
 
         vec2u seg(img.dims);
 
-        phypp_check(params.first_id > 0, "first ID must be > 0");
+        vif_check(params.first_id > 0, "first ID must be > 0");
 
         vec2u visited(img.dims);
         vec1u ox, oy;
@@ -1636,7 +1636,7 @@ namespace impl {
         };
 
         inline double polyon_area(const vec1d& x, const vec1d& y) {
-            // phypp_check(x.size() == y.size(), "incompatible dimensions between X and Y arrays (",
+            // vif_check(x.size() == y.size(), "incompatible dimensions between X and Y arrays (",
             //    x.size(), " vs. ", y.size(), ")");
 
             // Note: the above check is not performed here for performance reasons
@@ -1994,11 +1994,11 @@ namespace astro {
             "please enable the WCSLib library to use this function");
 #else
 
-        phypp_check(D == astros.dims.size(), "mismatch between WCS and image number of dimensions (",
+        vif_check(D == astros.dims.size(), "mismatch between WCS and image number of dimensions (",
             astros.dims.size(), " vs. ", D, ")");
 
         for (uint_t i : range(D)) {
-            phypp_check(imgs.dims[i] == astros.dims[i], "mismatch between WCS and image dimension (",
+            vif_check(imgs.dims[i] == astros.dims[i], "mismatch between WCS and image dimension (",
                 astros.dims, " vs. ", imgs.dims, ")");
         }
 

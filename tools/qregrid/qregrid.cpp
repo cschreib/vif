@@ -1,6 +1,6 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         return 0;
     }

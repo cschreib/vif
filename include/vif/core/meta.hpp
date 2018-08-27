@@ -1,12 +1,12 @@
-#ifndef PHYPP_CORE_META_HPP
-#define PHYPP_CORE_META_HPP
+#ifndef VIF_CORE_META_HPP
+#define VIF_CORE_META_HPP
 
 #include <type_traits>
 #include <array>
 #include <utility>
 #include <cassert>
 
-namespace phypp {
+namespace vif {
 namespace impl {
     namespace meta_impl {
         template<typename L1, typename L2>

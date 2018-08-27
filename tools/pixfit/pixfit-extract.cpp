@@ -1,9 +1,9 @@
 #include "pixfit-common.hpp"
-#include <phypp/astro/qxmatch.hpp>
+#include <vif/astro/qxmatch.hpp>
 
 void print_help();
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     std::string cat_file; // Name of the catalog from which to take the sources
     std::string map_file; // Name of the file listing the observed maps
     std::string img_file; // Name of the image from which to extract the fluxes
@@ -956,7 +956,7 @@ int phypp_main(int argc, char* argv[]) {
 
                 // Locate the sources that are part of this group
                 vec1u id = where(old_cat.group_aper_id == group_cat.id[i]);
-                phypp_check(!id.empty(), "aper group ", group_cat.id[i], " is empty...");
+                vif_check(!id.empty(), "aper group ", group_cat.id[i], " is empty...");
 
                 // Extract just what we need from the whole map
                 uint_t xmi = max(0,             floor(min(tx[id]) - map.group_aper_size));
@@ -1008,7 +1008,7 @@ int phypp_main(int argc, char* argv[]) {
 
                 // Locate the sources that are part of this group
                 vec1u id = where(old_cat.group_aper_id == group_cat.id[i]);
-                phypp_check(!id.empty(), "aper group ", group_cat.id[i], " is empty...");
+                vif_check(!id.empty(), "aper group ", group_cat.id[i], " is empty...");
 
                 // Extract just what we need from the whole map
                 uint_t xmi = max(0,             floor(min(tx[id]) - map.group_aper_size));

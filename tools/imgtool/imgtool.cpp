@@ -1,4 +1,4 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
 void print_help();
 
@@ -10,7 +10,7 @@ void print_convolve_help();
 void print_multiply_help();
 void print_rotate_help();
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

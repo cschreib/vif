@@ -1,5 +1,5 @@
-#ifndef PHYPP_CORE_VEC_HPP
-#define PHYPP_CORE_VEC_HPP
+#ifndef VIF_CORE_VEC_HPP
+#define VIF_CORE_VEC_HPP
 
 #include <vector>
 #include <string>
@@ -9,13 +9,13 @@
 #include <utility>
 #include <initializer_list>
 #include <limits>
-#include "phypp/core/typedefs.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/core/meta.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/iterator_base.hpp"
+#include "vif/core/typedefs.hpp"
+#include "vif/core/range.hpp"
+#include "vif/core/meta.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/iterator_base.hpp"
 
-namespace phypp {
+namespace vif {
     namespace impl {
         // Tag type to mark initialization of a reference vector.
         static struct vec_ref_tag_t {}    vec_ref_tag;
@@ -25,14 +25,14 @@ namespace phypp {
 }
 
 // Helper code is located in separate headers for clarity
-#define PHYPP_INCLUDING_CORE_VEC_BITS
-#include "phypp/core/bits/helpers.hpp"
-#include "phypp/core/bits/iterator.hpp"
-#include "phypp/core/bits/access.hpp"
-#include "phypp/core/bits/initializer_list.hpp"
-#undef PHYPP_INCLUDING_CORE_VEC_BITS
+#define VIF_INCLUDING_CORE_VEC_BITS
+#include "vif/core/bits/helpers.hpp"
+#include "vif/core/bits/iterator.hpp"
+#include "vif/core/bits/access.hpp"
+#include "vif/core/bits/initializer_list.hpp"
+#undef VIF_INCLUDING_CORE_VEC_BITS
 
-namespace phypp {
+namespace vif {
     ////////////////////////////////////////////
     //            Generic vector              //
     ////////////////////////////////////////////
@@ -261,7 +261,7 @@ namespace phypp {
                 std::copy(t.data.begin(), t.data.end(), data.begin());
             } else {
                 for (uint_t i = 0; i < Dim-1; ++i) {
-                    phypp_check(dims[i+1] == t.dims[i],
+                    vif_check(dims[i+1] == t.dims[i],
                         "push_back: incompatible dimensions (", dims, " vs ", t.dims, ")");
                 }
 
@@ -557,7 +557,7 @@ namespace phypp {
         #define OPERATOR(op) \
             template<typename U> \
             vec& operator op (const vec<Dim,U>& u) { \
-                phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
+                vif_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                     "' (", dims, " vs ", u.dims, ")"); \
                 if (u.view_same(*this)) { \
                     std::vector<typename vec<Dim,U>::dtype> t; \
@@ -763,7 +763,7 @@ namespace phypp {
         vec& operator = (const vec<Dim,T>& v) {
             static_assert(meta::vec_implicit_convertible<T,Type>::value, "could not assign vectors of "
                 "non-implicitly-convertible types");
-            phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
+            vif_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
                 v.dims, " to ", dims, ")");
 
             assign_(v);
@@ -772,7 +772,7 @@ namespace phypp {
         }
 
         vec& operator = (const vec& v) {
-            phypp_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
+            vif_check(data.size() == v.data.size(), "incompatible size in assignment (assigning ",
                 v.dims, " to ", dims, ")");
 
             assign_(v);
@@ -1100,7 +1100,7 @@ namespace phypp {
         #define OPERATOR(op) \
             template<typename U> \
             vec& operator op (const vec<Dim,U>& u) { \
-                phypp_check(dims == u.dims, "incompatible dimensions in operator '" #op \
+                vif_check(dims == u.dims, "incompatible dimensions in operator '" #op \
                     "' (", dims, " vs ", u.dims, ")"); \
                 if (u.view_same(*this)) { \
                     std::vector<typename vec<Dim,U>::dtype> t; \
@@ -1232,10 +1232,10 @@ namespace phypp {
     #undef MAKE_TYPEDEFS
 }
 
-#define PHYPP_INCLUDING_CORE_VEC_BITS
-#include "phypp/core/bits/operators.hpp"
-#include "phypp/core/bits/vectorize.hpp"
-#undef PHYPP_INCLUDING_CORE_VEC_BITS
+#define VIF_INCLUDING_CORE_VEC_BITS
+#include "vif/core/bits/operators.hpp"
+#include "vif/core/bits/vectorize.hpp"
+#undef VIF_INCLUDING_CORE_VEC_BITS
 
 #endif
 

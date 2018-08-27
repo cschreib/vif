@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_GENERIC_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/generic.hpp" instead
+#ifndef VIF_INCLUDING_GENERIC_BITS
+#error this file is not meant to be included separately, include "vif/utilty/generic.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     template<typename Type>
     vec<1,Type> reverse(vec<1,Type> v) {
         std::reverse(v.data.begin(), v.data.end());
@@ -127,15 +127,15 @@ namespace phypp {
             uint_t i1 = ids.safe[ids.size()-1-i];
             uint_t i0 = i1;
 
-            phypp_check(i1 < osize, "trying to erase value ", i1, " in vector of "
+            vif_check(i1 < osize, "trying to erase value ", i1, " in vector of "
                 "dimensions ", v.dims);
 
             ++i;
             while (i < ids.size() && i0 - ids.safe[ids.size()-1-i] <= 1) {
                 i0 = ids.safe[ids.size()-1-i];
 
-                phypp_check(i0 != i1, "remove indices contain duplicates");
-                phypp_check(i0 < osize, "trying to erase value ", i0, " in vector of "
+                vif_check(i0 != i1, "remove indices contain duplicates");
+                vif_check(i0 < osize, "trying to erase value ", i0, " in vector of "
                     "dimensions ", v.dims);
 
                 ++i;
@@ -165,7 +165,7 @@ namespace phypp {
         if (t2.empty()) return;
 
         std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
-        phypp_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
+        vif_check(t1.size()/n1 == t2.size()/n2, "cannot append dimension ", N, " in (", t1.dims,
             ") and (", t2.dims, ")");
 
         // TODO: (optimization) no need for this copy?
@@ -188,7 +188,7 @@ namespace phypp {
         if (t2.empty()) return;
 
         std::size_t n1 = t1.dims[N], n2 = t2.dims[N];
-        phypp_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
+        vif_check(t1.size()/n1 == t2.size()/n2, "cannot prepend dimension ", N, " in (", t1.dims,
             ") and (", t2.dims, ")");
 
         // TODO: (optimization) no need for this copy?

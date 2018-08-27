@@ -1,13 +1,13 @@
-#ifndef PHYPP_IO_FITS_TABLE_HPP
-#define PHYPP_IO_FITS_TABLE_HPP
+#ifndef VIF_IO_FITS_TABLE_HPP
+#define VIF_IO_FITS_TABLE_HPP
 
-#include "phypp/reflex/reflex_helpers.hpp"
-#include "phypp/io/fits/base.hpp"
-#include "phypp/math/reduce.hpp"
+#include "vif/reflex/reflex_helpers.hpp"
+#include "vif/io/fits/base.hpp"
+#include "vif/math/reduce.hpp"
 
 #ifndef NO_CFITSIO
 
-namespace phypp {
+namespace vif {
 namespace fits {
     // Reading options
     struct table_read_options {
@@ -151,7 +151,7 @@ namespace impl {
                 if (nhdu != 0) {
                     int ncols = 0;
                     fits_get_num_cols(fptr_, &ncols, &status_);
-                    fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+                    fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
                     if (ncols != 0) {
                         // Data exists, see if row or column-oriented
                         uint_t nrow;
@@ -220,13 +220,13 @@ namespace fits {
             long repeat = 0;
             fits_get_bcolparms(fptr_, c, name, nullptr, &type, &repeat,
                 nullptr, nullptr, nullptr, nullptr, &status_);
-            fits::phypp_check_cfitsio(status_, "could not read parameters of column "+to_string(c)+" in HDU");
+            fits::vif_check_cfitsio(status_, "could not read parameters of column "+to_string(c)+" in HDU");
 
             const uint_t max_dim = 256;
             long axes[max_dim];
             int naxis = 0;
             fits_read_tdim(fptr_, c, max_dim, &naxis, axes, &status_);
-            fits::phypp_check_cfitsio(status_, "could not read parameters of column '"+std::string(name)+"'");
+            fits::vif_check_cfitsio(status_, "could not read parameters of column '"+std::string(name)+"'");
 
             if (!read_keyword("TTYPE"+to_string(c), ci.name)) {
                 return false;
@@ -246,7 +246,7 @@ namespace fits {
                 int null;
                 fits_read_col(fptr_, impl::fits_impl::traits<char>::ttype, c, 1, 1, repeat,
                     &def, v.raw_data(), &null, &status_);
-                fits::phypp_check_cfitsio(status_, "could not read column '"+std::string(name)+"'");
+                fits::vif_check_cfitsio(status_, "could not read column '"+std::string(name)+"'");
 
                 if (min(v) == 0 && max(v) <= 1) {
                     ci.type = column_info::boolean;
@@ -355,7 +355,7 @@ namespace fits {
 
             int ncol;
             fits_get_num_cols(fptr_, &ncol, &status_);
-            fits::phypp_check_cfitsio(status_, "could not read number of columns in HDU");
+            fits::vif_check_cfitsio(status_, "could not read number of columns in HDU");
 
             for (uint_t c : range(ncol)) {
                 column_info ci;
@@ -398,7 +398,7 @@ namespace fits {
         public :
             ~read_sentry() {
                 if (!checked) {
-                    phypp_check(good, errmsg);
+                    vif_check(good, errmsg);
                 }
             }
 
@@ -449,7 +449,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, nelem, &def,
                 v.raw_data(), &null, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
+            fits::vif_check_cfitsio(status_, "could not read column '"+cname+"'");
         }
 
         template<typename Type>
@@ -462,7 +462,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1, &def,
                 reinterpret_cast<typename impl::fits_impl::traits<Type>::dtype*>(&v), &null, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
+            fits::vif_check_cfitsio(status_, "could not read column '"+cname+"'");
         }
 
         template<std::size_t Dim>
@@ -490,7 +490,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1, nelem, &def,
                 buffer, &null, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
+            fits::vif_check_cfitsio(status_, "could not read column '"+cname+"'");
 
             for (uint_t i : range(v)) {
                 v.safe[i] = trim(std::string(buffer[i]));
@@ -523,7 +523,7 @@ namespace fits {
                 fptr_, TSTRING, cid, 1, 1, 1, &def,
                 buffer, &null, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not read column '"+cname+"'");
+            fits::vif_check_cfitsio(status_, "could not read column '"+cname+"'");
 
             v = trim(std::string(buffer[0]));
             delete[] buffer[0];
@@ -673,7 +673,7 @@ namespace fits {
             int type;
             long repeat, width;
             fits_get_coltype(fptr_, cid, &type, &repeat, &width, &status_);
-            fits::phypp_check_cfitsio(status_, "could not read type of column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not read type of column '"+tcolname+"'");
             if (!read_column_check_type_<vtype>(opts, type)) {
                 return read_sentry{this, "wrong type for column '"+colname+"' "
                     "(expected "+pretty_type_t(vtype)+", got "+impl::fits_impl::type_to_string_(type)+")"};
@@ -683,7 +683,7 @@ namespace fits {
             std::array<long,max_column_dims> axes;
             int naxis = 0;
             fits_read_tdim(fptr_, cid, max_column_dims, &naxis, axes.data(), &status_);
-            fits::phypp_check_cfitsio(status_, "could not read dimensions of column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not read dimensions of column '"+tcolname+"'");
 
             // Support ASCII tables with string columns
             std::string extension;
@@ -915,7 +915,7 @@ namespace fits {
             const vec1u& dims, const vec1u& pitch, uint_t i, long& firstrow, long& firstelem,
             uint_t id, const Args& ... args) {
 
-            phypp_check(id < dims[i], "fits::at(): index out of bounds (",
+            vif_check(id < dims[i], "fits::at(): index out of bounds (",
                 id, " vs. ", dims[i], ") when accessing column '", tcolname,
                 "' (dimensions ", dims, ")");
 
@@ -968,7 +968,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, nelem, &def,
                 v.raw_data(), &null, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not read elements from column '"+cname+"'");
+            fits::vif_check_cfitsio(status_, "could not read elements from column '"+cname+"'");
         }
 
         template<typename Type>
@@ -981,7 +981,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, 1, &def,
                 reinterpret_cast<typename impl::fits_impl::traits<Type>::dtype*>(&v), &null, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not read element from column '"+cname+"'");
+            fits::vif_check_cfitsio(status_, "could not read element from column '"+cname+"'");
         }
 
         template<std::size_t Dim, typename Type>
@@ -1009,10 +1009,10 @@ namespace fits {
             uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
 
             column_info ci;
-            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
+            vif_check(read_column_info(tcolname, ci), "could not read data about column '",
                 tcolname, "'");
 
-            phypp_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
+            vif_check(naccessed == ci.dims.size(), "incompatible number of accessed dimensions "
                 "compared to what is present in the file (", naccessed, " vs. ",
                 ci.dims.size(), ")");
 
@@ -1025,7 +1025,7 @@ namespace fits {
                 convertible = traits::is_convertible(ci.cfitsio_type);
             }
 
-            phypp_check(convertible, "wrong type for column '", tcolname,
+            vif_check(convertible, "wrong type for column '", tcolname,
                 "' (expected ", pretty_type_t(vtype), ", got ",
                 impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 
@@ -1095,8 +1095,8 @@ namespace fits {
                 if (nhdu != 0) {
                     int ncols = 0;
                     fits_get_num_cols(fptr_, &ncols, &status_);
-                    fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
-                    phypp_check(ncols == 0, "cannot change table format when data exists in the table");
+                    fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
+                    vif_check(ncols == 0, "cannot change table format when data exists in the table");
                 }
             }
 
@@ -1112,7 +1112,7 @@ namespace fits {
                 auto type = hdu_type();
                 if (type != fits::table_hdu) {
                     // The current HDU is not a table
-                    phypp_check(type == fits::null_hdu || type == fits::empty_hdu,
+                    vif_check(type == fits::null_hdu || type == fits::empty_hdu,
                         "cannot create table, there is already data in this HDU");
 
                     // It is empty, so delete it and create a new table extension
@@ -1120,28 +1120,28 @@ namespace fits {
                     if (hdu == nhdu-1) {
                         // We are at the last HDU, so just delete and create
                         fits_delete_hdu(fptr_, nullptr, &status_);
-                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        fits::vif_check_cfitsio(status_, "could not create table HDU");
                         fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
-                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        fits::vif_check_cfitsio(status_, "could not create table HDU");
                     } else {
-                        phypp_check(hdu != 0, "cannot write tables in the primary HDU");
+                        vif_check(hdu != 0, "cannot write tables in the primary HDU");
 
                         // Delete current
                         fits_delete_hdu(fptr_, nullptr, &status_);
-                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        fits::vif_check_cfitsio(status_, "could not create table HDU");
                         // Move back because CFITSIO will insert *after* current HDU
                         fits_movrel_hdu(fptr_, -1, nullptr, &status_);
-                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        fits::vif_check_cfitsio(status_, "could not create table HDU");
                         // Add the new extension
                         fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
-                        fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                        fits::vif_check_cfitsio(status_, "could not create table HDU");
 
                     }
                 }
             } else {
                 // No HDU yet, just create the primary array and a table extension
                 fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
-                fits::phypp_check_cfitsio(status_, "could not create table HDU");
+                fits::vif_check_cfitsio(status_, "could not create table HDU");
             }
         }
 
@@ -1158,7 +1158,7 @@ namespace fits {
 
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, value.size(),
                 const_cast<typename vec<Dim,Type>::dtype*>(value.raw_data()), &status_);
-            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not write column '"+tcolname+"'");
         }
 
         template<typename Type>
@@ -1168,7 +1168,7 @@ namespace fits {
             using dtype = typename impl::fits_impl::traits<Type>::dtype;
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, 1, 1, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
-            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not write column '"+tcolname+"'");
         }
 
         template<std::size_t Dim>
@@ -1190,7 +1190,7 @@ namespace fits {
                 fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1,
                 value.size(), buffer, &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not write column '"+tcolname+"'");
 
             for (uint_t i : range(value)) {
                 delete[] buffer[i];
@@ -1209,7 +1209,7 @@ namespace fits {
             buffer[0] = const_cast<char*>(value.c_str());
             fits_write_col(fptr_, impl::fits_impl::traits<std::string>::ttype, cid, 1, 1, 1,
                 buffer, &status_);
-            fits::phypp_check_cfitsio(status_, "could not write column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not write column '"+tcolname+"'");
 
             delete[] buffer;
         }
@@ -1319,7 +1319,7 @@ namespace fits {
             }
 
             fits_write_tdim(fptr_, cid, dims.size(), const_cast<long*>(dims.raw_data()), &status_);
-            fits::phypp_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+
+            fits::vif_check_cfitsio(status_, "could not write TDIM for column '"+tcolname+
                 "' (dims "+to_string(dims)+")");
         }
 
@@ -1347,8 +1347,8 @@ namespace fits {
             if (cid > 1 && format_ == table_format::row_oriented) {
                 long nrow;
                 fits_get_num_rows(fptr_, &nrow, &status_);
-                fits::phypp_check_cfitsio(status_, "could not get number of rows in HDU");
-                phypp_check(ndrow == uint_t(nrow), "incompatible number "
+                fits::vif_check_cfitsio(status_, "could not get number of rows in HDU");
+                vif_check(ndrow == uint_t(nrow), "incompatible number "
                     "of rows in '", tcolname, "' (expected ", nrow, ", got ", ndrow, ")");
             }
 
@@ -1359,7 +1359,7 @@ namespace fits {
                 fptr_, cid, const_cast<char*>(colname.c_str()),
                 const_cast<char*>(tform.c_str()), &status_
             );
-            fits::phypp_check_cfitsio(status_, "could not create column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not create column '"+tcolname+"'");
 
             // Set TDIM keyword (if needed)
             write_column_write_tdim_(tcolname, cid, dims);
@@ -1373,7 +1373,7 @@ namespace fits {
             // Create ID of last column
             int cid;
             fits_get_num_cols(fptr_, &cid, &status_);
-            fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+            fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
             ++cid;
 
             // Create column
@@ -1446,7 +1446,7 @@ namespace fits {
         }
 
         template<typename T, typename ... Args>
-        void write_columns_impl_(impl::ascii_impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
+        void write_columns_impl_(impl::ascii_impl::macroed_t, std::string names, const vif::impl::named_t<T>& value,
             Args&& ... args) {
 
             impl::ascii_impl::pop_macroed_name(names);
@@ -1517,7 +1517,7 @@ namespace fits {
             // Create ID of last column
             int cid;
             fits_get_num_cols(fptr_, &cid, &status_);
-            fits::phypp_check_cfitsio(status_, "could not get number of columns in HDU");
+            fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
             ++cid;
 
             // Make fake data (do not actually allocate memory)
@@ -1534,7 +1534,7 @@ namespace fits {
             // when writing the actual data.
             if (format_ == table_format::row_oriented && cid == 1) {
                 fits_insert_rows(fptr_, 0, value.dims[0], &status_);
-                fits::phypp_check_cfitsio(status_,
+                fits::vif_check_cfitsio(status_,
                     "could not create all rows of columns '"+tcolname+"'");
             }
         }
@@ -1619,7 +1619,7 @@ namespace fits {
         }
 
         template<typename T, typename ... Args>
-        void update_columns_impl_(impl::ascii_impl::macroed_t, std::string names, const phypp::impl::named_t<T>& value,
+        void update_columns_impl_(impl::ascii_impl::macroed_t, std::string names, const vif::impl::named_t<T>& value,
             Args&& ... args) {
 
             impl::ascii_impl::pop_macroed_name(names);
@@ -1696,7 +1696,7 @@ namespace fits {
             using dtype = typename impl::fits_impl::traits<Type>::dtype;
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem, 1,
                 const_cast<dtype*>(reinterpret_cast<const dtype*>(&value)), &status_);
-            fits::phypp_check_cfitsio(status_, "could not update element in column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not update element in column '"+tcolname+"'");
         }
 
         template<std::size_t Dim, typename Type>
@@ -1715,7 +1715,7 @@ namespace fits {
             fits_write_col(fptr_, impl::fits_impl::traits<Type>::ttype, cid, firstrow, firstelem,
                 value.size(), const_cast<typename vec<Dim,Type>::dtype*>(value.raw_data()),
                 &status_);
-            fits::phypp_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
+            fits::vif_check_cfitsio(status_, "could not update elements in column '"+tcolname+"'");
         }
 
         template<typename Type, typename enable = typename std::enable_if<
@@ -1735,7 +1735,7 @@ namespace fits {
                 }
             }
 
-            phypp_check(!bad, "wrong dimensions for column '", tcolname, "' "
+            vif_check(!bad, "wrong dimensions for column '", tcolname, "' "
                 "(expected ending with ", value.dims, ", got ", dims, ")");
         }
 
@@ -1751,17 +1751,17 @@ namespace fits {
             uint_t naccessed = impl::vec_access::accessed_dim<Args...>::value;
 
             column_info ci;
-            phypp_check(read_column_info(tcolname, ci), "could not read data about column '",
+            vif_check(read_column_info(tcolname, ci), "could not read data about column '",
                 tcolname, "'");
 
-            phypp_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
+            vif_check(naccessed == ci.dims.size(), "wrong number of dimensions for column '",
                 tcolname, "' (expected ", naccessed, ", got ", ci.dims.size(), ")");
 
             update_elements_check_dims_(tcolname, value, ci.dims);
 
             using vtype = typename impl::fits_impl::data_type<Type>::type;
             using traits = impl::fits_impl::traits<vtype>;
-            phypp_check(traits::is_convertible_narrow(ci.cfitsio_type),
+            vif_check(traits::is_convertible_narrow(ci.cfitsio_type),
                 "wrong type for column '", tcolname, "' (expected ", pretty_type_t(vtype),
                 ", got ", impl::fits_impl::type_to_string_(ci.cfitsio_type)+")");
 

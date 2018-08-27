@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_STRING_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/string.hpp" instead
+#ifndef VIF_INCLUDING_STRING_BITS
+#error this file is not meant to be included separately, include "vif/utilty/string.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     template<typename T>
     vec1s split(const std::string& ts, const T& pattern) {
         vec1s ret;

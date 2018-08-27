@@ -1,9 +1,9 @@
-#ifndef PHYPP_IO_ASTRO_WCS_HPP
-#define PHYPP_IO_ASTRO_WCS_HPP
+#ifndef VIF_IO_ASTRO_WCS_HPP
+#define VIF_IO_ASTRO_WCS_HPP
 
-#include "phypp/core/error.hpp"
-#include "phypp/utility/thread.hpp"
-#include "phypp/io/fits.hpp"
+#include "vif/core/error.hpp"
+#include "vif/utility/thread.hpp"
+#include "vif/io/fits.hpp"
 
 #ifndef NO_CFITSIO
 
@@ -16,7 +16,7 @@
 #include <wcslib/tab.h>
 #endif
 
-namespace phypp {
+namespace vif {
 namespace astro {
     struct make_wcs_header_params {
         // The pixel size in arcsec
@@ -409,7 +409,7 @@ namespace astro {
                     default: error("unknown error"); break;
                 }
 
-                phypp_check(status != 0, "WCSlib failed to read this header");
+                vif_check(status != 0, "WCSlib failed to read this header");
 
                 return;
             }
@@ -580,7 +580,7 @@ namespace astro {
             if (!isset) {
                 std::lock_guard<std::mutex> lock(impl::wcs_impl::wcs_parser_mutex());
                 int status = wcsset(w);
-                phypp_check(status == 0, "error updating WCS structure");
+                vif_check(status == 0, "error updating WCS structure");
                 isset = true;
             }
         }
@@ -717,8 +717,8 @@ namespace astro {
             "please enable the WCSLib library to use this function");
 #else
 
-        phypp_check(w.is_valid(), "invalid WCS data");
-        phypp_check(ra.dims == dec.dims, "RA and Dec arrays do not match sizes (",
+        vif_check(w.is_valid(), "invalid WCS data");
+        vif_check(ra.dims == dec.dims, "RA and Dec arrays do not match sizes (",
             ra.dims, " vs ", dec.dims, ")");
 
         uint_t npt = ra.size();
@@ -754,8 +754,8 @@ namespace astro {
             "please enable the WCSLib library to use this function");
 #else
 
-        phypp_check(w.is_valid(), "invalid WCS data");
-        phypp_check(x.dims == y.dims, "x and y arrays do not match sizes (",
+        vif_check(w.is_valid(), "invalid WCS data");
+        vif_check(x.dims == y.dims, "x and y arrays do not match sizes (",
             x.dims, " vs ", y.dims, ")");
 
         uint_t npt = x.size();
@@ -996,13 +996,13 @@ namespace astro {
 #else
         uint_t naxis = wcs.axis_count();
 
-        phypp_check(wcs.is_valid(), "invalid WCS data");
-        phypp_check(axis < naxis, "trying to use an axis that does not exist (",
+        vif_check(wcs.is_valid(), "invalid WCS data");
+        vif_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
         std::string why;
         bool vunit = wcs.valid_unit(axis, unit, why);
-        phypp_check(vunit, why);
+        vif_check(vunit, why);
 
         uint_t npix = x.size();
 
@@ -1029,13 +1029,13 @@ namespace astro {
 #else
         uint_t naxis = wcs.axis_count();
 
-        phypp_check(wcs.is_valid(), "invalid WCS data");
-        phypp_check(axis < naxis, "trying to use an axis that does not exist (",
+        vif_check(wcs.is_valid(), "invalid WCS data");
+        vif_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
         std::string why;
         bool vunit = wcs.valid_unit(axis, unit, why);
-        phypp_check(vunit, why);
+        vif_check(vunit, why);
 
         uint_t npix = w.size();
 
@@ -1103,13 +1103,13 @@ namespace astro {
 #else
         uint_t naxis = wcs.axis_count();
 
-        phypp_check(wcs.is_valid(), "invalid WCS data");
-        phypp_check(axis < naxis, "trying to use an axis that does not exist (",
+        vif_check(wcs.is_valid(), "invalid WCS data");
+        vif_check(axis < naxis, "trying to use an axis that does not exist (",
             axis, " vs ", naxis, ")");
 
         std::string why;
         bool vunit = wcs.valid_unit(axis, unit, why);
-        phypp_check(vunit, why);
+        vif_check(vunit, why);
 
         uint_t npix = wcs.dims[axis];
 

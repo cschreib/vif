@@ -1,7 +1,7 @@
 #include "pixfit-common.hpp"
-#include <phypp/astro/qxmatch.hpp>
+#include <vif/astro/qxmatch.hpp>
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     // Read search circles
     vec2d regs;
     vec1s text;

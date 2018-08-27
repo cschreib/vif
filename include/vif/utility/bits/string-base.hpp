@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_STRING_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/string.hpp" instead
+#ifndef VIF_INCLUDING_STRING_BITS
+#error this file is not meant to be included separately, include "vif/utilty/string.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     inline uint_t length(const std::string& s) {
         return s.size();
     }
@@ -44,9 +44,9 @@ namespace phypp {
         return d;
     }
 
-    PHYPP_VECTORIZE(length)
-    PHYPP_VECTORIZE(empty)
-    PHYPP_VECTORIZE(distance)
-    PHYPP_VECTORIZE(keep_first)
-    PHYPP_VECTORIZE(keep_last)
+    VIF_VECTORIZE(length)
+    VIF_VECTORIZE(empty)
+    VIF_VECTORIZE(distance)
+    VIF_VECTORIZE(keep_first)
+    VIF_VECTORIZE(keep_last)
 }

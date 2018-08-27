@@ -1,9 +1,9 @@
-#ifndef PHYPP_ASTRO_QXMATCH_HPP
-#define PHYPP_ASTRO_QXMATCH_HPP
+#ifndef VIF_ASTRO_QXMATCH_HPP
+#define VIF_ASTRO_QXMATCH_HPP
 
-#include "phypp/astro/astro.hpp"
+#include "vif/astro/astro.hpp"
 
-namespace phypp {
+namespace vif {
 namespace astro {
     struct qxmatch_res {
         vec2u id;
@@ -87,7 +87,7 @@ namespace impl {
             }
 
             void grow() {
-                phypp_check(depths.size() < visited.dims[0] ||
+                vif_check(depths.size() < visited.dims[0] ||
                     depths.size() < visited.dims[1], "cannot grow past the size of the "
                     "bucket field (", visited.dims, "; trying to reach ", depths.size(), ")");
 
@@ -137,15 +137,15 @@ namespace astro {
 
         qxmatch_res res;
 
-        phypp_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
+        vif_check(ra1.dims == dec1.dims, "first RA and Dec dimensions do not match (",
             ra1.dims, " vs ", dec1.dims, ")");
-        phypp_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
+        vif_check(ra2.dims == dec2.dims, "second RA and Dec dimensions do not match (",
             ra2.dims, " vs ", dec2.dims, ")");
 
         // Make sure we are dealing with finite coordinates...
-        phypp_check(count(!is_finite(ra1) || !is_finite(dec1)) == 0,
+        vif_check(count(!is_finite(ra1) || !is_finite(dec1)) == 0,
             "first RA and Dec coordinates contain invalid values (infinite or NaN)");
-        phypp_check(count(!is_finite(ra2) || !is_finite(dec2)) == 0,
+        vif_check(count(!is_finite(ra2) || !is_finite(dec2)) == 0,
             "second RA and Dec coordinates contain invalid values (infinite or NaN)");
 
         // Make sure that the requested number of matches is valid
@@ -686,7 +686,7 @@ namespace astro {
         qdist_params params = qdist_params{}) {
         vec2d ret(ra.size(), ra.size());
 
-        phypp_check(ra.dims == dec.dims, "first RA and Dec dimensions do not match (",
+        vif_check(ra.dims == dec.dims, "first RA and Dec dimensions do not match (",
             ra.dims, " vs ", dec.dims, ")");
 
         const double d2r = dpi/180.0;

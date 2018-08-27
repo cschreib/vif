@@ -1,12 +1,12 @@
-#ifndef PHYPP_MATH_RANDOM_HPP
-#define PHYPP_MATH_RANDOM_HPP
+#ifndef VIF_MATH_RANDOM_HPP
+#define VIF_MATH_RANDOM_HPP
 
 #include <random>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/math/base.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/math/base.hpp"
 
-namespace phypp {
+namespace vif {
     using seed_t = std::mt19937;
 
     template<typename T>

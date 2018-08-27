@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_GENERIC_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/generic.hpp" instead
+#ifndef VIF_INCLUDING_GENERIC_BITS
+#error this file is not meant to be included separately, include "vif/utilty/generic.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     // Return the indices of the vector where the value is 'true'.
     template<std::size_t Dim, typename Type, typename enable =
         typename std::enable_if<std::is_same<meta::rtype_t<Type>,bool>::value>::type>
@@ -56,7 +56,7 @@ namespace phypp {
     template<std::size_t Dim, typename Type>
     vec1u complement(const vec<Dim,Type>& v, const vec1u& ids) {
         if (ids.size() == v.size()) return vec1u();
-        phypp_check(ids.size() < v.size(), "incompatible size of ids (", ids.size(),
+        vif_check(ids.size() < v.size(), "incompatible size of ids (", ids.size(),
             " vs. ", v.size(), ")");
 
         vec1b sel(v.size());
@@ -433,7 +433,7 @@ namespace phypp {
 
     // From a starting position on a 2D boolean map, find the closest point that is 'true'.
     inline bool astar_find(const vec2b& map, uint_t& x, uint_t& y) {
-        phypp_check(!map.empty(), "this algorithm requires a non empty 2D vector");
+        vif_check(!map.empty(), "this algorithm requires a non empty 2D vector");
 
         if (x >= map.dims[0]) x = map.dims[0]-1;
         if (y >= map.dims[1]) y = map.dims[1]-1;

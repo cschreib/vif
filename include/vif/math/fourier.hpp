@@ -1,14 +1,14 @@
-#ifndef PHYPP_MATH_FOURIER_HPP
-#define PHYPP_MATH_FOURIER_HPP
+#ifndef VIF_MATH_FOURIER_HPP
+#define VIF_MATH_FOURIER_HPP
 
 #ifndef NO_FFTW
 #include <fftw3.h>
 #endif
-#include "phypp/core/vec.hpp"
-#include "phypp/utility/thread.hpp"
-#include "phypp/math/complex.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/utility/thread.hpp"
+#include "vif/math/complex.hpp"
 
-namespace phypp {
+namespace vif {
     namespace impl {
         inline std::mutex& fftw_planner_mutex() {
             static std::mutex m;

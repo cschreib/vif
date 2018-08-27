@@ -1,14 +1,14 @@
-#ifndef PHYPP_MATH_CONVEX_HULL_HPP
-#define PHYPP_MATH_CONVEX_HULL_HPP
+#ifndef VIF_MATH_CONVEX_HULL_HPP
+#define VIF_MATH_CONVEX_HULL_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/math/base.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/range.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/math/base.hpp"
 
 
-namespace phypp {
+namespace vif {
     // Structure holding the data points of a convex hull
     template <typename T = double>
     struct convex_hull {
@@ -41,9 +41,9 @@ namespace phypp {
         // Will only be done once unless 'force' is set to 'true'.
         void validate(bool force = false) const {
             if (!validated || force) {
-                phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+                vif_check(x.dims == y.dims, "incompatible dimensions between X and Y "
                     "(", x.dims, " vs. ", y.dims, ")");
-                phypp_check(x.size() >= 3, "a hull must have at least 3 elements "
+                vif_check(x.size() >= 3, "a hull must have at least 3 elements "
                     "(got ", x.size(), ")");
 
                 const auto eps = std::numeric_limits<T>::epsilon();
@@ -107,7 +107,7 @@ namespace phypp {
     // http://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#C.2B.2B
     template<typename T>
     convex_hull<meta::rtype_t<T>> build_convex_hull(const vec<1,T>& x, const vec<1,T>& y) {
-        phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        vif_check(x.dims == y.dims, "incompatible dimensions between X and Y "
             "(", x.dims, " vs. ", y.dims, ")");
 
         uint_t npt = x.size();
@@ -152,7 +152,7 @@ namespace phypp {
     template<typename TX, typename TY, typename H>
     bool in_convex_hull(const TX& x, const TY& y, const convex_hull<H>& hull) {
         hull.validate();
-        phypp_check(hull.closed, "the provided hull must be closed");
+        vif_check(hull.closed, "the provided hull must be closed");
 
         // Find out if the hull is built counter-clockwise or not
         for (uint_t i : range(hull.size()-1)) {
@@ -171,8 +171,8 @@ namespace phypp {
         vec<Dim,bool> res = replicate(true, x.dims);
 
         hull.validate();
-        phypp_check(hull.closed, "the provided hull must be closed");
-        phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        vif_check(hull.closed, "the provided hull must be closed");
+        vif_check(x.dims == y.dims, "incompatible dimensions between X and Y "
             "(", x.dims, " vs. ", y.dims, ")");
 
         for (uint_t i : range(hull.size()-1)) {
@@ -197,7 +197,7 @@ namespace phypp {
         -> decltype(sqrt(x*y)) {
 
         hull.validate();
-        phypp_check(hull.closed, "the provided hull must be closed");
+        vif_check(hull.closed, "the provided hull must be closed");
         hull.build_vectors();
 
         decltype(sqrt(x*y)) res = finf;
@@ -245,10 +245,10 @@ namespace phypp {
     auto convex_hull_distance(const vec<Dim,TX>& x, const vec<Dim,TY>& y,
         const convex_hull<H>& hull) -> vec<Dim, decltype(sqrt(x[0]*y[0]))> {
 
-        phypp_check(x.dims == y.dims, "incompatible dimensions between X and Y "
+        vif_check(x.dims == y.dims, "incompatible dimensions between X and Y "
             "(", x.dims, " vs. ", y.dims, ")");
         hull.validate();
-        phypp_check(hull.closed, "the provided must be closed");
+        vif_check(hull.closed, "the provided must be closed");
         hull.build_vectors();
 
         vec<Dim,decltype(sqrt(x[0]*y[0]))> res = replicate(finf, x.dims);

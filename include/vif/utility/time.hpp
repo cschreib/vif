@@ -1,11 +1,11 @@
-#ifndef PHYPP_UTILITY_TIME_HPP
-#define PHYPP_UTILITY_TIME_HPP
+#ifndef VIF_UTILITY_TIME_HPP
+#define VIF_UTILITY_TIME_HPP
 
 #include <chrono>
-#include "phypp/utility/string.hpp"
-#include "phypp/utility/os.hpp"
+#include "vif/utility/string.hpp"
+#include "vif/utility/os.hpp"
 
-namespace phypp {
+namespace vif {
     // Return the current time [seconds]
     inline double now() {
         return std::chrono::duration_cast<std::chrono::microseconds>(
@@ -115,7 +115,7 @@ namespace phypp {
         return r;
     }
 
-    static const uint_t progress_ndash = system_var<uint_t>("PHYPP_PROGRESS_BAR_LENGTH", 32);
+    static const uint_t progress_ndash = system_var<uint_t>("VIF_PROGRESS_BAR_LENGTH", 32);
 
     namespace impl {
         inline void progress_(progress_t& p) {

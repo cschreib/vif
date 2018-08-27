@@ -1,12 +1,12 @@
-#ifndef PHYPP_ASTRO_QSTACK_HPP
-#define PHYPP_ASTRO_QSTACK_HPP
+#ifndef VIF_ASTRO_QSTACK_HPP
+#define VIF_ASTRO_QSTACK_HPP
 
 #ifndef NO_CFITSIO
 
-#include "phypp/astro/astro.hpp"
-#include "phypp/astro/wcs.hpp"
+#include "vif/astro/astro.hpp"
+#include "vif/astro/wcs.hpp"
 
-namespace phypp {
+namespace vif {
 namespace impl {
     namespace qstack_impl {
         struct image_workspace {
@@ -20,7 +20,7 @@ namespace impl {
 
             explicit image_workspace(const std::string& file, const vec1d& ra, const vec1d& dec) {
                 fits_open_image(&fptr, file.c_str(), READONLY, &status);
-                fits::phypp_check_cfitsio(status, "cannot open file '"+file+"'");
+                fits::vif_check_cfitsio(status, "cannot open file '"+file+"'");
 
                 // Read the header as a string and read the WCS data
                 char* hstr = nullptr;
@@ -54,7 +54,7 @@ namespace impl {
                     is2D = found == 2;
                 }
 
-                phypp_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
+                vif_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
             }
 
             image_workspace(const image_workspace&) = delete;
@@ -93,8 +93,8 @@ namespace astro {
     qstack_output qstack(const vec1d& ra, const vec1d& dec, const std::string& filename,
         uint_t hsize, vec<3,Type>& cube, vec1u& ids, qstack_params params = qstack_params()) {
 
-        phypp_check(file::exists(filename), "cannot stack on inexistant file '"+filename+"'");
-        phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+        vif_check(file::exists(filename), "cannot stack on inexistant file '"+filename+"'");
+        vif_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
         vec1s sects;
         if (ends_with(filename, ".sectfits")) {
@@ -225,9 +225,9 @@ namespace astro {
             out.sect.reserve(ra.size());
         }
 
-        phypp_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
-        phypp_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
-        phypp_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
+        vif_check(file::exists(ffile), "cannot stack on inexistant file '"+ffile+"'");
+        vif_check(file::exists(wfile), "cannot stack on inexistant file '"+wfile+"'");
+        vif_check(ra.size() == dec.size(), "need ra.size() == dec.size()");
 
         if (ends_with(ffile, ".sectfits") || ends_with(wfile, ".sectfits")) {
             uint_t norig = ids.size();
@@ -241,7 +241,7 @@ namespace astro {
 
             // Make sure that all sources that were extracted in one file match those that
             // are extracted in the other (could only keep the union of the two, WIP)
-            phypp_check(nsci == nwht, "some sources are covered on '", ffile, "' but not '", wfile, "'");
+            vif_check(nsci == nwht, "some sources are covered on '", ffile, "' but not '", wfile, "'");
 
             return out;
         }
@@ -252,9 +252,9 @@ namespace astro {
         int status = 0;
 
         fits_open_image(&fptr, ffile.c_str(), READONLY, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+ffile+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+ffile+"'");
         fits_open_image(&wfptr, wfile.c_str(), READONLY, &status);
-        fits::phypp_check_cfitsio(status, "cannot open file '"+wfile+"'");
+        fits::vif_check_cfitsio(status, "cannot open file '"+wfile+"'");
 
         // Read the header as a string and read the WCS data
         char* hstr = nullptr;
@@ -286,11 +286,11 @@ namespace astro {
             is2D = found == 2;
         }
 
-        phypp_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
+        vif_check(is2D, "cannot stack on image cubes (image dimensions: ", naxes, ")");
 
         vec<1,long> wnaxes(naxis);
         fits_get_img_size(wfptr, naxis, wnaxes.raw_data(), &status);
-        phypp_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
+        vif_check(naxes[0] == wnaxes[0] && naxes[1] == wnaxes[1], "image and weight map do not match");
 
         // Convert ra/dec to x/y
         vec1d x, y;

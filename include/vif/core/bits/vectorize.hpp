@@ -1,13 +1,13 @@
-#ifndef PHYPP_INCLUDING_CORE_VEC_BITS
-#error this file is not meant to be included separately, include "phypp/core/vec.hpp" instead
+#ifndef VIF_INCLUDING_CORE_VEC_BITS
+#error this file is not meant to be included separately, include "vif/core/vec.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     ////////////////////////////////////////////
     //         Vectorization helpers          //
     ////////////////////////////////////////////
 
-    #define PHYPP_VECTORIZE(name) \
+    #define VIF_VECTORIZE(name) \
         template<std::size_t Dim, typename Type, typename ... Args> \
         auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
             vec<Dim,decltype(name(v[0], args...))> { \
@@ -28,11 +28,11 @@ namespace phypp {
             return std::move(v); \
         }
 
-    #define PHYPP_VECTORIZE2(name) \
+    #define VIF_VECTORIZE2(name) \
         template<std::size_t D, typename T1, typename T2, typename ... Args> \
         auto name(const vec<D,T1>& v1, const vec<D,T2>& v2, const Args& ... args) -> \
             vec<D,decltype(name(v1[0], v2[0], args...))> { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
                 v1.dims, " vs. ", v2.dims, ")"); \
             using ntype = decltype(name(v1[0], v2[0], args...)); \
             vec<D,ntype> r; r.dims = v1.dims; r.data.reserve(v1.size()); \
@@ -45,7 +45,7 @@ namespace phypp {
         auto name(vec<D,T1>&& v1, const vec<D,T2>& v2, const Args& ... args) -> typename std::enable_if< \
             !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T1>::value, \
             vec<D,T1>>::type { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
                 v1.dims, " vs. ", v2.dims, ")"); \
             for (uint_t i : range(v1)) { \
                 v1.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
@@ -56,7 +56,7 @@ namespace phypp {
         auto name(const vec<D,T1>& v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if< \
             !std::is_pointer<T2>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T2>::value, \
             vec<D,T2>>::type { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
                 v1.dims, " vs. ", v2.dims, ")"); \
             for (uint_t i : range(v1)) { \
                 v2.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
@@ -67,7 +67,7 @@ namespace phypp {
         auto name(vec<D,T1>&& v1, vec<D,T2>&& v2, const Args& ... args) -> typename std::enable_if< \
             !std::is_pointer<T1>::value && std::is_same<decltype(name(v1[0], v2[0], args...)), T1>::value, \
             vec<D,T1>>::type { \
-            phypp_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
+            vif_check(v1.dims == v2.dims, "incompatible dimensions between V1 and V2 (", \
                 v1.dims, " vs. ", v2.dims, ")"); \
             for (uint_t i : range(v1)) { \
                 v1.safe[i] = name(v1.safe[i], v2.safe[i], args...); \
@@ -113,7 +113,7 @@ namespace phypp {
             return v1; \
         } \
 
-    #define PHYPP_VECTORIZE_REN(name, orig) \
+    #define VIF_VECTORIZE_REN(name, orig) \
         template<std::size_t Dim, typename Type, typename ... Args> \
         auto name(const vec<Dim,Type>& v, const Args& ... args) -> \
             vec<Dim,decltype(orig(v[0], args...))> { \
@@ -212,7 +212,7 @@ namespace phypp {
                 dims = u.dims;
                 set = true;
             } else {
-                phypp_check(dims == u.dims, "incompatible dimensions in lambda call (",
+                vif_check(dims == u.dims, "incompatible dimensions in lambda call (",
                     dims, " vs ", u.dims, ")");
             }
         }

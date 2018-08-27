@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_GENERIC_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/generic.hpp" instead
+#ifndef VIF_INCLUDING_GENERIC_BITS
+#error this file is not meant to be included separately, include "vif/utilty/generic.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     // Generate linearly increasing values.
     namespace impl {
         template<typename T, typename ... Dims>

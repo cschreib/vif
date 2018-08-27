@@ -1,13 +1,13 @@
-#ifndef PHYPP_MATH_HISTOGRAM_HPP
-#define PHYPP_MATH_HISTOGRAM_HPP
+#ifndef VIF_MATH_HISTOGRAM_HPP
+#define VIF_MATH_HISTOGRAM_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/math/base.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/range.hpp"
+#include "vif/core/error.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/math/base.hpp"
 
-namespace phypp {
+namespace vif {
     template<typename T>
     vec<2,T> make_bins(T mi, T ma) {
         return {{mi}, {ma}};
@@ -38,7 +38,7 @@ namespace phypp {
 
     template<typename T, typename B = double>
     bool in_bin(T t, const vec<1,B>& b) {
-        phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        vif_check(b.dims[0] == 2, "can only be called on a single bin "
             "vector (expected dims=[2], got dims=[", b.dims, "])");
 
         return t >= b.safe[0] && t < b.safe[1];
@@ -46,7 +46,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type, typename B = double>
     vec<Dim,bool> in_bin(const vec<Dim,Type>& v, const vec<1,B>& b) {
-        phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        vif_check(b.dims[0] == 2, "can only be called on a single bin "
             "vector (expected dims=[2], got dims=[", b.dims, "])");
 
         auto low = b.safe[0];
@@ -61,9 +61,9 @@ namespace phypp {
 
     template<typename T, typename B = double>
     bool in_bin(T t, const vec<2,B>& b, uint_t ib) {
-        phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        vif_check(b.dims[0] == 2, "can only be called on a single bin "
             "vector (expected dims=[2], got dims=[", b.dims, "])");
-        phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        vif_check(ib < b.dims[1], "bin index is out of bounds ",
             "(", ib, " vs. ", b.dims[1], ")");
 
         return t >= b.safe(0,ib) && t < b.safe(1,ib);
@@ -71,9 +71,9 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type, typename B = double>
     vec<Dim,bool> in_bin(const vec<Dim,Type>& v, const vec<2,B>& b, uint_t ib) {
-        phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        vif_check(b.dims[0] == 2, "B is not a bin vector "
             "(expected dims=[2, ...], got dims=[", b.dims, "])");
-        phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        vif_check(ib < b.dims[1], "bin index is out of bounds ",
             "(", ib, " vs. ", b.dims[1], ")");
 
         auto low = b.safe(0,ib);
@@ -88,9 +88,9 @@ namespace phypp {
 
     template<typename T, typename B = double>
     bool in_bin_open(T t, const vec<2,B>& b, uint_t ib) {
-        phypp_check(b.dims[0] == 2, "can only be called on a single bin "
+        vif_check(b.dims[0] == 2, "can only be called on a single bin "
             "vector (expected dims=[2], got dims=[", b.dims, "])");
-        phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        vif_check(ib < b.dims[1], "bin index is out of bounds ",
             "(", ib, " vs. ", b.dims[1], ")");
 
         if (ib == 0) {
@@ -104,9 +104,9 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type, typename B = double>
     vec<Dim,bool> in_bin_open(const vec<Dim,Type>& v, const vec<2,B>& b, uint_t ib) {
-        phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        vif_check(b.dims[0] == 2, "B is not a bin vector "
             "(expected dims=[2, ...], got dims=[", b.dims, "])");
-        phypp_check(ib < b.dims[1], "bin index is out of bounds ",
+        vif_check(ib < b.dims[1], "bin index is out of bounds ",
             "(", ib, " vs. ", b.dims[1], ")");
 
         auto low = b.safe(0,ib);
@@ -131,7 +131,7 @@ namespace phypp {
 
     template<typename Type>
     auto bin_center(const vec<2,Type>& b) -> vec<1,decltype(0.5*b[0])> {
-        phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        vif_check(b.dims[0] == 2, "B is not a bin vector "
             "(expected dims=[2, ...], got dims=[", b.dims, "])");
 
         return 0.5*(b.safe(1,_) + b.safe(0,_));
@@ -139,7 +139,7 @@ namespace phypp {
 
     template<typename Type>
     auto bin_center(const vec<1,Type>& b) -> decltype(0.5*b[0]) {
-        phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        vif_check(b.dims[0] == 2, "B is not a bin vector "
             "(expected dims=2, got dims=", b.dims, ")");
 
         return 0.5*(b.safe[1] + b.safe[0]);
@@ -147,7 +147,7 @@ namespace phypp {
 
     template<typename Type>
     vec<1,meta::rtype_t<Type>> bin_width(const vec<2,Type>& b) {
-        phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        vif_check(b.dims[0] == 2, "B is not a bin vector "
             "(expected dims=[2, ...], got dims=[", b.dims, "])");
 
         return b.safe(1,_) - b.safe(0,_);
@@ -155,7 +155,7 @@ namespace phypp {
 
     template<typename Type>
     meta::rtype_t<Type> bin_width(const vec<1,Type>& b) {
-        phypp_check(b.dims[0] == 2, "B is not a bin vector "
+        vif_check(b.dims[0] == 2, "B is not a bin vector "
             "(expected dims=2, got dims=", b.dims, ")");
 
         return b.safe[1] - b.safe[0];
@@ -163,7 +163,7 @@ namespace phypp {
 
     template<std::size_t Dim, typename Type, typename TypeB>
     vec1u histogram(const vec<Dim,Type>& data, const vec<2,TypeB>& bins) {
-        phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+        vif_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
             "dims=[2,...], got dims=[", bins.dims, "])");
 
         using rtype = meta::rtype_t<Type>;
@@ -190,9 +190,9 @@ namespace phypp {
     template<std::size_t Dim, typename Type, typename TypeB, typename TypeW>
     vec<1,meta::rtype_t<TypeW>> histogram(const vec<Dim,Type>& data, const vec<Dim,TypeW>& weight,
         const vec<2,TypeB>& bins) {
-        phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+        vif_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
             "dims=[2, ...], got dims=[", bins.dims, "])");
-        phypp_check(data.dims == weight.dims, "incompatible dimensions for data and weight "
+        vif_check(data.dims == weight.dims, "incompatible dimensions for data and weight "
             "(", data.dims, " vs. ", weight.dims, ")");
 
         vec1u ids = uindgen(data.size());
@@ -219,7 +219,7 @@ namespace phypp {
     namespace impl {
         template<std::size_t Dim, typename Type, typename TypeB, typename F>
         void histogram_impl(const vec<Dim,Type>& data, const vec<2,TypeB>& bins, F&& func) {
-            phypp_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
+            vif_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
                 "dims=[2, ...], got dims=[", bins.dims, "])");
 
             vec1u ids = uindgen(data.size());
@@ -264,11 +264,11 @@ namespace phypp {
         void histogram2d_impl(const vec<Dim,TypeX>& x, const vec<Dim,TypeY>& y,
             const vec<2,TypeBX>& xbins, const vec<2,TypeBY>& ybins, TypeF&& func) {
 
-            phypp_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
+            vif_check(xbins.dims[0] == 2, "can only be called with a bin vector (expected "
                 "dims=[2, ...], got dims=[", xbins.dims, "])");
-            phypp_check(ybins.dims[0] == 2, "can only be called with a bin vector (expected "
+            vif_check(ybins.dims[0] == 2, "can only be called with a bin vector (expected "
                 "dims=[2, ...], got dims=[", ybins.dims, "])");
-            phypp_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
+            vif_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
                 y.dims, ")");
 
             vec1u ids = uindgen(x.size());

@@ -1,9 +1,9 @@
-#include <phypp.hpp>
-#include <phypp/astro/qxmatch.hpp>
+#include <vif.hpp>
+#include <vif/astro/qxmatch.hpp>
 
 void print_help();
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 4) {
         print_help();
         return 0;

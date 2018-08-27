@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_MATH_MATRIX_BITS
-#error this file is not meant to be included separately, include "phypp/math/matrix.hpp" instead
+#ifndef VIF_INCLUDING_MATH_MATRIX_BITS
+#error this file is not meant to be included separately, include "vif/math/matrix.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
 namespace matrix {
     template<typename Type>
     struct mat;
@@ -475,7 +475,7 @@ namespace matrix {
         meta::is_matrix<TypeA>::value && meta::is_matrix<TypeB>::value
     >::type>
     auto operator * (const TypeA& a, const TypeB& b) -> mat<decltype(a(0,0)*b(0,0))> {
-        phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-matrix multiplication "
+        vif_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-matrix multiplication "
             "(", a.dims, " x ", b.dims, ")");
 
         using ntype_t = decltype(a(0,0)*b(0,0));
@@ -494,7 +494,7 @@ namespace matrix {
         meta::is_matrix<TypeA>::value
     >::type>
     auto operator * (const TypeA& a, const vec<1,TypeB>& b) -> vec<1,decltype(a(0,0)*b(0,0))> {
-        phypp_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-vector multiplication "
+        vif_check(a.dims[1] == b.dims[0], "incompatible dimensions in matrix-vector multiplication "
             "(", a.dims, " x ", b.dims, ")");
 
         using ntype_t = decltype(a(0,0)*b(0,0));
@@ -512,7 +512,7 @@ namespace matrix {
         meta::is_matrix<TypeA>::value
     >::type>
     auto operator * (const vec<1,TypeB>& a, const TypeA& b) -> vec<1,decltype(a(0,0)*b(0,0))> {
-        phypp_check(a.dims[0] == b.dims[0], "incompatible dimensions in vector-matrix multiplication "
+        vif_check(a.dims[0] == b.dims[0], "incompatible dimensions in vector-matrix multiplication "
             "(", a.dims, " x ", b.dims, ")");
 
         using ntype_t = decltype(a(0,0)*b(0,0));

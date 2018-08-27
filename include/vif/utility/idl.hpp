@@ -1,10 +1,10 @@
-#ifndef PHYPP_UTILITY_IDL_HPP
-#define PHYPP_UTILITY_IDL_HPP
+#ifndef VIF_UTILITY_IDL_HPP
+#define VIF_UTILITY_IDL_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/meta.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/meta.hpp"
 
-namespace phypp {
+namespace vif {
     // Create vectors a la IDL.
     template<typename T, typename ... Dims>
     vec<meta::dim_total<Dims...>::value, T> arr(Dims&& ... ds) {

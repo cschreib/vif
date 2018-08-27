@@ -1,5 +1,5 @@
-#include <phypp.hpp>
-#include <phypp/astro/qstack.hpp>
+#include <vif.hpp>
+#include <vif/astro/qstack.hpp>
 
 void print_help();
 
@@ -7,7 +7,7 @@ bool get_flux(int argc, char* argv[], const std::string& file);
 bool get_logdisp(int argc, char* argv[], const vec3d& cube);
 bool run_batch(int argc, char* argv[], const std::string& file);
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_CORE_VEC_BITS
-#error this file is not meant to be included separately, include "phypp/core/vec.hpp" instead
+#ifndef VIF_INCLUDING_CORE_VEC_BITS
+#error this file is not meant to be included separately, include "vif/core/vec.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     namespace impl {
        // Tag a value to indicate that is has to repeated N times
         template<std::size_t N, typename T>
@@ -263,51 +263,51 @@ namespace vec_access {
     struct are_indices<> : std::true_type {};
 
     inline impl::range_impl::range_t<uint_t> range(impl::range_impl::full_range_t, uint_t size) {
-        return phypp::range(size);
+        return vif::range(size);
     }
 
     inline impl::range_impl::range_t<uint_t> range(const impl::range_impl::left_range_t& rng, uint_t size) {
-        phypp::impl::range_impl::check_bounds(rng, size);
-        return phypp::range(rng.last+1);
+        vif::impl::range_impl::check_bounds(rng, size);
+        return vif::range(rng.last+1);
     }
 
     inline impl::range_impl::range_t<uint_t> range(const impl::range_impl::right_range_t& rng, uint_t size) {
-        phypp::impl::range_impl::check_bounds(rng, size);
-        return phypp::range(rng.first, size);
+        vif::impl::range_impl::check_bounds(rng, size);
+        return vif::range(rng.first, size);
     }
 
     inline impl::range_impl::range_t<uint_t> range(const impl::range_impl::left_right_range_t& rng, uint_t size) {
-        phypp::impl::range_impl::check_bounds(rng, size);
-        return phypp::range(rng.first, rng.last+1);
+        vif::impl::range_impl::check_bounds(rng, size);
+        return vif::range(rng.first, rng.last+1);
     }
 
     template<typename T>
     uint_t to_idx_(uint_t size, T ui, meta::cte_t<false>) {
-        phypp_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
+        vif_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
         return ui;
     }
 
     template<typename T>
     uint_t to_idx_(uint_t size, T i, meta::cte_t<true>) {
-        phypp_check(size > 0, "operator[]: index out of bounds (", i, " vs. ", size, ")");
+        vif_check(size > 0, "operator[]: index out of bounds (", i, " vs. ", size, ")");
         while (i < 0) i += size;
         uint_t ui(i);
-        phypp_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
+        vif_check(ui < size, "operator[]: index out of bounds (", ui, " vs. ", size, ")");
         return ui;
     }
 
     template<std::size_t I, std::size_t D, typename T>
     uint_t to_idx_(std::array<uint_t,D> dims, T ui, meta::cte_t<false>) {
-        phypp_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[D], ")");
+        vif_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[D], ")");
         return ui;
     }
 
     template<std::size_t I, std::size_t D, typename T>
     uint_t to_idx_(std::array<uint_t,D> dims, T i, meta::cte_t<true>) {
-        phypp_check(dims[I] > 0, "operator[]: index out of bounds (", i, " vs. ", dims[I], ")");
+        vif_check(dims[I] > 0, "operator[]: index out of bounds (", i, " vs. ", dims[I], ")");
         while (i < 0) i += dims[I];
         uint_t ui(i);
-        phypp_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[I], ")");
+        vif_check(ui < dims[I], "operator(): index out of bounds (", ui, " vs. ", dims[I], ")");
         return ui;
     }
 

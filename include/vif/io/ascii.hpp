@@ -1,15 +1,15 @@
-#ifndef PHYPP_IO_ASCII_HPP
-#define PHYPP_IO_ASCII_HPP
+#ifndef VIF_IO_ASCII_HPP
+#define VIF_IO_ASCII_HPP
 
 #include <fstream>
 #include <tuple>
 #include <stdexcept>
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/math/base.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/range.hpp"
+#include "vif/math/base.hpp"
 
-namespace phypp {
+namespace vif {
 namespace ascii {
     // ASCII exception type
     struct exception : std::runtime_error {
@@ -73,7 +73,7 @@ namespace ascii {
 
 namespace impl {
     namespace ascii_impl {
-        using placeholder_t = phypp::impl::placeholder_t;
+        using placeholder_t = vif::impl::placeholder_t;
 
         struct line_splitter_t {
             std::string line;
@@ -209,7 +209,7 @@ namespace impl {
 
         template<typename T, typename ... Args, typename enable>
         void read_table_resize_(uint_t n, T&, Args& ... args) {
-            phypp_check(n <= 1, "cannot read multiple values into a scalar variable");
+            vif_check(n <= 1, "cannot read multiple values into a scalar variable");
             read_table_resize_(n, args...);
         }
 
@@ -310,7 +310,7 @@ namespace impl {
 namespace ascii {
     template<typename ... Args>
     void read_table(const std::string& name, const input_format& opts, Args&& ... args) {
-        phypp_check(file::exists(name), "cannot open file '"+name+"'");
+        vif_check(file::exists(name), "cannot open file '"+name+"'");
 
         try {
             impl::ascii_impl::line_splitter_t spl;
@@ -363,7 +363,7 @@ namespace ascii {
                 ++i;
             }
         } catch (ascii::exception& e) {
-            phypp_check(false, std::string(e.what())+" (reading "+name+")");
+            vif_check(false, std::string(e.what())+" (reading "+name+")");
         }
     }
 
@@ -621,14 +621,14 @@ namespace ascii {
         file.header_chars = opts.header_chars;
 
         // Check we can write to the file
-        phypp_check(file.out.is_open(), "could not open file "+filename+" to write data");
+        vif_check(file.out.is_open(), "could not open file "+filename+" to write data");
 
         // Compute number of rows and check that all vectors have the same size
         uint_t r = 0, c = 0;
         impl::ascii_impl::write_table_check_size_(r, c, args...);
 
         if (!opts.header.empty()) {
-            phypp_check(opts.header.size() == c, "mismatch between dimensions of header and number "
+            vif_check(opts.header.size() == c, "mismatch between dimensions of header and number "
                 "of columns to write (", opts.header.size(), " vs. ", c, ")");
         }
 
@@ -688,7 +688,7 @@ namespace ascii {
                 }
             }
         } catch (ascii::exception& e) {
-            phypp_check(false, std::string(e.what())+" (writing "+filename+")");
+            vif_check(false, std::string(e.what())+" (writing "+filename+")");
         }
     }
 
@@ -732,7 +732,7 @@ namespace impl {
                         stack.push_back(k);
                         break;
                     } else if (s[pos] == closing[k]) {
-                        phypp_check(stack.back() == k,
+                        vif_check(stack.back() == k,
                             "library bug: error parsing macroed name list: '", s, "'");
                         stack.pop_back();
                         break;
@@ -814,7 +814,7 @@ namespace ascii {
         write_table(filename, output_format::standard(), impl::ascii_impl::macroed_t{}, names, args...);
     }
 
-    #define ftable(...) phypp::impl::ascii_impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
+    #define ftable(...) vif::impl::ascii_impl::macroed_t(), #__VA_ARGS__, __VA_ARGS__
 }
 }
 

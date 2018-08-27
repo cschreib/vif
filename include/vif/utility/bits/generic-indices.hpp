@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_GENERIC_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/generic.hpp" instead
+#ifndef VIF_INCLUDING_GENERIC_BITS
+#error this file is not meant to be included separately, include "vif/utilty/generic.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     // Get multi-dim IDs from a flat ID
     template<std::size_t D>
     vec1u mult_ids(const std::array<uint_t,D>& dims, uint_t i) {
@@ -78,7 +78,7 @@ namespace phypp {
 
     template<std::size_t D, typename TI>
     uint_t flat_id(const std::array<uint_t,D>& dims, const vec<1,TI>& ids) {
-        phypp_check(ids.size() == D, "wrong number of IDs provided");
+        vif_check(ids.size() == D, "wrong number of IDs provided");
         return impl::flat_id_(dims, meta::cte_t<0>{}, ids);
     }
 

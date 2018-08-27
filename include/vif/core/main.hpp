@@ -1,24 +1,24 @@
-#ifndef PHYPP_CORE_MAIN_HPP
-#define PHYPP_CORE_MAIN_HPP
+#ifndef VIF_CORE_MAIN_HPP
+#define VIF_CORE_MAIN_HPP
 
-#include "phypp/core/error.hpp"
+#include "vif/core/error.hpp"
 
 #ifndef NO_LIBUNWIND
-namespace phypp {
+namespace vif {
     const char* executable_path;
 }
 #endif
 
 // New entry point
-int phypp_main(int argc, char* argv[]);
+int vif_main(int argc, char* argv[]);
 
 // Define the standard main function
 int main(int argc, char* argv[]) {
     #ifndef NO_LIBUNWIND
-    phypp::executable_path = argv[0];
+    vif::executable_path = argv[0];
     #endif
 
-    return phypp_main(argc, argv);
+    return vif_main(argc, argv);
 }
 
 #endif

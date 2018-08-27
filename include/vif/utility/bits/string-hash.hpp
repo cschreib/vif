@@ -1,10 +1,10 @@
-#ifndef PHYPP_INCLUDING_STRING_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/string.hpp" instead
+#ifndef VIF_INCLUDING_STRING_BITS
+#error this file is not meant to be included separately, include "vif/utilty/string.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     // Note: this comes from smallsha1, a lightweight SHA-1 implementation in C++.
-    // It was slightly adapted to fit the needs of the phy++ library.
+    // It was slightly adapted to fit the needs of the vif library.
     // Source:
     // http://code.google.com/p/smallsha1/
     namespace impl {

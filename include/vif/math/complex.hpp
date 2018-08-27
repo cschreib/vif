@@ -1,29 +1,29 @@
-#ifndef PHYPP_MATH_COMPLEX_HPP
-#define PHYPP_MATH_COMPLEX_HPP
+#ifndef VIF_MATH_COMPLEX_HPP
+#define VIF_MATH_COMPLEX_HPP
 
-#include "phypp/core/vec.hpp"
+#include "vif/core/vec.hpp"
 
-// This file allows you to choose between the standard C++ implementation of 
-// complex numbers (the default choice), and a simple backup implementation 
-// from phy++. This backup implementation was provided because of compatibility
-// issues between the clang compiler and the gcc standard library implementation 
+// This file allows you to choose between the standard C++ implementation of
+// complex numbers (the default choice), and a simple backup implementation
+// from vif. This backup implementation was provided because of compatibility
+// issues between the clang compiler and the gcc standard library implementation
 // when enabling the C++14 mode, regarding the use of the 'constexpr' keyword.
 // This issue has been fixed with more recent versionf of both compilers, so
 // the workaround is not used by default anymore, but is still available for
 // users running on older platforms.
 
-#ifndef USE_PHYPP_COMPLEX
+#ifndef USE_VIF_COMPLEX
 
     #include <complex>
 
-    namespace phypp {
-        // Just bring the standard complex number class into the phypp namespace
+    namespace vif {
+        // Just bring the standard complex number class into the vif namespace
         using std::complex;
     }
 
-#else // USE_PHYPP_COMPLEX
+#else // USE_VIF_COMPLEX
 
-    namespace phypp {
+    namespace vif {
         // Define our own complex number class
         template<typename T>
         struct complex {
@@ -141,15 +141,15 @@
         }
     }
 
-#endif // USE_PHYPP_COMPLEX
+#endif // USE_VIF_COMPLEX
 
-namespace phypp {
+namespace vif {
 
     // Define new type aliases for complex vectors
-    
+
     #define MAKE_TYPEDEFS(N) \
-        using vec##N##cf  = vec<N, phypp::complex<float>>; \
-        using vec##N##cd  = vec<N, phypp::complex<double>>;
+        using vec##N##cf  = vec<N, vif::complex<float>>; \
+        using vec##N##cd  = vec<N, vif::complex<double>>;
 
     MAKE_TYPEDEFS(1)
     MAKE_TYPEDEFS(2)

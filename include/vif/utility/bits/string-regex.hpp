@@ -1,10 +1,10 @@
-#ifndef PHYPP_INCLUDING_STRING_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/string.hpp" instead
+#ifndef VIF_INCLUDING_STRING_BITS
+#error this file is not meant to be included separately, include "vif/utilty/string.hpp" instead
 #endif
 
 #include <regex.h>
 
-namespace phypp {
+namespace vif {
     namespace impl {
     namespace regex {
         inline std::string regex_get_error_(int status) {
@@ -30,7 +30,7 @@ namespace phypp {
 
         inline void build_regex_(const std::string& regex, regex_t& re, int flags) {
             int status = regcomp(&re, regex.c_str(), flags);
-            phypp_check(status == 0, "parsing regex '", regex, "': ", regex_get_error_(status));
+            vif_check(status == 0, "parsing regex '", regex, "': ", regex_get_error_(status));
         }
 
         inline bool regex_match_(const std::string& ts, regex_t& re) {

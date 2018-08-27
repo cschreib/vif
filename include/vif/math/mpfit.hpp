@@ -1,15 +1,15 @@
-#ifndef PHYPP_MATH_MPFIT_HPP
-#define PHYPP_MATH_MPFIT_HPP
+#ifndef VIF_MATH_MPFIT_HPP
+#define VIF_MATH_MPFIT_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/utility/generic.hpp"
-#include "phypp/math/base.hpp"
-#include "phypp/math/matrix.hpp"
-#include "phypp/math/reduce.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/range.hpp"
+#include "vif/utility/generic.hpp"
+#include "vif/math/base.hpp"
+#include "vif/math/matrix.hpp"
+#include "vif/math/reduce.hpp"
 
-namespace phypp {
+namespace vif {
     // Note:
     // The following code is a direct translation of MPFIT, a routine written in IDL language by
     // C. Markwardt, itself inspired from the MINPACK Fortran library.
@@ -461,7 +461,7 @@ namespace phypp {
 
     // Compute convariance matrix from Jacobian
     vec2d mpfit_covar(vec2d r, const vec1u& ipiv) {
-        phypp_check(r.dims[0] == r.dims[1], "matrix must be squared (got ", r.dims, ")");
+        vif_check(r.dims[0] == r.dims[1], "matrix must be squared (got ", r.dims, ")");
         const uint_t n = r.dims[0];
 
         // Form the inverse of r in the full upper triangle of r
@@ -531,7 +531,7 @@ namespace phypp {
             // No option provided, use defaults
             options = mpfit_options(xall.size());
         } else {
-            phypp_check(options.nparam == xall.size(), "incompatible number of elements in options "
+            vif_check(options.nparam == xall.size(), "incompatible number of elements in options "
                 "with provided parameters (", options.nparam, " vs ", xall.size(), ")");
         }
 
@@ -877,9 +877,9 @@ namespace phypp {
 
         bool bad = !meta::same_dims_or_scalar(x, y, ye);
         if (bad) {
-            phypp_check(meta::same_dims_or_scalar(x, y), "incompatible dimensions between X and Y arrays "
+            vif_check(meta::same_dims_or_scalar(x, y), "incompatible dimensions between X and Y arrays "
                 "(", meta::dims(x), " vs. ", meta::dims(y), ")");
-            phypp_check(meta::same_dims_or_scalar(x, ye), "incompatible dimensions between X and YE arrays "
+            vif_check(meta::same_dims_or_scalar(x, ye), "incompatible dimensions between X and YE arrays "
                 "(", meta::dims(x), " vs. ", meta::dims(ye), ")");
         }
 

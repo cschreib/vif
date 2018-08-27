@@ -1,9 +1,9 @@
-#ifndef PHYPP_ASTRO_DS9_HPP
-#define PHYPP_ASTRO_DS9_HPP
+#ifndef VIF_ASTRO_DS9_HPP
+#define VIF_ASTRO_DS9_HPP
 
-#include "phypp/astro/wcs.hpp"
+#include "vif/astro/wcs.hpp"
 
-namespace phypp {
+namespace vif {
 namespace astro {
 namespace ds9 {
     struct region {
@@ -16,7 +16,7 @@ namespace ds9 {
     };
 
     inline void read_regions(const std::string& filename, vec<1,region>& regs) {
-        phypp_check(file::exists(filename), "could not open region file '"+filename+"'");
+        vif_check(file::exists(filename), "could not open region file '"+filename+"'");
 
         std::ifstream file(filename);
 
@@ -191,7 +191,7 @@ namespace ds9 {
             r.params[2] *= aspix;
             r.params[3] *= aspix;
         } else {
-            phypp_check(false, "physical-to-wcs conversion for regions of type '",
+            vif_check(false, "physical-to-wcs conversion for regions of type '",
                 r.type, "' is not implemented");
         }
 
@@ -216,7 +216,7 @@ namespace ds9 {
             r.params[2] /= aspix;
             r.params[3] /= aspix;
         } else {
-            phypp_check(false, "wcs-to-physical conversion for regions of type '",
+            vif_check(false, "wcs-to-physical conversion for regions of type '",
                 r.type, "' is not implemented");
         }
 
@@ -229,7 +229,7 @@ namespace ds9 {
 
         read_regions(filename, regs);
 
-        phypp_check(w.is_valid(),
+        vif_check(w.is_valid(),
             "invalid WCS, cannot convert regions to 'physical' coordinates");
 
         for (auto& r : regs) {
@@ -240,13 +240,13 @@ namespace ds9 {
     inline void read_regions_physical(const std::string& filename, vec<1,region>& regs) {
         read_regions(filename, regs);
         for (auto& r : regs) {
-            phypp_check(r.physical, "expected regions in 'physical' coordinates (in ", filename, ")");
+            vif_check(r.physical, "expected regions in 'physical' coordinates (in ", filename, ")");
         }
     }
 
     inline void mask_region(const region& r, vec2b& mask) {
-        phypp_check(!mask.empty(), "mask file must be initialized before calling this function");
-        phypp_check(r.physical, "regions must be in physical coordinates to create masks");
+        vif_check(!mask.empty(), "mask file must be initialized before calling this function");
+        vif_check(r.physical, "regions must be in physical coordinates to create masks");
 
         if (r.type == "circle") {
             mask = mask || (circular_mask(mask.dims, r.params[2], r.params[1], r.params[0]) > 0.5);
@@ -306,7 +306,7 @@ namespace impl {
 namespace astro {
 namespace ds9 {
     inline void write_region(std::ofstream& out, const std::string& ss,
-        const phypp::astro::ds9::region& r) {
+        const vif::astro::ds9::region& r) {
 
         if (r.type == "circle") {
             out << r.type << "(" << r.params[0] << ", " << r.params[1] << ", " <<
@@ -316,7 +316,7 @@ namespace ds9 {
                 r.params[2] << ss << ", " <<
                 r.params[3] << ss << ", " << r.params[4] << ")\n";
         } else {
-            phypp_check(false, "writing regions of type '", r.type, "' is not implemented");
+            vif_check(false, "writing regions of type '", r.type, "' is not implemented");
         }
     }
 }
@@ -395,7 +395,7 @@ namespace ds9 {
         regfile.precision(12);
 
         for (auto& r : regs) {
-            phypp_check(r.physical, "no WCS provided to convert region to physical");
+            vif_check(r.physical, "no WCS provided to convert region to physical");
             impl::astro::ds9::write_region(regfile, "", r);
         }
     }

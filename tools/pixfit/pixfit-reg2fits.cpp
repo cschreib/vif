@@ -1,6 +1,6 @@
 #include "pixfit-common.hpp"
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     vec2d regs;
     vec1s text;
 

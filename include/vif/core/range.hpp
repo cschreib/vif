@@ -1,11 +1,11 @@
-#ifndef PHYPP_CORE_RANGE_HPP
-#define PHYPP_CORE_RANGE_HPP
+#ifndef VIF_CORE_RANGE_HPP
+#define VIF_CORE_RANGE_HPP
 
 #include <utility>
-#include "phypp/core/error.hpp"
-#include "phypp/core/typedefs.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/typedefs.hpp"
 
-namespace phypp {
+namespace vif {
 namespace impl {
     namespace range_impl {
         template<typename T>
@@ -131,13 +131,13 @@ namespace impl {
 
         template<typename T>
         void check_lower_bounds(const T& right, uint_t size) {
-            phypp_check(right.first < size, "lower bound of range goes past the "
+            vif_check(right.first < size, "lower bound of range goes past the "
                 "size of the data (", right.first, " vs. ", size, ")");
         }
 
         template<typename T>
         void check_upper_bounds(const T& left, uint_t size) {
-            phypp_check(left.last < size, "upper bound of range goes past the "
+            vif_check(left.last < size, "upper bound of range goes past the "
                 "size of the data (", left.last, " vs. ", size, ")");
         }
 

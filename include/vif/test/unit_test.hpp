@@ -1,12 +1,12 @@
-#ifndef PHYPP_TEST_UNIT_TEST_HPP
-#define PHYPP_TEST_UNIT_TEST_HPP
+#ifndef VIF_TEST_UNIT_TEST_HPP
+#define VIF_TEST_UNIT_TEST_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/print.hpp"
-#include "phypp/core/string_conversion.hpp"
-#include "phypp/math/math.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/print.hpp"
+#include "vif/core/string_conversion.hpp"
+#include "vif/math/math.hpp"
 
-namespace phypp {
+namespace vif {
     uint_t tested = 0u;
     uint_t failed = 0u;
 

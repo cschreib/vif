@@ -2,12 +2,12 @@
 #define ASTRO_CATALOG_MERGE_HPP
 
 #include <list>
-#include "phypp/astro/astro.hpp"
-#include "phypp/astro/qxmatch.hpp"
+#include "vif/astro/astro.hpp"
+#include "vif/astro/qxmatch.hpp"
 
 #ifndef NO_CFITSIO
 
-namespace phypp {
+namespace vif {
 namespace astro {
     struct comment_pool_t {
         std::map<std::string, std::string> var_pool;
@@ -150,7 +150,7 @@ namespace astro {
             const std::string& name, const vec1s& sources, const vec1s& files,
             const std::string& comment = "") {
 
-            phypp_check(cra.size() == cdec.size(), "need ra.size() == dec.size()");
+            vif_check(cra.size() == cdec.size(), "need ra.size() == dec.size()");
 
             if (sel.empty()) {
                 sel = uindgen(cra.size());
@@ -301,7 +301,7 @@ namespace astro {
 
     template<std::size_t Dim, typename T, typename U, typename V, typename enable>
     void catalog_t::merge(vec<Dim,T>& in, const vec<Dim,U>& out, const V& def) {
-        phypp_check(in.empty(), name+": merging twice into the same variable");
+        vif_check(in.empty(), name+": merging twice into the same variable");
         in.dims = out.dims;
         in.dims[0] = pool.ngal;
         in.resize();
@@ -311,14 +311,14 @@ namespace astro {
 
     template<typename T, typename U, typename V>
     void catalog_t::merge(vec<1,T>& in, const U& out, const V& def) {
-        phypp_check(in.empty(), name+": merging twice into the same variable");
+        vif_check(in.empty(), name+": merging twice into the same variable");
         in = replicate(def, pool.ngal);
         in[idm] = out;
     }
 
     template<typename T, typename U, typename V>
     void catalog_t::merge(vec<1,T>& in, const vec<1,U>& out, const V& def) {
-        phypp_check(in.empty(), name+": merging twice into the same variable");
+        vif_check(in.empty(), name+": merging twice into the same variable");
         in = replicate(def, pool.ngal);
         in[idm] = out[idi];
     }
@@ -364,7 +364,7 @@ namespace impl {
 
             template<typename P>
             void operator () (reflex::member_t& n, P&& p) {
-                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                vif_check(this->m.name != n.name, "incompatible types in merging '",
                     this->m.full_name(), "' into '", n.full_name(), "'"
                 );
             }
@@ -390,7 +390,7 @@ namespace impl {
 
             template<typename P>
             void operator () (reflex::member_t& n, P&& p) {
-                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                vif_check(this->m.name != n.name, "incompatible types in merging '",
                     this->m.full_name(), "' into '", n.full_name(), "'"
                 );
             }
@@ -447,8 +447,8 @@ namespace astro {
     void catalog_t::merge_flux(const vec2f& flux, const vec2f& err, const vec1s& bands,
         const vec1s& notes) {
 
-        phypp_check(flux.dims[1] == err.dims[1], name+": flux and error do not match");
-        phypp_check(flux.dims[1] == bands.size(), name+": flux and band do not match");
+        vif_check(flux.dims[1] == err.dims[1], name+": flux and error do not match");
+        vif_check(flux.dims[1] == bands.size(), name+": flux and band do not match");
 
         vec1s tnotes = notes;
         if (tnotes.empty()) {

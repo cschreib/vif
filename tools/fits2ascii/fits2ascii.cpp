@@ -1,4 +1,4 @@
-#include <phypp.hpp>
+#include <vif.hpp>
 
 template<std::size_t D, typename T>
 void read_column_(const std::string& filename, const std::string& colname,
@@ -164,7 +164,7 @@ bool regex_match_any_of(const std::string& str, const vec1s& rs) {
 
 void print_help();
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         print_help();
         return 0;

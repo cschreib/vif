@@ -1,5 +1,5 @@
-#include <phypp.hpp>
-#include <phypp/astro/qstack.hpp>
+#include <vif.hpp>
+#include <vif/astro/qstack.hpp>
 
 void print_help() {
     using namespace terminal_format;
@@ -83,7 +83,7 @@ bool read_ids(std::string sid, uint_t& id, uint_t pos, uint_t star, uint_t idmax
     return true;
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     if (argc < 2) {
         print_help();
         return 0;

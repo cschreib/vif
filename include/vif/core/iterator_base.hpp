@@ -1,7 +1,7 @@
-#ifndef PHYPP_CORE_ITERATOR_ADAPTOR_HPP
-#define PHYPP_CORE_ITERATOR_ADAPTOR_HPP
+#ifndef VIF_CORE_ITERATOR_ADAPTOR_HPP
+#define VIF_CORE_ITERATOR_ADAPTOR_HPP
 
-namespace phypp {
+namespace vif {
 namespace impl {
     template<typename T, typename C, typename P>
     struct iterator_adaptor;

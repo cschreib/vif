@@ -1,13 +1,13 @@
-#ifndef PHYPP_REFLEX_HPP
-#define PHYPP_REFLEX_HPP
+#ifndef VIF_REFLEX_HPP
+#define VIF_REFLEX_HPP
 
 #include <string>
 #include <typeinfo>
 #include <vector>
-#include "phypp/core/typedefs.hpp"
-#include "phypp/core/meta.hpp"
+#include "vif/core/typedefs.hpp"
+#include "vif/core/meta.hpp"
 
-namespace phypp {
+namespace vif {
     template<std::size_t Dim, typename Type>
     struct vec;
 

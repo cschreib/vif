@@ -1,22 +1,22 @@
-#ifndef PHYPP_INCLUDING_MATH_MATRIX_BITS
-#error this file is not meant to be included separately, include "phypp/math/matrix.hpp" instead
+#ifndef VIF_INCLUDING_MATH_MATRIX_BITS
+#error this file is not meant to be included separately, include "vif/math/matrix.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
 namespace matrix {
     template<typename Type, typename enable = typename std::enable_if<
         meta::is_matrix<Type>::value && !std::is_reference<Type>::value
     >::type>
     mat<typename meta::data_type<typename std::decay<Type>::type>::type> transpose(const Type& v) {
         using rtype = mat<typename meta::data_type<typename std::decay<Type>::type>::type>;
-        return rtype(phypp::transpose(v.base));
+        return rtype(vif::transpose(v.base));
     }
 
     template<typename Type, typename enable = typename std::enable_if<
         meta::is_matrix<Type>::value && !std::is_reference<Type>::value
     >::type>
     auto diagonal(Type&& v) -> decltype(v(_,0).concretise()) {
-        phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+        vif_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
             v.dims, ")");
 
         decltype(v(_,0).concretise()) d(v.dims[0]);
@@ -31,7 +31,7 @@ namespace matrix {
         meta::is_matrix<Type>::value
     >::type>
     auto diagonal(Type& v) -> decltype(v(_,0)) {
-        phypp_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+        vif_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
             v.dims, ")");
 
         decltype(v(_,0)) d(impl::vec_ref_tag, impl::vec_access::get_parent(v.base));
@@ -93,7 +93,7 @@ namespace matrix {
         meta::is_matrix<Type>::value
     >::type>
     void inplace_symmetrize(Type& alpha) {
-        phypp_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
+        vif_check(alpha.dims[0] == alpha.dims[1], "cannot symmetrize a non square matrix (",
             alpha.dims, ")");
 
         for (uint_t i : range(alpha.dims[0]))
@@ -115,7 +115,7 @@ namespace matrix {
         bool decompose(const T& alpha) {
             // LU decomposition
 
-            phypp_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
+            vif_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
                 "square matrix (", alpha.dims, ")");
 
             const uint_t n = alpha.dims[0];
@@ -201,7 +201,7 @@ namespace matrix {
         }
 
         vec1d solve(const vec1d& x) const {
-            phypp_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
+            vif_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
                 "dimensions (got ", lu.dims[0], " and ", x.dims[0], ")");
 
             vec1d r(x.size());
@@ -253,7 +253,7 @@ namespace matrix {
         mat2d a = i;
         return invert(a, i);
     #else
-        phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
+        vif_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
         int n = i.dims[0];
         int lda = n;
@@ -307,7 +307,7 @@ namespace matrix {
         mat2d a = i;
         return invert_symmetric(a, i);
     #else
-        phypp_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
+        vif_check(i.dims[0] == i.dims[1], "cannot invert a non square matrix (", i.dims, ")");
 
         char uplo = 'U';
         int n = i.dims[0];
@@ -367,9 +367,9 @@ namespace matrix {
         vec1d cbeta = beta;
         return solve_symmetric(alpha, cbeta, beta);
     #else
-        phypp_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
+        vif_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
             alpha.dims, ")");
-        phypp_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimensions (",
+        vif_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimensions (",
             "got ", alpha.dims[0], " and ", beta.dims[0], ")");
 
         char uplo = 'U';
@@ -423,7 +423,7 @@ namespace matrix {
             "please enable LAPACK to use this function");
         return false;
     #else
-        phypp_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
+        vif_check(a.dims[0] == a.dims[1], "cannot invert a non square matrix (",
             a.dims, ")");
 
         char jobz = 'V';

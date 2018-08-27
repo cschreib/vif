@@ -1,5 +1,5 @@
-#include <phypp.hpp>
-#include <phypp/astro/qxmatch.hpp>
+#include <vif.hpp>
+#include <vif/astro/qxmatch.hpp>
 
 void print_help() {
     using namespace terminal_format;
@@ -68,7 +68,7 @@ void print_help() {
     print("");
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     vec1s cats;
     std::string output;
     vec1s pos;

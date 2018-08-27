@@ -1,8 +1,8 @@
-#ifndef PHYPP_INCLUDING_CORE_VEC_BITS
-#error this file is not meant to be included separately, include "phypp/core/vec.hpp" instead
+#ifndef VIF_INCLUDING_CORE_VEC_BITS
+#error this file is not meant to be included separately, include "vif/core/vec.hpp" instead
 #endif
 
-namespace phypp {
+namespace vif {
     // Generic vector type
     template<std::size_t Dim, typename Type>
     struct vec;
@@ -376,7 +376,7 @@ namespace meta {
     // Resize vectors to provided dimensions, or check views have the right dimensions
     template<std::size_t Dim1, typename T, std::size_t Dim2>
     void resize_or_check(const vec<Dim1,T*>& s, const std::array<uint_t,Dim2>& dims) {
-        phypp_check(s.dims == dims, "incompatible dimensions for view (expected ", dims, ", "
+        vif_check(s.dims == dims, "incompatible dimensions for view (expected ", dims, ", "
             "got ", s.dims);
     }
 
@@ -439,4 +439,4 @@ namespace meta {
         std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN
     >;
 } // end namespace meta
-} // end namespace phypp
+} // end namespace vif

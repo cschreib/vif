@@ -1,14 +1,14 @@
-#ifndef PHYPP_MATH_LINFIT_HPP
-#define PHYPP_MATH_LINFIT_HPP
+#ifndef VIF_MATH_LINFIT_HPP
+#define VIF_MATH_LINFIT_HPP
 
-#include "phypp/core/vec.hpp"
-#include "phypp/core/error.hpp"
-#include "phypp/core/range.hpp"
-#include "phypp/utility/idl.hpp"
-#include "phypp/math/base.hpp"
-#include "phypp/math/matrix.hpp"
+#include "vif/core/vec.hpp"
+#include "vif/core/error.hpp"
+#include "vif/core/range.hpp"
+#include "vif/utility/idl.hpp"
+#include "vif/math/base.hpp"
+#include "vif/math/matrix.hpp"
 
-namespace phypp {
+namespace vif {
     struct linfit_result {
         bool          success = false;
         double        chi2 = dnan;
@@ -99,7 +99,7 @@ namespace phypp {
 
         template<typename TY, typename U, typename ... Args>
         void linfit_error_dims_(const TY& y, uint_t i, const U& t, const Args& ... args) {
-            phypp_check(meta::same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
+            vif_check(meta::same_dims_or_scalar(y, t), "incompatible dimensions between Y and X",
                 i, " (", meta::dims(y), " vs. ", meta::dims(t), ")");
             linfit_error_dims_(y, i+1, args...);
         }
@@ -109,7 +109,7 @@ namespace phypp {
     linfit_result linfit(const TypeY& y, const TypeE& ye, Args&&... args) {
         bool bad = !meta::same_dims_or_scalar(y, ye, args...);
         if (bad) {
-            phypp_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
+            vif_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
                 "YE arrays (", meta::dims(y), " vs. ", meta::dims(ye), ")");
             impl::linfit_error_dims_(y, 0, args...);
         }
@@ -134,7 +134,7 @@ namespace phypp {
             }
         }
 
-        phypp_check(good, "incompatible dimensions between X, Y and YE arrays (", x.dims,
+        vif_check(good, "incompatible dimensions between X, Y and YE arrays (", x.dims,
             " vs. ", y.dims, " vs. ", ye.dims, ")")
 
         linfit_result fr;
@@ -219,7 +219,7 @@ namespace phypp {
             uint_t np = cache.dims[0];
             uint_t nm = cache.dims[1];
 
-            phypp_check(i < np, "index goes beyond available models (", i, " vs. ", np, ")");
+            vif_check(i < np, "index goes beyond available models (", i, " vs. ", np, ")");
 
             for (uint_t j : range(nm)) {
                 cache.safe(i,j) = x.safe[j]/ye.safe[j];
@@ -274,7 +274,7 @@ namespace phypp {
 
         template<typename TypeY>
         void fit_nochi2(const TypeY& y) {
-            phypp_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
+            vif_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
                 "YE arrays (", meta::dims(y), " vs. ", meta::dims(ye), ")");
 
             if (!fr.success) return;

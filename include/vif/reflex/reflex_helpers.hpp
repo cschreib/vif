@@ -1,11 +1,11 @@
-#ifndef PHYPP_REFLEX_HELPERS_HPP
-#define PHYPP_REFLEX_HELPERS_HPP
+#ifndef VIF_REFLEX_HELPERS_HPP
+#define VIF_REFLEX_HELPERS_HPP
 
-#include "phypp/core/print.hpp"
-#include "phypp/utility/string.hpp"
-#include "phypp/reflex/reflex.hpp"
+#include "vif/core/print.hpp"
+#include "vif/utility/string.hpp"
+#include "vif/reflex/reflex.hpp"
 
-namespace phypp {
+namespace vif {
 namespace impl {
     namespace reflex_impl {
         template<typename T>
@@ -101,7 +101,7 @@ namespace impl {
 
             template<typename P>
             void operator () (reflex::member_t& n, P&& p) {
-                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                vif_check(this->m.name != n.name, "incompatible types in merging '",
                     this->m.full_name(), "' into '", n.full_name(), "'"
                 );
             }
@@ -127,7 +127,7 @@ namespace impl {
 
             template<typename P>
             void operator () (reflex::member_t& n, P&& p) {
-                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                vif_check(this->m.name != n.name, "incompatible types in merging '",
                     this->m.full_name(), "' into '", n.full_name(), "'"
                 );
             }
@@ -209,7 +209,7 @@ namespace impl {
 
             template<typename P>
             void operator () (reflex::member_t& n, P&& p) {
-                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                vif_check(this->m.name != n.name, "incompatible types in merging '",
                     this->m.full_name(), "' into '", n.full_name(), "'"
                 );
             }
@@ -237,7 +237,7 @@ namespace impl {
 
             template<typename P>
             void operator () (reflex::member_t& n, P&& p) {
-                phypp_check(this->m.name != n.name, "incompatible types in merging '",
+                vif_check(this->m.name != n.name, "incompatible types in merging '",
                     this->m.full_name(), "' into '", n.full_name(), "'"
                 );
             }

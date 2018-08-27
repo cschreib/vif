@@ -1,10 +1,10 @@
-#ifndef PHYPP_INCLUDING_STRING_BITS
-#error this file is not meant to be included separately, include "phypp/utilty/string.hpp" instead
+#ifndef VIF_INCLUDING_STRING_BITS
+#error this file is not meant to be included separately, include "vif/utilty/string.hpp" instead
 #endif
 
 #include <cctype>
 
-namespace phypp {
+namespace vif {
     inline char to_upper(char c) {
         return std::toupper(static_cast<unsigned char>(c));
     }
@@ -61,11 +61,11 @@ namespace phypp {
         return s;
     }
 
-    PHYPP_VECTORIZE(to_upper)
-    PHYPP_VECTORIZE(to_lower)
-    PHYPP_VECTORIZE(align_left)
-    PHYPP_VECTORIZE(align_right)
-    PHYPP_VECTORIZE(align_center)
+    VIF_VECTORIZE(to_upper)
+    VIF_VECTORIZE(to_lower)
+    VIF_VECTORIZE(align_left)
+    VIF_VECTORIZE(align_right)
+    VIF_VECTORIZE(align_center)
 
     namespace terminal_format {
         inline void header(const std::string& msg) {
