@@ -4,7 +4,7 @@
 #include "vif/core/vec.hpp"
 #include "vif/core/print.hpp"
 #include "vif/core/string_conversion.hpp"
-#include "vif/math/math.hpp"
+#include "vif/math/base.hpp"
 
 namespace vif {
     uint_t tested = 0u;

@@ -1,5 +1,8 @@
 #include <vif.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 bool read_ds9_region_circles(std::string file_name, vec2d& regs, bool& physical, std::string color) {
     if (!file::exists(file_name)) {
         error("could not open region file '", file_name, "'");

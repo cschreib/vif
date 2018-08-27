@@ -1,6 +1,9 @@
 #include <vif.hpp>
 #include <vif/astro/qxmatch.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 void print_help() {
     using namespace terminal_format;
 

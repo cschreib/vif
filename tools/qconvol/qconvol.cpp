@@ -1,5 +1,7 @@
 #include <vif.hpp>
 
+using namespace vif;
+
 void print_help() {
     using namespace terminal_format;
 

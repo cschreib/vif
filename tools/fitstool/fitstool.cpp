@@ -1,5 +1,7 @@
 #include <vif.hpp>
 
+using namespace vif;
+
 void print_help();
 
 bool get_columns(const vec1s& cols, fitsfile* fptr, vec1s& fcols, bool force = false);

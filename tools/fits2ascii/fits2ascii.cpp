@@ -1,5 +1,7 @@
 #include <vif.hpp>
 
+using namespace vif;
+
 template<std::size_t D, typename T>
 void read_column_(const std::string& filename, const std::string& colname,
     vec<D,std::string>& v, meta::type_list<T>) {

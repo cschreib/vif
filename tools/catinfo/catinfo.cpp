@@ -1,5 +1,8 @@
 #include <vif.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 int vif_main(int argc, char* argv[]) {
     if (argc < 2) return 0;
 
@@ -13,7 +16,7 @@ int vif_main(int argc, char* argv[]) {
         std::string version;
         std::string changelog;
     } cat;
-        
+
     fits::read_table_loose(fcat, ftable(
         cat.catalogs, cat.comments, cat.version, cat.changelog
     ));

@@ -1,5 +1,8 @@
 #include <vif.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 void print_help();
 
 template<typename T, typename D, typename I>

@@ -1,6 +1,9 @@
 #include <vif.hpp>
 #include <vif/astro/qstack.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 void print_help();
 
 struct image_t {

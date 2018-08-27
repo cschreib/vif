@@ -1,5 +1,8 @@
 #include <phypp.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 struct map_info {
     std::string band;
     std::string img;

@@ -1,7 +1,9 @@
-#include <phypp.hpp>
-#include <phypp/unit_test.hpp>
+#include <vif.hpp>
+#include <vif/unit_test.hpp>
 
-int main(int argc, char* argv[]) {
+using namespace vif;
+
+int vif_main(int argc, char* argv[]) {
     vec1i v;
 
     auto get_and_check = [&]() {

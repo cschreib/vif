@@ -2,6 +2,7 @@
 #include <vif/astro/template_fit.hpp>
 #include "pixfit-common.hpp"
 
+
 void print_help() {
     using namespace terminal_format;
 

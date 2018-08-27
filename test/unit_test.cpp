@@ -1,5 +1,7 @@
 #include <vif.hpp>
 
+using namespace vif;
+
 #define check(t, s) { \
     std::string st = to_string(t); \
     if (st == s) print("  checked: "+st); \

@@ -1,5 +1,8 @@
 #include <vif.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 int vif_main(int argc, char* argv[]) {
     fits::table tbl(argv[1]);
 

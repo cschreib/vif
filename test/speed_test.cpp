@@ -1,4 +1,6 @@
-#include <phypp.hpp>
+#include <vif.hpp>
+
+using namespace vif;
 
 template<typename T>
 void prof(const std::string& msg, T&& t) {
@@ -6,73 +8,7 @@ void prof(const std::string& msg, T&& t) {
     print(msg, ": ", seconds_str(d));
 }
 
-template<typename T>
-struct range_t;
-
-template<typename T>
-struct range_iterator_t;
-
-template<typename T>
-struct range_iterator_t<range_t<T>> {
-    const range_t<T>& range;
-    std::size_t i;
-
-    range_iterator_t& operator++ (int) {
-        ++i;
-        return *this;
-    }
-
-    range_iterator_t operator++ () {
-        return range_iterator_t{range, i++};
-    }
-
-    T operator * () const {
-        return range.b + range.d*i;
-    }
-
-    bool operator == (const range_iterator_t& iter) const {
-        return iter.i == i && iter.range == range;
-    }
-
-    bool operator != (const range_iterator_t& iter) const {
-        return iter.i != i || &iter.range != &range;
-    }
-};
-
-template<typename T>
-struct range_t {
-    T b, e, d;
-    std::size_t n;
-
-    range_t(T b_, T e_, std::size_t n_) : b(b_), e(e_), d((e_-b_)/n_), n(n_) {}
-
-    using iterator = range_iterator_t<range_t>;
-
-    iterator begin() const { return iterator{*this, 0}; }
-    iterator end() const { return iterator{*this, n}; }
-};
-
-template<typename T>
-range_t<T> range(T i, T e, std::size_t n) {
-    return range_t<T>(i, e, n);
-}
-
-template<typename T>
-range_t<T> range(T i, T e) {
-    return range(i, e, e-i);
-}
-
-template<typename T>
-range_t<T> range(T n) {
-    return range(T(0), n);
-}
-
-template<typename T, typename enable = typename std::enable_if<is_vec<T>::value>::type>
-range_t<T> range(T n) {
-    return range(0u, n.size()-1);
-}
-
-int main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     uint_t test = 0;
 
     read_args(argc, argv, arg_list(test));
@@ -103,13 +39,13 @@ int main(int argc, char* argv[]) {
             }
         });
         prof("Simple loop .data", [&]() {
-            v1 = intarr(n);
+            v1 = vec1i(n);
             for (uint_t i = 0; i < n; ++i) {
                 v1.data[i] = 2*u.data[i];
             }
         });
         prof("Simple loop", [&]() {
-            v2 = intarr(n);
+            v2 = vec1i(n);
             for (uint_t i = 0; i < n; ++i) {
                 v2[i] = 2*u[i];
             }
@@ -195,18 +131,19 @@ int main(int argc, char* argv[]) {
         print(vec1i{v13[0], v13[1], v13[2], v13[3]});
     } else if (test == 1) {
         double d1 = 0.1, d2 = 0.1, d3 = 0.1;
+        uint_t n = 1e6;
         prof("rgen", [&]() {
-            for (auto u : uindgen(1e6)) {
+            for (auto u : uindgen(n)) {
                 d1 += u*u + fabs(log10(d1));
             }
         });
         prof("range", [&]() {
-            for (auto u : range(uint_t(1e6))) {
+            for (auto u : range(uint_t(n))) {
                 d2 += u*u + fabs(log10(d2));
             }
         });
         prof("C", [&]() {
-            for (uint_t u = 0; u < 1e6; ++u) {
+            for (uint_t u = 0; u < n; ++u) {
                 d3 += u*u + fabs(log10(d3));
             }
         });

@@ -1,5 +1,8 @@
 #include <vif.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 int vif_main(int argc, char* argv[]) {
     if (argc < 3) {
         return 0;

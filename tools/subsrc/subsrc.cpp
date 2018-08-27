@@ -1,5 +1,8 @@
 #include <vif.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 void print_help();
 
 int vif_main(int argc, char* argv[]) {

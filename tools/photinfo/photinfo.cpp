@@ -1,6 +1,9 @@
 #include <vif.hpp>
 #include <vif/astro/qxmatch.hpp>
 
+using namespace vif;
+using namespace vif::astro;
+
 int vif_main(int argc, char* argv[]) {
     if (argc == 1) {
         return 0;

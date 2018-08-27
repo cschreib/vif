@@ -1,5 +1,7 @@
-#include <phypp.hpp>
-#include <phypp/test/unit_test.hpp>
+#include <vif.hpp>
+#include <vif/test/unit_test.hpp>
+
+using namespace vif;
 
 template<typename T>
 void assert_is_vec() {
@@ -1022,7 +1024,7 @@ void test() {
     print(" ");
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "line") {
             check_show_line = true;

@@ -1,4 +1,6 @@
-#include <phypp.hpp>
+#include <vif.hpp>
+
+using namespace vif;
 
 namespace speed_test {
     template<std::size_t D, typename T>
@@ -71,7 +73,7 @@ namespace speed_test {
     }
 }
 
-int main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     uint_t nsrc = 1000000;
     uint_t navg = 1;
     bool check = false;

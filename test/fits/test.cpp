@@ -1,4 +1,6 @@
-#include <phypp.hpp>
+#include <vif.hpp>
+
+using namespace vif;
 
 #define check(t, s) { \
     std::string st = to_string(t); \
@@ -7,7 +9,7 @@
     assert(st == s); \
 }
 
-int phypp_main(int argc, char* argv[]) {
+int vif_main(int argc, char* argv[]) {
     vec1u id = uindgen(100);
     vec1s sid = to_string_vector(reverse(id));
 

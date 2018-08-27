@@ -42,7 +42,3 @@
 #include "vif/astro/astro.hpp"
 #include "vif/astro/wcs.hpp"
 
-// Bring common functions into the global namespace
-using namespace vif;
-using namespace vif::astro;
-
