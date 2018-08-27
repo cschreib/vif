@@ -1,27 +1,28 @@
 # What is vif ?
 
-vif is a C++ library built to provide user friendly data manipulation as offered in interpreted languages like [IDL] or its open source clone [GDL], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
+vif is a C++ library built to provide user friendly data manipulation as offered in interpreted languages like [python], [IDL], [GDL], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
 
- - multidimensional arrays with overloaded mathematical operators and
-   mathematical functions, providing easy manipulation of tabulated data and images
- - a whole library of general purpose functions to modify and analyze these data
- - a number of optional modules:
-    - a FITS module allowing read/write operations on FITS images and tables
-    - an ASCII module allowing read/write operations on ASCII tables
+ - Multidimensional arrays with standard mathematical operators and
+   functions, providing easy manipulation of images and tabulated data.
+ - A whole library of general purpose functions to modify and analyze these data (reverse, shuffle, reduce, ...).
+ - A number of optional modules:
+    - a FITS module allowing read/write operations on FITS images and tables,
+    - an ASCII module allowing read/write operations on ASCII tables,
     - an astrophysics module providing tools such as cosmological calculations,
    PSF fitting, unit conversions, catalog cross-matching, image manipulation, ...
 
 It relies only on standard C++11, and a couple of well-known libraries (see INSTALL). Some features can optionally use compile-time reflection, which is not [yet] part of the C++ standard, so a small tool ('refgen') is used to fill the gap. These features are non-essential though, and reflection can be completely disabled if not needed.
 
 The library was designed following three core principles:
- 1. "safety first".
- 2. "you do not pay for what you do not use"
- 3. "minimize burden to the user".
+ 1. "Safety first".
+ 2. "You do not pay for what you do not use".
+ 3. "Minimize burden to the user".
 
-The first principle requires that the most easily accessible interface is the safest to use, meaning that it will perform basic checks on the data before processing it (bounds checking, etc.). The second principle requires the existence of mechanisms to bypass these safety checks, such that it is always possible to write optimal code when checks are not needed. The third and last principle requires that both interfaces are as simple to use as possible, to minimize the amount of code the user has to write to reach their goal.
+The first principle requires that the most easily accessible interface is the safest to use, meaning that the library will perform, by default, some basic checks on the data before processing it (bounds checking, etc.). The second principle requires the existence of mechanisms to bypass these safety checks, such that it is always possible to write optimal code when checks are not needed. The third and last principle requires that both interfaces are as simple to use as possible, to minimize the amount of code the user has to write to reach their goal.
 
 Thus far, vif has been a one-man project. Development started in 2013 during my PhD, and has continued until today. The library is now mature and fully functional; all that remains to be done before a version 1.0 is a final review of the code before API freeze, and wrapping up the documentation (see [roadmap]).
 
+[python]: https://www.python.org/
 [IDL]: http://www.exelisvis.com/ProductsServices/IDL.aspx
 [GDL]: http://gnudatalanguage.sourceforge.net/
 [cling]: http://root.cern.ch/drupal/content/cling
