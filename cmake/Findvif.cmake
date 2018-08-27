@@ -1,6 +1,6 @@
 if(NOT VIF_FOUND)
     # Find vif headers
-    find_path(VIF_INCLUDE_DIR phypp.hpp
+    find_path(VIF_INCLUDE_DIR vif.hpp
         HINTS ${VIF_ROOT_DIR} PATH_SUFFIXES include)
 
     find_path(VIF_COMPILER_DIR cvif
