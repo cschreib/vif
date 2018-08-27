@@ -226,7 +226,7 @@ int vif_main(int argc, char* argv[]) {
             b[1] = onsed-1;
         }
 
-        itdust = uindgen(b[1]-b[0]+1) + b[0];
+        itdust = indgen(b[1]-b[0]+1) + b[0];
 
         for (uint_t l : range(2)) {
             libs[l].lam = libs[l].lam(itdust,_);
@@ -244,7 +244,7 @@ int vif_main(int argc, char* argv[]) {
             print("using ", libs[0].tdust.size(), " SEDs out of ", onsed);
         }
     } else {
-        itdust = uindgen(libs[0].tdust.size());
+        itdust = indgen(libs[0].tdust.size());
     }
 
     // Handle Tdust constraints
@@ -391,7 +391,7 @@ int vif_main(int argc, char* argv[]) {
             idm = where(gff(i,_));
             f.measures = flux(i,idm);
             f.errors = flux_err(i,idm);
-            f.measure_id(0,idm) = uindgen(idm.size());
+            f.measure_id(0,idm) = indgen(idm.size());
             f.convd(0,_,_) = convd(i,_,_);
             f.convp(0,_,_) = convp(i,_,_);
 
@@ -434,7 +434,7 @@ int vif_main(int argc, char* argv[]) {
                 uint_t i0 = f.measures.size();
                 append(f.measures, flux(k,idm));
                 append(f.errors, flux_err(k,idm));
-                f.measure_id(j,idm) = uindgen(idm.size()) + i0;
+                f.measure_id(j,idm) = indgen(idm.size()) + i0;
             }
 
             // Then add groups
@@ -836,7 +836,7 @@ int vif_main(int argc, char* argv[]) {
             }
         }
 
-        vec1u bfit = clamp(round(interpolate(findgen(nsed), libs[0].tdust, tdust)), 0, nsed-1);
+        vec1u bfit = clamp(round(interpolate(indgen<float>(nsed), libs[0].tdust, tdust)), 0, nsed-1);
 
         res.group[gids] = f.id;
         res.bfit(0,gids) = itdust[bfit];

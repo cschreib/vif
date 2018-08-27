@@ -1109,7 +1109,7 @@ bool move_meta_columns(int argc, char* argv[], const std::string& file) {
                 count[i] = total(dims == udim[i]);
             }
 
-            vec1u weight = uindgen(udim.size()) + sort(count);
+            vec1u weight = indgen(udim.size()) + sort(count);
             dim = udim[max_id(weight)];
 
             if (!force) {

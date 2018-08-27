@@ -613,7 +613,7 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             vec1s args = trim(split(line, " "));
             cfile.push_back(args[0]);
             if (args.size() > 1) {
-                args = args[uindgen(args.size()-1)+1];
+                args = args[indgen(args.size()-1)+1];
                 program_arguments tmp(args);
                 ex.config(tmp);
             }
@@ -680,7 +680,7 @@ bool run_batch(int argc, char* argv[], const std::string& file) {
             vec1s args = trim(split(line, " "));
             cfile.push_back(args[0]);
             if (args.size() > 1) {
-                args = args[uindgen(args.size()-1)+1];
+                args = args[indgen(args.size()-1)+1];
                 program_arguments tmp(args);
                 ex.config(tmp);
             }

@@ -66,7 +66,7 @@ int vif_main(int argc, char* argv[]) {
     if (gidg.size() >= 2000) {
         rndid = shuffle(seed, gidg)[_-2000];
     } else {
-        rndid = uindgen(gidg.size());
+        rndid = indgen(gidg.size());
     }
 
     vec1f areas(cat.bands.size());

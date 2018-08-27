@@ -446,12 +446,12 @@ int vif_main(int argc, char* argv[]) {
                 linfit_result res;
                 do {
                     if (!res.params.empty()) {
-                        vec1u idp = where(res.params > 0 || uindgen(psfs.dims[0]) <= 1);
+                        vec1u idp = where(res.params > 0 || indgen(psfs.dims[0]) <= 1);
                         psfs = psfs(idp,_);
                     }
 
                     res = linfit_pack(img[idf], replicate(1.0, idf.size()), psfs(_,idf));
-                } while (count(res.params < 0 && uindgen(psfs.dims[0]) > 1) > 0);
+                } while (count(res.params < 0 && indgen(psfs.dims[0]) > 1) > 0);
 
                 // Subtract
                 for (uint_t i : range(psfs.dims[0]-2)) {

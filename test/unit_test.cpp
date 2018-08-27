@@ -280,7 +280,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("Index conversion");
-        vec2i v = indgen<uint_t>(2,3);
+        vec2i v = indgen(2,3);
         for (uint_t i = 0; i < v.size(); ++i) {
             vec1u ids = mult_ids(v, i);
             check(v(ids[0], ids[1]), to_string(i));
@@ -338,7 +338,7 @@ int vif_main(int argc, char* argv[]) {
         check(where(test != otest).empty(), "1");
 
         print("Unsigned type");
-        vec1u id = indgen<uint_t>(6);
+        vec1u id = indgen(6);
         fits::write_table("out/utable.fits", ftable(id));
 
         vec1u oid = id;
@@ -553,7 +553,7 @@ int vif_main(int argc, char* argv[]) {
         vec1i v = replicate(3, 5);
         check(v.dims, "{5}");
         check(v, "{3, 3, 3, 3, 3}");
-        v[indgen<uint_t>(2)] = indgen<int_t>(2)+1;
+        v[indgen(2)] = indgen<int_t>(2)+1;
         vec2i v2 = replicate(v[indgen<int_t>(2)], 3);
         check(v2, "{1, 2, 1, 2, 1, 2}");
         check(v2.dims, "{3, 2}");

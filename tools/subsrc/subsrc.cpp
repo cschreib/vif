@@ -52,7 +52,7 @@ int vif_main(int argc, char* argv[]) {
         }
 
         if (fcat.id.empty()) {
-            fcat.id = uindgen(fcat.ra.size());
+            fcat.id = indgen(fcat.ra.size());
         }
 
         vec1f flux;

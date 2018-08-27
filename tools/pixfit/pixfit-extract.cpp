@@ -311,7 +311,7 @@ int vif_main(int argc, char* argv[]) {
             }
 
             // Calibrate the relation between distance and PSF overlap
-            vec1d d = uindgen(2*hsize+2);
+            vec1d d = indgen(2*hsize+2);
             vec1d c(d.size());
             for (uint_t i : range(d)) {
                 c[i] = total(psf*translate(psf, d[i], 0.0));
@@ -447,8 +447,8 @@ int vif_main(int argc, char* argv[]) {
             } else {
                 is_grouped = old_cat.group_aper_id != 0;
                 group_fit_id = replicate(npos, ra.size());
-                id_old = uindgen(ra.size());
-                id_new = uindgen(ra.size());
+                id_old = indgen(ra.size());
+                id_new = indgen(ra.size());
             }
 
             if (has_groups) {
@@ -549,8 +549,8 @@ int vif_main(int argc, char* argv[]) {
             if (x.size() > 2) {
                 // Pick the pixels of the map that are within the coverage of our prior list
                 auto hull = build_convex_hull(x, y);
-                vec2d tix = replicate(dindgen(snr.dims[1]), snr.dims[0]);
-                vec2d tiy = transpose(replicate(dindgen(snr.dims[0]), snr.dims[1]));
+                vec2d tix = replicate(indgen<double>(snr.dims[1]), snr.dims[0]);
+                vec2d tiy = transpose(replicate(indgen<double>(snr.dims[0]), snr.dims[1]));
                 incov = in_convex_hull(tix, tiy, hull);
             }
 
@@ -833,7 +833,7 @@ int vif_main(int argc, char* argv[]) {
             // In particular: sources with significantly negative fluxes or with non-definite
             // errors, and their covarying neighbors.
             if (group_post_process) {
-                vec1u ido = uindgen(nobs);
+                vec1u ido = indgen(nobs);
                 vec1u idb = where(
                     ((best_fit[ido] < 0 && (best_fit/best_fit_err)[ido] < -2) ||
                     !is_finite(best_fit_err[ido]))
