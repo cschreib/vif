@@ -1,5 +1,11 @@
-vif documentation
-===================
+.. image:: icon_black_text.svg
+   :alt: vif
+   :width: 400
+
+Easy, robust, and fast numerics in C++.
+
+Documentation
+=============
 
 vif is a set of library and tools built to provide user-friendly vector data manipulation, as offered in interpreted languages like IDL_, its open source clone GDL_, or Python and numpy_, but with the added benefit of C++: increased robustness, and optimal speed.
 
