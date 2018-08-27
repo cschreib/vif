@@ -1,6 +1,12 @@
 #ifndef PHYPP_IO_ASTRO_WCS_HPP
 #define PHYPP_IO_ASTRO_WCS_HPP
 
+#include "phypp/core/error.hpp"
+#include "phypp/utility/thread.hpp"
+#include "phypp/io/fits.hpp"
+
+#ifndef NO_CFITSIO
+
 #ifndef NO_WCSLIB
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcserr.h>
@@ -9,10 +15,6 @@
 #endif
 #include <wcslib/tab.h>
 #endif
-
-#include "phypp/core/error.hpp"
-#include "phypp/utility/thread.hpp"
-#include "phypp/io/fits.hpp"
 
 namespace phypp {
 namespace astro {
@@ -1130,4 +1132,4 @@ namespace astro {
 }
 
 #endif
-
+#endif

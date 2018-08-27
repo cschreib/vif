@@ -5,6 +5,8 @@
 #include "phypp/io/fits/base.hpp"
 #include "phypp/math/reduce.hpp"
 
+#ifndef NO_CFITSIO
+
 namespace phypp {
 namespace fits {
     // Reading options
@@ -1775,4 +1777,5 @@ namespace fits {
 }
 }
 
+#endif
 #endif

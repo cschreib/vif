@@ -16,6 +16,7 @@ namespace astro {
         MEMBERS2("qxmatch_res", MAKE_MEMBER(id), MAKE_MEMBER(d), MAKE_MEMBER(rid), MAKE_MEMBER(rd));
     };
 
+    #ifndef NO_CFITSIO
     void qxmatch_save(const std::string& file, const qxmatch_res& r) {
         fits::write_table(file, ftable(r.id, r.d, r.rid, r.rd));
     }
@@ -25,6 +26,7 @@ namespace astro {
         fits::read_table(file, ftable(r.id, r.d, r.rid, r.rd));
         return r;
     }
+    #endif
 
     struct qxmatch_params {
         uint_t thread = 1u;
@@ -666,12 +668,14 @@ namespace astro {
         }
     }
 
+    #ifndef NO_CFITSIO
     void xmatch_save_lost(const id_pair& p, const std::string& save) {
         if (!p.lost.empty()) {
             warning(p.lost.size(), " sources failed to cross match");
             fits::write_table(save, ftable(p.lost));
         }
     }
+    #endif
 
     struct qdist_params {
         bool verbose = false;

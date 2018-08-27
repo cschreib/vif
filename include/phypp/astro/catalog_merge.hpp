@@ -5,6 +5,8 @@
 #include "phypp/astro/astro.hpp"
 #include "phypp/astro/qxmatch.hpp"
 
+#ifndef NO_CFITSIO
+
 namespace phypp {
 namespace astro {
     struct comment_pool_t {
@@ -471,4 +473,5 @@ namespace astro {
 }
 }
 
+#endif
 #endif

@@ -6,6 +6,8 @@
 #include "phypp/io/fits/image.hpp"
 #include "phypp/utility/os.hpp"
 
+#ifndef NO_CFITSIO
+
 namespace phypp {
 namespace fits {
     // Return the number of dimensions of a FITS file
@@ -228,5 +230,6 @@ namespace fits {
 }
 }
 
+#endif
 #endif
 

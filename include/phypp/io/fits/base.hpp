@@ -1,7 +1,6 @@
 #ifndef PHYPP_IO_FITS_BASE_HPP
 #define PHYPP_IO_FITS_BASE_HPP
 
-#include <fitsio.h>
 #include <string>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/print.hpp"
@@ -9,6 +8,10 @@
 #include "phypp/utility/generic.hpp"
 #include "phypp/io/filesystem.hpp"
 #include "phypp/io/ascii.hpp"
+
+#ifndef NO_CFITSIO
+
+#include <fitsio.h>
 
 namespace phypp {
 namespace fits {
@@ -956,5 +959,16 @@ namespace fits {
     }
 }
 }
+
+#else
+
+// Minimal support
+namespace phypp {
+namespace fits {
+    using header = std::string;
+}
+}
+
+#endif
 
 #endif

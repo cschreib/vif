@@ -1428,13 +1428,15 @@ namespace astro {
                 );
             });
         } else if (params[0] == "file") {
+            #ifndef NO_CFITSIO
+
             uint_t narg = 1;
             if (params.size() < narg+1) {
-                error("'gaussian' PSF model requires one argument (file name), but "
+                error("'file' PSF model requires one argument (file name), but "
                     "none was provided");
                 return false;
             } else if (params.size() > narg+1) {
-                warning("'gaussian' PSF model requires one argument (file name) but ",
+                warning("'file' PSF model requires one argument (file name) but ",
                     params.size()-1, " are provided");
             }
 
@@ -1475,6 +1477,13 @@ namespace astro {
             subregion(psf, {ix0-hsize, iy0-hsize, ix0+hsize, iy0+hsize}, idi, idp);
 
             psf[idi] = tpsf[idp];
+
+            #else
+
+            error("'file' PSF model requires the CFITSIO library");
+            return false;
+
+            #endif
         } else {
             error("unknown PSF model '", params[0], "'");
             return false;
@@ -1517,10 +1526,17 @@ namespace astro {
 
         auto read_filter_file = [](std::string filename, filter_t& tf) {
             if (ends_with(filename, ".fits")) {
+                #ifndef NO_CFITSIO
                 fits::input_table(filename).read_columns(fits::narrow, ftable(tf.lam, tf.res));
+                #else
+                error("get_filter: cannot read FITS filter without CFITSIO library");
+                return false;
+                #endif
             } else {
                 ascii::read_table(filename, tf.lam, tf.res);
             }
+
+            return true;
         };
 
         if (spl.size() == 1) {
@@ -1548,7 +1564,10 @@ namespace astro {
 
                 return false;
             } else {
-                read_filter_file(iter->second, f);
+                if (!read_filter_file(iter->second, f)) {
+                    return false;
+                }
+
                 f.rlam = integrate(f.lam, f.res*f.lam);
                 return true;
             }
@@ -1586,7 +1605,10 @@ namespace astro {
                     return false;
                 }
 
-                read_filter_file(spl[2], f);
+                if (!read_filter_file(spl[2], f)) {
+                    return false;
+                }
+
                 f.rlam = integrate(f.lam, f.res*f.lam);
 
                 return true;
@@ -1614,7 +1636,15 @@ namespace astro {
     inline void print_filters(const filter_db_t& db) {
         for (auto& sf : db) {
             filter_t f;
-            fits::read_table(sf.second, ftable(f.lam, f.res));
+            std::string filename = sf.second;
+            if (ends_with(filename, ".fits")) {
+                #ifndef NO_CFITSIO
+                fits::input_table(filename).read_columns(fits::narrow, ftable(f.lam, f.res));
+                #endif
+            } else {
+                ascii::read_table(filename, f.lam, f.res);
+            }
+
             f.rlam = integrate(f.lam, f.res*f.lam);
             print(sf.first, ": ", f.rlam);
         }

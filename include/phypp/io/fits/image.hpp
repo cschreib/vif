@@ -3,6 +3,8 @@
 
 #include "phypp/io/fits/base.hpp"
 
+#ifndef NO_CFITSIO
+
 namespace phypp {
 namespace fits {
     // FITS input table (read only)
@@ -334,4 +336,5 @@ namespace fits {
 }
 }
 
+#endif
 #endif

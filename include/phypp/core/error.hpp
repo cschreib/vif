@@ -324,13 +324,16 @@ namespace phypp {
             phypp::print("\n"); \
             exit(EXIT_FAILURE); \
         }
+
     #else
+
     #define phypp_check(value, ...) \
         if (!(value)) { \
             phypp::print("\n"); \
             phypp::error(__FILE__, ":", __LINE__, ": ", __VA_ARGS__, "\n"); \
             exit(EXIT_FAILURE); \
         }
+
     #endif
 }
 

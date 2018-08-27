@@ -1819,6 +1819,8 @@ namespace impl {
     }
 }
 
+#ifndef NO_CFITSIO
+
 namespace astro {
 
     enum class interpolation_method {
@@ -2168,6 +2170,9 @@ namespace astro {
         return regrid_drizzle(imgs, astros, astrod, wei, opts);
     }
 }
+
+#endif
+
 }
 
 #endif

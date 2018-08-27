@@ -90,14 +90,14 @@ if(NOT PHYPP_FOUND)
     endif()
 
     # find required libraries
-    find_package(CFITSIO REQUIRED)
     find_package(Threads REQUIRED)
 
-    set(PHYPP_INCLUDE_DIRS ${PHYPP_INCLUDE_DIRS} ${CFITSIO_INCLUDES})
-    set(PHYPP_LIBRARIES ${PHYPP_LIBRARIES} ${CFITSIO_LIBRARIES})
     set(PHYPP_LIBRARIES ${PHYPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
     # find optional libraries
+    if (NOT NO_CFITSIO)
+        find_package(CFITSIO)
+    endif()
     if (NOT NO_LIBUNWIND)
         find_package(LibUnwind)
     endif()
@@ -126,6 +126,14 @@ if(NOT PHYPP_FOUND)
     set(NO_REFLECTION 1)
     add_definitions(-DNO_REFLECTION)
 
+    # handle conditional CFITSIO support
+    if (NOT CFITSIO_FOUND OR NO_CFITSIO)
+        add_definitions(-DNO_CFITSIO)
+    else()
+        set(PHYPP_INCLUDE_DIRS ${PHYPP_INCLUDE_DIRS} ${CFITSIO_INCLUDES})
+        set(PHYPP_LIBRARIES ${PHYPP_LIBRARIES} ${CFITSIO_LIBRARIES})
+    endif()
+
     # handle conditional LAPACK support
     if (NOT LAPACK_FOUND OR NO_LAPACK)
         add_definitions(-DNO_LAPACK)
@@ -142,7 +150,7 @@ if(NOT PHYPP_FOUND)
     endif()
 
     # handle conditional WCSLib support
-    if (NOT WCSLIB_FOUND OR NO_WCSLIB)
+    if (NOT WCSLIB_FOUND OR NO_WCSLIB OR NO_CFITSIO)
         add_definitions(-DNO_WCSLIB)
     else()
         set(PHYPP_INCLUDE_DIRS ${PHYPP_INCLUDE_DIRS} ${WCSLIB_INCLUDE_DIRS})
