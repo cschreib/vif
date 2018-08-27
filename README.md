@@ -51,7 +51,7 @@ Detailed instructions are provided in the ``INSTALL.md`` file. The library is he
            vif::read_args(argc, argv, arg_list(n));
 
            // Create a vector containing 1, 2, ..., n-1
-           vif::vec1d v = vif::dindgen(n);
+           vif::vec1d v = vif::indgen<double>(n);
 
            // Print the square root of each element
            vif::print(sqrt(v));
