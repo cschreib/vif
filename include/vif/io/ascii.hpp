@@ -783,7 +783,7 @@ namespace impl {
         void write_table_hdr_fix_2d_(vec1s& vnames, uint_t i, const vec<2,T>& v, const Args& ... args) {
             std::string base = vnames[i];
 
-            vec1s ncols = base+"_"+to_stringa(uindgen(v.dims[1])+1);
+            vec1s ncols = base+"_"+to_string_vector(indgen<uint_t>(v.dims[1])+1);
             vnames.data.insert(vnames.data.begin()+i+1, ncols.begin()+1, ncols.end());
             vnames[i] = ncols[0];
             vnames.dims[0] += v.dims[1]-1;

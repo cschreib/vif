@@ -1114,7 +1114,7 @@ namespace astro {
         uint_t npix = wcs.dims[axis];
 
         vec2d pix(npix, naxis);
-        pix.safe(_,naxis-1-axis) = dindgen(npix)+1;
+        pix.safe(_,naxis-1-axis) = indgen<double>(npix)+1;
         for (uint_t i : range(naxis)) {
             if (i == axis) continue;
             pix.safe(_,naxis-1-i) = wcs.w->crpix[naxis-1-i];

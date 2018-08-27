@@ -196,8 +196,8 @@ namespace vif {
         vif_check(map.dims[1] == my.size(), "incompatible size of MAP and MY (", map.dims,
             " vs. ", my.size(), ")");
 
-        double ux = interpolate(dindgen(mx.size()), mx, x);
-        double uy = interpolate(dindgen(my.size()), my, y);
+        double ux = interpolate(indgen<double>(mx.size()), mx, x);
+        double uy = interpolate(indgen<double>(my.size()), my, y);
         return bilinear(map, ux, uy);
     }
 
@@ -214,8 +214,8 @@ namespace vif {
 
         vec<D,meta::rtype_t<Type>> v(x.dims);
 
-        auto ux = interpolate(dindgen(mx.size()), mx, x);
-        auto uy = interpolate(dindgen(my.size()), my, y);
+        auto ux = interpolate(indgen<double>(mx.size()), mx, x);
+        auto uy = interpolate(indgen<double>(my.size()), my, y);
 
         for (uint_t i : range(x)) {
             v.safe[i] = bilinear(map, ux.safe[i], uy.safe[i]);
@@ -256,8 +256,8 @@ namespace vif {
 
         vec<2,meta::rtype_t<Type>> v(x.size(), y.size());
 
-        vec1d ux = interpolate(dindgen(mx.size()), mx, x);
-        vec1d uy = interpolate(dindgen(my.size()), my, y);
+        vec1d ux = interpolate(indgen<double>(mx.size()), mx, x);
+        vec1d uy = interpolate(indgen<double>(my.size()), my, y);
 
         for (uint_t ix : range(ux))
         for (uint_t iy : range(uy)) {

@@ -4,7 +4,6 @@
 #include "vif/core/vec.hpp"
 #include "vif/core/error.hpp"
 #include "vif/core/range.hpp"
-#include "vif/utility/idl.hpp"
 #include "vif/math/base.hpp"
 #include "vif/math/matrix.hpp"
 

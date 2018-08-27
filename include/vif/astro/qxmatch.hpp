@@ -117,7 +117,7 @@ namespace impl {
 
                 // We have (+x,+y), fill the other 3 quadrants:
                 // (-x,+y), (-x,-y), (-x,+y)
-                vec1u idnew = uindgen(depth.bx.size());
+                vec1u idnew = indgen<uint_t>(depth.bx.size());
                 append(depth.bx, -depth.bx[idnew]);
                 append(depth.by, depth.by[idnew]);
                 append(depth.bx, -depth.bx[idnew]);

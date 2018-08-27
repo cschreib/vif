@@ -64,7 +64,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("Default initialization of array");
-        vec1u t = uintarr(3);
+        vec1u t(3);
         check(t, "{0, 0, 0}");
     }
 
@@ -98,7 +98,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("Index generation 'indgen'");
-        vec1f v = findgen(7);
+        vec1f v = indgen<float>(7);
         check(v, "{0, 1, 2, 3, 4, 5, 6}");
 
         print("Direct data access (single index)");
@@ -125,13 +125,13 @@ int vif_main(int argc, char* argv[]) {
         vec1u i = {5, 4, 3, 2};
         check((2*v)[i], "{10, 8, 6, 4}");
         check(2*v[i], "{10, 8, 6, 4}");
-        v[i] = dindgen(4);
+        v[i] = indgen<double>(4);
         check(v, "{0, 1, 3, 2, 1, 0, 6}");
         v[vec1u{4,5,6}] = v[vec1u{2,1,0}];
         check(v, "{0, 1, 3, 2, 3, 1, 0}");
         v[i] *= 2;
         check(v, "{0, 1, 6, 4, 6, 2, 0}");
-        v[i] += indgen(4);
+        v[i] += indgen<double>(4);
         check(v, "{0, 1, 9, 6, 7, 2, 0}");
         v[vec1u{0,1,2,3,4,5,6}] = v[vec1u{6,5,4,3,2,1,0}];
         check(v, "{0, 2, 7, 6, 9, 1, 0}");
@@ -161,7 +161,7 @@ int vif_main(int argc, char* argv[]) {
         print("Initialization list");
         vec1f tv = {44, 55, 66, 77};
         check(tv.dims, "{4}");
-        check(n_elements(tv), "4");
+        check(tv.size(), "4");
         check(tv, "{44, 55, 66, 77}");
     }
 
@@ -173,7 +173,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("Boolean logic");
-        vec1i i = indgen(5);
+        vec1i i = indgen<int_t>(5);
         vec1b b = (i == 3 || i == 1);
         check(b, "{0, 1, 0, 1, 0}");
         check(!b, "{1, 0, 1, 0, 1}");
@@ -203,13 +203,13 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("'reverse' function");
-        vec1i i = indgen(5);
+        vec1i i = indgen<int_t>(5);
         check(reverse(i), "{4, 3, 2, 1, 0}");
     }
 
     {
         print("'remove' function");
-        vec1i i = indgen(10);
+        vec1i i = indgen<int_t>(10);
         vec1i di = remove(i, {1,2,5,6,7,9});
         check(di, "{0, 3, 4, 8}");
         check(di.dims, "{4}");
@@ -221,7 +221,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("2 dimensional array & multiple indices '(i,j)'");
-        vec2d u = dindgen(3,2);
+        vec2d u = indgen<double>(3,2);
         check(u, "{0, 1, 2, 3, 4, 5}");
         check(u.dims, "{3, 2}");
         check(u(0,1), "1");
@@ -260,7 +260,7 @@ int vif_main(int argc, char* argv[]) {
         check(v(2,vec1u{1,2}), "{8, 2}");
         check(v(_,1), "{5, 9, 8, -5, 1}");
 
-        v(2,_) = indgen(4);
+        v(2,_) = indgen<int_t>(4);
         check(v, "{4, 5, 6, 7, 8, 9, 5, 2, 0, 1, 2, 3, -1, -5, -6, -7, -4, 1, -2, 5}");
         v(_,2) = {-4, -4, -4, -4, -4};
         check(v, "{4, 5, -4, 7, 8, 9, -4, 2, 0, 1, -4, 3, -1, -5, -4, -7, -4, 1, -4, 5}");
@@ -280,7 +280,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("Index conversion");
-        vec2i v = uindgen(2,3);
+        vec2i v = indgen<uint_t>(2,3);
         for (uint_t i = 0; i < v.size(); ++i) {
             vec1u ids = mult_ids(v, i);
             check(v(ids[0], ids[1]), to_string(i));
@@ -315,10 +315,10 @@ int vif_main(int argc, char* argv[]) {
         print("FITS table loading");
         vec1i id1, id2, id3;
         fits::read_table("data/table.fits", ftable(id1, id2, id3));
-        check(n_elements(id1), "79003");
-        check(n_elements(id2), "79003");
-        check(n_elements(id3), "79003");
-        check(id1(indgen(10)), "{43881, 43881, 43881, 43881, 43548, 43881, 43881, 43881, 43820, 43881}");
+        check(id1.size(), "79003");
+        check(id2.size(), "79003");
+        check(id3.size(), "79003");
+        check(id1[indgen<int_t>(10)], "{43881, 43881, 43881, 43881, 43548, 43881, 43881, 43881, 43820, 43881}");
 
         print("FITS table writing");
         fits::write_table("out/table_saved.fits", ftable(id1, id2, id3));
@@ -329,7 +329,7 @@ int vif_main(int argc, char* argv[]) {
         check(where(id3 != i3b).empty(), "1");
 
         print("2-d column");
-        vec2i test = dindgen(5,2);
+        vec2i test = indgen<double>(5,2);
         fits::write_table("out/2dtable.fits", ftable(test));
 
         vec2i otest = test;
@@ -338,7 +338,7 @@ int vif_main(int argc, char* argv[]) {
         check(where(test != otest).empty(), "1");
 
         print("Unsigned type");
-        vec1u id = uindgen(6);
+        vec1u id = indgen<uint_t>(6);
         fits::write_table("out/utable.fits", ftable(id));
 
         vec1u oid = id;
@@ -531,7 +531,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("'partial_median' for 3-d array");
-        vec3d v = dblarr(21,21,11);
+        vec3d v(21,21,11);
         v(_,_,0-_-4) = 0;
         v(_,_,6-_-10) = 1;
         v(_,_,5) = 0.5;
@@ -553,15 +553,15 @@ int vif_main(int argc, char* argv[]) {
         vec1i v = replicate(3, 5);
         check(v.dims, "{5}");
         check(v, "{3, 3, 3, 3, 3}");
-        v[uindgen(2)] = indgen(2)+1;
-        vec2i v2 = replicate(v[uindgen(2)], 3);
+        v[indgen<uint_t>(2)] = indgen<int_t>(2)+1;
+        vec2i v2 = replicate(v[indgen<int_t>(2)], 3);
         check(v2, "{1, 2, 1, 2, 1, 2}");
         check(v2.dims, "{3, 2}");
     }
 
     {
         print("'transpose' function");
-        vec2f v = findgen(3,2);
+        vec2f v = indgen<float>(3,2);
         vec2f tv = transpose(v);
         uint_t nok = 0;
         for (uint_t i = 0; i < 3; ++i)
@@ -574,38 +574,38 @@ int vif_main(int argc, char* argv[]) {
     {
         print("'circular_mask' function");
         vec1u dim = {51,41};
-        vec2d px = replicate(dindgen(dim[1]), dim[0]);
-        vec2d py = transpose(replicate(dindgen(dim[0]), dim[1]));
+        vec2d px = replicate(indgen<double>(dim[1]), dim[0]);
+        vec2d py = transpose(replicate(indgen<double>(dim[0]), dim[1]));
         fits::write("out/px.fits", px);
         fits::write("out/py.fits", py);
 
-        vec2d m = circular_mask({{51,51}}, 25, 25, 8);
+        vec2d m = astro::circular_mask({{51,51}}, 25, 25, 8);
         fits::write("out/circular.fits", m);
     }
 
     {
         print("'enlarge' function");
-        vec2d v = dblarr(5,3)*0 + 3.1415;
-        v = enlarge(v, 5, 1.0);
+        vec2d v = replicate(3.1415, 5, 3);
+        v = astro::enlarge(v, 5, 1.0);
         fits::write("out/enlarge.fits", v);
     }
 
     {
         print("'subregion' function");
-        vec2i v = indgen(5,5);
+        vec2i v = indgen<int_t>(5,5);
         fits::write("out/sub0.fits", v);
 
-        vec2i s = subregion(v, {0,0,4,4});
+        vec2i s = astro::subregion(v, {0,0,4,4});
         vec2i tv = v;
         check(count(s != tv) == 0, "1");
         fits::write("out/sub1.fits", s);
 
-        s = subregion(v, {0,1,4,3});
+        s = astro::subregion(v, {0,1,4,3});
         tv = {{1,2,3},{6,7,8},{11,12,13},{16,17,18},{21,22,23}};
         check(count(s != tv) == 0, "1");
         fits::write("out/sub2.fits", s);
 
-        s = subregion(v, {1,-1,3,5});
+        s = astro::subregion(v, {1,-1,3,5});
         tv = {{0,5,6,7,8,9,0},{0,10,11,12,13,14,0},{0,15,16,17,18,19,0}};
         check(count(s != tv) == 0, "1");
         fits::write("out/sub4.fits", s);
@@ -616,13 +616,13 @@ int vif_main(int argc, char* argv[]) {
         vec2d test(51,51);
         test(25,25) = 1.0;
 
-        vec2d trans = translate(test, 2, 0);
+        vec2d trans = astro::translate(test, 2, 0);
 
         vec1u mid = mult_ids(trans, max_id(trans));
         check(mid[0], "27");
         check(mid[1], "25");
 
-        trans = translate(trans, -2, 0);
+        trans = astro::translate(trans, -2, 0);
         mid = mult_ids(trans, max_id(trans));
         check(mid[0], "25");
         check(mid[1], "25");
@@ -661,8 +661,8 @@ int vif_main(int argc, char* argv[]) {
     }
 
     {
-        print("' ' function");
-        vec1i v = indgen(6);
+        print("'shift' function");
+        vec1i v = indgen<int_t>(6);
         check(shift(v, -2), "{2, 3, 4, 5, 0, 1}");
         check(shift(v, +2), "{4, 5, 0, 1, 2, 3}");
     }
@@ -689,7 +689,7 @@ int vif_main(int argc, char* argv[]) {
         check(integrate(x2, y2, 0.5, 1.5), "1");
         check(integrate(x2, y2, 1.25, 1.75), "0.5");
 
-        x = 0.5*3.14159265359*dindgen(30)/29.0;
+        x = 0.5*3.14159265359*indgen<double>(30)/29.0;
         y = cos(x);
         check(abs(1.0 - integrate(x,y)) < 0.001, "1");
 
@@ -815,7 +815,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("'linfit' function");
-        vec1d x = dindgen(5);
+        vec1d x = indgen<double>(5);
         vec1d y = 3.1415*x*x - 12.0*x;
 
         auto fr = linfit(y, 1.0, 1.0, x, x*x);
@@ -834,7 +834,7 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("'linfit_pack' function");
-        vec1d tx = dindgen(5);
+        vec1d tx = indgen<double>(5);
         vec1d y = 3.1415*tx*tx - 12.0*tx;
         vec1d ye = y*0 + 1;
         vec2d x(3,5);
@@ -964,14 +964,14 @@ int vif_main(int argc, char* argv[]) {
 
     {
         print("Cosmology functions");
-        auto cosmo = cosmo_wmap();
-        check(float(lumdist(0.5, cosmo)), "2863.03");
-        check(float(lookback_time(0.5, cosmo)), "5.09887");
+        auto cosmo = astro::cosmo_wmap();
+        check(float(astro::lumdist(0.5, cosmo)), "2863.03");
+        check(float(astro::lookback_time(0.5, cosmo)), "5.09887");
 
         vec1d v = rgen(0.0, 12.0, 1500);
-        vec1d r = lumdist(v, cosmo);
-        vec1d r1 = lumdist(v[0-_-750], cosmo);
-        append(r1, lumdist(v[751-_-1499], cosmo));
+        vec1d r = astro::lumdist(v, cosmo);
+        vec1d r1 = astro::lumdist(v[0-_-750], cosmo);
+        append(r1, astro::lumdist(v[751-_-1499], cosmo));
         check(max(abs(r - r1)/r1) < 1e-5, "1");
     }
 
@@ -983,7 +983,7 @@ int vif_main(int argc, char* argv[]) {
         vec1f i = interpolate(y, x, nx);
         check(count(i != nx), "0");
 
-        i = findgen(10);
+        i = indgen<float>(10);
 
         check(lower_bound(i, 0.5) == 0, "1");
         check(upper_bound(i, 0.5) == 1, "1");
@@ -1032,18 +1032,18 @@ int vif_main(int argc, char* argv[]) {
         print("'uJy2lsun' & 'lsun2uJy' functions");
         vec1d jy = {1000.0};
         double z = 1.0;
-        double d = lumdist(z, cosmo_wmap());
+        double d = astro::lumdist(z, astro::cosmo_wmap());
         double lam_obs = 160.0;
-        auto lsun = uJy2lsun(z, d, lam_obs, jy);
+        auto lsun = astro::uJy2lsun(z, d, lam_obs, jy);
         double lam_rf = lam_obs/(1.0 + z);
-        check(abs(jy - lsun2uJy(z, d, lam_rf, lsun)) < 1e-5, "{1}");
+        check(abs(jy - astro::lsun2uJy(z, d, lam_rf, lsun)) < 1e-5, "{1}");
     }
 
 #ifndef NO_REFLECTION
     {
         print("Reflection: save & write a structure");
         struct tmp_t {
-            vec1d f = indgen(3);
+            vec1d f = indgen<double>(3);
             vec1i s = {5,4,2,3,1};
             struct {
                 vec1i u = {1,2};
@@ -1140,7 +1140,7 @@ int vif_main(int argc, char* argv[]) {
         vec1d hdist = convex_hull_distance(tra, tdec, hull);
         fits::write_table("out/hull.fits", ftable(tra, tdec, inhull, hdist, hull.x, hull.y));
 
-        print(field_area_hull(hull));
+        print(astro::field_area_hull(hull));
 
         check(in_convex_hull(mean(cat.ra), mean(cat.dec), hull), "1");
         check(in_convex_hull(2*mean(cat.ra), 2*mean(cat.dec), hull), "0");
@@ -1152,13 +1152,13 @@ int vif_main(int argc, char* argv[]) {
         std::string sdec = "-27:56:26.674";
 
         double ra, dec;
-        sex2deg(sra, sdec, ra, dec);
+        astro::sex2deg(sra, sdec, ra, dec);
 
         check(format::precision(ra, 12), "53.0880375");
         check(format::precision(dec, 12), "-27.9407427778");
 
         std::string sra2, sdec2;
-        deg2sex(ra, dec, sra2, sdec2);
+        astro::deg2sex(ra, dec, sra2, sdec2);
         check(sra2, sra);
         check(sdec2, sdec);
     }

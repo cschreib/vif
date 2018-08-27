@@ -122,7 +122,7 @@ namespace matrix {
 
             y.resize(n);
             lu.resize(alpha.dims);
-            ipiv = uindgen(n);
+            ipiv = indgen<uint_t>(n);
 
             // Find pivot
             for (uint_t i : range(n)) {

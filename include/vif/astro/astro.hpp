@@ -240,7 +240,7 @@ namespace astro {
 
         err_type err = terr;
         if (err.dims[0] == 1 && err.dims[1] == 1) {
-            err = arr<meta::rtype_t<TypeE>>(img.dims)*0+terr[0];
+            err = replicate(terr[0], img.dims);
         } else {
             assert(err.dims[0] == img.dims[0] && err.dims[1] == img.dims[1]);
         }
@@ -269,7 +269,7 @@ namespace astro {
 
     template<typename TypeM, typename TypeE, typename TypeP = TypeM>
     psffit_result psffit(const vec<2,TypeM>& img, const TypeE& err, const vec<2,TypeP>& psf) {
-        vec<2,TypeE> terr = arr<TypeE>(1,1) + err;
+        vec<2,TypeE> terr = replicate(err, img.dims);
         return psffit(img, terr, psf, {img.dims[0]/2, img.dims[1]/2});
     }
 
@@ -407,7 +407,7 @@ namespace astro {
                 auto ma = max(z[idz]); \
                 auto tz = rgen_log(mi, ma, npt); \
                 using rtype = meta::rtype_t<Type>; \
-                vec<1,rtype> td = arr<rtype>(tz.dims); \
+                vec<1,rtype> td(tz.dims); \
                 for (uint_t i : range(tz)) { \
                     td[i] = name(tz[i], args...); \
                 } \

@@ -189,7 +189,7 @@ namespace vif {
 
         rdiag = acnorm;
         vec1d wa = rdiag;
-        ipiv = uindgen(n);
+        ipiv = indgen<uint_t>(n);
 
         uint_t minmn = std::min(n, m);
         for (uint_t i : range(minmn)) {
@@ -251,7 +251,7 @@ namespace vif {
         const uint_t n = r.dims[0];
         const uint_t m = r.dims[1];
 
-        vec1u delm = uindgen(n)*(m+1); // Diagonal elements of r
+        vec1u delm = indgen<uint_t>(n)*(m+1); // Diagonal elements of r
 
         // Copy r and (q transpose)*b to preserve input and initialize s.
         // In particular, save the diagonal elements of r in x.
@@ -343,7 +343,7 @@ namespace vif {
         const uint_t n = r.dims[0];
         const uint_t m = r.dims[1];
 
-        vec1u delm = uindgen(n)*(m+1); // Diagonal elements of r
+        vec1u delm = indgen<uint_t>(n)*(m+1); // Diagonal elements of r
 
         // Compute and store in x the gauss-newton direction.  If the
         // jacobian is rank-deficient, obtain a least-squares solution

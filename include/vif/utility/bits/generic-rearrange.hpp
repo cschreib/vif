@@ -77,7 +77,7 @@ namespace vif {
 
     template<std::size_t Dim, typename Type>
     vec1u sort(const vec<Dim,Type>& v) {
-        vec1u r = uindgen(v.size());
+        vec1u r = indgen<uint_t>(v.size());
         std::stable_sort(r.data.begin(), r.data.end(), [&v](uint_t i, uint_t j) {
             return typename vec<Dim,Type>::comparator_less()(v.data[i], v.data[j]);
         });
@@ -87,7 +87,7 @@ namespace vif {
 
     template<std::size_t Dim, typename Type, typename F>
     vec1u sort(const vec<Dim,Type>& v, F&& comp) {
-        vec1u r = uindgen(v.size());
+        vec1u r = indgen<uint_t>(v.size());
         std::stable_sort(r.data.begin(), r.data.end(), [&v,&comp](uint_t i, uint_t j) {
             return comp(v.safe[i], v.safe[j]);
         });
@@ -173,8 +173,8 @@ namespace vif {
         t1.dims[N] += n2;
         t1.resize();
 
-        t1(repeat<N>(_), uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
-        t1(repeat<N>(_), n1+uindgen(n2), repeat<Dim-N-1>(_)) = t2;
+        t1.safe(repeat<N>(_), indgen<uint_t>(n1), repeat<Dim-N-1>(_)) = tmp;
+        t1.safe(repeat<N>(_), n1+indgen<uint_t>(n2), repeat<Dim-N-1>(_)) = t2;
     }
 
     template<std::size_t N, std::size_t Dim, typename Type1, typename Type2 = Type1,
@@ -196,8 +196,8 @@ namespace vif {
         t1.dims[N] += n2;
         t1.resize();
 
-        t1(repeat<N>(_), uindgen(n2), repeat<Dim-N-1>(_)) = t2;
-        t1(repeat<N>(_), n2+uindgen(n1), repeat<Dim-N-1>(_)) = tmp;
+        t1.safe(repeat<N>(_), indgen<uint_t>(n2), repeat<Dim-N-1>(_)) = t2;
+        t1.safe(repeat<N>(_), n2+indgen<uint_t>(n1), repeat<Dim-N-1>(_)) = tmp;
     }
 
     template<typename Type1, typename Type2 = Type1,

@@ -195,7 +195,7 @@ namespace vif {
         vif_check(data.dims == weight.dims, "incompatible dimensions for data and weight "
             "(", data.dims, " vs. ", weight.dims, ")");
 
-        vec1u ids = uindgen(data.size());
+        vec1u ids = indgen<uint_t>(data.size());
 
         uint_t nbin = bins.dims[1];
         vec<1,meta::rtype_t<TypeW>> counts(nbin);
@@ -222,7 +222,7 @@ namespace vif {
             vif_check(bins.dims[0] == 2, "can only be called with a bin vector (expected "
                 "dims=[2, ...], got dims=[", bins.dims, "])");
 
-            vec1u ids = uindgen(data.size());
+            vec1u ids = indgen<uint_t>(data.size());
             using iterator = vec1u::const_iterator;
 
             uint_t nbin = bins.dims[1];
@@ -271,7 +271,7 @@ namespace vif {
             vif_check(x.dims == y.dims, "incompatible dimensions for x and y (", x.dims, " vs. ",
                 y.dims, ")");
 
-            vec1u ids = uindgen(x.size());
+            vec1u ids = indgen<uint_t>(x.size());
 
             uint_t nxbin = xbins.dims[1];
             uint_t nybin = ybins.dims[1];

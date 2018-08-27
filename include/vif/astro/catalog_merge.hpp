@@ -141,7 +141,8 @@ namespace astro {
             const std::string& comment = "") {
 
             std::string ref = "["+to_string(pool.size()+1)+"]";
-            pool.push_back({*this, uindgen(ngal), uindgen(ngal), {}, {}, name, sources, files, comment, ref});
+            pool.push_back({*this, indgen<uint_t>(ngal), indgen<uint_t>(ngal),
+                {}, {}, name, sources, files, comment, ref});
             return pool.back();
         }
 
@@ -153,7 +154,7 @@ namespace astro {
             vif_check(cra.size() == cdec.size(), "need ra.size() == dec.size()");
 
             if (sel.empty()) {
-                sel = uindgen(cra.size());
+                sel = indgen<uint_t>(cra.size());
             }
 
             if (pool.empty()) {
@@ -161,7 +162,7 @@ namespace astro {
                 origin = replicate(1, ngal);
                 ra = cra[sel];
                 dec = cdec[sel];
-                vec1u idm = uindgen(ngal);
+                vec1u idm = indgen<uint_t>(ngal);
                 std::string ref = "[1]";
                 pool.push_back({*this, sel, idm, {}, {}, name, sources, files, comment, ref});
                 return pool.back();
@@ -208,7 +209,7 @@ namespace astro {
                 if (no_new) {
                     tsel.reserve(n);
                 } else {
-                    tsel = uindgen(sel.size());
+                    tsel = indgen<uint_t>(sel.size());
                 }
 
                 for (uint_t i = 0; i < n; ++i) {
@@ -463,7 +464,7 @@ namespace astro {
         merge(tflux, flux, fnan);
         merge(terr, err, fnan);
 
-        idb = uindgen(bands.size()) + pool.bands.size();
+        idb = indgen<uint_t>(bands.size()) + pool.bands.size();
 
         append(pool.bands, bands);
         append(pool.notes, tnotes);

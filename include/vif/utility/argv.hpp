@@ -195,9 +195,9 @@ namespace vif {
             if (argc <= 1) return;
 
             uint_t narg = argc;
-            argv_ = strarr(narg-1);
+            argv_.resize(narg-1);
             for (uint_t i = 1; i < narg; ++i) {
-                argv_[i-1] = trim(argv[i]);
+                argv_.safe[i-1] = trim(argv[i]);
             }
 
             read_.resize(narg-1);

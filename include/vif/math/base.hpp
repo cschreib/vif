@@ -222,7 +222,7 @@ namespace vif {
             step *= -1.0;
         }
 
-        ret = dindgen(n)*step + i;
+        ret = indgen<double>(n)*step + i;
 
         if (n > 1) {
             ret.back() = j;

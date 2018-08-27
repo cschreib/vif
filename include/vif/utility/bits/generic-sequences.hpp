@@ -4,34 +4,10 @@
 
 namespace vif {
     // Generate linearly increasing values.
-    namespace impl {
-        template<typename T, typename ... Dims>
-        auto indgen_(Dims&& ... ds) -> decltype(arr<T>(std::forward<Dims>(ds)...)) {
-            auto v = arr<T>(std::forward<Dims>(ds)...);
-            for (uint_t i = 0; i < v.size(); ++i) {
-                v.safe[i] = i;
-            }
-            return v;
-        }
-    }
-
-    template<typename ... Dims>
-    auto findgen(Dims&& ... ds) -> decltype(impl::indgen_<float>(std::forward<Dims>(ds)...)) {
-        return impl::indgen_<float>(std::forward<Dims>(ds)...);
-    }
-
-    template<typename ... Dims>
-    auto dindgen(Dims&& ... ds) -> decltype(impl::indgen_<double>(std::forward<Dims>(ds)...)) {
-        return impl::indgen_<double>(std::forward<Dims>(ds)...);
-    }
-
-    template<typename ... Dims>
-    auto indgen(Dims&& ... ds) -> decltype(impl::indgen_<int_t>(std::forward<Dims>(ds)...)) {
-        return impl::indgen_<int_t>(std::forward<Dims>(ds)...);
-    }
-
-    template<typename ... Dims>
-    auto uindgen(Dims&& ... ds) -> decltype(impl::indgen_<uint_t>(std::forward<Dims>(ds)...)) {
-        return impl::indgen_<uint_t>(std::forward<Dims>(ds)...);
+    template<typename T, typename ... Dims>
+    vec<meta::dim_total<Dims...>::value,T> indgen(Dims&& ... ds) {
+        vec<meta::dim_total<Dims...>::value,T> v(std::forward<Dims>(ds)...);
+        std::iota(v.begin(), v.end(), static_cast<T>(0));
+        return v;
     }
 }

@@ -141,12 +141,12 @@ namespace astro {
         typename vec<2,TypeV>::rtype def = 0.0) {
 
         vec<2,meta::rtype_t<TypeV>> trs = v;
-        vec1d t = dindgen(v.dims[1]) - dy;
+        vec1d t = indgen<double>(v.dims[1]) - dy;
         for (uint_t x : range(v.dims[0])) {
             trs.safe(x,_) = interpolate_3spline(trs.safe(x,_), t);
         }
 
-        t = dindgen(v.dims[0]) - dx;
+        t = indgen<double>(v.dims[0]) - dx;
         for (uint_t y : range(v.dims[1])) {
             trs.safe(_,y) = interpolate_3spline(trs.safe(_,y), t);
         }
@@ -520,20 +520,21 @@ namespace astro {
         // Resize kernel to map size, with kernel center at (0,0)
         vec2d tkernel(tmap.dims);
 
-        vec1u px1 = hsx + uindgen(hsx);
-        vec1u py1 = hsy + uindgen(hsy);
-        vec1u px2 = hsx - 1 - uindgen(hsx);
-        vec1u py2 = hsy - 1 - uindgen(hsy);
+        // TODO: optimize this and catch case where kernel is larger than image
+        vec1u px1 = hsx + indgen<uint_t>(hsx);
+        vec1u py1 = hsy + indgen<uint_t>(hsy);
+        vec1u px2 = hsx - 1 - indgen<uint_t>(hsx);
+        vec1u py2 = hsy - 1 - indgen<uint_t>(hsy);
 
-        vec1u ix1 = uindgen(hsx);
-        vec1u iy1 = uindgen(hsy);
-        vec1u ix2 = tmap.dims[0] - 1 - uindgen(hsx);
-        vec1u iy2 = tmap.dims[1] - 1 - uindgen(hsy);
+        vec1u ix1 = indgen<uint_t>(hsx);
+        vec1u iy1 = indgen<uint_t>(hsy);
+        vec1u ix2 = tmap.dims[0] - 1 - indgen<uint_t>(hsx);
+        vec1u iy2 = tmap.dims[1] - 1 - indgen<uint_t>(hsy);
 
-        tkernel(ix1,iy1) = kernel(px1, py1);
-        tkernel(ix2,iy1) = kernel(px2, py1);
-        tkernel(ix1,iy2) = kernel(px1, py2);
-        tkernel(ix2,iy2) = kernel(px2, py2);
+        tkernel(ix1,iy1) = kernel(px1,py1);
+        tkernel(ix2,iy1) = kernel(px2,py1);
+        tkernel(ix1,iy2) = kernel(px1,py2);
+        tkernel(ix2,iy2) = kernel(px2,py2);
 
         // Perform the convolution in Fourier space
         auto cimg = fft(tmap)*fft(tkernel);
