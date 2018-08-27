@@ -2,7 +2,7 @@
 
 # What is vif ?
 
-vif is a C++ library built to provide user friendly data manipulation as offered in interpreted languages like [python], [IDL], [GDL], but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:
+vif is a C++ library built to provide user friendly data manipulation as offered in interpreted languages like [Python], [IDL], [GDL], but with the added benefit of C++, namely, increased robustness and speed. The library offers the following features:
 
  - Multidimensional arrays with standard mathematical operators and
    functions, providing easy manipulation of images and tabulated data.
@@ -24,7 +24,7 @@ The first principle requires that the most easily accessible interface is the sa
 
 Thus far, vif has been a one-man project. Development started in 2013 during my PhD, and has continued until today. The library is now mature and fully functional; all that remains to be done before a version 1.0 is a final review of the code before API freeze, and wrapping up the documentation (see [roadmap]).
 
-[python]: https://www.python.org/
+[Python]: https://www.python.org/
 [IDL]: http://www.exelisvis.com/ProductsServices/IDL.aspx
 [GDL]: http://gnudatalanguage.sourceforge.net/
 [cling]: http://root.cern.ch/drupal/content/cling
@@ -69,7 +69,7 @@ Detailed instructions are provided in the ``INSTALL.md`` file. The library is he
    g++ -std=c++11 foobar.cpp -o foobar
    ```
 
- - once the program is compiled, you can run it
+ - once the program is compiled, you can run it:
 
    ```bash
    ./foobar n=20
