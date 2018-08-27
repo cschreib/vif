@@ -1,4 +1,4 @@
-License for phy++ library and tools
+License for vif library and tools
 ===================================
 
 Note: This covers all the files present in the 'include' and 'tools' directory
@@ -10,14 +10,14 @@ List of dependencies licensed under the GPL:
     defining 'NO_FFTW'.
 
 Note: If you enable the use of at least one of the above libraries, then you
-  have to consider the whole phy++ library as licensed under the GPL. This means
+  have to consider the whole vif library as licensed under the GPL. This means
   that your own code should also be publised under the GPL. Otherwise, the below
-  license (MIT) applies to the phy++ library, and you are free to use any
+  license (MIT) applies to the vif library, and you are free to use any
   license for your own code.
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Corentin Schreiber
+Copyright (c) 2013-2018 Corentin Schreiber
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

@@ -3,7 +3,7 @@
 ASCII tables
 ============
 
-Defined in header ``<phypp/io/ascii.hpp>``.
+Defined in header ``<vif/io/ascii.hpp>``.
 
 ascii::read_table
 -----------------

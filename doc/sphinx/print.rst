@@ -1,7 +1,7 @@
 Printing to the terminal
 ========================
 
-Defined in header ``<phypp/core/print.hpp>``.
+Defined in header ``<vif/core/print.hpp>``.
 
 print
 -----
@@ -33,7 +33,7 @@ The above code will display on the terminal:
 
 First, since the text is meant to be sent to a simple terminal window, there are very few options to affect the look and feel of the output. In fact there is currently no option to change fonts, add boldface or italic, or change the color (some of this may be implemented in the future, but it will always remain fairly limited). The only thing you can actually control is when to start a new line. This is done with the special character ``'\n'``, and such a line break is always made at the end of each printed message. If you need a finer control of line jumps, you will have to come back to the standard C++ functions for output (i.e., ``std::cout`` and the likes).
 
-Second, if you are used to C functions like ``prinft()``, note from the above example how printing in phy++ behaves quite differently. The ``print()`` function does not work with "format strings", hence the character ``'%'`` is not special and can be used safely without escaping. One can print a value that is not a string simply by adding it to the list of the function arguments, which will do the conversion to string automatically based on that argument's type. See also :ref:`String conversions` for more information on that process. The format of this conversion is defined by the C++ standard library, and is usually fine for most cases. If you need a finer control on the display format (for example for floating point numbers), look at :ref:`Formatting` and ``format::`` functions.
+Second, if you are used to C functions like ``prinft()``, note from the above example how printing in vif behaves quite differently. The ``print()`` function does not work with "format strings", hence the character ``'%'`` is not special and can be used safely without escaping. One can print a value that is not a string simply by adding it to the list of the function arguments, which will do the conversion to string automatically based on that argument's type. See also :ref:`String conversions` for more information on that process. The format of this conversion is defined by the C++ standard library, and is usually fine for most cases. If you need a finer control on the display format (for example for floating point numbers), look at :ref:`Formatting` and ``format::`` functions.
 
 
 error, warning, note

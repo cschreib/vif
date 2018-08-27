@@ -1,7 +1,7 @@
 Rearranging elements and dimensions
 ===================================
 
-Defined in header ``<phypp/utility/generic.hpp>``.
+Defined in header ``<vif/utility/generic.hpp>``.
 
 flatten
 -------
@@ -189,7 +189,7 @@ sort, inplace_sort
 
 In [2] and [4], the comparator function ``comp(x,y)`` must return ``true`` if ``x`` should be placed after ``y`` after the sort.
 
-.. warning:: The comparison function ``comp`` must provide a *strict total ordering*, otherwise the behavior of the function is undefined. See `cppreference.com <http://en.cppreference.com/w/cpp/concept/Compare>`_ for more information. In brief, this means that any value can only be "equal", "lesser", or "greater" than any other value. With a comparison function returning simply ``x < y``, this requirement is not met for ``float`` and ``double`` because of the special value "not-a-number", ``NaN``, which is neither. [1] and [3] use the default comparator for phy++ vectors, in which this issue is solved by considering ``NaN`` as "greater than" positive infinity. ``NaN`` values will thus be placed at the end of a sorted vector. To take advantage of this implementation, use ``vec<Dim,Type>::comparator_less{}(x,y)`` and ``vec<Dim,Type>::comparator_greater{}(x,y)`` instead of ``x < y`` and ``x > y`` inside your custom comparison functions. This is unnecessary for integer types and strings.
+.. warning:: The comparison function ``comp`` must provide a *strict total ordering*, otherwise the behavior of the function is undefined. See `cppreference.com <http://en.cppreference.com/w/cpp/concept/Compare>`_ for more information. In brief, this means that any value can only be "equal", "lesser", or "greater" than any other value. With a comparison function returning simply ``x < y``, this requirement is not met for ``float`` and ``double`` because of the special value "not-a-number", ``NaN``, which is neither. [1] and [3] use the default comparator for vif vectors, in which this issue is solved by considering ``NaN`` as "greater than" positive infinity. ``NaN`` values will thus be placed at the end of a sorted vector. To take advantage of this implementation, use ``vec<Dim,Type>::comparator_less{}(x,y)`` and ``vec<Dim,Type>::comparator_greater{}(x,y)`` instead of ``x < y`` and ``x > y`` inside your custom comparison functions. This is unnecessary for integer types and strings.
 
 **Example:**
 

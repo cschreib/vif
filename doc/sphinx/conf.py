@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# phy++ documentation build configuration file, created by
+# vif documentation build configuration file, created by
 # sphinx-quickstart on Fri Jan 12 21:51:15 2018.
 #
 # This file is execfile()d with the current directory set to its
@@ -45,7 +45,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'phy++'
+project = u'vif'
 copyright = u'2018, Corentin Schreiber'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -178,7 +178,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'phydoc'
+htmlhelp_basename = 'vifdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -198,7 +198,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'phy.tex', u'phy++ Documentation',
+  ('index', 'vif.tex', u'vif Documentation',
    u'Corentin Schreiber', 'manual'),
 ]
 
@@ -228,7 +228,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'phy', u'phy++ Documentation',
+    ('index', 'vif', u'vif Documentation',
      [u'Corentin Schreiber'], 1)
 ]
 
@@ -242,8 +242,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'phy', u'phy++ Documentation',
-   u'Corentin Schreiber', 'phy', 'One line description of project.',
+  ('index', 'vif', u'vif Documentation',
+   u'Corentin Schreiber', 'vif', 'One line description of project.',
    'Miscellaneous'),
 ]
 

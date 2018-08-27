@@ -1,7 +1,7 @@
 Integer sequences
 =================
 
-Defined in header ``<phypp/utility/generic.hpp>``.
+Defined in header ``<vif/utility/generic.hpp>``.
 
 uindgen, indgen, findgen, dindgen
 ---------------------------------

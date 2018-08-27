@@ -1,0 +1,13 @@
+<snippet>
+	<description>vif include &amp; main</description>
+    <content><![CDATA[#include <vif.hpp>
+
+int vif_main(int argc, char* argv[]) {
+	${0}
+
+    return 0;
+}
+]]></content>
+    <tabTrigger>vif</tabTrigger>
+    <scope>source.c++, source.objc++</scope>
+</snippet>

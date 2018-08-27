@@ -1,7 +1,7 @@
 Environment variables
 =====================
 
-Defined in header ``<phypp/utility/os.hpp>``.
+Defined in header ``<vif/utility/os.hpp>``.
 
 system_var
 ----------

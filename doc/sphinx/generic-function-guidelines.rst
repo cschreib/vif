@@ -3,7 +3,7 @@
 Guidelines for writing generic functions
 ========================================
 
-This section contains more advanced technical details about the implementation of vectors and views in phy++. It also includes tips and tricks for writing correct, efficient, and generic functions.
+This section contains more advanced technical details about the implementation of vectors and views in vif. It also includes tips and tricks for writing correct, efficient, and generic functions.
 
 
 What is a generic function?
@@ -26,7 +26,7 @@ In C++, such generic functions are written using *template metaprogramming*:
     vec2i v2 = {{1, 5}, {-1, 1}}; // int, shape 2x2
     foo(v2); // prints {-2.5, 2.5}
 
-.. note:: This example uses the ``print()`` function from the phy++ support library, which simply displays its arguments on the terminal.
+.. note:: This example uses the ``print()`` function from the vif support library, which simply displays its arguments on the terminal.
 
 
 Summary of guidelines
@@ -41,7 +41,7 @@ The functions we use as examples here can be somewhat silly, but they will serve
 * Provide default values for template arguments whenever it makes sense, to enable support for initializer lists.
 * Avoid output or input/output parameters whenever possible, else use universal references ``T&&`` and ``std::enable_if<>`` as described in the guidelines below.
 * Use the available helper tools to vectorize existing functions.
-* Use ``phypp_check()`` to express any constraints on the data that can only be checked at run time (number of elements, value ranges, etc.).
+* Use ``vif_check()`` to express any constraints on the data that can only be checked at run time (number of elements, value ranges, etc.).
 
 
 Expressing constraints on function arguments
@@ -106,14 +106,14 @@ It will fail at runtime though. The backtrace will show that the error happened 
 
     error: operator(): index out of bounds (1 vs. 0)
 
-The solution here is to perform an explicit check inside the function, and emit a clearer error message using the ``phypp_check()`` function:
+The solution here is to perform an explicit check inside the function, and emit a clearer error message using the ``vif_check()`` function:
 
 .. code-block:: c++
 
     template<typename T,
         typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     void foo(const vec<2,T>& v) {
-        phypp_check(v.dims[0] >= 2, "vector must have at least two elements along first dimension ",
+        vif_check(v.dims[0] >= 2, "vector must have at least two elements along first dimension ",
             "(got ", v.dims[0], ")");
         print(v(1,_)*2.5);
     }
@@ -131,7 +131,7 @@ Now that we do an explicit check that the index ``1`` is valid before accessing 
     template<typename T,
         typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     void foo(const vec<2,T>& v) {
-        phypp_check(v.dims[0] >= 2, "vector must have at least two elements along first dimension ",
+        vif_check(v.dims[0] >= 2, "vector must have at least two elements along first dimension ",
             "(got ", v.dims[0], ")");
         print(v.safe(1,_)*2.5);
     }
@@ -161,7 +161,7 @@ In this particular case, ``double`` is actually a perfect choice because we mult
     template<typename T = double, // use a default value here
         typename enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     void foo(const vec<2,T>& v) {
-        phypp_check(v.dims[0] >= 2, "vector must have at least two elements along first dimension ",
+        vif_check(v.dims[0] >= 2, "vector must have at least two elements along first dimension ",
             "(got ", v.dims[0], ")");
         print(v.safe(1,_)*2.5);
     }
@@ -186,7 +186,7 @@ This makes it relatively easy to write function that work on both vectors and vi
         return ret;
     }
 
-.. note:: Such a function already exists in the phy++ support library, and is called ``total()`` (for integers and floating point values) or ``count()`` (for boolean values). Their return type is determined in a smarter way than we discuss here, to prevent overflow and underflow.
+.. note:: Such a function already exists in the vif support library, and is called ``total()`` (for integers and floating point values) or ``count()`` (for boolean values). Their return type is determined in a smarter way than we discuss here, to prevent overflow and underflow.
 
 This implementation works for all vectors, but it will fail for views. Indeed, if called on a view of type ``vec<1,int*>``, then ``T = int*``, and the return value is not an integer but an (invalid!) pointer to an integer. Fortunately, it will not even compile because the loop will try to assign the values of ``v`` to a ``const int*&``, which will fail. Therefore, the type ``T`` should never be used directly like this.
 
@@ -210,7 +210,7 @@ There are a few, rarer corner cases to keep in mind when both view and vectors n
 Vectorizing scalar functions
 ----------------------------
 
-Most function created in C++ thus far, including those in the C++ standard library, are *scalar* functions which operate on one single value. The best example of this are all the mathematical functions, ``sqrt()``, ``pow()``, ``ceil()``, etc. These functions can be *vectorized* to operate directly on vector data without having to write a loop. The phy++ support library contains a large number of such vectorized functions:
+Most function created in C++ thus far, including those in the C++ standard library, are *scalar* functions which operate on one single value. The best example of this are all the mathematical functions, ``sqrt()``, ``pow()``, ``ceil()``, etc. These functions can be *vectorized* to operate directly on vector data without having to write a loop. The vif support library contains a large number of such vectorized functions:
 
 .. code-block:: c++
 
@@ -219,7 +219,7 @@ Most function created in C++ thus far, including those in the C++ standard libra
     vec1d v2 = {2.0, 4.0, 6.0};
     sqrt(v2); // {1.41..., 2.0, 2.45...}
 
-However the phy++ support library cannot contain *all* functions that ever existed, and you may create your own scalar functions that you wish to vectorize. This can be achieved using the preprocessor macro ``PHYPP_VECTORIZE()``:
+However the vif support library cannot contain *all* functions that ever existed, and you may create your own scalar functions that you wish to vectorize. This can be achieved using the preprocessor macro ``VIF_VECTORIZE()``:
 
 .. code-block:: c++
 
@@ -227,7 +227,7 @@ However the phy++ support library cannot contain *all* functions that ever exist
         return sqrt(3*v + 5.0); // whatever you wish to do
     }
 
-    PHYPP_VECTORIZE(myfunc)
+    VIF_VECTORIZE(myfunc)
 
 The macro must be called in the global scope, inside a namespace, or a the root scope of a class. It *cannot* be called inside a function. This macro emits two additional functions with the same name. The first function is the most generic vectorized version of the scalar version, which will get used most of the time.
 
@@ -284,9 +284,9 @@ The optimal version would avoid the extra loop:
 
     vec1d v2 = std::move(tmp);
 
-This is only possible using expression templates, which currently phy++ does not support for the sake of simplicity. Therefore, if performances are critical you may want to write the loop explicitly (following the guidelines in :ref:`Indexing` for optimal performance).
+This is only possible using expression templates, which currently vif does not support for the sake of simplicity. Therefore, if performances are critical you may want to write the loop explicitly (following the guidelines in :ref:`Indexing` for optimal performance).
 
-A cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a lambda function into a functor with overloaded call operator that works on both vector and scalar values. It also supports the optimization for chained calls. Contrary to the ``PHYPP_VECTORIZE()`` macro, ``vectorize_lambda_first()`` can be called in any scope, including inside other functions:
+A cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a lambda function into a functor with overloaded call operator that works on both vector and scalar values. It also supports the optimization for chained calls. Contrary to the ``VIF_VECTORIZE()`` macro, ``vectorize_lambda_first()`` can be called in any scope, including inside other functions:
 
 .. code-block:: c++
 
@@ -295,7 +295,7 @@ A cleaner alternative is to use ``vectorize_lambda_first()``, which transforms a
     vec1d v1 = {1.0, 1.2, 1.5};
     vec1d v2 = chained(v1);
 
-Both ``PHYPP_VECTORIZE()`` and ``vectorize_lambda_first()`` will vectorize the function/lambda on the *first* argument only. Other arguments will simply be forwarded to all the calls, so ``foo(v,w)`` will call ``foo(v[i],w)`` for each index ``i`` in ``v``.
+Both ``VIF_VECTORIZE()`` and ``vectorize_lambda_first()`` will vectorize the function/lambda on the *first* argument only. Other arguments will simply be forwarded to all the calls, so ``foo(v,w)`` will call ``foo(v[i],w)`` for each index ``i`` in ``v``.
 
 If instead you need to call ``foo(v[i],w[i])``, you should use ``vectorize_lambda()``. This is an alternative implementation that will support vector or scalars for *all* its arguments, and will assume that the vectors all have the same size and should be jointly iterated. The downside of this implementation is that the chaining optimization is not available.
 
@@ -395,7 +395,7 @@ Such type of problem arises whenever you write a function that takes a non-const
 * that if ``T`` is an r-value, it must be a non-constant view,
 * that if ``T`` is an l-value, it must be a non-constant reference (to a vector or a view).
 
-Since these basic requirements will be the same for every vectorized function with output parameters, a specific trait is provided in phy++ to express all these constraints: ``meta::is_compatible_output_type<In,Out>``. It is used in the following way:
+Since these basic requirements will be the same for every vectorized function with output parameters, a specific trait is provided in vif to express all these constraints: ``meta::is_compatible_output_type<In,Out>``. It is used in the following way:
 
 .. code-block:: c++
 
@@ -408,7 +408,7 @@ Since these basic requirements will be the same for every vectorized function wi
         // ...
     }
 
-In addition, here we need to differentiate the behavior of the function for the two cases: we want the "vector" version to automatically resize the output vector to the dimensions of the input vector, and the "view" version to simply check that the view has the same dimensions as the input vector. This is expected to be a common behavior for functions with output parameters, therefore a helper function is provided in phy++ to do just that: ``meta::resize_or_check(v, d)``. This function resizes the vector ``v`` to the dimensions ``d``, or, if ``v`` is a view, checks that its dimensions match ``d``. The final, fully generic, vectorized function is therefore:
+In addition, here we need to differentiate the behavior of the function for the two cases: we want the "vector" version to automatically resize the output vector to the dimensions of the input vector, and the "view" version to simply check that the view has the same dimensions as the input vector. This is expected to be a common behavior for functions with output parameters, therefore a helper function is provided in vif to do just that: ``meta::resize_or_check(v, d)``. This function resizes the vector ``v`` to the dimensions ``d``, or, if ``v`` is a view, checks that its dimensions match ``d``. The final, fully generic, vectorized function is therefore:
 
 .. code-block:: c++
 

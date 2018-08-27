@@ -4,13 +4,13 @@ Vectors
 Overview
 --------
 
-A vector in phy++ is basically an enhanced ``std::vector`` (which, in fact, is used to implement the phy++ vectors), and it therefore shares most of its features and strengths.
+A vector in vif is basically an enhanced ``std::vector`` (which, in fact, is used to implement the vif vectors), and it therefore shares most of its features and strengths.
 
 In particular, a vector can contain zero, one, or as many elements as your computer can handle. Its size is defined at *runtime*, meaning that its content can vary depending on user input, and that it can change its total number of elements at any time. The elements of a vector are stored *contiguously* in memory, which provides optimal performances in most situations. Lastly, a vector is an *homogeneous* container, meaning that a given vector can only contain a single type of elements; for example ``int`` or ``float``, but not both.
 
-On top of the ``std::vector`` interface, the phy++ vectors have some extra functionalities. The most important ones are :ref:`Operator overloading` (which allows writing ``v+w`` instead of writing a loop to sum all the elements one by one), structured :ref:`Indexing` for multi-dimensional data (i.e., images, data cubes, and objects of higher dimensions), and :ref:`Views` (which allow accessing and modifying subsets of existing vectors).
+On top of the ``std::vector`` interface, the vif vectors have some extra functionalities. The most important ones are :ref:`Operator overloading` (which allows writing ``v+w`` instead of writing a loop to sum all the elements one by one), structured :ref:`Indexing` for multi-dimensional data (i.e., images, data cubes, and objects of higher dimensions), and :ref:`Views` (which allow accessing and modifying subsets of existing vectors).
 
-Like in most advanced C++ libraries, phy++ vectors are *template-based*. This means they are designed to work with *any* data type ``T`` for their elements, for example ``int``, ``float``, or ``std::string``. The type of a vector is therefore spelled ``vec<1,T>``, where ``T`` can be replaced by any type (it could be a vector itself). There is no explicit restriction regarding the data type ``T``, however some features may obviously not be available depending on the capabilities of your type. For example, if your type has no ``operator*`` (such as ``std::string``), you will not be able to multiply vectors of this type. Lastly, the phy++ vector shares the same restrictions as the ``std::vector`` regarding the *copyable* and *movable* capabilities of the stored type.
+Like in most advanced C++ libraries, vif vectors are *template-based*. This means they are designed to work with *any* data type ``T`` for their elements, for example ``int``, ``float``, or ``std::string``. The type of a vector is therefore spelled ``vec<1,T>``, where ``T`` can be replaced by any type (it could be a vector itself). There is no explicit restriction regarding the data type ``T``, however some features may obviously not be available depending on the capabilities of your type. For example, if your type has no ``operator*`` (such as ``std::string``), you will not be able to multiply vectors of this type. Lastly, the vif vector shares the same restrictions as the ``std::vector`` regarding the *copyable* and *movable* capabilities of the stored type.
 
 The number of dimensions of a vector is specified in its type; this is the ``1`` in ``vec<1,T>``. For example, a 2D image of ``float`` will be declared as ``vec<2,float>`` (or ``vec2f``, see :ref:`Type aliases` below), while a 1D tabulated data set of ``int`` will be ``vec<1,int>`` (or ``vec1i``). The fact that the number of dimensions is part of the type means that, while the number of *elements* in a vector is determined at runtime, the multi-dimensional nature of a vector is determined at *compile time*. In other words, a 1D vector cannot be turned into a 2D vector; you would have to create a new variable (using the ``reform()`` and ``flatten()`` functions). However it is possible to change, say, a 128x128 2D vector into a 256x256 2D vector. Only the *number* of dimensions is fixed, the length of each dimension is free to vary.
 
@@ -24,7 +24,7 @@ The hard limit on the number of dimensions depends on your compiler, as each dim
 Type aliases
 ------------
 
-While templates are a fantastic tool for library writers, they can easily become a burden for the *user* of the library, because of the additional syntax complexity (the ``<...>`` in the name of the vector type). Since phy++ is a numerical analysis library, we know in advance what types will most often be stored inside the vectors, and we therefore introduce type aliases for the most common vector types:
+While templates are a fantastic tool for library writers, they can easily become a burden for the *user* of the library, because of the additional syntax complexity (the ``<...>`` in the name of the vector type). Since vif is a numerical analysis library, we know in advance what types will most often be stored inside the vectors, and we therefore introduce type aliases for the most common vector types:
 
 * ``vec1f``: vector of ``float``,
 * ``vec1d``: vector of ``double``,
@@ -148,7 +148,7 @@ The rules for converting a vector of a type ``T`` into a vector of another type 
     vec1f v1 = {1.5, -2.2, 100.0};
     vec1i v2 = v1; // this works
 
-There is one notable exception to this rule, which is for vectors of type ``bool``. In C++, ``bool`` can be implicitly converted to (and from) any other arithmetic type (such as ``int`` or ``float``). While implicit conversion is very convenient in most cases, in the case of ``bool`` the risk of unwanted narrowing conversion (where data is lost) is much greater, while the actual use cases for implicit conversion are rarer; ``bool`` indeed carries a very different semantic compared to the other arithmetic types. For this reason, in phy++ it was decided to disable implicit conversion to and from ``bool``. If needed, the conversion is still possible at no extra cost by using an explicit cast:
+There is one notable exception to this rule, which is for vectors of type ``bool``. In C++, ``bool`` can be implicitly converted to (and from) any other arithmetic type (such as ``int`` or ``float``). While implicit conversion is very convenient in most cases, in the case of ``bool`` the risk of unwanted narrowing conversion (where data is lost) is much greater, while the actual use cases for implicit conversion are rarer; ``bool`` indeed carries a very different semantic compared to the other arithmetic types. For this reason, in vif it was decided to disable implicit conversion to and from ``bool``. If needed, the conversion is still possible at no extra cost by using an explicit cast:
 
 .. code-block:: c++
 
@@ -179,11 +179,11 @@ When dealing with ``std::vector``, the only thing you can do to operate on all t
         v[i] *= 2;
     }
 
-While this is fairly readable (especially the first version), it is still not very concise and expressive. For phyp++ vectors, we have *overloaded* the usual mathematical operators to make it possible to write the above code in a much simpler way:
+While this is fairly readable (especially the first version), it is still not very concise and expressive. For vif vectors, we have *overloaded* the usual mathematical operators to make it possible to write the above code in a much simpler way:
 
 .. code-block:: c++
 
-    // Using phy++ vector.
+    // Using vif vector.
     vec1f v = {1,2,3,4};
     v *= 2;
 
@@ -198,7 +198,7 @@ Not only this, but we can also perform operations on a pair of vectors:
 
 Almost all the mathematical and logical operators are overloaded. Therefore, as a rule of thumb, if you can do an operation with a type ``T``, you can do it with ``vec<1,T>`` as well. The one notable exception are bitwise operators: ``|``, ``&``, and ``^``. The reason is twofold: first, these are not so commonly used in data analysis, and second, the ``^`` operator can be mistakenly interpreted as the exponentiation operator, that some other languages possess (if you need to do exponentiation, use ``pow()``).
 
-.. note:: Contrary to some other C++ libraries with vectorized arithmetic (such as Eigen_, blazelib_, or xtensor_), phy++ does not use *expression templates*. Instead, each operation is executed immediately (no lazy evaluation) and operates if necessary on temporary intermediate vectors. While this may appear to be a sub-optimal implementation, phy++ was tuned to makes good use of return value optimization, move semantics, and for reusing the memory of temporaries in chained expressions. As a result, performance was found to be on par with expression templates in the most common situations. This is of course dependent on the precise calculation to perform. The benefit of not using expression templates is a reduced compilation time, and a much simpler code base.
+.. note:: Contrary to some other C++ libraries with vectorized arithmetic (such as Eigen_, blazelib_, or xtensor_), vif does not use *expression templates*. Instead, each operation is executed immediately (no lazy evaluation) and operates if necessary on temporary intermediate vectors. While this may appear to be a sub-optimal implementation, vif was tuned to makes good use of return value optimization, move semantics, and for reusing the memory of temporaries in chained expressions. As a result, performance was found to be on par with expression templates in the most common situations, but memory consumption is generally higher in vif. This is of course dependent on the precise calculation to perform. The benefit of not using expression templates is a reduced compilation time, and a much simpler code base.
 
 .. _Eigen: http://eigen.tuxfamily.org/index.php?title=Main_Page
 .. _blazelib: https://bitbucket.org/blaze-lib/blaze

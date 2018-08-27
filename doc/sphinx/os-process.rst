@@ -1,7 +1,7 @@
 Processes
 =========
 
-Defined in header ``<phypp/utility/os.hpp>``.
+Defined in header ``<vif/utility/os.hpp>``.
 
 spawn
 -----

@@ -1,7 +1,7 @@
 Regular expressions (regex)
 ===========================
 
-Defined in header ``<phypp/utility/string.hpp>``.
+Defined in header ``<vif/utility/string.hpp>``.
 
 
 regex_match

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
-project(phy++-tools)
+project(vif-tools)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/../cmake")
-find_package(phypp)
+find_package(vif)
 
 add_subdirectory(catinfo)
 add_subdirectory(findsrc)

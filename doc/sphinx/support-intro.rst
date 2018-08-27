@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Here we describe the set of helper functions that are part of the phy++ support library. These functions are not *essential* to the use of the library, in that the vector and view classes can be used on their own, but they are definitely *useful*. The functions in the support library are arranged inside modular components, which one may choose to use or not. This is the first repository in which one should look for existing, extensively tested functions, which are written to be as generic and efficient as possible.
+Here we describe the set of helper functions that are part of the vif support library. These functions are not *essential* to the use of the library, in that the vector and view classes can be used on their own, but they are definitely *useful*. The functions in the support library are arranged inside modular components, which one may choose to use or not. This is the first repository in which one should look for existing, extensively tested functions, which are written to be as generic and efficient as possible.
 
 In this documentation, all these functions are sorted into categories to help you discover new functions and algorithm. Alternatively, if you know the name of a function and would like to read its documentation, you may use the search feature.
 
@@ -13,7 +13,7 @@ The signature of each function is given in a simplified form, both for concisene
 Interface conventions
 ---------------------
 
-To preserve consistency and help users ``guess`` the correct name or behavior of a function without having to look at the documentation all the time, there are a few interface conventions that all functions and types in phy++ should adhere to. Not all of these conventions are strictly enforced, and exceptions are allowed when there is a good justification.
+To preserve consistency and help users ``guess`` the correct name or behavior of a function without having to look at the documentation all the time, there are a few interface conventions that all functions and types in vif should adhere to. Not all of these conventions are strictly enforced, and exceptions are allowed when there is a good justification.
 
 * **Case.** All names must use lower case letters, with words separated by underscores ``_``. For example ``to_string()`` is good, but not ``ToString()`` or ``TO_STRING()``. Capital letters are reserved for macros only. This rule will be strictly enforced.
 * **Language.** All names must be written in US English. This rule will be strictly enforced.
@@ -24,6 +24,6 @@ To preserve consistency and help users ``guess`` the correct name or behavior of
 * **Member values.** Member values of a class or struct should follow the same naming conventions as functions. If part of the private interface of a class, they may end with an underscore to highlight that they are not part of the public interface (for example: ``cached_``).
 * **Free functions vs. member functions.** There is no definite convention, but favor free functions for implementing elaborate algorithms and data processing that use this class/struct, and prefer member functions for simple modifications or queries of the state of that class/struct.
 * **Variables and function arguments.** There is no convention for the names of local variables, although lower case should usually be preferred.
-* **Namespaces.** All functions and classes must reside in the ``phypp`` namespace. Nested namespaces are allowed and encouraged.
+* **Namespaces.** All functions and classes must reside in the ``vif`` namespace. Nested namespaces are allowed and encouraged.
 
 

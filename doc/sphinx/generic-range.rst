@@ -1,7 +1,7 @@
 Range-based iteration
 =====================
 
-Defined in header ``<phypp/core/range.hpp>``.
+Defined in header ``<vif/core/range.hpp>``.
 
 range
 -----

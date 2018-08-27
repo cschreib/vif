@@ -3,7 +3,7 @@
 String conversions
 ==================
 
-Defined in header ``<phypp/core/string_conversion.hpp>``.
+Defined in header ``<vif/core/string_conversion.hpp>``.
 
 to_string, to_string_vector
 ---------------------------

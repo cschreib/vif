@@ -1,7 +1,7 @@
 File paths manipulation
 =======================
 
-Defined in header ``<phypp/io/filesystem.hpp>``.
+Defined in header ``<vif/io/filesystem.hpp>``.
 
 file::directorize
 -----------------

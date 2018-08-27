@@ -1,7 +1,7 @@
 Split and combine
 =================
 
-Defined in header ``<phypp/utility/string.hpp>``.
+Defined in header ``<vif/utility/string.hpp>``.
 
 
 split, split_any_of

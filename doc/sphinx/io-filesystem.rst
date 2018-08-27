@@ -1,7 +1,7 @@
 File system
 ===========
 
-Defined in header ``<phypp/io/filesystem.hpp>``.
+Defined in header ``<vif/io/filesystem.hpp>``.
 
 file::exists
 ------------
@@ -22,7 +22,7 @@ The function [2] is the vectorized version of [1].
 .. code-block:: c++
 
     bool b;
-    b = file::exists("~/.phypprc");      // hopefully true
+    b = file::exists("~/.vifrc");      // hopefully true
     b = file::exists("/i/do/not/exist"); // probably false
 
 
@@ -44,7 +44,7 @@ The function [2] is the vectorized version of [1], where all files in ``f1`` are
 
 .. code-block:: c++
 
-    bool b = file::is_older("~/.phypprc", "/usr/bin/cp"); // maybe false?
+    bool b = file::is_older("~/.vifrc", "/usr/bin/cp"); // maybe false?
 
 
 file::list_directories
@@ -65,10 +65,10 @@ Hidden directories are ignored. An empty list is returned if there is no subdire
     vec1s d = file::list_directories("./");
     d; // subdirectories of the working directory
 
-    d = file::list_directories("/path/to/phypp/");
+    d = file::list_directories("/path/to/vif/");
     d; // {"cmake", "test", "doc", "bin", "include", "tools"}
 
-    d = file::list_directories("/path/to/phypp/", "t*");
+    d = file::list_directories("/path/to/vif/", "t*");
     d; // {"test", "tools"}
 
 
@@ -90,11 +90,11 @@ Hidden files are ignored. An empty list is returned if there is no file matching
     vec1s d = file::list_files("./");
     d; // files in the working directory
 
-    d = file::list_files("/path/to/phypp/doc");
-    d; // {"phypp.pdf", "compile.sh", "phypp.tex"}
+    d = file::list_files("/path/to/vif/doc");
+    d; // {"vif.pdf", "compile.sh", "vif.tex"}
 
-    d = file::list_files("/path/to/phypp/doc", "*.tex");
-    d; // {"phypp.tex"}
+    d = file::list_files("/path/to/vif/doc", "*.tex");
+    d; // {"vif.tex"}
 
 
 file::explorer
@@ -173,11 +173,11 @@ The function [2] is the vectorized version of [1].
 
 .. code-block:: c++
 
-    bool b = file::mkdir("/path/to/phypp/a/new/directory");
+    bool b = file::mkdir("/path/to/vif/a/new/directory");
     // Will most likely create the directories:
-    //  - /path/to/phypp/a
-    //  - /path/to/phypp/a/new
-    //  - /path/to/phypp/a/new/directory
+    //  - /path/to/vif/a
+    //  - /path/to/vif/a/new
+    //  - /path/to/vif/a/new/directory
     b; // maybe true or false, depending on your permissions
 
 
@@ -194,7 +194,7 @@ This function creates a copy of the file ``from`` at the location given in ``to`
 
 .. code-block:: c++
 
-    bool b = file::copy("/home/joe/.phypprc", "/home/bob/.phypprc");
+    bool b = file::copy("/home/joe/.vifrc", "/home/bob/.vifrc");
     b; // maybe true or false, depending on your permissions
 
 
@@ -212,7 +212,7 @@ This function will delete the file (or directory) given in argument and return `
 .. code-block:: c++
 
     // That's a bad idea, but for the sake of the example...
-    bool b = file::remove("/home/joe/.phypprc");
+    bool b = file::remove("/home/joe/.vifrc");
     b; // probably true
 
 

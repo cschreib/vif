@@ -1,19 +1,20 @@
-phy++ documentation
+vif documentation
 ===================
 
-phy++ is a set of library and tools built to provide user-friendly vector data manipulation, as offered in interpreted languages like IDL_, its open source clone GDL_, or Python and numpy_, but with the added benefit of C++: increased robustness, and optimal speed.
+vif is a set of library and tools built to provide user-friendly vector data manipulation, as offered in interpreted languages like IDL_, its open source clone GDL_, or Python and numpy_, but with the added benefit of C++: increased robustness, and optimal speed.
 
 The library can be split into two components:
 
 * The "core" library
 * The "support" library
 
-The core library introduces the ``vec`` type (a "data vector"), which is the most important data type in phy++, while the support library provides functions and other tools to manipulate these vectors and perform common tasks. You can think of phy++ as a separate language inside C++, where the core library defines this language, and the support library is the the "standard" library where all the useful functions are stored.
+The core library introduces the ``vec`` type (a "data vector"), which is the most important data type in vif, while the support library provides functions and other tools to manipulate these vectors and perform common tasks. You can think of vif as a separate language inside C++, where the core library defines this language, and the support library is the the "standard" library where all the useful functions are stored.
 
-Below is a code sample written in phy++ that illustrates the most basic functionalities.
+Below is a code sample written in vif that illustrates the most basic functionalities.
 
 .. code-block:: c++
 
+    using namespace vif;                // import everything in current namespace
     vec2f img = fits::read("img.fits"); // read a FITS image
     img -= median(img);                 // subtract the median of the whole image
     float imax = max(img);              // find the maximum of the image

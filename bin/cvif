@@ -1,16 +1,16 @@
 #! /bin/bash
 
-# Source local phy++ configuration if running from root ("sudo" only)
-if [ -z "${PHYPP_COMPILER}" ]; then
+# Source local vif configuration if running from root ("sudo" only)
+if [ -z "${VIF_COMPILER}" ]; then
     if [ "$(id -u)" -eq "0" ]; then
         if [ ! -z "${SUDO_USER}" ]; then
-            eval source "~${SUDO_USER}/.phypprc"
+            eval source "~${SUDO_USER}/.vifrc"
         fi
     fi
 fi
 
-if [ -z "${PHYPP_COMPILER}" ]; then
-    echo "error: the phy++ library is not installed for this user"
+if [ -z "${VIF_COMPILER}" ]; then
+    echo "error: the vif library is not installed for this user"
     exit
 fi
 
@@ -61,15 +61,15 @@ if [ -z "${OUTPUT}" ]; then
     OUTPUT="${FILE_DIR}/${PROG}"
 fi
 
-OPTIONS="${PHYPP_INCLUDE_DIR} ${PHYPP_COMPILER_FLAGS}"
+OPTIONS="${VIF_INCLUDE_DIR} ${VIF_COMPILER_FLAGS}"
 if [ ${DEBUG} -eq 1 ]; then
-    OPTIONS="${OPTIONS} ${PHYPP_COMPILER_DEBUG_FLAGS}"
+    OPTIONS="${OPTIONS} ${VIF_COMPILER_DEBUG_FLAGS}"
 fi
 if [ ${OPTIMIZE} -eq 1 ]; then
-    OPTIONS="${OPTIONS} ${PHYPP_COMPILER_OPT_FLAGS}"
+    OPTIONS="${OPTIONS} ${VIF_COMPILER_OPT_FLAGS}"
 fi
 if [ ${PROFILE} -eq 1 ]; then
-    OPTIONS="${OPTIONS} ${PHYPP_COMPILER_PROF_FLAGS}"
+    OPTIONS="${OPTIONS} ${VIF_COMPILER_PROF_FLAGS}"
 fi
 
 case "$OSTYPE" in
@@ -81,18 +81,18 @@ esac
 
 T="$(date ${DATE_FORMAT})"
 
-if [ ${PHYPP_DISABLE_REFLECTION} -eq 0 ]; then
-    TMP_OUTPUT="${PHYPP_TEMP_DIR}/._reflex_$(basename "${FILE}")"
+if [ ${VIF_DISABLE_REFLECTION} -eq 0 ]; then
+    TMP_OUTPUT="${VIF_TEMP_DIR}/._reflex_$(basename "${FILE}")"
 
     # Parse file and generate reflection data
-    if [ ${PHYPP_SHOW_CMD} -eq 1 ]; then
-        echo ${PHYPP_REFGEN} "${FILE}" "${TMP_OUTPUT}" -I"${FILE_DIR}" ${PHYPP_INCLUDE_DIR} $PHYPP_REFGEN_FLAGS
+    if [ ${VIF_SHOW_CMD} -eq 1 ]; then
+        echo ${VIF_REFGEN} "${FILE}" "${TMP_OUTPUT}" -I"${FILE_DIR}" ${VIF_INCLUDE_DIR} $VIF_REFGEN_FLAGS
     fi
 
-    ${PHYPP_REFGEN} "${FILE}" "${TMP_OUTPUT}" -I"${FILE_DIR}" ${PHYPP_INCLUDE_DIR} $PHYPP_REFGEN_FLAGS
+    ${VIF_REFGEN} "${FILE}" "${TMP_OUTPUT}" -I"${FILE_DIR}" ${VIF_INCLUDE_DIR} $VIF_REFGEN_FLAGS
 
     if [ $? -ne 0 ]; then
-        echo "phy++: program '${PROG}' FAILED to compile"
+        echo "vif: program '${PROG}' FAILED to compile"
         exit 1
     fi
     if [ ${TIME} -eq 1 ]; then
@@ -102,13 +102,13 @@ if [ ${PHYPP_DISABLE_REFLECTION} -eq 0 ]; then
             S="$((TT/1000000000))"
             M="$((TT/1000000))"
 
-            printf "phy++: reflection data generated (%02d:%02d.%03d)\n" \
+            printf "vif: reflection data generated (%02d:%02d.%03d)\n" \
                 "$((S/60%60))" "$((S%60))" "${M}"
         fi
         if [ ${DATE_PRECISION} == "s" ]; then
             S=${TT}
 
-            printf "phy++: reflection data generated (%02d:%02d)\n" \
+            printf "vif: reflection data generated (%02d:%02d)\n" \
                 "$((S/60%60))" "$((S%60))"
         fi
     fi
@@ -117,14 +117,14 @@ else
 fi
 
 # Compile the generated file to build the final executable
-if [ ${PHYPP_SHOW_CMD} -eq 1 ]; then
-    echo ${PHYPP_COMPILER} "${TMP_OUTPUT}" -I"${FILE_DIR}" ${OPTIONS} -o "${OUTPUT}"
+if [ ${VIF_SHOW_CMD} -eq 1 ]; then
+    echo ${VIF_COMPILER} "${TMP_OUTPUT}" -I"${FILE_DIR}" ${OPTIONS} -o "${OUTPUT}"
 fi
 
-${PHYPP_COMPILER} "${TMP_OUTPUT}" -I"${FILE_DIR}" ${OPTIONS} -o "${OUTPUT}"
+${VIF_COMPILER} "${TMP_OUTPUT}" -I"${FILE_DIR}" ${OPTIONS} -o "${OUTPUT}"
 
 if [ $? -ne 0 ]; then
-    echo "phy++: program '${PROG}' FAILED to compile"
+    echo "vif: program '${PROG}' FAILED to compile"
     exit 1
 fi
 if [ ${TIME} -eq 1 ]; then
@@ -134,13 +134,13 @@ if [ ${TIME} -eq 1 ]; then
         S="$((TT/1000000000))"
         M="$((TT/1000000))"
 
-        printf "phy++: program '${PROG}' successfully compiled (%02d:%02d.%03d)\n" \
+        printf "vif: program '${PROG}' successfully compiled (%02d:%02d.%03d)\n" \
             "$((S/60%60))" "$((S%60))" "${M}"
     fi
     if [ ${DATE_PRECISION} == "s" ]; then
         S=${TT}
 
-        printf "phy++: program '${PROG}' successfully compiled (%02d:%02d)\n" \
+        printf "vif: program '${PROG}' successfully compiled (%02d:%02d)\n" \
             "$((S/60%60))" "$((S%60))"
     fi
 fi

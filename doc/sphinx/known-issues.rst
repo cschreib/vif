@@ -3,7 +3,7 @@
 Known issues and problems
 =========================
 
-This section describes issues and limitations in phy++. Some of these are design issues which should be solved by me, the author of the library, but which I actually *cannot* solve, or haven't found the time solve yet. Some are not issues but *features*, conscious choices I made that may surprise some of you.
+This section describes issues and limitations in vif. Some of these are design issues which should be solved by me, the author of the library, but which I actually *cannot* solve, or haven't found the time solve yet. Some are not issues but *features*, conscious choices I made that may surprise some of you.
 
 In any case, all these may require you, the user, to pay special attention to some corner cases, and you should therefore make sure you are familiar with them.
 
@@ -22,7 +22,7 @@ A "dangling" reference is a invalid reference that points to an object that no l
         return i; // warning: reference to local variable ‘i’ returned
     }
 
-phy++ views suffer from the same problem: a dangling view can be created that points to a vector that no longer exists. Unfortunately, compilers are not aware of it:
+vif views suffer from the same problem: a dangling view can be created that points to a vector that no longer exists. Unfortunately, compilers are not aware of it:
 
 .. code-block:: c++
 
@@ -46,7 +46,7 @@ One such case where dangling views are hard to spot is when returning a view fro
         return i;
     }
 
-This lambda actually returns *a copy* of ``i``, to avoid silently creating a dangling reference. Again, unfortunately this special behavior does not apply to phy++ views:
+This lambda actually returns *a copy* of ``i``, to avoid silently creating a dangling reference. Again, unfortunately this special behavior does not apply to vif views:
 
 .. code-block:: c++
 

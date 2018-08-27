@@ -53,7 +53,7 @@ Mixing views (or vectors) of different sizes will trigger an error at runtime.
 Range indexing
 --------------
 
-Sometimes, one will want to use views to access all the elements at once, for example to set all the elements of a vector to a specific value. This can be done with a loop, of course, but the whole point of phy++ is to avoid explicit loops whenever possible. An alternative is to use a view, with an index vector that contains all the indices of the target vector:
+Sometimes, one will want to use views to access all the elements at once, for example to set all the elements of a vector to a specific value. This can be done with a loop, of course, but the whole point of vif is to avoid explicit loops whenever possible. An alternative is to use a view, with an index vector that contains all the indices of the target vector:
 
 .. code-block:: c++
 
@@ -66,7 +66,7 @@ Sometimes, one will want to use views to access all the elements at once, for ex
 
 However, not only is this not very practical to write, it is error prone and not very clear. If someday we decide to add an element to ``v``, we also have to modify ``id``. Not only this, but it will most likely be slower than writing the loop directly, because the compiler may not realize that you are accessing all the elements contiguously, and will fail to optimize it properly.
 
-The optimal way to do this in phy++ is to use the "placeholder" symbol, defined as a single underscore ``_``. When used as an index, it means "all the indices in the range". Coming back to our example:
+The optimal way to do this in vif is to use the "placeholder" symbol, defined as a single underscore ``_``. When used as an index, it means "all the indices in the range". Coming back to our example:
 
 .. code-block:: c++
 
@@ -156,14 +156,14 @@ There is no difference between these two cases: "a constant view on non-constant
 Aliasing
 --------
 
-The implementation of vectors and views in phy++ is such that aliasing *never* occurs in vectorized operations. More precisely, any assignment of the form ``x = y`` (or ``x += y``, etc.) occurs *as if* executed in the following order:
+The implementation of vectors and views in vif is such that aliasing *never* occurs in vectorized operations. More precisely, any assignment of the form ``x = y`` (or ``x += y``, etc.) occurs *as if* executed in the following order:
 
 1. ``y`` (the right-hand-side) is evaluated,
 2. the values of ``y`` are copied in a temporary vector,
 3. ``x`` (the left-hand-side) is evaluated,
 4. the values of the temporary vector are assigned to the elements of ``x``.
 
-In practice, the creation of the temporary vector (step 2) may be dropped for optimization purposes, but only in cases where it would not change the outcome of the operation, that is, when aliasing is guaranteed not to occur. The following illustrates when aliasing *could* occur, and describes in practice how it is avoided in phy++.
+In practice, the creation of the temporary vector (step 2) may be dropped for optimization purposes, but only in cases where it would not change the outcome of the operation, that is, when aliasing is guaranteed not to occur. The following illustrates when aliasing *could* occur, and describes in practice how it is avoided in vif.
 
 Because views hold *references* to existing data, there is the possibility of the same data being read and modified in the same expression. This is, essentially, what is called "aliasing":
 

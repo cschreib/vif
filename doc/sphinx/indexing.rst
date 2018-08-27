@@ -6,9 +6,9 @@ Indexing
 Flat and multidimensional indices
 ---------------------------------
 
-The ``std::vector``, which is used to implement phy++ vectors, is a purely linear container: one can access its elements using ``v[i]``, with ``i`` ranging from ``0`` up to ``std::vector::size()-1`` (included). In C++, all indexing is zero-based: the first value has an index of zero (contrary to R, or Fortran).
+The ``std::vector``, which is used to implement vif vectors, is a purely linear container: one can access its elements using ``v[i]``, with ``i`` ranging from ``0`` up to ``std::vector::size()-1`` (included). In C++, all indexing is zero-based: the first value has an index of zero (contrary to R, or Fortran).
 
-One can do exactly the same thing on a phy++ vector. In this context, ``i`` is called a "flat" index, since it conveys no particular structure about the data. The phy++ vectors go beyond this, and also allow N-dimensional indexing, that is, using the combination of multiple indices to identify one element. This is particularly useful to work on images, which can be seen as 2-dimensional objects where each pixel is identified by its coordinates ``x`` and ``y``. In this context, the pair ``x,y`` is called a "multidimensional" index.
+One can do exactly the same thing on a vif vector. In this context, ``i`` is called a "flat" index, since it conveys no particular structure about the data. The vif vectors go beyond this, and also allow N-dimensional indexing, that is, using the combination of multiple indices to identify one element. This is particularly useful to work on images, which can be seen as 2-dimensional objects where each pixel is identified by its coordinates ``x`` and ``y``. In this context, the pair ``x,y`` is called a "multidimensional" index.
 
 Since regular vectors use the syntax ``v[i]`` to access 1-dimensional data, the natural syntax for 2-dimensional indexing would be ``img[x,y]``. This syntax is valid C++ code, but unfortunately will not do what you expect... This will call the dreaded *comma* operator, which evaluates both elements ``x`` and ``y`` and returns the last one, i.e., ``y``. So this code actually means ``img[y]``. If you ever make this mistake, most compilers should emit a warning, since in this context ``x`` is a useless statement. So watch out! Unfortunately, there is no sane way around it. The only valid syntax is therefore ``img(x,y)``.
 
@@ -57,7 +57,7 @@ When executed, the code above produces:
     error: operator[]: index out of bounds (20 vs. 10)
 
     backtrace:
-     - phypp_main(int, char**)
+     - vif_main(int, char**)
        at /home/cschreib/test.cpp:5
 
 
@@ -65,7 +65,7 @@ This bound checking has a small but sometimes noticeable impact on performances.
 
 However, there are cases where bound checking is superfluous, for example if we already know *by construction* that our indices will always be valid, and no check is required. Sometimes the compiler may realize that and optimize the checks away, but one should not rely on it. If these situations are computation-limited, i.e., a lot of time is spent doing some number crushing for each element, then the performance hit of bound checking will be negligible, and one should not worry about it. On the other hand, if very little work is done per element and most of the time is spent iterating from one index to the next and loading the value in the CPU cache, then bounds checking can take a significant amount of the total time.
 
-For this reason, the phy++ vector also offers an alternative indexing interface, the so-called "safe" interface. It behaves exactly like the standard indexing interface described above, except that it does not perform bound checking. One can use this interface using ``v.safe[i]`` instead of ``v[i]`` for flat indexing, or ``v.safe(x,y)`` instead of ``v(x,y)`` for multidimensional indexing. The safe interface can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times. Just be certain to use this interface when you know *for sure* what you are doing, and you can prove that the index will always be valid. A good strategy is to always use the standard interface and, only when the program runs successfully, switch to the safe interface for the most stable but time-consuming code sections.
+For this reason, the vif vector also offers an alternative indexing interface, the so-called "safe" interface. It behaves exactly like the standard indexing interface described above, except that it does not perform bound checking. One can use this interface using ``v.safe[i]`` instead of ``v[i]`` for flat indexing, or ``v.safe(x,y)`` instead of ``v(x,y)`` for multidimensional indexing. The safe interface can also be used to create views. This interface is not meant to be used in daily coding, but rather for computationally intensive functions that you write once but use many times. Just be certain to use this interface when you know *for sure* what you are doing, and you can prove that the index will always be valid. A good strategy is to always use the standard interface and, only when the program runs successfully, switch to the safe interface for the most stable but time-consuming code sections.
 
 .. note:: One may wonder why the word ``safe`` was used instead of ``unsafe``, since indexing without bounds checking is actually an "unsafe" operation. The reason why is that writing ``v.safe[i]`` can be understood as telling the vector: "I am in a context where I know where the index ``i`` came from, you're *safe*, you can disable bounds checking". I was also feeling somewhat uncomfortable at writing ``unsafe`` everywhere in the core functions of the library...
 

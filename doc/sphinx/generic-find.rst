@@ -1,7 +1,7 @@
 Finding elements
 ================
 
-Defined in header ``<phypp/utility/generic.hpp>``.
+Defined in header ``<vif/utility/generic.hpp>``.
 
 where
 -----

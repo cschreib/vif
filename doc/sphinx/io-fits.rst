@@ -3,4 +3,4 @@
 FITS files
 ==========
 
-Defined in header ``<phypp/io/fits.hpp>``.
+Defined in header ``<vif/io/fits.hpp>``.

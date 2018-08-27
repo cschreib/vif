@@ -1,7 +1,7 @@
 Index manipulation
 ==================
 
-Defined in header ``<phypp/utility/generic.hpp>``.
+Defined in header ``<vif/utility/generic.hpp>``.
 
 
 mult_ids

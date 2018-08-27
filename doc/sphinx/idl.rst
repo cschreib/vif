@@ -38,9 +38,9 @@ IDL equivalents
    }
    </style>
 
-The interface of phy++ was designed to facilitate the migration from IDL, an interpreted language that, wile dated, is still commonly used in astronomy. Although IDL as a language suffers from a number of design issues, there is much good in its interface and API that one may wish to emulate in C++. But not all of it.
+The interface of vif was designed to facilitate the migration from IDL, an interpreted language that, wile dated, is still commonly used in astronomy. Although IDL as a language suffers from a number of design issues, there is much good in its interface and API that one may wish to emulate in C++. But not all of it.
 
-This page lists common language constructs in IDL and their C++ equivalent with phy++. The following table is inspired from the `xtensor documentation <https://xtensor.readthedocs.io/en/latest/numpy.html>`_.
+This page lists common language constructs in IDL and their C++ equivalent with vif. The following table is inspired from the `xtensor documentation <https://xtensor.readthedocs.io/en/latest/numpy.html>`_.
 
 Crucial differences to always keep in mind
 ------------------------------------------
@@ -57,7 +57,7 @@ Other notable differences
 
 * C++ does not have a mechanism for finding where a function's code is based only on its name. If you put the function in a different file (a "header"), you must ``#include "..."`` this header explicitly in all other files that use this function.
 * C++ has no procedures, but functions are allowed to have no return values.
-* phy++ vectors can be empty, while IDL vectors cannot. It is possible to do operations with an empty vector (which have no cost and do nothing) if all the other vectors involved, if any, are also empty.
+* vif vectors can be empty, while IDL vectors cannot. It is possible to do operations with an empty vector (which have no cost and do nothing) if all the other vectors involved, if any, are also empty.
 * C++ loops are *much* faster than in IDL, so there is no need to avoid them except to make the code shorter and more readable.
 * C++ does not support keywords for functions, only normal arguments. A structure with named member values can be used instead.
 * C++ does not have an equivalent for IDL's ``common`` variables (shared between functions), but you can use ``static`` to declare variables that survive between different calls to the same function. They just cannot be shared with another function.
@@ -69,7 +69,7 @@ Basics
 .. |_| unicode:: 0xA0
 
 +------------------------------------------------+------------------------------------------------+
-|             IDL                                |               C++ 11 - phy++                   |
+|             IDL                                |               C++ 11 - vif                     |
 +================================================+================================================+
 | ``; a comment``                                | ``// a comment``                               |
 +------------------------------------------------+------------------------------------------------+
@@ -103,7 +103,7 @@ Control flow
 ------------
 
 +------------------------------------------------+------------------------------------------------+
-|             IDL                                |               C++ 11 - phy++                   |
+|             IDL                                |               C++ 11 - vif                     |
 +================================================+================================================+
 | | ``if x lt y then begin``                     | | ``if (x < y) {``                             |
 | | |_| |_| |_| ``; ...``                        | | |_| |_| |_| ``// ...``                       |
@@ -154,7 +154,7 @@ Creating, accessing, modifying vectors
 --------------------------------------
 
 +------------------------------------------------+------------------------------------------------+
-|             IDL                                |               C++ 11 - phy++                   |
+|             IDL                                |               C++ 11 - vif                     |
 +================================================+================================================+
 | | ``v = fltarr(10)``                           | | ``vec1f v(10);``                             |
 | | ``v = fltarr(20)``                           | | ``v.resize(20);``                            |
@@ -206,7 +206,7 @@ Vector operations
 -----------------
 
 +------------------------------------------------+------------------------------------------------+
-|             IDL                                |               C++ 11 - phy++                   |
+|             IDL                                |               C++ 11 - vif                     |
 +================================================+================================================+
 | | Arithmetic:                                  | |                                              |
 | | ``x = v + w``                                | | ``x = v + w;``                               |
@@ -235,7 +235,11 @@ Vector operations
 | | ``x = not w``                                | | ``x = ~w;``                                  |
 +------------------------------------------------+------------------------------------------------+
 | | Matrix:                                      | |                                              |
-| | ``x = v # w``                                | | ``x = matrix::product(w, v);``               |
+| | ``x = v # w``                                | | ``matrix::mat<T> w, v;``                     |
+| |                                              | | ``x = w * v;``                               |
+| |                                              | | or                                           |
+| |                                              | | ``vec<2,T> w, v;``                           |
+| |                                              | | ``x = matrix::wrap(w)*matrix::wrap(v);``     |
 +------------------------------------------------+------------------------------------------------+
 | ``x = v ## w``                                 | No direct equivalent. Do the operation         |
 |                                                | explicitly with indices in a loop.             |
@@ -246,11 +250,11 @@ Finding values
 --------------
 
 +------------------------------------------------+------------------------------------------------+
-|             IDL                                |               C++ 11 - phy++                   |
+|             IDL                                |               C++ 11 - vif                     |
 +================================================+================================================+
 | | ``v = [1,2,3,4,5]``                          | | ``vec1f v = {1,2,3,4,5};``                   |
 | | ``id = where(v gt 3, cnt)``                  | | ``vec1u id = where(v > 3);``                 |
 | | ``if cnt ne 0 then v[id] = 0``               | | ``v[id] = 0;``                               |
-| |                                              | | Note: empty vectors are allowed in phy++,    |
+| |                                              | | Note: empty vectors are allowed in vif,      |
 | |                                              | | so the check for ``cnt`` is not needed.      |
 +------------------------------------------------+------------------------------------------------+

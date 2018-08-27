@@ -3,7 +3,7 @@
 Command line arguments
 ======================
 
-Defined in header ``<phypp/utility/argv.hpp>``.
+Defined in header ``<vif/utility/argv.hpp>``.
 
 read_args
 ---------
@@ -12,7 +12,7 @@ The biggest problem of C++ programs is that, while they are fast to execute, the
 
 There are ways around this issue. One in particular is called *data driven* programming: the behavior of a program depends on the data that are fed to it. The simplest way to use this paradigm is to control the program through "command line arguments". The C++ language provides the basic bricks to use command line arguments, but the interface is inherited from C and lacks severely in usability.
 
-For this reason we introduce in phy++ a single function, ``read_args()``, that uses these bricks to provide a simple and concise interface to implement command line arguments in a program. The first two arguments of the function (``argc, argv``) must be the arguments of the ``main()`` function, in the same order. The following argument must be ``arg_list(...)``, inside of which one must list all the variables that can be modified through the command line interface. These variables can be of any type, as long as it is possible to convert a string into a variable of this type.
+For this reason we introduce in vif a single function, ``read_args()``, that uses these bricks to provide a simple and concise interface to implement command line arguments in a program. The first two arguments of the function (``argc, argv``) must be the arguments of the ``main()`` function, in the same order. The following argument must be ``arg_list(...)``, inside of which one must list all the variables that can be modified through the command line interface. These variables can be of any type, as long as it is possible to convert a string into a variable of this type.
 
 
 Usage examples
@@ -22,11 +22,11 @@ Let us illustrate this with an example. Assume that we want to build a simple pr
 
 .. code-block:: c++
 
-    # include <phypp.hpp>
+    # include <vif.hpp>
 
     // This is the standard entry point of every C++ program.
     // The signature of the main function is imposed by the C++ standard
-    int main(int argc, char* argv[]) {
+    int vif_main(int argc, char* argv[]) {
         // Declare the main parameters of the program, in this case
         // the number of powers of two to display, 'n'.
         uint_t n = 1;
