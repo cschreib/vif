@@ -111,13 +111,14 @@ The dimensions and size of a vector can be modified in three main ways.
 
 First, ``v.clear()`` will erase all the values from the vector and set all its dimensions to zero. This will set the vector in the state of a default-initialized vector (see above).
 
-Second, ``v.resize(...)`` will change the dimensions of the vector. The parameters it accepts are the same as the "size" constructor (see above), i.e., either integral values for individual dimensions, or an ``std::array`` containing multiple dimensions, or any combination of these. The only constraint is that the total number of dimensions of the vector must remain unchanged.
+Second, ``v.resize(...)`` will change the dimensions of the vector. The parameters it accepts are the same as the "size" constructor (see above), i.e., either integral values for individual dimensions, or an ``std::array`` containing multiple dimensions, or any combination of these. While the total number of elements can be modified at will, the number of *dimensions* of the vector must remain unchanged.
 
 .. code-block:: c++
 
-    vec2f w;          // empty
-    w.resize(20,10);  // 20x10
-    w.resize(200,10); // 200x10
+    vec2f w;            // empty, zero elements
+    w.resize(20,10);    // 20x10, 200 elements
+    w.resize(200,10);   // 200x10, 2000 elements
+    w.resize(200,10,5); // error: cannot change a 2D vector into a 3D vector
 
 Once the vector has been resized, its previous content is left in an undefined state, i.e., you can generally assume the previous values (if any) have been lost and replaced by meaningless garbage. The only exception is for 1D vectors. If the resize operation *decreases* the total number of elements, then values are erased from the end of the vector and the rest remains untouched. On the other hand, if the resize operation *increased* the total number of elements, new elements are inserted at the end of the vector, default constructed (i.e., zeros for integral types, etc.). This is the same behavior as ``std::vector``.
 
@@ -198,12 +199,13 @@ Not only this, but we can also perform operations on a pair of vectors:
 
 Almost all the mathematical and logical operators are overloaded. Therefore, as a rule of thumb, if you can do an operation with a type ``T``, you can do it with ``vec<1,T>`` as well. The one notable exception are bitwise operators: ``|``, ``&``, and ``^``. The reason is twofold: first, these are not so commonly used in data analysis, and second, the ``^`` operator can be mistakenly interpreted as the exponentiation operator, that some other languages possess (if you need to do exponentiation, use ``pow()``).
 
+.. note:: In Python+NumPy and some C++ libraries (like xtensor_), it is possible to mix vectors with different numbers of dimensions in a given operation, if some conditions are satisfied. For example, this allows multiplying the same 1D vector to each row or column of a 2D vector without having to write an explicit loop. This mechanism is called *broadcasting*. It is *not* implemented in vif, and will likely never be. Indeed, it is perceived that the benefits are not worth the costs, both in terms of making the vif codebase more complex, but also in introducing more complex rules for the user of the library. Therefore, in vif, one can only do arithmetics on vectors which have the *exact* same dimensions. If you require an operation similar to what broadcasting provides, you can always write the loop explicitly.
+
 .. note:: Contrary to some other C++ libraries with vectorized arithmetic (such as Eigen_, blazelib_, or xtensor_), vif does not use *expression templates*. Instead, each operation is executed immediately (no lazy evaluation) and operates if necessary on temporary intermediate vectors. While this may appear to be a sub-optimal implementation, vif was tuned to makes good use of return value optimization, move semantics, and for reusing the memory of temporaries in chained expressions. As a result, performance was found to be on par with expression templates in the most common situations, but memory consumption is generally higher in vif. This is of course dependent on the precise calculation to perform. The benefit of not using expression templates is a reduced compilation time, and a much simpler code base.
 
 .. _Eigen: http://eigen.tuxfamily.org/index.php?title=Main_Page
 .. _blazelib: https://bitbucket.org/blaze-lib/blaze
 .. _xtensor: https://xtensor.readthedocs.io/en/latest/
-
 
 Constant vectors
 ----------------
