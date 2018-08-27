@@ -41,36 +41,36 @@ Detailed instructions are provided in the ``INSTALL.md`` file. The library is he
  - write some code:
 
    ```cpp
-       // Include the vif headers
-       #include <vif.hpp>
+   // Include the vif headers
+   #include <vif.hpp>
 
-       // Declare the main function, entry point of the program
-       int vif_main(int argc, char* argv[]) {
-           // Read some arguments from the command line
-           vif::uint_t n = 10;
-           vif::read_args(argc, argv, arg_list(n));
+   // Declare the main function, entry point of the program
+   int vif_main(int argc, char* argv[]) {
+       // Read some arguments from the command line
+       vif::uint_t n = 10;
+       vif::read_args(argc, argv, arg_list(n));
 
-           // Create a vector containing 1, 2, ..., n-1
-           vif::vec1d v = vif::indgen<double>(n);
+       // Create a vector containing 1, 2, ..., n-1
+       vif::vec1d v = vif::indgen<double>(n);
 
-           // Print the square root of each element
-           vif::print(sqrt(v));
+       // Print the square root of each element
+       vif::print(sqrt(v));
 
-           return 0;
-       }
+       return 0;
+   }
    ```
 
  - invoke your compiler from the directory where the source code is
    located:
 
    ```bash
-      g++ -std=c++11 foobar.cpp -o foobar
+   g++ -std=c++11 foobar.cpp -o foobar
    ```
 
  - once the program is compiled, you can run it
 
    ```bash
-      ./foobar n=20
+   ./foobar n=20
    ```
 
  - alternatively, you may also compile the program using ``cvif``, a handy shortcut
@@ -78,10 +78,10 @@ Detailed instructions are provided in the ``INSTALL.md`` file. The library is he
    and takes care of specifying include paths and linking dependencies):
 
    ```bash
-      cvif foobar.cpp
-      ./foobar n=20
+   cvif foobar.cpp
+   ./foobar n=20
 
-      # bonus: compile with full optimizations
-      cvif optimize foobar.cpp
-      ./foobar n=20
+   # bonus: compile with full optimizations
+   cvif optimize foobar.cpp
+   ./foobar n=20
    ```
