@@ -306,6 +306,10 @@ namespace matrix {
             typename std::enable_if<meta::is_dim_list<Args...>::value>::type>
         explicit mat(Args&& ... d) : base(std::forward<Args>(d)...), dims(base.dims), safe(base.safe) {}
 
+        // Initializer list constructor
+        mat(meta::nested_initializer_list<2,meta::dtype_t<Type>> il) : base(il),
+            dims(base.dims), safe(base.safe) {}
+
         // Import access operators
         template<typename Arg>
         auto operator [] (Arg&& arg) -> decltype(base[std::forward<Arg>(arg)]) {
