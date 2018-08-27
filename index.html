@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>phy++ by cschreib</title>
+    <title>vif by cschreib</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -20,12 +20,11 @@
   <body>
       <div id="header">
         <nav>
-          <li class="fork"><a href="https://github.com/cschreib/phypp">View On GitHub <img border="0" src="images/octocat-white-small.png" alt="GitHub" style="vertical-align:middle"></a></li>
-          <li class="downloads"><a href="https://github.com/cschreib/phypp/zipball/master"><img border="0" src="images/archive.png" alt="ZIP" style="vertical-align:middle"> ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/cschreib/phypp/tarball/master"><img border="0" src="images/archive.png" alt="TAR" style="vertical-align:middle"> TAR</a></li>
+          <li class="fork"><a href="https://github.com/cschreib/vif">View On GitHub <img border="0" src="images/octocat-white-small.png" alt="GitHub" style="vertical-align:middle"></a></li>
+          <li class="downloads"><a href="https://github.com/cschreib/vif/zipball/master"><img border="0" src="images/archive.png" alt="ZIP" style="vertical-align:middle"> ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/cschreib/vif/tarball/master"><img border="0" src="images/archive.png" alt="TAR" style="vertical-align:middle"> TAR</a></li>
           <li class="title">DOWNLOADS:</li>
-          <li class="downloads"><a href="https://github.com/cschreib/phypp/raw/master/doc/latex/phypp.pdf"><img border="0" src="images/document-pdf.png" alt="PDF" style="vertical-align:middle"> PDF</a></li>
-          <li class="downloads"><a href="doc/category_support_01_intro.html"><img border="0" src="images/document-html.png" alt="HTML" style="vertical-align:middle"> HTML</a></li>
+          <li class="downloads"><a href="http://vif.readthedocs.io/"><img border="0" src="images/document-html.png" alt="ReadTheDocs" style="vertical-align:middle"> ReadTheDocs</a></li>
           <li class="title">DOCUMENTATION:</li>
         </nav>
       </div><!-- end header -->
@@ -34,84 +33,91 @@
 
       <section>
         <div id="title">
-          <h1><i>phy</i><sub>++</sub></h1>
-          <p>Library and tools designed for easy, robust and fast numerical astrophysics in modern C++. Inspired by the expressiveness of IDL.</p>
+          <h1><i>vif</i></h1>
+          <p>Brings easy, robust, and fast numerics to C++.</p>
           <hr>
           <span class="credits left">Project maintained by <a href="https://cschreib.github.io">Corentin Schreiber</a> (<a href="https://github.com/cschreib">cschreib</a>)</span>
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
         <h1>
-<a name="what-is-phy" class="anchor" href="#what-is-phy"><span class="octicon octicon-link"></span></a>What is <i>phy</i><sub>++</sub>?</h1>
+<a name="what-is-phy" class="anchor" href="#what-is-phy"><span class="octicon octicon-link"></span></a>What is <i>vif</i> ?</h1>
 
-<p><i>phy</i><sub>++</sub> is a set of library and tools built to provide user friendly data manipulation as offered in interpreted languages like <a href="http://www.exelisvis.com/ProductsServices/IDL.aspx">IDL</a> or its open source clone <a href="http://gnudatalanguage.sourceforge.net/">GDL</a>, but with the added benefit of C++, i.e. increased robustness and speed. The library offers the following features:</p>
+<p><i>vif</i> is a C++ library built to provide user friendly data manipulation as offered in interpreted languages like <a href="https://www.python.org/">Python</a>, <a href="http://www.exelisvis.com/ProductsServices/IDL.aspx">IDL</a>, <a href="http://gnudatalanguage.sourceforge.net/">GDL</a>, but with the added benefit of C++, namely, increased robustness and speed. The library offers the following features:</p>
 
 <ul>
-<li>multidimensional arrays with overloaded mathematical operators and mathematical functions, providing easy manipulation of tabulated data</li>
-<li>a whole library of general purpose functions to modify and analyze these data</li>
-<li>a FITS module allowing read/write operations on FITS images and tables</li>
-<li>an ASCII module allowing read/write operations on ASCII tables</li>
-<li>an astrophysics module providing tools such as cosmological calculations, PSF fitting, unit conversions, catalog cross-matching, image manipulation, ...</li>
-<li>a full featured plot module to output graphs in EPS format (WIP!)</li>
+<li>Multidimensional arrays with standard mathematical operators and
+   functions, providing easy manipulation of images and tabulated data.</li>
+<li>A whole library of general purpose functions to modify and analyze these data (reverse, shuffle, reduce, ...).</li>
+<li>A number of optional modules:</li>
+  <ul>
+  <li>a FITS module allowing read/write operations on FITS images and tables,</li>
+  <li>an ASCII module allowing read/write operations on ASCII tables,</li>
+  <li>an astrophysics module providing tools such as cosmological calculations,
+   PSF fitting, unit conversions, catalog cross-matching, image manipulation, ...</li>
+  </ul>
 </ul>
 
-<p>It relies only on standard C++11, plus a couple of optional well-known libraries. A few features require compile-time reflection, which is not <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">yet</a> part of the C++ standard, so a small tool ('refgen') is used to fill the gap. These features are non-essential though, so reflection can be completely disabled if not needed.</p>
+<p>It relies only on standard C++11, and a couple of well-known libraries (see INSTALL). Some features can optionally use compile-time reflection, which is not <a href="https://groups.google.com/a/isocpp.org/forum/#!forum/reflection">yet</a> part of the C++ standard, so a small tool ('refgen') is used to fill the gap. These features are non-essential though, and reflection can be completely disabled if not needed.</p>
 
-<p>Currently, there is one main drawback of using phy++ instead of IDL/GDL. Indeed, while I tried to be exhaustive in which functions are provided inside the library, it is certainly missing some of the functions or features available today in IDL. The only way to solve this is to write these missing functions with phy++! You can do it yourself and contribute them back to phy++ by submitting a pull request, or submit a feature request so that I take a look at it.</p>
+<p>The library was designed following three core principles:</p>
+<ol>
+<li>"Safety first".</li>
+<li>"You do not pay for what you do not use".</li>
+<li>"Minimize burden to the user".</li>
+</ol>
 
-<p>Another important thing to consider is that, to date, there is no stable and full-featured C++ interpreter (although <a href="http://root.cern.ch/drupal/content/cling">cling</a> is a promising candidate). This means that it is impossible (or hard) to do "real-time" interaction with your code, namely, stop the program and inspect the value of some arrays, plot them, modify them, then continue execution. Any C++ program must be recompiled whenever a change is made, and compilation itself usually takes a few precious seconds. This issue can be partly solved by making use of command line arguments to quickly modify the behavior of a program without having to recompile. But this is obviously more limited. </p>
+<p>The first principle requires that the most easily accessible interface is the safest to use, meaning that the library will perform, by default, some basic checks on the data before processing it (bounds checking, etc.). The second principle requires the existence of mechanisms to bypass these safety checks, such that it is always possible to write optimal code when checks are not needed. The third and last principle requires that both interfaces are as simple to use as possible, to minimize the amount of code the user has to write to reach their goal.</p>
 
-<p>For this reason, I recommend the use of the phy++ library for writing "programs" that deal with only one specific task (like reading a specific ASCII catalog into a FITS table, or compute a stellar mass function from a catalog with incompleteness corrections), rather than "scripts" that do many things at once and need to be edited often whenever a new task must be done. This also encourages writing reusable and modular code, that is written once and is generic enough that it can be used in many different situations, which a good practice!</p>
+<p>Thus far, <i>vif</i> has been a one-man project. Development started in 2013 during my PhD, and has continued until today. The library is now mature and fully functional; all that remains to be done before a version 1.0 is a final review of the code before API freeze, and wrapping up the documentation (see <a href="https://github.com/cschreib/vif/projects/1">roadmap</a>).</p>
 
 <h1>
-<a name="how-to-use-it" class="anchor" href="#how-to-use-it"><span class="octicon octicon-link"></span></a>How to use it?</h1>
+<a name="how-to-use-it" class="anchor" href="#how-to-use-it"><span class="octicon octicon-link"></span></a>Using the library</h1>
 
 <ul>
 <li>create a new C++ file (foobar.cpp for example)</li>
 <li>write some code:</li>
-</ul><div class="highlight highlight-cpp"><pre><span class="c1">// Include the phy++ headers</span>
-<span class="cp">#include &lt;phypp.hpp&gt;</span>
+<div class="highlight highlight-cpp"><pre><span class="c1">// Include the vif headers</span>
+<span class="cp">#include &lt;vif.hpp&gt;</span>
 
 <span class="c1">// Declare the main function, entry point of the program</span>
-<span class="kt">int</span> <span class="nfc">phypp_main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+<span class="kt">int</span> <span class="nfc">vif_main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
     <span class="c1">// Read some arguments from the command line</span>
-    <span class="kt">uint_t</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-    <span class="nf">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="nf">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+    vif<span class="p">::</span>uint_t <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+    vif<span class="p">::</span><span class="nf">read_args</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="nf">arg_list</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
     <span class="c1">// Create a vector containing 1, 2, ..., n-1</span>
-    <span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> <span class="nf">dindgen</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
+    vif<span class="p">::</span><span class="n">vec1d</span> <span class="n">v</span> <span class="o">=</span> vif<span class="p">::</span><span class="nf">indgen<span class="p">&lt;</span><span class="kt">double</span><span class="p">&gt;</span></span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
     <span class="c1">// Print the square root of each element</span>
-    <span class="nf">print</span><span class="p">(</span><span class="nf">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">));</span>
+    vif<span class="p">::</span><span class="nf">print</span><span class="p">(</span><span class="nf">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">));</span>
     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
-
-<ul>
-<li>invoke the <inlinecode>phy++</inlinecode> compiler from the directory where the source code is located: </li>
-</ul><div class="highlight highlight-bash"><pre>phy++ foobar <span class="nv">n</span><span class="o">=</span><span class="mi">20</span
+<li>invoke your compiler from the directory where the source code is located: </li>
+<div class="highlight highlight-bash"><pre>g++ <span class="o">-</span><span class="nv">std</span><span class="o">=</span>c++11 foobar.cpp <span class="o">-</span><span class="nv">o</span> foobar
 </pre></div>
-
-<ul>
-<li>the program will compile and run automatically (if no compiler error occurred)</li>
-<li>alternatively, you may also just compile the program using the <inlinecode>cphy++</inlinecode> compiler:</li>
-</ul><div class="highlight highlight-bash"><pre>cphy++ foobar.cpp
+<li>once the program is compiled, you can run it:</li>
+<div class="highlight highlight-bash"><pre>./foobar <span class="nv">n</span><span class="o">=</span>20
 </pre></div>
+<li>alternatively, you may also compile the program using <inlinecode>cvif</inlinecode>, a handy shortcut script that does the same thing as above (plus it also enables useful warnings, and takes care of specifying include paths and linking dependencies):</li>
+<div class="highlight highlight-bash"><pre>
+cvif foobar.cpp
+<span class="o">./</span>foobar <span class="nv">n</span><span class="o">=</span>20
 
-<ul>
-<li>... then run the program yourself afterwards:</li>
-</ul><div class="highlight highlight-bash"><pre><span class="o">./</span>foobar <span class="nv">n</span><span class="o">=</span><span class="mi">20</span
+<span class="c1"># bonus: compile with full optimizations</span>
+cvif optimize foobar.cpp
+<span class="o">./</span>foobar <span class="nv">n</span><span class="o">=</span>20
 </pre></div>
-
-<p>More detailed explanations are available in the <a href="https://github.com/cschreib/phypp/raw/master/doc/latex/phypp.pdf">documentation</a>.</p>
+</ul>
 
 <h1>
 <a name="how-to-get-it" class="anchor" href="#how-to-get-it"><span class="octicon octicon-link"></span></a>How to get it?</h1>
 
 <p>Simply download the code, either by cloning the git repository:</p>
 
-<div class="highlight highlight-bash"><pre>git clone https://github.com/cschreib/phypp.git
+<div class="highlight highlight-bash"><pre>git clone https://github.com/cschreib/vif.git
 </pre></div>
 
-<p>or by downloading .tgz or .zip archives from this page. The library itself depends on several other libraries, all of which are fairly common and should be provided in your distribution's repositories (or in MacPorts if you are a MacOS user). Please refer to the <inlinecode>INSTALL</inlinecode> file in the main directory for detailed instructions on how to install the dependencies and the <em>phypp</em> library.</p>
+<p>or by downloading .tgz or .zip archives from this page (see buttons at the top of the page). The library itself depends on several other libraries, all of which are fairly common and should be provided in your distribution's repositories (or in MacPorts if you are a MacOS user). Please refer to the <inlinecode>INSTALL.md</inlinecode> file in the main directory for detailed instructions on how to install the dependencies and the <em>vif</em> library.</p>
       </section>
 
     </div>
