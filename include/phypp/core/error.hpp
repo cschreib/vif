@@ -22,10 +22,11 @@
 #endif
 
 namespace phypp {
+    #ifndef NO_LIBUNWIND
+
     // Store the path to the executable, to get debug information in case of error
     extern const char* executable_path;
 
-    #ifndef NO_LIBUNWIND
     #ifndef NO_LIBDWARF
     namespace impl {
         // Inspired from:
