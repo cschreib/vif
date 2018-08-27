@@ -2,7 +2,6 @@
    :alt: vif
    :width: 400
 
-Easy, robust, and fast numerics in C++.
 
 Documentation
 =============
