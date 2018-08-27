@@ -3,32 +3,24 @@ Integer sequences
 
 Defined in header ``<vif/utility/generic.hpp>``.
 
-uindgen, indgen, findgen, dindgen
----------------------------------
+indgen
+------
 
 .. code-block:: c++
 
-    template<typename ... Dims>
-    vec</*...*/,uint_t> uindgen(Dims&& ... ds); // [1]
+    template<typename T = uint_t, typename ... Dims>
+    vec</*...*/,T> indgen(Dims&& ... ds);
 
-    template<typename ... Dims>
-    vec</*...*/,int_t> indgen(Dims&& ... ds); // [2]
+This functions will create a new vector with values starting at ``0`` and increment linearly by steps of ``1`` until the end of the vector. Internally, the values are generated with the standard function ``std::iota```. The number of dimensions of the resulting vector depends on the types ``Args`` of the arguments:
 
-    template<typename ... Dims>
-    vec</*...*/,float> findgen(Dims&& ... ds); // [3]
+* Each argument of type ``uint_t`` increases the number of dimensions by one.
+* Each argument of type ``std::array<uint_t,D>`` increases the number of dimensions by ``D``.
 
-    template<typename ... Dims>
-    vec</*...*/,double> dindgen(Dims&& ... ds); // [4]
-
-These functions will create a new vector with values starting at ``0`` and increment linearly by steps of ``1`` until the end of the vector. The number of dimensions of the resulting vector depends on the types ``Args`` of the arguments:
-
-* The starting dimension is ``0``.
-* Each argument of type ``uint_t`` increases the final dimension by one.
-* Each argument of type ``std::array<uint_t,D>`` increases the final dimension by ``D``.
+The type of the values in the resulting vector is determined by the template parameter ``T``, which defaults to ``uint_t`` if none is provided.
 
 **Example:**
 
 .. code-block:: c++
 
-    vec1i v = indgen(5);    // {0,1,2,3,4}
-    vec2u w = uindgen(3,2); // {{0,1}, {2,3}, {4,5}}
+    vec1u v = indgen(5);   // {0,1,2,3,4}
+    vec2u w = indgen(3,2); // {{0,1}, {2,3}, {4,5}}
