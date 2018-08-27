@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include "phypp/core/vec.hpp"
 #include "phypp/core/error.hpp"
+#include "phypp/utility/string.hpp"
 
 namespace phypp {
 namespace file {
