@@ -240,7 +240,7 @@ Function [2] allows you to change the output format by specifying a number of op
         vec1s       header;
     };
 
-* ``auto_width``. When set to ``true`` (the default), the function will compute the maximum width (in characters) of each column before writing the data to the disk. It will then use this maximum width to nicely align the data in each column. Note that it also takes into account the width of the header string (see below). This two-step process reduces performances a bit, and for large data sets you may want to disable it by setting this option to ``false``. In this case, either the data is written without alignment (still readable by a machine, but not really by a human), or with a fixed common width if ``min_width`` is set to a positive value.
+* ``auto_width``. When set to ``true`` (the default), the function will compute the maximum width (in characters) of each column before writing the data to the disk. It will then use this maximum width to nicely align the data in each column (always aligned to the right). Note that it also takes into account the width of the header string (see below). This two-step process reduces performances a bit, and for large data sets you may want to disable it by setting this option to ``false``. In this case, either the data is written without alignment (still readable by a machine, but not really by a human), or with a fixed common width if ``min_width`` is set to a positive value.
 * ``min_width``. This defines the minimum width allowed for a column, in characters. The default is zero, which means columns can be as narrow as one single character if that is all the space they require.
 * ``delim``. This string defines which character(s) should be used to separate columns in the file. The default is to use a single white space (plus any alignment coming from adjusting the column widths).
 * ``header`` and ``header_chars``. These variables can be used to print a header at the beginning of the file, before the data. This header can be used by a human (or, possibly, a machine) to understand what kind of data is contained in the table. The header will be written on a single line, starting with ``header_chars`` (the header starting string). Then, each column written in the file must have its name listed in the ``header`` array, in the same order as given in ``args``.
@@ -263,15 +263,45 @@ Some pre-defined sets of options are made available for simplicity:
     // This is equivalent to
     ascii::write_table("my_table.dat", id, x, y);
 
+  This would result in the table:
+
+  .. code-block:: none
+
+      1  125  -56
+      2  568  157
+      3 9852    2
+      4   12   99
+      5  -51 1024
+
   You can also use it as a starting point to create customized options:
 
   .. code-block:: c++
 
       ascii::output_format opts = ascii::output_format::standard();
-      opts.header_chars = "% "; // begin header line with '% ' instead of '# '
+      opts.header_chars = "% ";          // begin header line with '% ' instead of '# '
+      opts.header = {"index", "X", "Y"}; // specify column names
       ascii::write_table("my_table.dat", opts, id, x, y);
 
-* ``ascii::output_format::csv()``. This preset enables writing comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``), and the data is not aligned at all.
+  This would produce instead:
+
+  .. code-block:: none
+
+      % index    X    Y
+            1  125  -56
+            2  568  157
+            3 9852    2
+            4   12   99
+            5  -51 1024
+
+* ``ascii::output_format::csv()``. This preset enables writing comma-separated values (CSV) tables. In these tables, columns are separated by a single comma (``','``), and the data is not aligned at all:
+
+  .. code-block:: none
+
+      1,125,-56
+      2,568,157
+      3,9852,2
+      4,12,99
+      5,-51,1024
 
 The information below applies to any type of table.
 
@@ -333,6 +363,15 @@ The content of ``my_table.dat`` will be:
 .. code-block:: c++
 
     // Write these in a simple ASCII file
-    ascii::write_table_hdr("my_table.dat", ftable(id, x, y)); // [4]
+    ascii::write_table("my_table.dat", ftable(id, x, y));
 
 This also works for 2D vectors. In such cases, ``_i`` is appended to the name of the vector for each column ``i``. If you need better looking headers, you can always write them manually using function [2].
+
+Function [4] allows combining this convenient shortcut with other output options:
+
+.. code-block:: c++
+
+    // Write these in a CSV file
+    ascii::write_table("my_table.dat", ascii::output_format::csv(), ftable(id, x, y));
+
+In this case the ``header`` vector is overriden by the values produced by ``ftable()``.
