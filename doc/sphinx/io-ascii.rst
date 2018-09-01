@@ -305,9 +305,46 @@ Some pre-defined sets of options are made available for simplicity:
 
 The information below applies to any type of table.
 
-**Output format.** When providing vectors of floats or doubles, these functions will convert the values to strings using the default C++ format. See discussion in :ref:`String conversions`. When this is not appropriate, you can use the ``format::...`` functions to modify the output format, as you would with ``to_string()``.
+**Output format for numbers.** When providing vectors of floats or doubles, these functions will convert the values to strings using the default C++ format. See discussion in :ref:`String conversions`. When this is not appropriate, you can use the ``format::...`` functions to modify the output format, as you would with ``to_string()``. For example:
 
-**Writing 2D vectors.** These functions support writing 2D vectors as well. They are interpreted as containing multiple columns: the number of columns is the first dimension of the vector (``v.dims[0]``), and the number of rows is the second dimension (``v.dims[1]``). For them to be recognized by the function, you must wrap them in ``ascii::columns(n,v)``, where ``n`` is the number of columns. For example:
+.. code-block:: c++
+
+    // Data
+    vec1i x = {0, 1, 2, 3, 4};
+    vec1f y = {1e-5, 0.0, 1e5, 1.2, 100.5};
+
+    // Standard format
+    ascii::write_table("my_table.dat", x, y);
+
+The default format produces the following table:
+
+.. code-block:: none
+
+    0  1e-05
+    1      0
+    2 100000
+    3    1.2
+    4  100.5
+
+Using a custom format:
+
+.. code-block:: c++
+
+    // Custom format
+    ascii::write_table("my_table.dat", x, format::scientific(y));
+
+This produces instead:
+
+.. code-block:: none
+
+    0 1.000000e-05
+    1 0.000000e+00
+    2 1.000000e+05
+    3 1.200000e+00
+    4 1.005000e+02
+
+
+**Writing 2D vectors.** These functions support writing 2D vectors as well. They are interpreted as containing multiple columns: the number of rows is the first dimension of the vector (``v.dims[0]``), and the number of columns is the second dimension (``v.dims[1]``). For them to be recognized by the function, you must wrap them in ``ascii::columns(n,v)``, where ``n`` is the number of columns. For example:
 
 .. code-block:: c++
 
