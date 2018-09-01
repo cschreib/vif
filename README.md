@@ -1,3 +1,5 @@
+![logo](icons/icon_black_text.svg)
+
 [![Documentation Status](https://readthedocs.org/projects/vif/badge/?version=latest)](https://vif.readthedocs.io/en/latest/?badge=latest)
 
 # What is vif ?
