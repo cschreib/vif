@@ -1,4 +1,4 @@
-<img src="icons/icon_black_text.svg" width="500">
+<img src="icons/icon_black_text.svg" width="400">
 
 [![Documentation Status](https://readthedocs.org/projects/vif/badge/?version=latest)](https://vif.readthedocs.io/en/latest/?badge=latest)
 
