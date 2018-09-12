@@ -356,6 +356,59 @@ namespace matrix {
         meta::is_matrix<T>::value && std::is_same<meta::data_type_t<T>, double>::value &&
         !meta::is_view<T>::value
     >::type>
+    bool solve(const T& alpha, const vec1d& beta, vec1d& res);
+
+    template<typename T, typename enable = typename std::enable_if<
+        meta::is_matrix<T>::value && std::is_same<meta::data_type_t<T>, double>::value &&
+        !meta::is_view<T>::value
+    >::type>
+    bool inplace_solve(T& alpha, vec1d& beta) {
+    #ifdef NO_LAPACK
+        vec1d cbeta = beta;
+        return solve(alpha, cbeta, beta);
+    #else
+        vif_check(alpha.dims[0] == alpha.dims[1], "cannot invert a non square matrix (",
+            alpha.dims, ")");
+        vif_check(alpha.dims[0] == beta.dims[0], "matrix and vector must have the same dimensions (",
+            "got ", alpha.dims[0], " and ", beta.dims[0], ")");
+
+        int n = alpha.dims[0];
+        int nrhs = 1;
+        int lda = n, ldb = n;
+        int info;
+        vec<1,int> ipiv(n);
+
+        lapack::dgesv_(&n, &nrhs, alpha.raw_data(), &lda, ipiv.raw_data(), beta.raw_data(),
+            &ldb, &info);
+        if (info != 0) {
+            return false;
+        }
+
+        return true;
+    #endif
+    }
+
+    template<typename T, typename enable>
+    bool solve(const T& alpha, const vec1d& beta, vec1d& res) {
+    #ifdef NO_LAPACK
+        decompose_lu d;
+        if (!d.decompose(alpha)) {
+            return false;
+        }
+
+        res = d.solve(beta);
+        return true;
+    #else
+        mat2d a = alpha;
+        res = beta;
+        return inplace_solve(a, res);
+    #endif
+    }
+
+    template<typename T, typename enable = typename std::enable_if<
+        meta::is_matrix<T>::value && std::is_same<meta::data_type_t<T>, double>::value &&
+        !meta::is_view<T>::value
+    >::type>
     bool solve_symmetric(const T& alpha, const vec1d& beta, vec1d& res);
 
     template<typename T, typename enable = typename std::enable_if<

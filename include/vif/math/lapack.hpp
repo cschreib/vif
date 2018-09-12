@@ -10,6 +10,8 @@ namespace lapack {
     extern "C" void dsytrf_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work,
         int* lwork, int* info);
     extern "C" void dsytri_(char* uplo, int* n, double* a, int* lda, int* ipiv, double* work, int* info);
+    extern "C" void dgesv_(int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
+        int* ldb, int* info);
     extern "C" void dsysv_(char* uplo, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b,
         int* ldb, double* work, int* lwork, int* info);
     extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
