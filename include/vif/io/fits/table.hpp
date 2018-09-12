@@ -1057,7 +1057,7 @@ namespace impl {
         >> {};
 
         template<std::size_t D, typename T>
-        struct is_writable_column_type<vec<D,T>> : is_writable_column_type<meta::rtype_t<T>::rtype> {};
+        struct is_writable_column_type<vec<D,T>> : is_writable_column_type<meta::rtype_t<T>> {};
 
         template<typename T>
         struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
