@@ -102,66 +102,103 @@ namespace matrix {
         }
     }
 
+    // Source of this class is adapted from:
+    // http://www.mymathlib.com/matrices/linearsystems/crout.html
     struct decompose_lu {
         mat2d lu;
         vec1u ipiv;
-        mutable vec1d y;
         bool bad = false;
 
     public:
+        uint_t size() const {
+            return ipiv.size();
+        }
+
         template<typename T, typename enable = typename std::enable_if<
             meta::is_matrix<T>::value
         >::type>
-        bool decompose(const T& alpha) {
+        bool decompose(T alpha) {
             // LU decomposition
 
-            vif_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
+            phypp_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
                 "square matrix (", alpha.dims, ")");
 
             const uint_t n = alpha.dims[0];
 
-            y.resize(n);
-            lu.resize(alpha.dims);
-            ipiv = indgen<uint_t>(n);
+            lu = std::move(alpha);
+            ipiv = uindgen(n);
 
-            // Find pivot
-            for (uint_t i : range(n)) {
-                double aii = abs(alpha.safe(i,i));
-                for (uint_t k : range(i+1, n)) {
-                    double aki = abs(alpha.safe(k,i));
-                    if (aii < aki) {
-                        aii = aki;
-                        std::swap(ipiv.safe[i], ipiv.safe[k]);
-                    }
-                }
-            }
-
-            // Find L and U
             for (uint_t k : range(n)) {
-                for (uint_t i : range(k, n)) {
-                    double sum = 0.0;
-                    for (uint_t p : range(k)) {
-                        sum += lu.safe(i,p)*lu.safe(p,k);
+                // Find pivot
+                double akk = abs(lu.safe(k,k));
+                for (uint_t j : range(k+1, n)) {
+                    double ajk = abs(lu.safe(j,k));
+                    if (akk < ajk) {
+                        akk = ajk;
+                        ipiv.safe[k] = j;
                     }
-
-                    lu.safe(i,k) = alpha.safe(ipiv.safe[i],k) - sum;
                 }
 
+                // Apply pivot
+                if (ipiv.safe[k] != k) {
+                    for (uint_t j : range(n)) {
+                        std::swap(lu.safe(ipiv.safe[k],j), lu.safe(k,j));
+                    }
+                }
+
+                // If the matrix is singular, return an error
                 if (lu.safe(k,k) == 0.0) {
                     bad = true;
                 }
 
-                for (uint_t i : range(k+1, n)) {
-                    double sum = 0.0;
-                    for (uint_t p : range(k)) {
-                        sum += lu.safe(k,p)*lu.safe(p,i);
-                    }
+                // Find upper elements of row
+                for (uint_t j : range(k+1, n)) {
+                    lu.safe(k,j) /= lu.safe(k,k);
+                }
 
-                    lu.safe(k,i) = (alpha.safe(ipiv.safe[k],i) - sum)/lu.safe(k,k);
+                // Update remaining matrix elements
+                for (uint_t i : range(k+1, n))
+                for (uint_t j : range(k+1, n)) {
+                    lu.safe(i,j) -= lu.safe(i,k)*lu.safe(k,j);
                 }
             }
 
             return !bad;
+        }
+
+        vec1d solve(vec1d x) const {
+            phypp_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
+                "dimensions (got ", lu.dims[0], " and ", x.dims[0], ")");
+
+            vec1d r(x.size());
+            const uint_t n = x.size();
+
+            // Solve L*y = x
+            for (uint_t k : range(n)) {
+                // Apply pivot
+                if (ipiv.safe[k] != k) {
+                    std::swap(x.safe[k], x.safe[ipiv.safe[k]]);
+                }
+
+                r.safe[k] = x.safe[k];
+                for (uint_t i : range(k)) {
+                    r.safe[k] -= r.safe[i]*lu.safe(k,i);
+                }
+
+                r.safe[k] /= lu.safe(k,k);
+            }
+
+            // Solve U*z = y
+            uint_t k = n;
+            while (k > 0) {
+                --k;
+
+                for (uint_t i : range(k+1, n)) {
+                    r.safe[k] -= r.safe[i]*lu.safe(k,i);
+                }
+            }
+
+            return r;
         }
 
         mat2d invert() const {
@@ -169,72 +206,12 @@ namespace matrix {
             const uint_t n = lu.dims[0];
 
             for (uint_t c : range(n)) {
-                // Solve L*y = x
-                for (uint_t i : range(n)) {
-                    double sum = 0.0;
-                    for (uint_t p : range(i)) {
-                        sum += lu.safe(i,p)*y.safe[p];
-                    }
-
-                    y.safe[i] = ((c == ipiv.safe[i] ? 1.0 : 0.0) - sum)/lu.safe(i,i);
-                }
-
-                // Solve U*z = y
-                {
-                    uint_t i = n;
-                    while (i > 0) {
-                        --i;
-
-                        double sum = 0.0;
-                        uint_t p = n;
-                        while (p > i+1) {
-                            --p;
-                            sum += lu.safe(i,p)*inv.safe(p,c);
-                        }
-
-                        inv.safe(i,c) = y.safe[i] - sum;
-                    }
-                }
+                vec1d x(n);
+                x.safe[c] = 1.0;
+                inv(_,c) = solve(x);
             }
 
             return inv;
-        }
-
-        vec1d solve(const vec1d& x) const {
-            vif_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
-                "dimensions (got ", lu.dims[0], " and ", x.dims[0], ")");
-
-            vec1d r(x.size());
-            const uint_t n = x.size();
-
-            // Solve L*y = x
-            for (uint_t i : range(n)) {
-                double sum = 0.0;
-                for (uint_t p : range(i)) {
-                    sum += lu.safe(i,p)*y.safe[p];
-                }
-
-                y.safe[i] = (x.safe[ipiv.safe[i]] - sum)/lu.safe(i,i);
-            }
-
-            // Solve U*z = y
-            {
-                uint_t i = n;
-                while (i > 0) {
-                    --i;
-
-                    double sum = 0.0;
-                    uint_t p = n;
-                    while (p > i+1) {
-                        --p;
-                        sum += lu.safe(i,p)*r.safe[p];
-                    }
-
-                    r.safe[i] = y.safe[i] - sum;
-                }
-            }
-
-            return r;
         }
     };
 
