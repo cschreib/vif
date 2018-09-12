@@ -176,8 +176,9 @@ namespace matrix {
             // Solve L*y = x
             for (uint_t k : range(n)) {
                 // Apply pivot
-                if (ipiv.safe[k] != k) {
-                    std::swap(x.safe[k], x.safe[ipiv.safe[k]]);
+                uint_t pk = ipiv.safe[k];
+                if (pk != k) {
+                    std::swap(x.safe[k], x.safe[pk]);
                 }
 
                 r.safe[k] = x.safe[k];
@@ -205,10 +206,39 @@ namespace matrix {
             mat2d inv(lu.dims);
             const uint_t n = lu.dims[0];
 
+            vec1d r(n);
             for (uint_t c : range(n)) {
-                vec1d x(n);
-                x.safe[c] = 1.0;
-                inv(_,c) = solve(x);
+                uint_t i1 = c;
+
+                // Solve L*y = x
+                for (uint_t k : range(n)) {
+                    // Apply pivot
+                    uint_t pk = ipiv.safe[k];
+                    if (k == i1) {
+                        i1 = pk;
+                    } else if (pk == i1) {
+                        i1 = k;
+                    }
+
+                    r.safe[k] = (i1 == k);
+                    for (uint_t i : range(k)) {
+                        r.safe[k] -= r.safe[i]*lu.safe(k,i);
+                    }
+
+                    r.safe[k] /= lu.safe(k,k);
+                }
+
+                // Solve U*z = y
+                uint_t k = n;
+                while (k > 0) {
+                    --k;
+
+                    for (uint_t i : range(k+1, n)) {
+                        r.safe[k] -= r.safe[i]*lu.safe(k,i);
+                    }
+
+                    inv.safe(k,c) = r.safe[k];
+                }
             }
 
             return inv;
