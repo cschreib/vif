@@ -120,13 +120,13 @@ namespace matrix {
         bool decompose(T alpha) {
             // LU decomposition
 
-            phypp_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
+            vif_check(alpha.dims[0] == alpha.dims[1], "cannot do LU decomposition of a non "
                 "square matrix (", alpha.dims, ")");
 
             const uint_t n = alpha.dims[0];
 
             lu = std::move(alpha);
-            ipiv = uindgen(n);
+            ipiv = indgen(n);
 
             for (uint_t k : range(n)) {
                 // Find pivot
@@ -167,7 +167,7 @@ namespace matrix {
         }
 
         vec1d solve(vec1d x) const {
-            phypp_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
+            vif_check(lu.dims[0] == x.dims[0], "matrix and vector must have the same "
                 "dimensions (got ", lu.dims[0], " and ", x.dims[0], ")");
 
             vec1d r(x.size());
