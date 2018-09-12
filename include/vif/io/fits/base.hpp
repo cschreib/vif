@@ -205,6 +205,39 @@ namespace impl {
         };
 
         template<>
+        struct traits<short> {
+            using dtype = short;
+
+            static const char tform = 'I';
+            static const int ttype = TSHORT;
+            static const int image_type = SHORT_IMG;
+
+            static short def() {
+                return 0;
+            }
+
+            static bool is_convertible(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return false;
+                if (type == TLONGLONG) return false;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return false;
+                return false;
+            }
+
+            static bool is_convertible_narrow(int type) {
+                if (type == TSHORT) return true;
+                if (type == TLONG) return true;
+                if (type == TLONGLONG) return true;
+                if (type == TBIT) return true;
+                if (type == TBYTE) return true;
+                if (type == TINT32BIT) return true;
+                return false;
+            }
+        };
+
+        template<>
         struct traits<float> {
             using dtype = float;
 

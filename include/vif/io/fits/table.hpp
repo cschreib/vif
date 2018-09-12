@@ -110,13 +110,11 @@ namespace impl {
         // Traits to identify types that can be read from a FITS table
         template<typename T>
         struct is_readable_column_type : meta::is_any_type_of<T, meta::type_list<
-            bool, char, int_t, uint_t, float, double, std::string
+            bool, char, short, int_t, uint_t, float, double, std::string
         >> {};
 
         template<std::size_t D, typename T>
-        struct is_readable_column_type<vec<D,T>> : meta::is_any_type_of<T, meta::type_list<
-            bool, char, int_t, uint_t, float, double, std::string
-        >> {};
+        struct is_readable_column_type<vec<D,T>> : is_readable_column_type<T> {};
 
         template<typename T>
         struct is_readable_column_type<reflex::struct_t<T>> : std::true_type {};
@@ -1055,13 +1053,11 @@ namespace impl {
     namespace fits_impl {
         template<typename T>
         struct is_writable_column_type : meta::is_any_type_of<T, meta::type_list<
-            bool, char, int_t, uint_t, float, double, std::string
+            bool, char, short, int_t, uint_t, float, double, std::string
         >> {};
 
         template<std::size_t D, typename T>
-        struct is_writable_column_type<vec<D,T>> : meta::is_any_type_of<typename vec<D,T>::rtype, meta::type_list<
-            bool, char, int_t, uint_t, float, double, std::string
-        >> {};
+        struct is_writable_column_type<vec<D,T>> : is_writable_column_type<meta::rtype_t<T>::rtype> {};
 
         template<typename T>
         struct is_writable_column_type<reflex::struct_t<T>> : std::true_type {};
