@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+
 #include "vif/core/vec.hpp"
 #include "vif/core/error.hpp"
 #include "vif/core/range.hpp"

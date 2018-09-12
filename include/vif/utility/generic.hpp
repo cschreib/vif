@@ -1,6 +1,8 @@
 #ifndef VIF_UTILITY_GENERIC_HPP
 #define VIF_UTILITY_GENERIC_HPP
 
+#include <numeric>
+
 #include "vif/core/vec.hpp"
 #include "vif/core/meta.hpp"
 #include "vif/core/range.hpp"
