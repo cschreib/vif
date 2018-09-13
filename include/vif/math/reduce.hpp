@@ -685,11 +685,10 @@ namespace vif {
 
         vif_check(x.size() == y.size(),
             "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
-        vif_check(!y.empty(), "cannot integrate empty array");
 
         decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
-        for (uint_t i = 0; i < x.size()-1; ++i) {
-            r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
+        for (uint_t i : range(1, x.size())) {
+            r += 0.5*(y.safe[i]+y.safe[i-1])*(x.safe[i]-x.safe[i-1]);
         }
 
         return r;
@@ -705,10 +704,9 @@ namespace vif {
             "got dim=[", x.dims[0], ",...]");
         vif_check(x.dims[1] == y.size(),
             "incompatible x and y array dimensions (", x.dims[1], " vs ", y.size(), ")");
-        vif_check(!y.empty(), "cannot integrate empty array");
 
         decltype(y[0]*(x[1]-x[0])) r = 0;
-        for (uint_t i = 0; i < x.dims[1]; ++i) {
+        for (uint_t i : range(x.dims[1])) {
             r += y.safe[i]*(x.safe[i+x.dims[1]]-x.safe[i]);
         }
 
@@ -737,7 +735,7 @@ namespace vif {
             return 0.5*(y0+y1)*(x1-x0);
         } else {
             decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
-            for (uint_t i = i0; i < i1; ++i) {
+            for (uint_t i : range(i0, i1)) {
                 r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
             }
 
@@ -776,7 +774,7 @@ namespace vif {
             return y.safe[i1]*(x1 - x0);
         } else {
             decltype(y[0]*(x[1]-x[0])) r = 0;
-            for (uint_t i = i0; i < i1; ++i) {
+            for (uint_t i : range(i0, i1)) {
                 r += y.safe[i]*(x.safe[i+x.dims[1]]-x.safe[i]);
             }
 
@@ -837,7 +835,7 @@ namespace vif {
             return 0.5*(y0+y1)*(x1-x0);
         } else {
             decltype(0.5*y[0]*(x[1]-x[0])) r = 0;
-            for (uint_t i = i0; i < i1; ++i) {
+            for (uint_t i : range(i0, i1)) {
                 r += 0.5*(y.safe[i+1]+y.safe[i])*(x.safe[i+1]-x.safe[i]);
             }
 
