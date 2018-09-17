@@ -14,7 +14,7 @@
 
 #define VIF_INCLUDING_STRING_BITS
 #include "vif/utility/bits/string-base.hpp"
-#include "vif/utility/bits/string-find_replace.hpp"
+#include "vif/utility/bits/string-find-replace.hpp"
 #include "vif/utility/bits/string-split.hpp"
 #include "vif/utility/bits/string-format.hpp"
 #include "vif/utility/bits/string-regex.hpp"
