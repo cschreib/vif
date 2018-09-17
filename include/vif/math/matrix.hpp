@@ -10,8 +10,8 @@
 #include "vif/math/base.hpp"
 
 #define VIF_INCLUDING_MATH_MATRIX_BITS
-#include "vif/math/bits/matrix_types.hpp"
-#include "vif/math/bits/matrix_functions.hpp"
+#include "vif/math/bits/matrix-types.hpp"
+#include "vif/math/bits/matrix-functions.hpp"
 #undef VIF_INCLUDING_MATH_MATRIX_BITS
 
 #endif
