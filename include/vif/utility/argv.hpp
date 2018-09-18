@@ -53,15 +53,15 @@ namespace vif {
         }
 
         template<typename T, typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
-        void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, T& t) {
+        bool read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, T& t) {
             auto p = arg.find_first_of('=');
             if (p == arg.npos) {
                 if (arg[0] == '-') {
                     if (arg.substr(1) != name) {
-                        return;
+                        return false;
                     }
                 } else if (arg != name) {
-                    return;
+                    return false;
                 }
 
                 read = true;
@@ -70,25 +70,27 @@ namespace vif {
                 int_t p0 = arg[0] == '-' ? 1 : 0;
                 std::string aname = trim(arg.substr(p0, p - p0));
                 if (aname != name) {
-                    return;
+                    return false;
                 }
 
                 read = true;
                 std::string value = trim(trim(arg.substr(p+1)), "'\"");
                 valid = read_args_n2T_(t, value);
             }
+
+            return true;
         }
 
         template<typename T>
-        void read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, vec<1,T>& t) {
+        bool read_args_impl_(const std::string& arg, bool& read, bool& valid, const std::string& name, vec<1,T>& t) {
             auto p = arg.find_first_of('=');
             if (p == arg.npos) {
                 if (arg[0] == '-') {
                     if (arg.substr(1) != name) {
-                        return;
+                        return false;
                     }
                 } else if (arg != name) {
-                    return;
+                    return false;
                 }
 
                 read = true;
@@ -97,7 +99,7 @@ namespace vif {
                 int_t p0 = arg[0] == '-' ? 1 : 0;
                 std::string aname = trim(arg.substr(p0, p - p0));
                 if (aname != name) {
-                    return;
+                    return false;
                 }
 
                 read = true;
@@ -134,6 +136,8 @@ namespace vif {
                     }
                 }
             }
+
+            return true;
         }
 
         inline void read_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
@@ -150,18 +154,21 @@ namespace vif {
             }
 
             vec1u idm = where(find(argv, tname) != npos);
-            if (idm.empty()) {
+            bool found = false;
+            for (auto& i : idm) {
+                if (read_args_impl_(argv[i], read[i], valid[i], tname, t)) {
+                    found = true;
+                }
+                if (!valid[i]) {
+                    warning("could not convert '", tname, "' argument to type ", pretty_type_t(T));
+                    break;
+                }
+            }
+
+            if (!found) {
                 argv.push_back(tname+"="+to_string(t));
                 read.push_back(true);
                 valid.push_back(true);
-            } else {
-                for (auto& i : idm) {
-                    read_args_impl_(argv[i], read[i], valid[i], tname, t);
-                    if (!valid[i]) {
-                        warning("could not convert '", tname, "' argument to type ", pretty_type_t(T));
-                        break;
-                    }
-                }
             }
 
             if (pos != names.npos) {
@@ -182,18 +189,21 @@ namespace vif {
             if (pos != names.npos) ++pos;
 
             vec1u idm = where(find(argv, t.name) != npos);
-            if (idm.empty()) {
-                argv.push_back(t.name+"="+to_string(t.obj));
+            bool found = false;
+            for (auto& i : idm) {
+                if (read_args_impl_(argv[i], read[i], valid[i], t.name, t.obj)) {
+                    found = true;
+                }
+                if (!valid[i]) {
+                    warning("could not convert '", t.name, "' argument to type ", pretty_type_t(T));
+                    break;
+                }
+            }
+
+            if (!found) {
+                argv.push_back(tname+"="+to_string(t));
                 read.push_back(true);
                 valid.push_back(true);
-            } else {
-                for (auto& i : idm) {
-                    read_args_impl_(argv[i], read[i], valid[i], t.name, t.obj);
-                    if (!valid[i]) {
-                        warning("could not convert '", t.name, "' argument to type ", pretty_type_t(T));
-                        break;
-                    }
-                }
             }
 
             if (pos != names.npos && pos != names.size()) {
