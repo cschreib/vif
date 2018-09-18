@@ -140,6 +140,22 @@ namespace vif {
             return true;
         }
 
+        template<typename T>
+        std::string write_arg_(const T& t) {
+            return to_string(t);
+        }
+
+        template<typename T>
+        std::string write_arg_(const vec<1,T>& t) {
+            std::string str = "[";
+            for (uint_t i : range(t)) {
+                if (i != 0) str += ",";
+                str += to_string(t.safe[i]);
+            }
+            str += "]";
+            return str;
+        }
+
         inline void read_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
 
         template<typename T, typename ... Args>
@@ -166,7 +182,7 @@ namespace vif {
             }
 
             if (!found) {
-                argv.push_back(tname+"="+to_string(t));
+                argv.push_back(tname+"="+write_arg_(t));
                 read.push_back(true);
                 valid.push_back(true);
             }
@@ -201,7 +217,7 @@ namespace vif {
             }
 
             if (!found) {
-                argv.push_back(t.name+"="+to_string(t.obj));
+                argv.push_back(t.name+"="+write_arg_(t.obj));
                 read.push_back(true);
                 valid.push_back(true);
             }
