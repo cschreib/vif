@@ -104,28 +104,28 @@ namespace vif {
 
                 read = true;
                 std::string value = trim(arg.substr(p+1));
+
                 if (!value.empty() && value.front() == '[' && value.back() == ']') {
-                    t.clear();
+                    vec<1,meta::rtype_t<T>> tmpv;
 
                     value.erase(0,1); value.pop_back();
 
                     if (!value.empty()) {
                         vec1s vals = split(value, ",");
-                        t.reserve(vals.size());
+                        tmpv.reserve(vals.size());
                         meta::rtype_t<T> tmp;
                         for (auto& s : vals) {
                             bool v = read_args_n2T_(tmp, trim(trim(s), "'\""));
                             if (!v) {
-                                t.clear();
                                 valid = false;
-                                return;
+                                return false;
                             } else {
-                                t.push_back(tmp);
+                                tmpv.push_back(tmp);
                             }
                         }
                     }
 
-                    t.data.shrink_to_fit();
+                    t = tmpv;
                     valid = true;
                 } else {
                     meta::rtype_t<T> v;
@@ -201,7 +201,7 @@ namespace vif {
             }
 
             if (!found) {
-                argv.push_back(tname+"="+to_string(t));
+                argv.push_back(t.name+"="+to_string(t.obj));
                 read.push_back(true);
                 valid.push_back(true);
             }
