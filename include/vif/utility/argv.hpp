@@ -136,25 +136,31 @@ namespace vif {
             }
         }
 
-        inline void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
+        inline void read_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
 
         template<typename T, typename ... Args>
-        void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names, T& t,
+        void read_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names, T& t,
             Args&& ... args) {
 
             std::size_t pos = names.find_first_of(',');
-            std::string name = trim(names.substr(0, pos));
-            auto p = name.find_last_of('.');
-            if (p != name.npos) {
-                name = trim(name.substr(p+1));
+            std::string tname = trim(names.substr(0, pos));
+            auto p = tname.find_last_of('.');
+            if (p != tname.npos) {
+                tname = trim(tname.substr(p+1));
             }
 
-            vec1u idm = where(find(argv, name) != npos);
-            for (auto& i : idm) {
-                read_args_impl_(argv[i], read[i], valid[i], name, t);
-                if (!valid[i]) {
-                    warning("could not convert '", name, "' argument to type ", pretty_type_t(T));
-                    break;
+            vec1u idm = where(find(argv, tname) != npos);
+            if (idm.empty()) {
+                argv.push_back(tname+"="+to_string(t));
+                read.push_back(true);
+                valid.push_back(true);
+            } else {
+                for (auto& i : idm) {
+                    read_args_impl_(argv[i], read[i], valid[i], tname, t);
+                    if (!valid[i]) {
+                        warning("could not convert '", tname, "' argument to type ", pretty_type_t(T));
+                        break;
+                    }
                 }
             }
 
@@ -169,18 +175,24 @@ namespace vif {
         }
 
         template<typename T, typename ... Args>
-        void read_args_(const vec1s& argv, vec1b& read, vec1b& valid, const std::string& names,
+        void read_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names,
             impl::named_t<T> t, Args&& ... args) {
 
             std::size_t pos = names.find_first_of(')');
             if (pos != names.npos) ++pos;
 
             vec1u idm = where(find(argv, t.name) != npos);
-            for (auto& i : idm) {
-                read_args_impl_(argv[i], read[i], valid[i], t.name, t.obj);
-                if (!valid[i]) {
-                    warning("could not convert '", t.name, "' argument to type ", pretty_type_t(T));
-                    break;
+            if (idm.empty()) {
+                argv.push_back(t.name+"="+to_string(t.obj));
+                read.push_back(true);
+                valid.push_back(true);
+            } else {
+                for (auto& i : idm) {
+                    read_args_impl_(argv[i], read[i], valid[i], t.name, t.obj);
+                    if (!valid[i]) {
+                        warning("could not convert '", t.name, "' argument to type ", pretty_type_t(T));
+                        break;
+                    }
                 }
             }
 
@@ -196,7 +208,7 @@ namespace vif {
 
             uint_t narg = argc;
             argv_.resize(narg-1);
-            for (uint_t i = 1; i < narg; ++i) {
+            for (uint_t i : range(1, narg)) {
                 argv_.safe[i-1] = trim(argv[i]);
             }
 
@@ -206,8 +218,8 @@ namespace vif {
 
         explicit program_arguments(const vec1s& args) {
             argv_ = args;
-            read_.resize(args.size());
-            valid_ = !read_;
+            read_ = replicate(false, args.size());
+            valid_ = replicate(true, args.size());
         }
 
         ~program_arguments() {
