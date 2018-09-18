@@ -1294,6 +1294,13 @@ namespace astro {
     double sed2flux(const vec<1,TypeFL>& flam, const vec<1,TypeFR>& fres,
         const vec<1,TypeL>& lam, const vec<1,TypeS>& sed) {
 
+        vif_check(flam.dims == fres.dims, "incompatible dimensions for first x and y arrays "
+            "(", flam.dims, " vs. ", fres.dims, ")");
+        vif_check(lam.dims == sed.dims, "incompatible dimensions for second x and y arrays "
+            "(", lam.dims, " vs. ", sed.dims, ")");
+        vif_check(!flam.empty(), "first array cannot be empty");
+        vif_check(!lam.empty(), "second array cannot be empty");
+
         uint_t ised = lower_bound(lam, flam.safe[0]);
         if (ised == npos) return dnan;
         uint_t ifil = 0;
