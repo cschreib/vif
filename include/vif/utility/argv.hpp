@@ -226,6 +226,50 @@ namespace vif {
                 read_args_(argv, read, valid, names.substr(pos+1), std::forward<Args>(args)...);
             }
         }
+
+
+        inline void write_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names) {}
+
+        template<typename T, typename ... Args>
+        void write_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names, T& t,
+            Args&& ... args) {
+
+            std::size_t pos = names.find_first_of(',');
+            std::string tname = trim(names.substr(0, pos));
+            auto p = tname.find_last_of('.');
+            if (p != tname.npos) {
+                tname = trim(tname.substr(p+1));
+            }
+
+            argv.push_back(tname+"="+write_arg_(t));
+            read.push_back(true);
+            valid.push_back(true);
+
+            if (pos != names.npos) {
+                write_args_(argv, read, valid, names.substr(pos+1), std::forward<Args>(args)...);
+            } else if (sizeof...(Args) != 0) {
+                error("read_args: too few names provided");
+                note("please use the arg_list() macro and make sure that all variables are "
+                    "placed there");
+                throw std::logic_error("read_args: too few names provided");
+            }
+        }
+
+        template<typename T, typename ... Args>
+        void write_args_(vec1s& argv, vec1b& read, vec1b& valid, const std::string& names,
+            impl::named_t<T> t, Args&& ... args) {
+
+            std::size_t pos = names.find_first_of(')');
+            if (pos != names.npos) ++pos;
+
+            argv.push_back(t.name+"="+write_arg_(t.obj));
+            read.push_back(true);
+            valid.push_back(true);
+
+            if (pos != names.npos && pos != names.size()) {
+                read_args_(argv, read, valid, names.substr(pos+1), std::forward<Args>(args)...);
+            }
+        }
     }
 
     struct program_arguments {
@@ -264,6 +308,11 @@ namespace vif {
         template<typename ... Args>
         void read(const std::string& names, Args&& ... args) {
             impl::read_args_(argv_, read_, valid_, names, std::forward<Args>(args)...);
+        }
+
+        template<typename ... Args>
+        void write(const std::string& names, Args&& ... args) {
+            impl::write_args_(argv_, read_, valid_, names, std::forward<Args>(args)...);
         }
 
         std::string serialize() const {
