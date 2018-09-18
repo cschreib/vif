@@ -250,6 +250,10 @@ namespace vif {
             impl::read_args_(argv_, read_, valid_, names, std::forward<Args>(args)...);
         }
 
+        std::string serialize() const {
+            return collapse(argv_, " ");
+        }
+
     private :
         vec1s argv_;
         vec1b read_;
