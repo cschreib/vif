@@ -170,8 +170,8 @@ namespace vif {
     template<std::size_t Dim, typename Type, typename TypeW, typename enable = typename std::enable_if<
         std::is_arithmetic<meta::rtype_t<TypeW>>::value
     >::type>
-    meta::rtype_t<Type> weighted_median(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
-        vif_check(!v.empty(), "cannot find the weighted median of an empty vector");
+    meta::rtype_t<Type> weighted_percentile(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w, double p) {
+        vif_check(!v.empty(), "cannot find the weighted percentiles of an empty vector");
         vif_check(v.dims == w.dims, "incompatible dimensions between values and weights "
             "(", v.dims, " vs. ", w.dims, ")");
 
@@ -189,13 +189,20 @@ namespace vif {
             uint_t j = ids.safe[i];
             if (!is_nan(v.safe[j]) && !is_nan(w.safe[j])) {
                 tot += w.safe[j];
-                if (tot >= totw/2.0) {
+                if (tot >= totw*p) {
                     return v.safe[j];
                 }
             }
         }
 
         return dnan;
+    }
+
+    template<std::size_t Dim, typename Type, typename TypeW, typename enable = typename std::enable_if<
+        std::is_arithmetic<meta::rtype_t<TypeW>>::value
+    >::type>
+    meta::rtype_t<Type> weighted_median(const vec<Dim,Type>& v, const vec<Dim,TypeW>& w) {
+        return weighted_percentile(v, w, 0.5);
     }
 
     template<std::size_t Dim, typename Type, typename U, typename enable = typename std::enable_if<
