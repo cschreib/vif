@@ -13,6 +13,7 @@
 #include "vif/utility/bits/thread-queue.hpp"
 #include "vif/utility/bits/thread-worker.hpp"
 #include "vif/utility/bits/thread-worker-pool.hpp"
+#include "vif/utility/bits/thread-parallel-for.hpp"
 #undef VIF_INCLUDING_THREAD_BITS
 
 #endif
