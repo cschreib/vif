@@ -35,11 +35,12 @@ namespace thread {
                 uint_t di = n/workers.size() + 1;
                 uint_t i0 = ifirst;
                 uint_t i1 = ifirst + di;
+                bool local_verbose = verbose;
                 for (auto& t : workers) {
-                    t.start([&f,&iter,i0,i1,verbose=this->verbose]() {
+                    t.start([&f,&iter,i0,i1,local_verbose]() {
                         for (uint_t i : range(i0, i1)) {
                             f(i);
-                            if (verbose) {
+                            if (local_verbose) {
                                 ++iter;
                             }
                         }
