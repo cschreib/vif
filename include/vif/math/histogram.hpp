@@ -26,11 +26,36 @@ namespace vif {
     }
 
     template<typename T = double>
-    vec<2,T> make_bins(const vec<1,T>& v) {
+    vec<2,T> make_bins_from_edges(const vec<1,T>& v) {
+        vif_check(v.size() > 1, "need at least two values to build bins (got ", v.size(), ")");
+
         vec<2,T> b(2, v.size()-1);
         for (uint_t i : range(b.dims[1])) {
             b.safe(0,i) = v.safe[i];
             b.safe(1,i) = v.safe[i+1];
+        }
+
+        return b;
+    }
+
+    template<typename T = double>
+    vec<2,T> make_bins_from_centers(const vec<1,T>& v) {
+        vif_check(v.size() > 1, "need at least two values to build bins (got ", v.size(), ")");
+
+        vec<2,T> b(2, v.size());
+        uint_t n = v.size();
+        for (uint_t i : range(n)) {
+            if (i == 0) {
+                b.safe(0,i) = v.safe[0] - 0.5*(v.safe[1] - v.safe[0]);
+            } else {
+                b.safe(0,i) = b.safe(1,i-1);
+            }
+
+            if (i == n-1) {
+                b.safe(1,i) = v.safe[n-1] + 0.5*(v.safe[n-1] - v.safe[n-2]);
+            } else {
+                b.safe(1,i) = 0.5*(v.safe[i] + v.safe[i+1]);
+            }
         }
 
         return b;
