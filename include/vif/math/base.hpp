@@ -124,6 +124,32 @@ namespace vif {
         return 1.0/(t*t);
     }
 
+    float fast_exp(float x) {
+        // Implementation based on:
+        // https://stackoverflow.com/a/10792321/1565581
+
+        static_assert(sizeof(float) == sizeof(std::int32_t), "size of float and int32_t don't match");
+
+        if (x < -87.0f || x > 88.0f) return 0.0f;
+
+        // exp(x) = 2^i * 2^f; i = floor (log2(e) * x), 0 <= f <= 1
+        float t = x * 1.442695041f;
+        float fi = floor(t);
+        float f = t - fi;
+        std::int32_t i = (std::int32_t)fi;
+
+        // compute 2^f
+        f = (0.3371894346f*f + 0.657636276f)*f + 1.00172476f;
+
+        // scale by 2^i
+        std::int32_t k;
+        std::memcpy(&k, &f, sizeof(float));
+        k += (i << 23);
+        std::memcpy(&f, &k, sizeof(float));
+
+        return f;
+    }
+
     VIF_VECTORIZE(sqrt);
     VIF_VECTORIZE(sqr);
     VIF_VECTORIZE(invsqr);
@@ -143,6 +169,7 @@ namespace vif {
     VIF_VECTORIZE(asinh);
     VIF_VECTORIZE(atanh);
     VIF_VECTORIZE(exp);
+    VIF_VECTORIZE(fast_exp);
     VIF_VECTORIZE(log);
     VIF_VECTORIZE(log2);
     VIF_VECTORIZE(log10);
