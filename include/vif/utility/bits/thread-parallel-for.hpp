@@ -5,20 +5,86 @@
 namespace vif {
 namespace thread {
     struct parallel_for {
-        std::vector<thread_t> workers;
+        // Setup
         bool verbose = false;
         uint_t progress_step = 1;
         double update_rate = 0.1;
+        uint_t chunk_size = 0;
+
+    private :
+
+        struct worker_t {
+            thread_t thread;
+            parallel_for& pfor;
+
+            explicit worker_t(parallel_for& p) : pfor(p) {}
+
+            worker_t(worker_t&& w) : pfor(w.pfor) {}
+
+            worker_t(const worker_t& w) = delete;
+
+            template<typename F>
+            void start(const F& f, bool verbose) {
+                thread.start([this,&f,verbose]() {
+                    uint_t i0, i1;
+                    while (pfor.query_chunk(i0, i1)) {
+                        for (uint_t i : range(i0, i1)) {
+                            f(i);
+                            if (verbose) {
+                                ++pfor.iter;
+                            }
+                        }
+                    }
+                });
+            }
+
+            void join() {
+                thread.join();
+            }
+        };
+
+        // Workers
+        std::vector<parallel_for::worker_t> workers;
+
+        // Internal
+        std::mutex query_mutex;
+        std::atomic<uint_t> iter;
+        uint_t n, i0, i1, di;
+
+        bool query_chunk(uint_t& oi0, uint_t& oi1) {
+            std::unique_lock<std::mutex> l(query_mutex);
+
+            if (i0 == n) {
+                return false;
+            }
+
+            oi0 = i0;
+            oi1 = i1;
+
+            i0 = i1;
+            i1 += di;
+            if (i1 > n) {
+                i1 = n;
+            }
+
+            return true;
+        }
+
+    public :
 
         parallel_for() = default;
+        parallel_for(const parallel_for&) = delete;
+        parallel_for(parallel_for&&) = delete;
 
         explicit parallel_for(uint_t nthread) {
-            workers.resize(nthread);
+            for (uint_t i : range(nthread)) {
+                workers.emplace_back(*this);
+            }
         }
 
         template<typename F>
         void execute(const F& f, uint_t ifirst, uint_t ilast) {
-            uint_t n = ilast - ifirst;
+            n = ilast - ifirst;
 
             if (workers.empty()) {
                 // Single-threaded execution
@@ -31,39 +97,40 @@ namespace thread {
                 }
             } else {
                 // Multi-threaded execution
-                std::atomic<uint_t> iter(0);
-                uint_t di = n/workers.size() + 1;
-                uint_t i0 = ifirst;
-                uint_t i1 = ifirst + di;
-                bool local_verbose = verbose;
-                for (auto& t : workers) {
-                    t.start([&f,&iter,i0,i1,local_verbose]() {
-                        for (uint_t i : range(i0, i1)) {
-                            f(i);
-                            if (local_verbose) {
-                                ++iter;
-                            }
-                        }
-                    });
+                uint_t nchunk = (chunk_size == 0 ?
+                    workers.size() : std::max(workers.size(), n/chunk_size));
 
-                    i0 += di;
-                    i1 += di;
-                    if (i1 > n) {
-                        i1 = n;
-                    }
+                // Setup chunks
+                di = n/nchunk + 1;
+                i0 = ifirst;
+                i1 = ifirst + di;
+                iter = 0;
+
+                // Launch threads
+                for (auto& t : workers) {
+                    t.start(f, verbose);
+                }
+
+                progress_t pg;
+                if (verbose) {
+                    pg = progress_start(n);
                 }
 
                 // Wait for all threads to finish before returning
                 if (verbose) {
-                    auto pg = progress_start(n);
                     while (iter < n) {
                         thread::sleep_for(update_rate);
-                        if (verbose) print_progress(pg, iter);
+                        print_progress(pg, iter);
                     }
                 }
 
+                // Join all
                 for (auto& t : workers) {
                     t.join();
+                }
+
+                if (verbose) {
+                    print_progress(pg, iter);
                 }
             }
         }
