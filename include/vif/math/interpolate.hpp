@@ -268,7 +268,7 @@ namespace vif {
     }
 
     namespace impl {
-        template <typename TX, typename TY>
+        template<typename TX, typename TY>
         void interpolate_3spline_make_coefs(const vec<1,TY>& y, const vec<1,TX>& x,
             vec1d& b, vec1d& c, vec1d& d) {
 
@@ -311,7 +311,7 @@ namespace vif {
                                     + 3*d.safe[n-1]*sqr(x.safe[n]-x.safe[n-1]);
         }
 
-        template <typename TX, typename TY>
+        template<typename TY = double>
         void interpolate_3spline_make_coefs(const vec<1,TY>& y, vec1d& b, vec1d& c, vec1d& d) {
             const uint_t n = y.size()-1;
 
@@ -351,7 +351,7 @@ namespace vif {
     // If one of the arrays contains special values (NaN, inf, ...), all the points that would use
     // these values will be contaminated. If 'x' is not properly sorted, the result will simply be
     // wrong.
-    template <std::size_t D, typename TN = double, typename TX = double, typename TY = double>
+    template<std::size_t D, typename TN = double, typename TX = double, typename TY = double>
     vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x,
         const vec<D,TN>& xn) {
 
@@ -384,7 +384,7 @@ namespace vif {
     // If one of the arrays contains special values (NaN, inf, ...), all the points that would use
     // these values will be contaminated. If 'x' is not properly sorted, the result will simply be
     // wrong.
-    template <typename TX = double, typename TY = double, typename T = double,
+    template<typename TX = double, typename TY = double, typename T = double,
         typename enable = typename std::enable_if<!meta::is_vec<T>::value>::type>
     meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const vec<1,TX>& x,
         const T& xn) {
@@ -410,7 +410,7 @@ namespace vif {
     // Perform cubic interpolation of the regularly gridded data 'y' at the new positions 'nx'.
     // Assumes that the data array only contains finite elements. If this is not the case,
     // all the points that would use these values will be contaminated.
-    template <std::size_t D, typename TN, typename TY>
+    template<std::size_t D, typename TN, typename TY>
     vec<D,meta::rtype_t<TY>> interpolate_3spline(const vec<1,TY>& y, const vec<D,TN>& xn) {
         vec<D,meta::rtype_t<TY>> yn(xn.dims);
 
@@ -438,7 +438,7 @@ namespace vif {
     // Perform cubic interpolation of the regularly gridded data 'y' at the new positions 'nx'.
     // Assumes that the data array only contains finite elements. If this is not the case,
     // all the points that would use these values will be contaminated.
-    template <typename TN, typename TY>
+    template<typename TN, typename TY>
     meta::rtype_t<TY> interpolate_3spline(const vec<1,TY>& y, const TN& xn) {
         vif_check(y.size() >= 2, "'y' array must contain at least 2 elements");
 
