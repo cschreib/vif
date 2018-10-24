@@ -16,6 +16,7 @@ namespace lapack {
         int* ldb, double* work, int* lwork, int* info);
     extern "C" void dsyev_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
         double* work, int* lwork, int* info);
+    extern "C" void dpotrf_(char* uplo, int* n, double* a, int* lda, int* info);
 }
 
 #endif

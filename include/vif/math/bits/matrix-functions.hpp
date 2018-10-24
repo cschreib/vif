@@ -258,6 +258,57 @@ namespace matrix {
         }
     };
 
+    // Source of is adapted from:
+    // https://rosettacode.org/wiki/Cholesky_decomposition#C
+    bool decompose_cholesky_inplace(mat2d& a) {
+        vif_check(a.dims[0] == a.dims[1], "Cholesky decomposition can only operate on square "
+            "matrices (given ", a.dims, ")");
+
+    #ifdef NO_LAPACK
+        for (uint_t i : range(a.dims[0])) {
+            for (uint_t j : range(i+1)) {
+                double s = 0.0;
+                for (uint_t k : range(j)) {
+                    s += a.safe(i,k)*a.safe(j,k);
+                }
+
+                if (i == j) {
+                    s = a.safe(i,i) - s;
+                    if (s <= 0.0) return false;
+                    a.safe(i,i) = sqrt(s);
+                } else {
+                    a.safe(i,j) = (a.safe(i,j) - s)/a.safe(j,j);
+                }
+            }
+
+            for (uint_t j : range(i+1, a.dims[0])) {
+                a.safe(i,j) = 0.0;
+            }
+        }
+
+        return true;
+    #else
+        char uplo = 'U';
+        int n = a.dims[0];
+        int lda = n;
+        int info;
+
+        lapack::dpotrf_(&uplo, &n, a.raw_data(), &lda, &info);
+
+        for (uint_t i : range(n))
+        for (uint_t j : range(i+1, n)) {
+            a.safe(i,j) = 0.0;
+        }
+
+        return info == 0;
+    #endif
+    };
+
+    bool decompose_cholesky(const mat2d& a, mat2d& ch) {
+        ch = a;
+        return decompose_cholesky_inplace(ch);
+    }
+
     template<typename T, typename enable = typename std::enable_if<
         meta::is_matrix<T>::value && std::is_same<meta::data_type_t<T>, double>::value &&
         !meta::is_view<T>::value
