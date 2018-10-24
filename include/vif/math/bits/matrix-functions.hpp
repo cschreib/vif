@@ -105,6 +105,10 @@ namespace matrix {
     // Source of this class is adapted from:
     // http://www.mymathlib.com/matrices/linearsystems/crout.html
     struct decompose_lu {
+        // Options
+        bool no_pivot = false;
+
+        // Outputs
         mat2d lu;
         vec1u ipiv;
         bool bad = false;
@@ -131,18 +135,20 @@ namespace matrix {
             for (uint_t k : range(n)) {
                 // Find pivot
                 double akk = abs(lu.safe(k,k));
-                for (uint_t j : range(k+1, n)) {
-                    double ajk = abs(lu.safe(j,k));
-                    if (akk < ajk) {
-                        akk = ajk;
-                        ipiv.safe[k] = j;
+                if (!no_pivot) {
+                    for (uint_t j : range(k+1, n)) {
+                        double ajk = abs(lu.safe(j,k));
+                        if (akk < ajk) {
+                            akk = ajk;
+                            ipiv.safe[k] = j;
+                        }
                     }
-                }
 
-                // Apply pivot
-                if (ipiv.safe[k] != k) {
-                    for (uint_t j : range(n)) {
-                        std::swap(lu.safe(ipiv.safe[k],j), lu.safe(k,j));
+                    // Apply pivot
+                    if (ipiv.safe[k] != k) {
+                        for (uint_t j : range(n)) {
+                            std::swap(lu.safe(ipiv.safe[k],j), lu.safe(k,j));
+                        }
                     }
                 }
 
@@ -175,10 +181,12 @@ namespace matrix {
 
             // Solve L*y = x
             for (uint_t k : range(n)) {
-                // Apply pivot
-                uint_t pk = ipiv.safe[k];
-                if (pk != k) {
-                    std::swap(x.safe[k], x.safe[pk]);
+                if (!no_pivot) {
+                    // Apply pivot
+                    uint_t pk = ipiv.safe[k];
+                    if (pk != k) {
+                        std::swap(x.safe[k], x.safe[pk]);
+                    }
                 }
 
                 r.safe[k] = x.safe[k];
@@ -212,15 +220,20 @@ namespace matrix {
 
                 // Solve L*y = x
                 for (uint_t k : range(n)) {
-                    // Apply pivot
-                    uint_t pk = ipiv.safe[k];
-                    if (k == i1) {
-                        i1 = pk;
-                    } else if (pk == i1) {
-                        i1 = k;
+                    if (!no_pivot) {
+                        // Apply pivot
+                        uint_t pk = ipiv.safe[k];
+                        if (k == i1) {
+                            i1 = pk;
+                        } else if (pk == i1) {
+                            i1 = k;
+                        }
+
+                        r.safe[k] = (i1 == k);
+                    } else {
+                        r.safe[k] = 1.0;
                     }
 
-                    r.safe[k] = (i1 == k);
                     for (uint_t i : range(k)) {
                         r.safe[k] -= r.safe[i]*lu.safe(k,i);
                     }
