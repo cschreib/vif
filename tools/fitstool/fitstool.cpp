@@ -276,7 +276,7 @@ bool transpose_columns(int argc, char* argv[], const std::string& file) {
             fits::vif_check_cfitsio(status, "cannot re-write TDIM for column '"+col+"'");
 
             fits_write_col(
-                fptr, impl::fits_impl::traits<double>::ttype, id, 1, 1, n_elements(v),
+                fptr, impl::fits_impl::traits<double>::ttype, id, 1, 1, v.size(),
                 const_cast<vec2d::dtype*>(v.data.data()), &status
             );
             fits::vif_check_cfitsio(status, "cannot write transposed data for column '"+col+"'");
