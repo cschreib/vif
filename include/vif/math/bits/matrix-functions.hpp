@@ -112,6 +112,7 @@ namespace matrix {
         mat2d lu;
         vec1u ipiv;
         bool bad = false;
+        uint_t ns = 0;
 
     public:
         uint_t size() const {
@@ -132,6 +133,7 @@ namespace matrix {
             bad = false;
             lu = std::move(alpha);
             ipiv = indgen(n);
+            ns = 0;
 
             for (uint_t k : range(n)) {
                 // Find pivot
@@ -147,6 +149,8 @@ namespace matrix {
 
                     // Apply pivot
                     if (ipiv.safe[k] != k) {
+                        ++ns;
+
                         for (uint_t j : range(n)) {
                             std::swap(lu.safe(ipiv.safe[k],j), lu.safe(k,j));
                         }
@@ -256,6 +260,16 @@ namespace matrix {
             }
 
             return inv;
+        }
+
+        double determinant() const {
+            double d = (ns % 2 == 0 ? 1.0 : -1.0);
+            const uint_t n = lu.dims[0];
+            for (uint_t i : range(n)) {
+                d *= lu.safe(i,i);
+            }
+
+            return d;
         }
     };
 
@@ -401,7 +415,33 @@ namespace matrix {
 
             return inv;
         }
+
+        double determinant() const {
+            double d = 1.0;
+            const uint_t n = l.dims[0];
+            for (uint_t i : range(n)) {
+                d *= l.safe(i,i);
+            }
+
+            return d;
+        }
     };
+
+
+    template<typename Type, typename enable = typename std::enable_if<
+        meta::is_matrix<Type>::value
+    >::type>
+    auto determinant(const Type& v) -> decltype(+v(0,0)) {
+        vif_check(v.dims[0] == v.dims[1], "cannot compute determinant of non-square matrix (got ",
+            v.dims, ")");
+
+        decompose_lu d;
+        if (!d.decompose(v)) {
+            return 0.0;
+        }
+
+        return d.determinant();
+    }
 
     template<typename T, typename enable = typename std::enable_if<
         meta::is_matrix<T>::value && std::is_same<meta::data_type_t<T>, double>::value &&
