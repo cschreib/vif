@@ -16,7 +16,7 @@ namespace matrix {
         meta::is_matrix<Type>::value && !std::is_reference<Type>::value
     >::type>
     auto diagonal(Type&& v) -> decltype(v(_,0).concretise()) {
-        vif_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+        vif_check(v.dims[0] == v.dims[1], "cannot get diagnoal of non-square matrix (got ",
             v.dims, ")");
 
         decltype(v(_,0).concretise()) d(v.dims[0]);
@@ -31,7 +31,7 @@ namespace matrix {
         meta::is_matrix<Type>::value
     >::type>
     auto diagonal(Type& v) -> decltype(v(_,0)) {
-        vif_check(v.dims[0] == v.dims[1], "can only be called on square matrix (got ",
+        vif_check(v.dims[0] == v.dims[1], "cannot get diagnoal of non-square matrix (got ",
             v.dims, ")");
 
         decltype(v(_,0)) d(impl::vec_ref_tag, impl::vec_access::get_parent(v.base));
