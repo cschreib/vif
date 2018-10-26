@@ -129,6 +129,7 @@ namespace matrix {
 
             const uint_t n = alpha.dims[0];
 
+            bad = false;
             lu = std::move(alpha);
             ipiv = indgen(n);
 
@@ -258,56 +259,149 @@ namespace matrix {
         }
     };
 
-    // Source of is adapted from:
+    // Source of this class is adapted from:
     // https://rosettacode.org/wiki/Cholesky_decomposition#C
-    bool decompose_cholesky_inplace(mat2d& a) {
-        vif_check(a.dims[0] == a.dims[1], "Cholesky decomposition can only operate on square "
-            "matrices (given ", a.dims, ")");
+    struct decompose_cholesky {
+        // Outputs
+        mat2d l;
+        bool bad = false;
 
-    #ifdef NO_LAPACK
-        for (uint_t i : range(a.dims[0])) {
-            for (uint_t j : range(i+1)) {
-                double s = 0.0;
-                for (uint_t k : range(j)) {
-                    s += a.safe(i,k)*a.safe(j,k);
+    public:
+        uint_t size() const {
+            return l.dims[0];
+        }
+
+        template<typename T, typename enable = typename std::enable_if<
+            meta::is_matrix<T>::value
+        >::type>
+        bool decompose(T alpha) {
+            // Cholesky decomposition
+            vif_check(alpha.dims[0] == alpha.dims[1], "cannot do Cholesky decomposition of a non "
+                "square matrix (", alpha.dims, ")");
+
+            bad = false;
+            l = std::move(alpha);
+
+        #ifdef NO_LAPACK
+            const uint_t n = alpha.dims[0];
+            for (uint_t i : range(n)) {
+                for (uint_t j : range(i+1)) {
+                    double s = 0.0;
+                    for (uint_t k : range(j)) {
+                        s += l.safe(i,k)*l.safe(j,k);
+                    }
+
+                    if (i == j) {
+                        s = l.safe(i,i) - s;
+                        if (s <= 0.0) {
+                            bad = true;
+                            return false;
+                        }
+                        l.safe(i,i) = sqrt(s);
+                    } else {
+                        l.safe(i,j) = (l.safe(i,j) - s)/l.safe(j,j);
+                    }
                 }
 
-                if (i == j) {
-                    s = a.safe(i,i) - s;
-                    if (s <= 0.0) return false;
-                    a.safe(i,i) = sqrt(s);
-                } else {
-                    a.safe(i,j) = (a.safe(i,j) - s)/a.safe(j,j);
+                for (uint_t j : range(i+1, n)) {
+                    l.safe(i,j) = 0.0;
                 }
             }
+        #else
+            char uplo = 'U';
+            int n = l.dims[0];
+            int lda = n;
+            int info;
 
-            for (uint_t j : range(i+1, a.dims[0])) {
-                a.safe(i,j) = 0.0;
+            lapack::dpotrf_(&uplo, &n, l.raw_data(), &lda, &info);
+
+            for (uint_t i : range(n))
+            for (uint_t j : range(i+1, n)) {
+                l.safe(i,j) = 0.0;
+            }
+
+            bad = info != 0;
+        #endif
+
+            return !bad;
+        }
+
+        void substitute_forward_inplace(vec1d& x) const {
+            vif_check(l.dims[0] == x.dims[0], "matrix and vector must have the same "
+                "dimensions (got ", l.dims[0], " and ", x.dims[0], ")");
+
+            const uint_t n = x.size();
+
+            // Solve L*y = x
+            for (uint_t k : range(n)) {
+                for (uint_t i : range(k)) {
+                    x.safe[k] -= x.safe[i]*l.safe(k,i);
+                }
+
+                x.safe[k] /= l.safe(k,k);
             }
         }
 
-        return true;
-    #else
-        char uplo = 'U';
-        int n = a.dims[0];
-        int lda = n;
-        int info;
-
-        lapack::dpotrf_(&uplo, &n, a.raw_data(), &lda, &info);
-
-        for (uint_t i : range(n))
-        for (uint_t j : range(i+1, n)) {
-            a.safe(i,j) = 0.0;
+        vec1d substitute_forward(vec1d x) const {
+            substitute_forward_inplace(x);
+            return std::move(x);
         }
 
-        return info == 0;
-    #endif
+        void substitute_backward_inplace(vec1d& x) const {
+            vif_check(l.dims[0] == x.dims[0], "matrix and vector must have the same "
+                "dimensions (got ", l.dims[0], " and ", x.dims[0], ")");
+
+            const uint_t n = x.size();
+
+            // Solve L^t*y = x
+            uint_t k = n;
+            while (k > 0) {
+                --k;
+
+                for (uint_t i : range(k+1, n)) {
+                    x.safe[k] -= x.safe[i]*l.safe(i,k);
+                }
+
+                x.safe[k] /= l.safe(k,k);
+            }
+        }
+
+        vec1d substitute_backward(vec1d x) const {
+            substitute_backward_inplace(x);
+            return std::move(x);
+        }
+
+        void solve_inplace(vec1d& x) const {
+            vif_check(l.dims[0] == x.dims[0], "matrix and vector must have the same "
+                "dimensions (got ", l.dims[0], " and ", x.dims[0], ")");
+
+            substitute_forward_inplace(x);
+            substitute_backward_inplace(x);
+        }
+
+        vec1d solve(vec1d x) const {
+            solve_inplace(x);
+            return std::move(x);
+        }
+
+        mat2d invert() const {
+            mat2d inv(l.dims);
+            const uint_t n = l.dims[0];
+
+            vec1d x(n);
+            for (uint_t c : range(n)) {
+                x.safe[c] = 1.0;
+                substitute_forward_inplace(x);
+                substitute_backward_inplace(x);
+                for (uint_t i : range(x)) {
+                    inv.safe(c,i) = x.safe[i];
+                    x.safe[i] = 0.0;
+                }
+            }
+
+            return inv;
+        }
     };
-
-    bool decompose_cholesky(const mat2d& a, mat2d& ch) {
-        ch = a;
-        return decompose_cholesky_inplace(ch);
-    }
 
     template<typename T, typename enable = typename std::enable_if<
         meta::is_matrix<T>::value && std::is_same<meta::data_type_t<T>, double>::value &&
