@@ -2,6 +2,7 @@
 #define VIF_MATH_MATH_HPP
 
 #include <cmath>
+#include <cstring>
 #include <limits>
 #ifndef NO_GSL
 #include <gsl/gsl_sf_bessel.h>
