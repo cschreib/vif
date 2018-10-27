@@ -1286,7 +1286,8 @@ namespace fits {
 
         vec<1,long> write_column_get_dims_(const std::string& value, uint_t& nrow) {
             nrow = 1;
-            return {{long(value.size())}};
+            vec<1,long> v = {long(value.size())};
+            return v;
         }
 
         template<typename Type>
