@@ -125,7 +125,7 @@ namespace vif {
         return 1.0/(t*t);
     }
 
-    float fast_exp(float x) {
+    inline float fast_exp(float x) {
         // Implementation based on:
         // https://stackoverflow.com/a/10792321/1565581
 
