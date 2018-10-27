@@ -92,8 +92,6 @@ if(NOT VIF_FOUND)
     # find required libraries
     find_package(Threads REQUIRED)
 
-    set(VIF_LIBRARIES ${VIF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-
     # find optional libraries
     if (NOT NO_CFITSIO)
         find_package(CFITSIO)
@@ -194,6 +192,9 @@ if(NOT VIF_FOUND)
     if (PROFILER_LIBRARY)
         set(VIF_LIBRARIES ${VIF_LIBRARIES} ${PROFILER_LIBRARY})
     endif()
+
+    # Handle pthread (must be last)
+    set(VIF_LIBRARIES ${VIF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 # Function to compile a vif program in CMake
