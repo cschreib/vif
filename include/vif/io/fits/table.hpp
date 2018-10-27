@@ -1117,7 +1117,8 @@ namespace fits {
                         // We are at the last HDU, so just delete and create
                         fits_delete_hdu(fptr_, nullptr, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
-                        fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
+                        fits_insert_btbl(fptr_, 1, 0,
+                            nullptr, nullptr, nullptr, nullptr, 0, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
                     } else {
                         vif_check(hdu != 0, "cannot write tables in the primary HDU");
@@ -1129,14 +1130,15 @@ namespace fits {
                         fits_movrel_hdu(fptr_, -1, nullptr, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
                         // Add the new extension
-                        fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
+                        fits_insert_btbl(fptr_, 1, 0,
+                            nullptr, nullptr, nullptr, nullptr, 0, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
 
                     }
                 }
             } else {
                 // No HDU yet, just create the primary array and a table extension
-                fits_insert_btbl(fptr_, 1, 0, 0, 0, 0, nullptr, 0, &status_);
+                fits_insert_btbl(fptr_, 1, 0, nullptr, nullptr, nullptr, nullptr, 0, &status_);
                 fits::vif_check_cfitsio(status_, "could not create table HDU");
             }
         }
