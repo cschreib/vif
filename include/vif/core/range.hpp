@@ -16,7 +16,7 @@ namespace impl {
             template <typename U> static std::true_type dummy(typename std::decay<
                 decltype(std::declval<U&>().size())>::type*);
             template <typename U> static std::false_type dummy(...);
-            using type = decltype(dummy<T>(0));
+            using type = decltype(dummy<T>(nullptr));
         };
 
         template<typename T>

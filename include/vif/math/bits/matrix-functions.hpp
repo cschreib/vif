@@ -358,7 +358,7 @@ namespace matrix {
 
         vec1d substitute_forward(vec1d x) const {
             substitute_forward_inplace(x);
-            return std::move(x);
+            return x;
         }
 
         void substitute_backward_inplace(vec1d& x) const {
@@ -382,7 +382,7 @@ namespace matrix {
 
         vec1d substitute_backward(vec1d x) const {
             substitute_backward_inplace(x);
-            return std::move(x);
+            return x;
         }
 
         void solve_inplace(vec1d& x) const {
@@ -395,7 +395,7 @@ namespace matrix {
 
         vec1d solve(vec1d x) const {
             solve_inplace(x);
-            return std::move(x);
+            return x;
         }
 
         mat2d invert() const {

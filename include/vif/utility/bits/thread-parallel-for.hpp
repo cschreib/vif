@@ -77,7 +77,7 @@ namespace thread {
         parallel_for(parallel_for&&) = delete;
 
         explicit parallel_for(uint_t nthread) {
-            for (uint_t i : range(nthread)) {
+            for (uint_t i = 0; i < nthread; ++i) {
                 workers.emplace_back(*this);
             }
         }
