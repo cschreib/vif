@@ -451,6 +451,16 @@ namespace matrix {
 
             return d;
         }
+
+        double log_determinant() const {
+            double d = 0.0;
+            const uint_t n = l.dims[0];
+            for (uint_t i : range(n)) {
+                d += log(l.safe(i,i));
+            }
+
+            return d;
+        }
     };
 
 
