@@ -389,8 +389,19 @@ namespace matrix {
             vif_check(l.dims[0] == x.dims[0], "matrix and vector must have the same "
                 "dimensions (got ", l.dims[0], " and ", x.dims[0], ")");
 
+        #ifdef NO_LAPACK
             substitute_forward_inplace(x);
             substitute_backward_inplace(x);
+        #else
+            char uplo = 'U';
+            int n = l.dims[0];
+            int nrhs = 1;
+            int lda = n;
+            int ldb = n;
+            int info;
+
+            lapack::dpotrs_(&uplo, &n, &nrhs, l.raw_data(), &lda, x.raw_data(), &ldb, &info);
+        #endif
         }
 
         vec1d solve(vec1d x) const {
@@ -399,6 +410,7 @@ namespace matrix {
         }
 
         mat2d invert() const {
+        #ifdef NO_LAPACK
             mat2d inv(l.dims);
             const uint_t n = l.dims[0];
 
@@ -412,6 +424,20 @@ namespace matrix {
                     x.safe[i] = 0.0;
                 }
             }
+        #else
+            mat2d inv = l;
+            char uplo = 'U';
+            int n = l.dims[0];
+            int lda = n;
+            int info;
+
+            lapack::dpotri_(&uplo, &n, inv.raw_data(), &lda, &info);
+
+            for (uint_t i : range(n))
+            for (uint_t j : range(i+1, n)) {
+                inv.safe(i,j) = inv.safe(j,i);
+            }
+        #endif
 
             return inv;
         }
