@@ -29,6 +29,12 @@ namespace vif {
 
     template<typename F>
     minimize_result minimize_bfgs(const minimize_params& opts, const vec1d& start, F&& func) {
+    #ifdef NO_GSL
+        static_assert(!std::is_same<F,F>::value, "please enable the GSL library to use "
+            "this function");
+
+        return minimize_result{};
+    #else
         using func_ptr = typename std::decay<decltype(func)>::type*;
 
         // Initialize return value
@@ -135,6 +141,7 @@ namespace vif {
         }
 
         return ret;
+    #endif
     }
 }
 
