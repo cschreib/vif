@@ -111,7 +111,7 @@ namespace vif {
                 status = gsl_multimin_fdfminimizer_iterate(m);
                 if (status != 0) break;
 
-                status = gsl_multimin_test_gradient(m->gradient, 1e-3);
+                status = gsl_multimin_test_gradient(m->gradient, opts.ftol);
                 if (status == GSL_SUCCESS) {
                     ret.success = true;
                     break;
