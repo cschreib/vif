@@ -115,10 +115,18 @@ namespace vif {
                 ++ret.niter;
 
                 status = gsl_multimin_fdfminimizer_iterate(m);
-                if (status != 0) break;
+                if (status != 0) {
+                    if (status == GSL_ENOPROG) {
+                        // No progress possible, local minimum found
+                        ret.success = true;
+                    }
+
+                    break;
+                }
 
                 status = gsl_multimin_test_gradient(m->gradient, opts.ftol);
                 if (status == GSL_SUCCESS) {
+                    // Gradient small enough, local minimum found
                     ret.success = true;
                     break;
                 }
