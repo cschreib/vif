@@ -366,8 +366,9 @@ namespace vif {
     template<typename TypeY>
     auto cumul(const vec<1,TypeY>& y) -> vec<1,meta::rtype_t<TypeY>> {
         vec<1,meta::rtype_t<TypeY>> dr(y.dims);
-        for (uint_t i : range(1, y.size())) {
-            dr.safe[i] = dr.safe[i-1] + y.safe[i];
+        for (uint_t i : range(y)) {
+            if (i != 0) dr.safe[i] = dr.safe[i-1];
+            dr.safe[i] += y.safe[i];
         }
 
         return dr;
@@ -376,8 +377,10 @@ namespace vif {
     template<typename TypeY>
     auto cumul_reverse(const vec<1,TypeY>& y) -> vec<1,meta::rtype_t<TypeY>> {
         vec<1,meta::rtype_t<TypeY>> dr(y.dims);
-        for (uint_t i : range(1, y.size())) {
-            dr.safe[dr.size()-1-i] = dr.safe[dr.size()-i] + y.safe[y.size()-1-i];
+        for (uint_t i : range(y)) {
+            uint_t ri = y.size()-1-i;
+            if (i != 0) dr.safe[ri] = y.safe[ri+1];
+            dr.safe[ri] += y.safe[ri];
         }
 
         return dr;
