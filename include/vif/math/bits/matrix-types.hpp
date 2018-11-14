@@ -600,5 +600,24 @@ namespace matrix {
     auto operator - (const TypeA& a, TypeB&& b) -> mat<decltype(a-b(0,0))> {
         return mat<decltype(a-b(0,0))>(a - std::forward<TypeB>(b).base);
     }
+
+
+    // Conversion to string
+    template<typename O, typename Type, typename enable = typename std::enable_if<
+        meta::is_matrix<Type>::value
+    >::type>
+    O& operator << (O& o, const Type& v) {
+        for (uint_t i : range(v.dims[0])) {
+            o << '[';
+            for (uint_t j : range(v.dims[1])) {
+                if (j != 0) o << ", ";
+                o << v.safe(i,j);
+            }
+            o << ']';
+            if (i != v.dims[0]-1) o << '\n';
+        }
+
+        return o;
+    }
 }
 }
