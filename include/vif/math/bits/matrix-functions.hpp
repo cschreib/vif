@@ -442,6 +442,34 @@ namespace matrix {
             return inv;
         }
 
+        mat2d lower_inverse() const {
+        #ifdef NO_LAPACK
+            mat2d inv(l.dims);
+            const uint_t n = l.dims[0];
+
+            vec1d x(n);
+            for (uint_t c : range(n)) {
+                x.safe[c] = 1.0;
+                substitute_backward_inplace(x);
+                for (uint_t i : range(x)) {
+                    inv.safe(c,i) = x.safe[i];
+                    x.safe[i] = 0.0;
+                }
+            }
+        #else
+            mat2d inv = l;
+            char uplo = 'U';
+            char diag = 'N';
+            int n = l.dims[0];
+            int lda = n;
+            int info = 0;
+
+            lapack::dtrtri_(&uplo, &diag, &n, inv.raw_data(), &lda, &info);
+        #endif
+
+            return inv;
+        }
+
         double determinant() const {
             double d = 1.0;
             const uint_t n = l.dims[0];

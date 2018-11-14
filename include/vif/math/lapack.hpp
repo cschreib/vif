@@ -21,6 +21,8 @@ namespace lapack {
     extern "C" void dpotrf_(char* uplo, int* n, double* a, int* lda, int* info);
     extern "C" void dpotri_(char* uplo, int* n, double* a, int* lda, int* info);
     extern "C" void dpotrs_(char* uplo, int* n, int* nrhs, const double* a, int* lda, double* b, int* ldb, int* info);
+
+    extern "C" void dtrtri_(char* uplo, char* diag, int* n, double* a, int* lda, int* info);
 }
 
 #endif
