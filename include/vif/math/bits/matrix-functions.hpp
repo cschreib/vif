@@ -470,7 +470,7 @@ namespace matrix {
             return inv;
         }
 
-        double determinant() const {
+        double lower_determinant() const {
             double d = 1.0;
             const uint_t n = l.dims[0];
             for (uint_t i : range(n)) {
@@ -480,7 +480,7 @@ namespace matrix {
             return d;
         }
 
-        double log_determinant() const {
+        double log_lower_determinant() const {
             double d = 0.0;
             const uint_t n = l.dims[0];
             for (uint_t i : range(n)) {
