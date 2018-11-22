@@ -308,6 +308,17 @@ namespace impl {
 }
 
 namespace ascii {
+    template<typename Input>
+    bool getline(Input& in, std::string& out) {
+        if (!std::getline(in, out)) return false;
+
+        while (!out.empty() && (out.back() == '\r' || out.back() == '\n')) {
+            out.resize(out.size()-1);
+        }
+
+        return true;
+    }
+
     template<typename ... Args>
     void read_table(const std::string& name, const input_format& opts, Args&& ... args) {
         vif_check(file::exists(name), "cannot open file '"+name+"'");
@@ -322,7 +333,7 @@ namespace ascii {
             // Count number of lines
             uint_t n = 0; {
                 while (!file.eof()) {
-                    std::getline(file, spl.line);
+                    ascii::getline(file, spl.line);
 
                     auto p = spl.line.find_first_not_of(" \t");
                     if (p == spl.line.npos || (opts.auto_skip && spl.line.find(opts.skip_pattern) == p)) {
@@ -346,7 +357,7 @@ namespace ascii {
             uint_t to_skip = opts.skip_first;
             while (!file.eof()) {
                 spl.reset();
-                std::getline(file, spl.line);
+                ascii::getline(file, spl.line);
 
                 auto p = spl.line.find_first_not_of(" \t");
                 if (p == spl.line.npos || (opts.auto_skip && spl.line.find(opts.skip_pattern) == p)) {
