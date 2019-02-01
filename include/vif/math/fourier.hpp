@@ -42,6 +42,31 @@ namespace vif {
         return r;
     }
 
+    // Compute the Fast Fourier Transform (FFT) of the provided 2d complex array
+    inline void fft_c2c(const vec2cd& v, vec2cd& r) {
+        fftw_plan p;
+        {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+            p = fftw_plan_dft_2d(v.dims[0], v.dims[1],
+                const_cast<fftw_complex*>(reinterpret_cast<const fftw_complex*>(v.raw_data())),
+                reinterpret_cast<fftw_complex*>(r.raw_data()), FFTW_FORWARD, FFTW_ESTIMATE);
+        }
+
+        fftw_execute(p);
+
+        {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+            fftw_destroy_plan(p);
+        }
+    }
+
+    // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+    inline vec2cd fft_c2c(const vec2cd& v) {
+        vec2cd r(v.dims);
+        fft_c2c(v, r);
+        return r;
+    }
+
     // Compute the Fast Fourier Transform (FFT) of the provided 2d array
     // NB: the FFTW routine does not preserve the data in input, so the
     // input array has to be copied
@@ -68,6 +93,35 @@ namespace vif {
     inline vec2d ifft(vec2cd v) {
         vec2d r(v.dims);
         ifft(v, r);
+        return r;
+    }
+
+    // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+    // NB: the FFTW routine does not preserve the data in input, so the
+    // input array has to be copied
+    inline void ifft_c2c(vec2cd v, vec2cd& r) {
+        fftw_plan p;
+        {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+            p = fftw_plan_dft_2d(v.dims[0], v.dims[1],
+                reinterpret_cast<fftw_complex*>(v.raw_data()),
+                reinterpret_cast<fftw_complex*>(r.raw_data()), FFTW_BACKWARD, FFTW_ESTIMATE);
+        }
+
+        fftw_execute(p);
+
+        {
+            std::lock_guard<std::mutex> lock(impl::fftw_planner_mutex());
+            fftw_destroy_plan(p);
+        }
+    }
+
+    // Compute the Fast Fourier Transform (FFT) of the provided 2d array
+    // NB: the FFTW routine does not preserve the data in input, so the
+    // input array has to be copied
+    inline vec2cd ifft_c2c(vec2cd v) {
+        vec2cd r(v.dims);
+        ifft_c2c(v, r);
         return r;
     }
     #endif
