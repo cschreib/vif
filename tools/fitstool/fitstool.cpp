@@ -1030,6 +1030,17 @@ bool make_2d(int argc, char* argv[], const std::string& file) {
                 if (status != 0) {
                     status = 0;
                 }
+
+                fits_delete_key(fptr, ("PC"+to_string(i)+"_"+
+                                            to_string(j)).c_str(), &status);
+                if (status != 0) {
+                    status = 0;
+                }
+                fits_delete_key(fptr, ("PC"+to_string(j)+"_"+
+                                            to_string(i)).c_str(), &status);
+                if (status != 0) {
+                    status = 0;
+                }
             }
         }
 
