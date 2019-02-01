@@ -541,7 +541,7 @@ namespace matrix {
     template<typename TypeA, typename TypeB, typename enable = typename std::enable_if<
         meta::is_matrix<TypeB>::value && std::is_arithmetic<typename std::decay<TypeA>::type>::value
     >::type>
-    auto operator * (const TypeB& a, TypeA&& b) -> mat<decltype(a*b(0,0))> {
+    auto operator * (const TypeA& a, TypeB&& b) -> mat<decltype(a*b(0,0))> {
         return mat<decltype(a*b(0,0))>(a*std::forward<TypeB>(b).base);
     }
 
@@ -565,7 +565,7 @@ namespace matrix {
     template<typename TypeA, typename TypeB, typename enable = typename std::enable_if<
         meta::is_matrix<TypeA>::value && meta::is_scalar<TypeB>::value
     >::type>
-    auto operator - (TypeA&& a, const TypeB& b) -> mat<decltype(a(0,0)+b)> {
+    auto operator + (TypeA&& a, const TypeB& b) -> mat<decltype(a(0,0)+b)> {
         return mat<decltype(a(0,0)+b)>(std::forward<TypeA>(a).base + b);
     }
 
@@ -573,7 +573,7 @@ namespace matrix {
     template<typename TypeA, typename TypeB, typename enable = typename std::enable_if<
         meta::is_matrix<TypeB>::value && meta::is_scalar<TypeA>::value
     >::type>
-    auto operator - (const TypeA& a, TypeB&& b) -> mat<decltype(a+b(0,0))> {
+    auto operator + (const TypeA& a, TypeB&& b) -> mat<decltype(a+b(0,0))> {
         return mat<decltype(a+b(0,0))>(a + std::forward<TypeB>(b).base);
     }
 
