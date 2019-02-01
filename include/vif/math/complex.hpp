@@ -50,6 +50,22 @@
             }
         };
 
+        T& real() {
+            return re;
+        }
+
+        const T& real() const {
+            return re;
+        }
+
+        T& imag() {
+            return im;
+        }
+
+        const T& imag() const {
+            return im;
+        }
+
         template<typename T>
         T norm_sqr(complex<T> c) {
             return c.re*c.re + c.im*c.im;
@@ -160,6 +176,18 @@ namespace vif {
 
     #undef MAKE_TYPEDEFS
 
+    template<typename T>
+    T real_part(const vif::complex<T>& c) {
+        return c.real();
+    }
+
+    template<typename T>
+    T imag_part(const vif::complex<T>& c) {
+        return c.imag();
+    }
+
+    VIF_VECTORIZE(real_part);
+    VIF_VECTORIZE(imag_part);
 }
 
 #endif
