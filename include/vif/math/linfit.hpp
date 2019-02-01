@@ -21,6 +21,16 @@ namespace vif {
             MAKE_MEMBER(params), MAKE_MEMBER(errors), MAKE_MEMBER(cov));
     };
 
+    struct linfit_nn_result {
+        bool          success = false;
+        double        chi2 = dnan;
+        vec1d         params;
+
+        // Reflection data
+        MEMBERS1(success, chi2, params);
+        MEMBERS2("linfit_result", MAKE_MEMBER(success), MAKE_MEMBER(chi2), MAKE_MEMBER(params));
+    };
+
     namespace impl {
         template<typename T, typename TypeE>
         void linfit_make_cache_(vec2d& cache, const TypeE& ye, uint_t i, T&& t) {
@@ -33,17 +43,17 @@ namespace vif {
             linfit_make_cache_(cache, ye, i+1, args...);
         }
 
-        template<typename TypeY, typename TypeE>
-        linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
-            linfit_result fr;
+
+        template<typename TypeY>
+        void linfit_make_alpha_beta_(const TypeY& ny, const vec2d& cache,
+            matrix::mat2d& alpha, vec1d& beta) {
 
             uint_t np = cache.dims[0];
             uint_t nm = cache.dims[1];
 
             // Solving 'y +/- e = sum over i of a[i]*x[i]' to get all a[i]'s
-            matrix::mat2d alpha(np,np);
-            vec1d beta(np);
-            auto tmp = flatten(y/ye);
+            alpha.resize(np,np);
+            beta.resize(np);
             for (uint_t i : range(np)) {
                 for (uint_t j : range(np)) {
                     if (i <= j) {
@@ -60,9 +70,22 @@ namespace vif {
                 beta.safe[i] = 0.0;
                 // beta[i] = sum over all points of x[i]*y/e^2
                 for (uint_t m : range(nm)) {
-                    beta.safe[i] += cache.safe(i,m)*tmp.safe[m];
+                    beta.safe[i] += cache.safe(i,m)*ny.safe[m];
                 }
             }
+        }
+
+        template<typename TypeY, typename TypeE>
+        linfit_result linfit_do_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
+            linfit_result fr;
+
+            uint_t np = cache.dims[0];
+            uint_t nm = cache.dims[1];
+
+            matrix::mat2d alpha;
+            vec1d beta;
+            auto ny = flatten(y/ye);
+            linfit_make_alpha_beta_(ny, cache, alpha, beta);
 
             if (!inplace_invert_symmetric(alpha)) {
                 fr.success = false;
@@ -88,7 +111,66 @@ namespace vif {
                 }
             }
 
-            fr.chi2 = total(sqr(model - tmp));
+            fr.chi2 = total(sqr(model - ny));
+
+            return fr;
+        }
+
+        template<typename TypeY, typename TypeE>
+        linfit_nn_result linfit_do_nn_(const TypeY& y, const TypeE& ye, const vec2d& cache) {
+            linfit_nn_result fr;
+
+            uint_t np = cache.dims[0];
+            uint_t nm = cache.dims[1];
+
+            matrix::mat2d alpha;
+            vec1d beta;
+            auto ny = flatten(y/ye);
+            linfit_make_alpha_beta_(ny, cache, alpha, beta);
+
+            // Initialize coefficients
+            fr.params.resize(np);
+            for (uint_t m : range(np)) {
+                fr.params.safe[m] = (beta.safe[m] > 0.0 ? 1.0 : 0.0);
+            }
+
+            uint_t titer = 0;
+            const uint_t titermax = 10000;
+            const double fit_tftol = 1e-4;
+
+            double ta, tb;
+            do {
+                ta = 0.0; tb = 0.0;
+                for (uint_t m0 : range(np)) {
+                    double av = 0.0;
+                    for (uint_t m1 : range(np)) {
+                        av += alpha.safe(m0,m1)*fr.params.safe[m1];
+                    }
+
+                    // Update coeff
+                    double old = fr.params.safe[m0];
+                    fr.params.safe[m0] *= beta.safe[m0]/av;
+
+                    ta += abs(fr.params.safe[m0] - old);
+                    tb += old;
+                }
+
+                ++titer;
+            } while (ta/tb > fit_tftol && titer < titermax);
+
+            if (titer == titermax) {
+                fr.success = false;
+            }
+
+            vec1d model(nm);
+            for (uint_t m : range(nm)) {
+                model.safe[m] = 0.0;
+                for (uint_t i : range(np)) {
+                    model.safe[m] += fr.params.safe[i]*cache.safe(i,m);
+                }
+            }
+
+            fr.chi2 = total(sqr(model - ny));
 
             return fr;
         }
@@ -148,6 +230,52 @@ namespace vif {
         }
 
         return impl::linfit_do_(y, ye, cache);
+    }
+
+    template<typename TypeY, typename TypeE, typename ... Args>
+    linfit_nn_result linfit_nn(const TypeY& y, const TypeE& ye, Args&&... args) {
+        bool bad = !meta::same_dims_or_scalar(y, ye, args...);
+        if (bad) {
+            vif_check(meta::same_dims_or_scalar(y, ye), "incompatible dimensions between Y and "
+                "YE arrays (", meta::dims(y), " vs. ", meta::dims(ye), ")");
+            impl::linfit_error_dims_(y, 0, args...);
+        }
+
+        uint_t np = sizeof...(Args);
+        uint_t nm = meta::size(y);
+
+        vec2d cache(np,nm);
+        impl::linfit_make_cache_(cache, ye, 0, std::forward<Args>(args)...);
+
+        return impl::linfit_do_nn_(y, ye, cache);
+    }
+
+    template<std::size_t Dim, typename TypeY, typename TypeE, typename TypeX>
+    linfit_nn_result linfit_nn_pack(const vec<Dim,TypeY>& y, const vec<Dim,TypeE>& ye,
+        const vec<Dim+1,TypeX>& x) {
+        bool good = true;
+        for (uint_t i : range(Dim)) {
+            if (x.dims[i+1] != ye.dims[i] || x.dims[i+1] != y.dims[i]) {
+                good = false;
+                break;
+            }
+        }
+
+        vif_check(good, "incompatible dimensions between X, Y and YE arrays (", x.dims,
+            " vs. ", y.dims, " vs. ", ye.dims, ")")
+
+        linfit_result fr;
+
+        uint_t np = x.dims[0];
+        uint_t nm = y.size();
+
+        vec2d cache(np,nm);
+        for (uint_t i : range(np))
+        for (uint_t j : range(nm)) {
+            cache.safe(i,j) = x.safe[i*x.pitch(0) + j]/ye.safe[j];
+        }
+
+        return impl::linfit_do_nn_(y, ye, cache);
     }
 
     template<typename TypeE>
