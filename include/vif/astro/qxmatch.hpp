@@ -407,10 +407,10 @@ namespace astro {
                 // Create the thread pool and launch the threads
                 std::vector<qxmatch_res> vres(params.thread);
                 for (auto& r : vres) {
-                    r.id = replicate(npos, nth, n1);
-                    r.d  = dblarr(nth, n1)+dinf;
+                    r.id  = replicate(npos, nth, n1);
+                    r.d   = replicate(dinf, nth, n1);
                     r.rid = replicate(npos, n2);
-                    r.rd  = dblarr(n2)+dinf;
+                    r.rd  = replicate(dinf, n2);
                 }
 
                 if (n2 < nth) {
