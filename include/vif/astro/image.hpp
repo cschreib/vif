@@ -509,8 +509,8 @@ namespace astro {
 #ifdef NO_FFTW
         return convolve2d_naive(map, kernel);
 #else
-        vif_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
-            "kernel must have odd dimensions (", kernel.dims, ")");
+        // vif_check(kernel.dims[0]%2 == 1 && kernel.dims[1]%2 == 1,
+        //     "kernel must have odd dimensions (", kernel.dims, ")");
 
         uint_t hsx = kernel.dims[0]/2, hsy = kernel.dims[1]/2;
 
@@ -553,6 +553,8 @@ namespace astro {
         bool pf_built = false, pi_built = false;
         vec2d tmap;
         vec2cd cimg;
+
+        bool cyclic = false;
 
         explicit convolver2d(const vec2d& k) : kernel_normal(k) {
             vif_check(k.dims[0]%2 == 1 && k.dims[1]%2 == 1,
@@ -630,39 +632,62 @@ namespace astro {
     public :
         void inplace_convolve(vec2d& map) {
             if (kernel_fourier.empty()) {
-                hsx = kernel_normal.dims[0]/2; hsy = kernel_normal.dims[1]/2;
+                if (cyclic) {
+                    hsx = 0; hsy = 0;
 
-                // Resize kernel to map size, with kernel center at (0,0), and some padding
-                // to avoid cyclic borders (assume image is 0 outside)
-                vec2d tkernel = enlarge(kernel_normal, {{0, 0, map.dims[0]-1, map.dims[1]-1}});
-                inplace_shift(tkernel, -hsx, -hsy);
+                    // Resize kernel to map size, with kernel center at (0,0)
+                    vec2d tkernel = recenter(
+                        kernel_normal, kernel_normal.dims[0]/2, kernel_normal.dims[1]/2, map.dims
+                    );
+                    inplace_shift(tkernel, -int_t(map.dims[0])/2, -int_t(map.dims[1])/2);
 
-                // Put the kernel in Fourier space
-                kernel_fourier = this->fft(tkernel);
+                    // Put the kernel in Fourier space
+                    kernel_fourier = this->fft(tkernel);
 
-                tmap.resize(kernel_fourier.dims);
-                cimg.resize(kernel_fourier.dims);
+                    cimg.resize(map.dims);
+                } else {
+                    hsx = kernel_normal.dims[0]/2; hsy = kernel_normal.dims[1]/2;
+
+                    // Resize kernel to map size, with kernel center at (0,0), and some padding
+                    // to avoid cyclic borders (assume image is 0 outside)
+                    vec2d tkernel = enlarge(kernel_normal, {{0, 0, map.dims[0]-1, map.dims[1]-1}});
+                    inplace_shift(tkernel, -int_t(hsx), -int_t(hsy));
+
+                    // Put the kernel in Fourier space
+                    kernel_fourier = this->fft(tkernel);
+
+                    tmap.resize(kernel_fourier.dims);
+                    cimg.resize(kernel_fourier.dims);
+                }
             }
 
-            // Pad image to prevent issues with cyclic borders
-            for (uint_t ix : range(map.dims[0]))
-            for (uint_t iy : range(map.dims[1])) {
-                tmap.safe(hsx+ix,hsy+iy) = map.safe(ix,iy);
-            }
-            for (uint_t ix : range(hsx)) {
-                for (uint_t iy : range(tmap.dims[0])) {
-                    tmap.safe(ix,iy) = 0;
+            if (cyclic) {
+                // Copy image data
+                tmap = std::move(map);
+            } else {
+                // Copy image data
+                for (uint_t ix : range(map.dims[0]))
+                for (uint_t iy : range(map.dims[1])) {
+                    tmap.safe(hsx+ix,hsy+iy) = map.safe(ix,iy);
                 }
-                for (uint_t iy : range(tmap.dims[0])) {
-                    tmap.safe(tmap.dims[0]-hsx+ix,iy) = 0;
+
+                // Pad image to prevent issues with cyclic borders
+                for (uint_t ix : range(hsx)) {
+                    for (uint_t iy : range(tmap.dims[0])) {
+                        tmap.safe(ix,iy) = 0;
+                    }
+                    for (uint_t iy : range(tmap.dims[0])) {
+                        tmap.safe(tmap.dims[0]-hsx+ix,iy) = 0;
+                    }
                 }
-            }
-            for (uint_t ix : range(map.dims[0])) {
-                for (uint_t iy : range(hsy)) {
-                    tmap.safe(hsx+ix,iy) = 0;
-                }
-                for (uint_t iy : range(hsy)) {
-                    tmap.safe(hsx+ix,tmap.dims[1]-hsy+iy) = 0;
+
+                for (uint_t ix : range(map.dims[0])) {
+                    for (uint_t iy : range(hsy)) {
+                        tmap.safe(hsx+ix,iy) = 0;
+                    }
+                    for (uint_t iy : range(hsy)) {
+                        tmap.safe(hsx+ix,tmap.dims[1]-hsy+iy) = 0;
+                    }
                 }
             }
 
@@ -670,12 +695,18 @@ namespace astro {
             this->fft(tmap, cimg);
             cimg *= kernel_fourier;
 
-            // Go back to real space and shrink map back to original dimensions
+            // Go back to real space
             this->ifft(cimg, tmap);
 
-            for (uint_t ix : range(map.dims[0]))
-            for (uint_t iy : range(map.dims[1])) {
-                map.safe(ix,iy) = tmap.safe(hsx+ix,hsy+iy)/cimg.size();
+            if (cyclic) {
+                // Copy image data
+                map = std::move(tmap);
+            } else {
+                // Copy image data and shrink back to original dimensions
+                for (uint_t ix : range(map.dims[0]))
+                for (uint_t iy : range(map.dims[1])) {
+                    map.safe(ix,iy) = tmap.safe(hsx+ix,hsy+iy)/cimg.size();
+                }
             }
         }
 
