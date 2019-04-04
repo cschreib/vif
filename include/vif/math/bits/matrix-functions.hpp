@@ -502,6 +502,61 @@ namespace matrix {
     };
 
 
+    struct decompose_svd {
+        // Outputs
+        mat2d u, vt;
+        vec1d s;
+        bool bad = false;
+
+    public:
+        uint_t size() const {
+            return u.dims[0];
+        }
+
+        template<typename T, typename enable = typename std::enable_if<
+            meta::is_matrix<T>::value
+        >::type>
+        bool decompose(T alpha) {
+            // Cholesky decomposition
+            vif_check(alpha.dims[0] == alpha.dims[1], "cannot do Singular Value Decomposition of a non "
+                "square matrix (", alpha.dims, ")");
+
+            bad = false;
+
+        #ifdef NO_LAPACK
+            static_assert(!std::is_same<T,T>::value, "LAPACK support has been disabled, "
+                "please enable LAPACK to use this function");
+        #else
+            char jobz = 'A';
+            int m = alpha.dims[0];
+            int n = m;
+            int lda = m;
+            int info;
+            int ldu = m;
+            int ldvt = n;
+            int mx = std::max(m,n);
+            int mn = std::min(m,n);
+            int lwork = 4*mn*mn + 6*mn + mx;
+            vec1d work(lwork);
+            vec<1,int> iwork(8*mn);
+
+            s.resize(mn);
+            u.resize(m,m);
+            vt.resize(n,n);
+            lapack::dgesdd_(&jobz, &m, &n, alpha.raw_data(), &lda, s.raw_data(), u.raw_data(),
+                &ldu, vt.raw_data(), &ldvt, work.raw_data(), &lwork, iwork.raw_data(), &info);
+
+            // Probably because FORTRAN is row-oriented, we have to swap U and Vt
+            std::swap(u, vt);
+
+            bad = info != 0;
+        #endif
+
+            return !bad;
+        }
+    };
+
+
     template<typename Type, typename enable = typename std::enable_if<
         meta::is_matrix<Type>::value
     >::type>
