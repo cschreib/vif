@@ -44,6 +44,16 @@ namespace matrix {
         return d;
     }
 
+    template<typename Type>
+    mat<meta::rtype_t<Type>> as_diagonal(const vec<1,Type>& v) {
+        mat<meta::rtype_t<Type>> m(v.size(), v.size());
+        for (uint_t i : range(v)) {
+            m.safe(i,i) = v.safe[i];
+        }
+
+        return m;
+    }
+
     template<typename Type = double>
     mat<Type> make_identity(uint_t dim) {
         mat<Type> m(dim, dim);
