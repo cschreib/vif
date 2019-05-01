@@ -32,7 +32,8 @@ int vif_main(int argc, char* argv[]) {
     uint_t ngal = cat.flux.dims[0];
 
     if (cat.lambda.empty()) {
-        cat.lambda = fltarr(cat.bands.size());
+        //cat.lambda = fltarr(cat.bands.size());
+        cat.lambda.resize(cat.bands.size());
         for (uint_t i = 0; i < cat.bands.size(); ++i) {
             filter_t filter;
             if (get_filter(fdb, cat.bands[i], filter)) {
