@@ -63,7 +63,8 @@ int vif_main(int argc, char* argv[]) {
         }
 
         if (hsize == 0) hsize = imax;
-        beam = subregion(beam, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
+        //beam = subregion(beam, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
+        beam = astro::subregion(beam, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
     } else {
         if (arcsec) {
             double aspix;
@@ -80,7 +81,8 @@ int vif_main(int argc, char* argv[]) {
         uint_t nk = ceil(30*radius);
         if (nk % 2 == 0) ++nk;
 
-        beam = gaussian_profile({{nk,nk}}, radius);
+        //beam = gaussian_profile({{nk,nk}}, radius);
+        beam = astro::gaussian_profile({{nk,nk}}, radius);
         beam /= total(beam);
     }
 
@@ -88,7 +90,8 @@ int vif_main(int argc, char* argv[]) {
     fits::header hdr;
     fits::read(fimg, img, hdr);
 
-    vec2d out = convolve2d(img, beam);
+    //vec2d out = convolve2d(img, beam);
+    vec2d out = astro::convolve2d(img, beam);
     fits::write(fout, out, hdr);
 
     return 0;
