@@ -88,7 +88,6 @@ int vif_main(int argc, char* argv[]) {
     fits::header hdr;
     fits::read(fimg, img, hdr);
 
-    //vec2d out = convolve2d(img, beam);
     vec2d out = astro::convolve2d(img, beam);
     fits::write(fout, out, hdr);
 
