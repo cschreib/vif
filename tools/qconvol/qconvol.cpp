@@ -63,7 +63,6 @@ int vif_main(int argc, char* argv[]) {
         }
 
         if (hsize == 0) hsize = imax;
-        //beam = subregion(beam, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
         beam = astro::subregion(beam, {idm[0]-hsize, idm[1]-hsize, idm[0]+hsize, idm[1]+hsize});
     } else {
         if (arcsec) {
