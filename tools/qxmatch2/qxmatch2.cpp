@@ -121,7 +121,6 @@ int vif_main(int argc, char* argv[]) {
         }
 
         if (verbose) {
-	  //print("qxmatch: crossmatching ", n_elements(cat1.ra), " sources from '", cats[0],
 	  //"' with ", n_elements(cat2.ra), " sources from '", cats[1], "'...");
 	  print("qxmatch: crossmatching ", cat1.ra.size(), " sources from '", cats[0],
                 "' with ", cat2.ra.size(), " sources from '", cats[1], "'...");
