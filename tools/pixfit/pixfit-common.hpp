@@ -283,7 +283,6 @@ vec2d read_psf(const map_info& map, int_t& hsize) {
 // the gridded data points
 template<typename TypeX, typename TypeY>
 double find_zero(const vec<1,TypeX>& x, const vec<1,TypeY>& y) {
-  //phypp_check(x.size() == y.size(),
   vif_check(x.size() == y.size(),
         "incompatible x and y array dimensions (", x.size(), " vs ", y.size(), ")");
 
