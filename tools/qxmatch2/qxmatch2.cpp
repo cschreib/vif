@@ -141,7 +141,7 @@ int vif_main(int argc, char* argv[]) {
 
         if (verbose) {
 	  //print("qxmatch: self matching ", n_elements(cat.ra), " sources from '", cats[0], "'...");
-	  print("qxmatch: self matching ", cat.ra.size(), " sources from '", cats[0], "'...");
+            print("qxmatch: self matching ", cat.ra.size(), " sources from '", cats[0], "'...");
         }
 
         qxmatch_params p; p.nth = nth; p.thread = thread; p.verbose = verbose; p.no_mirror = no_mirror;
