@@ -140,7 +140,6 @@ int vif_main(int argc, char* argv[]) {
         }
 
         if (verbose) {
-	  //print("qxmatch: self matching ", n_elements(cat.ra), " sources from '", cats[0], "'...");
             print("qxmatch: self matching ", cat.ra.size(), " sources from '", cats[0], "'...");
         }
 
