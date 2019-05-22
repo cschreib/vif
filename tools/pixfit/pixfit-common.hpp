@@ -1,4 +1,3 @@
-//#include <phypp.hpp>
 #include <vif.hpp>
 
 using namespace vif;
