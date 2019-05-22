@@ -80,7 +80,6 @@ int vif_main(int argc, char* argv[]) {
         uint_t nk = ceil(30*radius);
         if (nk % 2 == 0) ++nk;
 
-        //beam = gaussian_profile({{nk,nk}}, radius);
         beam = astro::gaussian_profile({{nk,nk}}, radius);
         beam /= total(beam);
     }
