@@ -7,7 +7,7 @@ Pre-requisites
 2) You should have ``cmake`` (>= 2.6) installed (see Appendix below for instructions on how
    to install it).
 
-3) Installing the ``cfitsio``, ``wcslib``, ``lapack``, ``gsl``, ``fftw``, ``tcmalloc``,
+3) Installing the ``cfitsio``, ``wcslib``, ``lapack``, ``gsl``, ``fftw-3``, ``tcmalloc``,
    ``libdwarf``, ``libunwind``, and ``libelf`` libraries is not mandatory, but recommended
    to use all the features of the vif library (see Appendix below for instructions on how
    to install these libraries). The ``libclang`` is needed if you want to use reflection.
@@ -70,12 +70,12 @@ Install the library with CMake
 5) As the install script suggests, you should then source the ``.vifrc`` file
    that was just created in your home directory, so that the vif configuration
    is loaded in all your terminals. This can be done by adding a line in your
-   ``.bashrc`` file containing ``source ~/.phypprc``.
+   ``.bashrc`` file containing ``source ~/.vifrc``.
 
-6) You may then build the vif tools. Inside the ``build`` directory, navigate to
+6) You may then build the vif tools. Inside the ``build`` directory, create & navigate to
    the ``tools`` directory. Note: if you are still in the same terminal session, you
    will need to either close it and open a new one, or source the vif configuration
-   using ``source ~/.phypprc``
+   using ``source ~/.vifrc``
 
 7) Invoque cmake again, this time pointing to the tools directory:
    ``cmake ../../tools/``. Like in point 2) above, you may need to manually
