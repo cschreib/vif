@@ -1103,6 +1103,7 @@ namespace fits {
 
         void create_table_() {
             uint_t nhdu = hdu_count();
+            uint_t nrow = (format_ == table_format::column_oriented ? 1 : 0);
             if (nhdu > 0) {
                 // There are HDUs in this file already
                 auto type = hdu_type();
@@ -1117,7 +1118,7 @@ namespace fits {
                         // We are at the last HDU, so just delete and create
                         fits_delete_hdu(fptr_, nullptr, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
-                        fits_insert_btbl(fptr_, 1, 0,
+                        fits_insert_btbl(fptr_, nrow, 0,
                             nullptr, nullptr, nullptr, nullptr, 0, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
                     } else {
@@ -1130,7 +1131,7 @@ namespace fits {
                         fits_movrel_hdu(fptr_, -1, nullptr, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
                         // Add the new extension
-                        fits_insert_btbl(fptr_, 1, 0,
+                        fits_insert_btbl(fptr_, nrow, 0,
                             nullptr, nullptr, nullptr, nullptr, 0, &status_);
                         fits::vif_check_cfitsio(status_, "could not create table HDU");
 
@@ -1138,7 +1139,7 @@ namespace fits {
                 }
             } else {
                 // No HDU yet, just create the primary array and a table extension
-                fits_insert_btbl(fptr_, 1, 0, nullptr, nullptr, nullptr, nullptr, 0, &status_);
+                fits_insert_btbl(fptr_, nrow, 0, nullptr, nullptr, nullptr, nullptr, 0, &status_);
                 fits::vif_check_cfitsio(status_, "could not create table HDU");
             }
         }
