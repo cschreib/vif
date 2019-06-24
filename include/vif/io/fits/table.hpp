@@ -154,7 +154,7 @@ namespace impl {
                         // Data exists, see if row or column-oriented
                         uint_t nrow;
                         if (read_keyword("NAXIS2", nrow)) {
-                            if (nrow > 1) {
+                            if (nrow > 1 || nrow == 0) {
                                 format_ = fits::table_format::row_oriented;
                                 return;
                             }
