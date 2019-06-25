@@ -696,7 +696,7 @@ namespace fits {
             uint_t nrow = 1;
             if (format_ == table_format::row_oriented) {
                 read_keyword("NAXIS2", nrow);
-                if (naxis == 1 && axes[naxis-1] == 1) {
+                if (naxis == 1 && axes[naxis-1] == 1 && type != TSTRING) {
                     axes[naxis-1] = nrow;
                 } else {
                     axes[naxis] = nrow;
