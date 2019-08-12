@@ -182,7 +182,7 @@ file_base::cfitsio_ptr
 
 .. code-block:: c++
 
-    fitsfile* file_base::cfitsio_ptr() noexcept;
+    fitsfile*       file_base::cfitsio_ptr()       noexcept;
     const fitsfile* file_base::cfitsio_ptr() const noexcept;
 
 These functions returns the underlying CFITSIO file pointer. This is useful if you need to perform an operation that is not available as part of the C++ interface. It is safe to perform any operation with this pointer and then fall back to the C++ interface, however if you do so you must call the ``update_state()`` function before using any function of the C++ interface.
@@ -254,7 +254,7 @@ file_base::hdu_count
 
     uint_t file_base::hdu_count() const;
 
-This function returns the number of HDU (or extensions) currently present in the file. This includes the "primary HDU" (extension with ID ``0``), and therefore should always be larger or equal to one. Will throw an exception if no file is currently open.
+This function returns the number of HDUs (or extensions) currently present in the file. This includes the "primary HDU" (extension with ID ``0``), and therefore should always be larger or equal to one. Will throw an exception if no file is currently open.
 
 **Example:**
 
@@ -275,7 +275,7 @@ file_base::current_hdu
 
     uint_t file_base::current_hdu() const;
 
-This function returns the ID of the current HDU (or extensions). The "primary HDU" has ID of ``0``, and every following HDU has its ID incremented by one. Will throw an exception if no file is currently open.
+This function returns the ID of the current HDU (or extension). The "primary HDU" has ID of ``0``, and every following HDU has its ID incremented by one. Will throw an exception if no file is currently open.
 
 **Example:**
 
