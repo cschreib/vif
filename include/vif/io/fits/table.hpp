@@ -59,12 +59,6 @@ namespace fits {
         return opts;
     }();
 
-    // Format of FITS table (row/column oriented)
-    enum class table_format {
-        column_oriented,
-        row_oriented
-    };
-
     // Build an indexing range or point
     template<typename ... Args>
     std::tuple<typename std::decay<Args>::type...> at(const Args& ... args) {
@@ -124,57 +118,6 @@ namespace impl {
 
         template<typename T>
         struct is_readable_column_type<impl::named_t<T>> : is_readable_column_type<meta::decay_t<T>> {};
-
-        // FITS table (base class)
-        class table_base : public impl::fits_impl::file_base {
-        public :
-            table_base(access_right rights) :
-                impl::fits_impl::file_base(file_type::table_file, rights) {}
-
-            table_base(const std::string& filename, access_right rights) :
-                impl::fits_impl::file_base(file_type::table_file, filename, rights) {
-                get_format_();
-            }
-
-            void read_hdu(uint_t hdu) {
-                impl::fits_impl::file_base::reach_hdu(hdu);
-                get_format_();
-            }
-
-        protected :
-
-            void get_format_() {
-                // Check if data exists
-                uint_t nhdu = hdu_count();
-                if (nhdu != 0) {
-                    int ncols = 0;
-                    fits_get_num_cols(fptr_, &ncols, &status_);
-                    fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
-                    if (ncols != 0) {
-                        // Data exists, see if row or column-oriented
-                        uint_t nrow;
-                        if (read_keyword("NAXIS2", nrow)) {
-                            if (nrow > 1 || nrow == 0) {
-                                format_ = fits::table_format::row_oriented;
-                                return;
-                            }
-                        }
-                    }
-                }
-
-                // Default
-                format_ = fits::table_format::column_oriented;
-            }
-
-            fits::table_format format_ = fits::table_format::column_oriented;
-
-        public :
-
-            void open(const std::string& filename) {
-                impl::fits_impl::file_base::open(filename);
-                get_format_();
-            }
-        };
     }
 }
 
@@ -192,16 +135,13 @@ namespace fits {
     };
 
     // FITS input table (read only)
-    class input_table : public virtual impl::fits_impl::table_base {
+    class input_table : public virtual impl::fits_impl::file_base {
     public :
-        input_table() : impl::fits_impl::table_base(impl::fits_impl::read_only) {}
+        input_table() :
+            impl::fits_impl::file_base(impl::fits_impl::table_file, impl::fits_impl::read_only) {}
 
         explicit input_table(const std::string& filename) :
-            impl::fits_impl::table_base(filename, impl::fits_impl::read_only) {}
-        explicit input_table(const std::string& filename, uint_t hdu) :
-            impl::fits_impl::table_base(filename, impl::fits_impl::read_only) {
-            reach_hdu(hdu);
-        }
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_only) {}
 
         input_table(input_table&&) noexcept = default;
         input_table(const input_table&) noexcept = delete;
@@ -1070,13 +1010,16 @@ namespace impl {
 namespace fits {
 
     // Output FITS table (write only, overwrites existing files)
-    class output_table : public virtual impl::fits_impl::table_base {
+    class output_table : public impl::fits_impl::output_file_base {
     public :
 
-        output_table() : impl::fits_impl::table_base(impl::fits_impl::write_only) {}
+        output_table() :
+            impl::fits_impl::file_base(impl::fits_impl::table_file, impl::fits_impl::write_only),
+            impl::fits_impl::output_file_base(impl::fits_impl::table_file, impl::fits_impl::write_only) {}
 
         explicit output_table(const std::string& filename) :
-            impl::fits_impl::table_base(filename, impl::fits_impl::write_only) {}
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only),
+            impl::fits_impl::output_file_base(impl::fits_impl::table_file, filename, impl::fits_impl::write_only) {}
 
         output_table(output_table&&) noexcept = default;
         output_table(const output_table&) = delete;
@@ -1543,18 +1486,12 @@ namespace fits {
     // Input/output FITS table (read & write, modifies existing files)
     class table : public output_table, public input_table {
     public :
-        table() : impl::fits_impl::table_base(impl::fits_impl::read_write),
+        table() : impl::fits_impl::file_base(impl::fits_impl::table_file, impl::fits_impl::read_write),
             output_table(), input_table() {}
 
         explicit table(const std::string& filename) :
-            impl::fits_impl::table_base(filename, impl::fits_impl::read_write),
+            impl::fits_impl::file_base(impl::fits_impl::table_file, filename, impl::fits_impl::read_write),
             output_table(filename), input_table(filename) {}
-
-        explicit table(const std::string& filename, uint_t hdu) :
-            impl::fits_impl::table_base(filename, impl::fits_impl::read_write),
-            output_table(filename), input_table(filename) {
-            reach_hdu(hdu);
-        }
 
         table(table&&) noexcept = default;
         table(const table&) = delete;

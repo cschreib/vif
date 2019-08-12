@@ -4,6 +4,7 @@
 #include "vif/io/fits/base.hpp"
 #include "vif/io/fits/table.hpp"
 #include "vif/io/fits/image.hpp"
+#include "vif/io/fits/file.hpp"
 #include "vif/utility/os.hpp"
 
 #ifndef NO_CFITSIO
@@ -22,25 +23,20 @@ namespace fits {
         return fits::input_image(filename).image_dims();
     }
 
-    inline bool is_cube(const std::string& filename) {
-        return fits::input_image(filename).is_cube();
-    }
-
-    inline bool is_image(const std::string& filename) {
-        return fits::input_image(filename).is_image();
-    }
-
     // Load the content of a FITS file into an array.
     template<std::size_t Dim, typename Type>
     void read_hdu(const std::string& filename, vec<Dim,Type>& v, uint_t hdu, fits::header& hdr) {
-        fits::input_image img(filename, hdu);
+        fits::input_image img(filename);
+        img.reach_hdu(hdu);
         hdr = img.read_header();
         img.read(v);
     }
 
     template<std::size_t Dim, typename Type>
     void read_hdu(const std::string& filename, vec<Dim, Type>& v, uint_t hdu) {
-        fits::input_image(filename, hdu).read(v);
+        fits::input_image img(filename);
+        img.reach_hdu(hdu);
+        img.read(v);
     }
 
     template<std::size_t Dim, typename Type>
@@ -68,7 +64,7 @@ namespace fits {
             throw fits::exception("could not find file '"+filename+"'");
         }
 
-        std::string dir = file::get_directory(filename);
+        std::string dir = vif::file::get_directory(filename);
 
         vec1s files;
         std::string line;
@@ -86,11 +82,13 @@ namespace fits {
     }
 
     inline fits::header read_header(const std::string& filename) {
-        return fits::generic_file(filename).read_header();
+        return fits::input_file(filename).read_header();
     }
 
     inline fits::header read_header_hdu(const std::string& filename, uint_t hdu) {
-        return fits::generic_file(filename, hdu).read_header();
+        fits::input_file file(filename);
+        file.reach_hdu(hdu);
+        return file.read_header();
     }
 
     inline fits::header read_header_sectfits(const std::string& filename, uint_t sect) {
@@ -135,7 +133,9 @@ namespace fits {
     // Write an image in a FITS file
     template<std::size_t Dim, typename Type>
     void update_hdu(const std::string& filename, const vec<Dim,Type>& v, uint_t hdu) {
-        fits::image(filename, hdu).update(v);
+        fits::image img(filename);
+        img.reach_hdu(hdu);
+        img.update(v);
     }
 
     // Read information about the columns of a FITS table

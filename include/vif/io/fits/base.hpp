@@ -51,6 +51,12 @@ namespace fits {
         image_hdu,
         table_hdu
     };
+
+    // Format of FITS table (row/column oriented)
+    enum class table_format {
+        column_oriented,
+        row_oriented
+    };
 }
 
 namespace impl {
@@ -380,10 +386,12 @@ namespace impl {
                 in.fptr_ = nullptr;
             }
 
+            virtual ~file_base() noexcept {
+                close();
+            }
+
             void open(const std::string& filename) {
                 close();
-
-                filename_ = filename;
 
                 if (rights_ == write_only || (rights_ == read_write && !file::exists(filename))) {
                     fits_create_file(&fptr_, ("!"+filename).c_str(), &status_);
@@ -405,9 +413,13 @@ namespace impl {
 
                     fits::vif_check_cfitsio(status_, "cannot open file '"+filename+"'");
                 }
+
+                filename_ = filename;
+
+                update_internal_state();
             }
 
-            void close() {
+            void close() noexcept {
                 if (!fptr_) return;
 
                 status_ = 0;
@@ -415,39 +427,28 @@ namespace impl {
                 fptr_ = nullptr;
             }
 
-            bool is_open() const {
+            bool is_open() const noexcept {
                 return fptr_ != nullptr;
             }
 
-            void flush() {
-                if (!fptr_) return;
-
-                fits_flush_file(fptr_, &status_);
-                fits::vif_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
-            }
-
-            void flush_buffer() {
-                if (!fptr_) return;
-
-                // Will be faster than flush(), but only updates data, not all the keywords
-                fits_flush_buffer(fptr_, 0, &status_);
-                fits::vif_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
-            }
-
-            const std::string& filename() const {
+            const std::string& filename() const noexcept {
                 return filename_;
             }
 
-            int cfitsio_status() const {
+            int cfitsio_status() const noexcept {
                 return status_;
             }
 
-            fitsfile* cfitsio_ptr() {
+            fitsfile* cfitsio_ptr() noexcept {
                 return fptr_;
             }
 
-            const fitsfile* cfitsio_ptr() const {
+            const fitsfile* cfitsio_ptr() const noexcept {
                 return fptr_;
+            }
+
+            virtual void update_internal_state() {
+                get_table_format_();
             }
 
         protected :
@@ -456,6 +457,29 @@ namespace impl {
                 if (!is_open()) {
                     throw fits::exception("no FITS file opened, cannot proceed");
                 }
+            }
+
+            void get_table_format_() {
+                // Check if data exists
+                uint_t nhdu = hdu_count();
+                if (nhdu != 0) {
+                    int ncols = 0;
+                    fits_get_num_cols(fptr_, &ncols, &status_);
+                    fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
+                    if (ncols != 0) {
+                        // Data exists, see if row or column-oriented
+                        uint_t nrow;
+                        if (read_keyword("NAXIS2", nrow)) {
+                            if (nrow > 1 || nrow == 0) {
+                                format_ = fits::table_format::row_oriented;
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Default
+                format_ = fits::table_format::column_oriented;
             }
 
         public :
@@ -511,83 +535,6 @@ namespace impl {
                 }
 
                 return from_string(content, value);
-            }
-
-            void write_header(const fits::header& hdr) {
-                check_is_open_();
-
-                std::size_t nentry = hdr.size()/80 + 1;
-                fits_set_hdrsize(fptr_, nentry, &status_);
-
-                for (uint_t i : range(nentry)) {
-                    std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
-                    if (begins_with(entry, "END ")) continue;
-
-                    // Skip if it is an internal FITS keyword
-                    std::size_t eqpos = entry.find_first_of("=");
-                    if (eqpos != entry.npos) {
-                        std::string nam = trim(entry.substr(0, eqpos));
-                        if (nam == "SIMPLE" || nam == "BITPIX" || begins_with(nam, "NAXIS") ||
-                            nam == "EXTEND" || nam == "XTENSION" || nam == "EXTNAME" ||
-                            nam == "PCOUNT" || nam == "GCOUNT") {
-                            continue;
-                        }
-                    }
-
-                    fits_write_record(fptr_, entry.c_str(), &status_);
-                    fits::vif_check_cfitsio(status_, "could not write header");
-                }
-            }
-
-            template<typename T, typename enable = typename
-                std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
-            void write_keyword(const std::string& name, const T& value,
-                const std::string& com = "") {
-                check_is_open_();
-
-                fits_update_key(fptr_, traits<meta::decay_t<T>>::ttype,
-                    name.c_str(), const_cast<T*>(&value),
-                    const_cast<char*>(com.c_str()), &status_);
-                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
-            }
-
-            template<typename T, typename enable = typename
-                std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
-            void add_keyword(const std::string& name, const T& value,
-                const std::string& com = "") {
-                check_is_open_();
-
-                fits_write_key(fptr_, traits<meta::decay_t<T>>::ttype,
-                    name.c_str(), const_cast<T*>(&value),
-                    const_cast<char*>(com.c_str()), &status_);
-                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
-            }
-
-            void write_keyword(const std::string& name, const std::string& value,
-                const std::string& com = "") {
-                check_is_open_();
-
-                fits_update_key(fptr_, TSTRING, name.c_str(),
-                    const_cast<char*>(value.c_str()),
-                    const_cast<char*>(com.c_str()), &status_);
-                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
-            }
-
-            void add_keyword(const std::string& name, const std::string& value,
-                const std::string& com = "") {
-                check_is_open_();
-
-                fits_write_key(fptr_, TSTRING, name.c_str(),
-                    const_cast<char*>(value.c_str()),
-                    const_cast<char*>(com.c_str()), &status_);
-                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
-            }
-
-            void remove_keyword(const std::string& name) {
-                check_is_open_();
-
-                fits_delete_key(fptr_, name.c_str(), &status_);
-                status_ = 0; // don't care if the keyword doesn't exist or other errors
             }
 
             uint_t hdu_count() const {
@@ -663,13 +610,8 @@ namespace impl {
 
                 fits_movabs_hdu(fptr_, hdu+1, nullptr, &status_);
                 fits::vif_check_cfitsio(status_, "could not reach HDU "+to_string(hdu));
-            }
 
-            void remove_hdu() {
-                check_is_open_();
-
-                fits_delete_hdu(fptr_, nullptr, &status_);
-                fits::vif_check_cfitsio(status_, "could not remove the current HDU");
+                update_internal_state();
             }
 
             // Return the number of dimensions of a FITS file
@@ -681,22 +623,6 @@ namespace impl {
                 fits_get_img_dim(fptr_, &naxis, &status_);
                 fits::vif_check_cfitsio(status_, "could not get the number of axis in HDU");
                 return naxis;
-            }
-
-            bool is_cube() const {
-                return axis_count() == 3;
-            }
-
-            bool is_image() const {
-                return axis_count() == 2;
-            }
-
-            bool is_spectrum() const {
-                return axis_count() == 1;
-            }
-
-            bool is_table() const {
-                return axis_count() == 0;
             }
 
             // Return the dimensions of a FITS image
@@ -718,35 +644,136 @@ namespace impl {
                 return dims;
             }
 
-            virtual ~file_base() {
-                close();
-            }
-
         protected :
+
             const file_type type_ = generic_file;
             const access_right rights_ = read_write;
 
             std::string filename_;
             fitsfile* fptr_ = nullptr;
             mutable int status_ = 0;
+            fits::table_format format_ = fits::table_format::column_oriented;
+        };
+
+        class output_file_base : public virtual file_base {
+        public :
+            output_file_base(file_type type, access_right rights) : file_base(type, rights) {}
+
+            output_file_base(file_type type, const std::string& filename, access_right rights) :
+                file_base(type, filename, rights) {}
+
+            output_file_base(output_file_base&& in) = default;
+            ~output_file_base() = default;
+
+            void flush() {
+                if (!fptr_) return;
+
+                fits_flush_file(fptr_, &status_);
+                fits::vif_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
+            }
+
+            void flush_buffer() {
+                if (!fptr_) return;
+
+                // Will be faster than flush(), but only updates data, not all the keywords
+                fits_flush_buffer(fptr_, 0, &status_);
+                fits::vif_check_cfitsio(status_, "could not flush data for '"+filename_+"'");
+            }
+
+            void write_header(const fits::header& hdr) {
+                check_is_open_();
+
+                std::size_t nentry = hdr.size()/80 + 1;
+                fits_set_hdrsize(fptr_, nentry, &status_);
+
+                for (uint_t i : range(nentry)) {
+                    std::string entry = hdr.substr(i*80, std::min(std::size_t(80), hdr.size() - i*80));
+                    if (begins_with(entry, "END ")) continue;
+
+                    // Skip if it is an internal FITS keyword
+                    std::size_t eqpos = entry.find_first_of("=");
+                    if (eqpos != entry.npos) {
+                        std::string nam = trim(entry.substr(0, eqpos));
+                        if (nam == "SIMPLE" || nam == "BITPIX" || begins_with(nam, "NAXIS") ||
+                            nam == "EXTEND" || nam == "XTENSION" || nam == "EXTNAME" ||
+                            nam == "PCOUNT" || nam == "GCOUNT") {
+                            continue;
+                        }
+                    }
+
+                    fits_write_record(fptr_, entry.c_str(), &status_);
+                    fits::vif_check_cfitsio(status_, "could not write header");
+                }
+            }
+
+            template<typename T, typename enable = typename
+                std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
+            void write_keyword(const std::string& name, const T& value,
+                const std::string& com = "") {
+                check_is_open_();
+
+                fits_update_key(fptr_, traits<meta::decay_t<T>>::ttype,
+                    name.c_str(), const_cast<T*>(&value),
+                    const_cast<char*>(com.c_str()), &status_);
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
+            }
+
+            template<typename T, typename enable = typename
+                std::enable_if<!is_string<meta::decay_t<T>>::value>::type>
+            void add_keyword(const std::string& name, const T& value,
+                const std::string& com = "") {
+                check_is_open_();
+
+                fits_write_key(fptr_, traits<meta::decay_t<T>>::ttype,
+                    name.c_str(), const_cast<T*>(&value),
+                    const_cast<char*>(com.c_str()), &status_);
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
+            }
+
+            void write_keyword(const std::string& name, const std::string& value,
+                const std::string& com = "") {
+                check_is_open_();
+
+                if (name.size() > 8) {
+
+                }
+
+                fits_update_key(fptr_, TSTRING, name.c_str(),
+                    const_cast<char*>(value.c_str()),
+                    const_cast<char*>(com.c_str()), &status_);
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
+            }
+
+            void add_keyword(const std::string& name, const std::string& value,
+                const std::string& com = "") {
+                check_is_open_();
+
+                fits_write_key(fptr_, TSTRING, name.c_str(),
+                    const_cast<char*>(value.c_str()),
+                    const_cast<char*>(com.c_str()), &status_);
+                fits::vif_check_cfitsio(status_, "could not write keyword '"+name+"'");
+            }
+
+            void remove_keyword(const std::string& name) {
+                check_is_open_();
+
+                fits_delete_key(fptr_, name.c_str(), &status_);
+                status_ = 0; // don't care if the keyword doesn't exist or other errors
+            }
+
+            void remove_hdu() {
+                check_is_open_();
+
+                fits_delete_hdu(fptr_, nullptr, &status_);
+                fits::vif_check_cfitsio(status_, "could not remove the current HDU");
+
+                update_internal_state();
+            }
         };
     }
 }
 
 namespace fits {
-    // Generic FITS file (read only)
-    class generic_file : public virtual impl::fits_impl::file_base {
-    public :
-        explicit generic_file(const std::string& filename) :
-            impl::fits_impl::file_base(impl::fits_impl::generic_file, filename, impl::fits_impl::read_only) {}
-        explicit generic_file(const std::string& filename, uint_t hdu) :
-            impl::fits_impl::file_base(impl::fits_impl::generic_file, filename, impl::fits_impl::read_only) {
-            reach_hdu(hdu);
-        }
-
-        generic_file(generic_file&&) noexcept = default;
-    };
-
     // Header keyword manipulation
     template<typename T>
     bool getkey(const fits::header& hdr, const std::string& key, T& v) {

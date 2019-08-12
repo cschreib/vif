@@ -1,11 +1,11 @@
 .. _Known issues and problems:
 
-Known issues and problems
-=========================
+Known issues, problems, and limitations
+=======================================
 
-This section describes issues and limitations in vif. Some of these are design issues which should be solved by me, the author of the library, but which I actually *cannot* solve, or haven't found the time solve yet. Some are not issues but *features*, conscious choices I made that may surprise some of you.
+This section describes issues and limitations in vif. Some of these are design issues which should be solved by me, the author of the library, but which I actually *cannot* solve, or haven't found the time to solve yet. Some are not issues but *features*, namely, conscious choices that were made when designing the library, and that will thus never be "solved".
 
-In any case, all these may require you, the user, to pay special attention to some corner cases, and you should therefore make sure you are familiar with them.
+In any case, the aspects listed in this page may require you, the user, to pay special attention to some corner cases, and you should therefore make sure you are familiar with them.
 
 
 Dangling views
@@ -13,7 +13,7 @@ Dangling views
 
 **The problem 1.**
 
-A "dangling" reference is a invalid reference that points to an object that no longer exists. Creating such dangling references is a common programming mistake, which compilers are fortunately well equipped to detect:
+A "dangling" reference is a invalid reference that points to an object that no longer exists. Creating such dangling references is a common programming mistake not specific to vif, which compilers are fortunately well equipped to detect:
 
 .. code-block:: c++
 
@@ -60,7 +60,7 @@ This lambda will return a dangling view, and because it would not do that for no
 
 **The solution.**
 
-If you are a seasoned C++ programmer, you know how to avoid dangling references within the current C++ language rules. Use the same caution with views, and you will avoid most "Problem 1" (as described above) without relying on the compiler to throw warnings at you.
+If you are a seasoned C++ programmer, you know how to avoid dangling references within the current C++ language rules. Use the same caution with views, and you will avoid most instances of "Problem 1" (as described above) without relying on the compiler to throw warnings at you.
 
 To solve "Problem 2", take extra precautions whenever you write a lambda function (or a function with ``auto`` return type in C++14) to ensure you are not accidentally returning a view. If you do not trust yourself to do this, then make sure you *always* specify the expected return type of your lambda functions:
 
