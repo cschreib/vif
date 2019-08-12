@@ -8,4 +8,6 @@ Input/output (IO)
     io-paths
     io-filesystem
     io-ascii
-    io-fits
+    io-fits-generic
+    io-fits-image
+    io-fits-table

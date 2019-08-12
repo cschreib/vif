@@ -43,17 +43,17 @@ General information on the FITS classes
 
 The class hierarchy is roughly modeled around the ``std::iostream`` interface:
 
-* **impl::fits_impl::file_base**. File manipulation (open/close), access extensions, read header data.
-    * **fits::input_image**. Read image data.
-    * **fits::input_table**. Read table data.
-    * **impl::fits_impl::output_file_base**. Create/remove extensions, create/remove header keywords.
-        * **fits::output_image**. Write image data.
-        * **fits::output_table**. Write table data.
-            * **fits::input_file**. Read image and table data.
-            * **fits::output_file**. Write image and table data.
-            * **fits::image**. Read/write/update image data.
-            * **fits::table**. Read/write/update table data.
-                * **fits::file**. Read/write/update image and table data.
+* ``impl::fits_impl::file_base``. File manipulation (open/close), access extensions, read header data.
+    * ``fits::input_image``. Read image data.
+    * ``fits::input_table``. Read table data.
+    * ``impl::fits_impl::output_file_base``. Edit extensions, edit header keywords.
+        * ``fits::output_image``. Write image data.
+        * ``fits::output_table``. Write table data.
+            * ``fits::input_file``. Read image and table data.
+            * ``fits::output_file``. Write image and table data.
+            * ``fits::image``. Read/write/update image data.
+            * ``fits::table``. Read/write/update table data.
+                * ``fits::file``. Read/write/update image and table data.
 
 A file can be opened directly by providing the file name in the constructor, or using the ``open()`` member function. Memory and other resources are freed automatically in the destructor of the object, however it is possible to close the file early if needed using the ``close()`` member function. When the file is open, classes ``fits::input_image``, ``fits::output_image``, and ``fits::image`` will automatically go to the first extension of the file containing image data, likewise with ``fits::input_table``, ``fits::output_table``, and ``fits::table`` and table data.
 
