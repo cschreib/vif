@@ -45,7 +45,6 @@ The class hierarchy is roughly modeled around the ``std::iostream`` interface:
 
 .. image:: fits_hierarchy.svg
    :alt: FITS class hierarchy
-   :width: auto
 
 A file can be opened directly by providing the file name in the constructor, or using the ``open()`` member function. Memory and other resources are freed automatically in the destructor of the object, however it is possible to close the file early if needed using the ``close()`` member function. When the file is open, classes ``fits::input_image``, ``fits::output_image``, and ``fits::image`` will automatically go to the first extension of the file containing image data, likewise with ``fits::input_table``, ``fits::output_table``, and ``fits::table`` and table data.
 
