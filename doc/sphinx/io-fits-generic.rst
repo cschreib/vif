@@ -61,7 +61,7 @@ open
 
 .. code-block:: c++
 
-    void file_base::open(std::string f);
+    void fits::file_base::open(std::string f);
 
 This function will open a new FITS file for read or write access (depending on the actual class that is used).
 
@@ -101,7 +101,7 @@ close
 
 .. code-block:: c++
 
-    void file_base::close() noexcept;
+    void fits::file_base::close() noexcept;
 
 This function will close the currently opened FITS file (if any). If data was written to the file, it will be force-flushed to the disk to ensure no data is lost before the file is closed.
 
@@ -127,7 +127,7 @@ is_open
 
 .. code-block:: c++
 
-    bool file_base::is_open() const noexcept;
+    bool fits::file_base::is_open() const noexcept;
 
 This function checks if a file is currently open.
 
@@ -148,7 +148,7 @@ filename
 
 .. code-block:: c++
 
-    const std::string& file_base::filename() const noexcept;
+    const std::string& fits::file_base::filename() const noexcept;
 
 This function returns the name of the currently opened file (or blank if no file is opened).
 
@@ -165,7 +165,7 @@ cfitstio_status
 
 .. code-block:: c++
 
-    int file_base::cfitstio_status() const noexcept;
+    int fits::file_base::cfitstio_status() const noexcept;
 
 This function returns the current CFITSIO error code. Only useful for debugging purposes. If no file is currently open, it will return zero.
 
@@ -182,8 +182,8 @@ cfitsio_ptr
 
 .. code-block:: c++
 
-    fitsfile*       file_base::cfitsio_ptr()       noexcept;
-    const fitsfile* file_base::cfitsio_ptr() const noexcept;
+    fitsfile*       fits::file_base::cfitsio_ptr()       noexcept;
+    const fitsfile* fits::file_base::cfitsio_ptr() const noexcept;
 
 These functions returns the underlying CFITSIO file pointer. This is useful if you need to perform an operation that is not available as part of the C++ interface. It is safe to perform any operation with this pointer and then fall back to the C++ interface, however if you do so you must call the ``update_state()`` function before using any function of the C++ interface.
 
@@ -209,7 +209,7 @@ update_internal_state
 
 .. code-block:: c++
 
-    void file_base::update_internal_state();
+    void fits::file_base::update_internal_state();
 
 This function is called internally by ``open()`` and ``reach_hdu()``, and is used to update the internal state of the C++ wrapper based on the current content of the file. You only need to use this function if you perform operations on the file using the raw CFITSIO interface. See ``cfitsio_ptr()`` for more information. Will throw an exception if no file is currently open.
 
@@ -219,7 +219,7 @@ flush
 
 .. code-block:: c++
 
-    void output_file_base::flush();
+    void fits::output_file_base::flush();
 
 This function will perform any pending write operation to the disk and only return when all the data has been written. It will perform a full update of the file, including binary data and header data. Only available for output files. Will throw an exception if no file is currently open.
 
@@ -242,7 +242,7 @@ flush_buffer
 
 .. code-block:: c++
 
-    void output_file_base::flush_buffer();
+    void fits::output_file_base::flush_buffer();
 
 This function will perform any pending write operation to the disk and only return when all the data has been written. Contrary to ``flush()``, it will only flush the binary data, and not the header data. This will be faster but less complete; only use this if you know the header data is likely to already be up-to-date. See ``flush()`` for more information. Only available for output files. Will throw an exception if no file is currently open.
 
@@ -252,7 +252,7 @@ hdu_count
 
 .. code-block:: c++
 
-    uint_t file_base::hdu_count() const;
+    uint_t fits::file_base::hdu_count() const;
 
 This function returns the number of HDUs (or extensions) currently present in the file. This includes the "primary HDU" (extension with ID ``0``), and therefore should always be larger or equal to one. Will throw an exception if no file is currently open.
 
@@ -273,7 +273,7 @@ current_hdu
 
 .. code-block:: c++
 
-    uint_t file_base::current_hdu() const;
+    uint_t fits::file_base::current_hdu() const;
 
 This function returns the ID of the current HDU (or extension). The "primary HDU" has ID of ``0``, and every following HDU has its ID incremented by one. Will throw an exception if no file is currently open.
 
@@ -294,7 +294,7 @@ hdu_type
 
 .. code-block:: c++
 
-    fits::hdu_type file_base::hdu_type() const;
+    fits::hdu_type fits::file_base::hdu_type() const;
 
 This function attempts to identify the content in the current HDU, determining whether it is an image (``fits::image_hdu``), a table (``fits::table_hdu``), or an empty HDU (``fits::empty_hdu``). If it could not decide, it returns ``fits::null_hdu``. The function will throw an exception if the header contains keywords with invalid values, or if no file is currently open.
 
@@ -315,7 +315,7 @@ reach_hdu
 
 .. code-block:: c++
 
-    void file_base::reach_hdu(uint_t hdu);
+    void fits::file_base::reach_hdu(uint_t hdu);
 
 This function attempts to reach the requested HDU to start reading/writing data from/to it. If this HDU does not exist and the file was opened only with read access, the function will throw an exception. If the file was opened with write access, the function will insert as many empty HDUs as required so that the requested HDU exists, and then reach it for read/write operations. Will throw an exception if no file is currently open.
 
@@ -341,7 +341,7 @@ remove_hdu
 
 .. code-block:: c++
 
-    void file_base::remove_hdu();
+    void fits::file_base::remove_hdu();
 
 This function removes the current HDU from the file. If other HDUs existed after the current HDU, their IDs are decreased by one, to fill the gap. This function will throw an exception when attempting to remove the primary HDU, as by definition it cannot be removed. Will throw an exception if no file is currently open. Only available for output files.
 
@@ -375,7 +375,7 @@ axis_count
 
 .. code-block:: c++
 
-    uint_t file_base::axis_count() const;
+    uint_t fits::file_base::axis_count() const;
 
 This function returns the number of axes of the data located in the current HDU. For image data, this is the number of axes (1 for 1D data, 2 for images, 3 for cubes, etc.). For table data and empty HDUs, the function returns zero. Will throw an exception if no file is currently open.
 
@@ -397,7 +397,7 @@ image_dims
 
 .. code-block:: c++
 
-    vec1u file_base::image_dims() const;
+    vec1u fits::file_base::image_dims() const;
 
 This function returns the dimensions of the image in the current HDU. If the current HDU is empty or contains table data, this returns an empty vector. Will throw an exception if no file is currently open.
 
@@ -419,7 +419,7 @@ has_keyword
 
 .. code-block:: c++
 
-    bool file_base::has_keyword(std::string name) const;
+    bool fits::file_base::has_keyword(std::string name) const;
 
 This function checks if a given keyword exists in the header of the current HDU. This check is not case-sensitive, and the function automatically supports long keyword names specified with the ``HIERARCH`` convention; it is not necessary to specify the ``HIERARCH`` explicitly. Will throw an exception if no file is currently open.
 
@@ -438,7 +438,7 @@ read_keyword
 .. code-block:: c++
 
     template<typename T>
-    bool file_base::read_keyword(std::string name, T& value) const;
+    bool fits::file_base::read_keyword(std::string name, T& value) const;
 
 This function checks if a given keyword exists in the header of the current HDU, and if the keyword exits, attempts to read its value and store it into the variable ``value``. This check is not case-sensitive, and the function automatically supports long keyword names specified with the ``HIERARCH`` convention; it is not necessary to specify the ``HIERARCH`` explicitly. If any of these steps fail, the content of ``value`` is unchanged and the function returns ``false``. Will throw an exception if no file is currently open.
 
@@ -464,9 +464,9 @@ write_keyword, add_keyword
 .. code-block:: c++
 
     template<typename T>
-    void output_file_base::write_keyword(std::string name, const T& value); // [1]
+    void fits::output_file_base::write_keyword(std::string name, const T& value); // [1]
     template<typename T>
-    void output_file_base::add_keyword(std::string name, const T& value); // [2]
+    void fits::output_file_base::add_keyword(std::string name, const T& value); // [2]
 
 These functions write the given keyword into the header of the current HDU, setting its value to the provided ``value``. If a keyword with this name already exist, function [1] will update its value, while function [2] will simply ignore it and add a new keyword with the same name at the end of the header (it is indeed possible to have multiple keywords with the same name). If the keyword name is longer than 8 characters, CFITSIO will automatically write the keyword with the ``HIERARCH`` convention; it is not necessary to specify the ``HIERARCH`` explicitly. Will throw an exception if no file is currently open.
 
@@ -487,7 +487,7 @@ remove_keyword
 
 .. code-block:: c++
 
-    void output_file_base::remove_keyword(std::string name);
+    void fits::output_file_base::remove_keyword(std::string name);
 
 This function will remove the first keyword in the header whose name matches the provided string. No error is generated if no such keyword exists. If the keyword name is longer than 8 characters, CFITSIO will automatically write the keyword with the ``HIERARCH`` convention; it is not necessary to specify the ``HIERARCH`` explicitly. Will throw an exception if no file is currently open.
 
