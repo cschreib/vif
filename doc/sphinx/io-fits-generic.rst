@@ -56,8 +56,8 @@ If an instance of any of these classes is shared by multiple execution threads, 
 - all instances are pointing to different files, or instances pointing to the same file are all performing read operations only.
 
 
-file_base::open
----------------
+open
+----
 
 .. code-block:: c++
 
@@ -96,8 +96,8 @@ It is possible to open the same file multiple times as different objects, but th
     img1.read(image2);
 
 
-file_base::close
-----------------
+close
+-----
 
 .. code-block:: c++
 
@@ -122,8 +122,8 @@ If the file cannot be properly closed for any reason, this function will not rai
     // A new file must now be opened before doing further operations
 
 
-file_base::is_open
-------------------
+is_open
+-------
 
 .. code-block:: c++
 
@@ -143,8 +143,8 @@ This function checks if a file is currently open.
     img.is_open(); // true
 
 
-file_base::filename
--------------------
+filename
+--------
 
 .. code-block:: c++
 
@@ -160,8 +160,8 @@ This function returns the name of the currently opened file (or blank if no file
     img.filename(); // "my_image.fits"
 
 
-file_base::cfitstio_status
---------------------------
+cfitstio_status
+---------------
 
 .. code-block:: c++
 
@@ -177,8 +177,8 @@ This function returns the current CFITSIO error code. Only useful for debugging 
     img.cfitsio_status(); // most likely 0
 
 
-file_base::cfitsio_ptr
-----------------------
+cfitsio_ptr
+-----------
 
 .. code-block:: c++
 
@@ -204,8 +204,8 @@ If no file is currently open, it will return a null pointer.
     // Continue using the C++ interface
 
 
-file_base::update_internal_state
---------------------------------
+update_internal_state
+---------------------
 
 .. code-block:: c++
 
@@ -214,8 +214,8 @@ file_base::update_internal_state
 This function is called internally by ``open()`` and ``reach_hdu()``, and is used to update the internal state of the C++ wrapper based on the current content of the file. You only need to use this function if you perform operations on the file using the raw CFITSIO interface. See ``cfitsio_ptr()`` for more information. Will throw an exception if no file is currently open.
 
 
-output_file_base::flush
------------------------
+flush
+-----
 
 .. code-block:: c++
 
@@ -237,8 +237,8 @@ Indeed, as with any disk write operation in the C++ standard library, CFITSIO wr
     img.flush();
 
 
-output_file_base::flush_buffer
-------------------------------
+flush_buffer
+------------
 
 .. code-block:: c++
 
@@ -247,8 +247,8 @@ output_file_base::flush_buffer
 This function will perform any pending write operation to the disk and only return when all the data has been written. Contrary to ``flush()``, it will only flush the binary data, and not the header data. This will be faster but less complete; only use this if you know the header data is likely to already be up-to-date. See ``flush()`` for more information. Only available for output files. Will throw an exception if no file is currently open.
 
 
-file_base::hdu_count
---------------------
+hdu_count
+---------
 
 .. code-block:: c++
 
@@ -268,8 +268,8 @@ This function returns the number of HDUs (or extensions) currently present in th
     img.hdu_count(); // 2
 
 
-file_base::current_hdu
-----------------------
+current_hdu
+-----------
 
 .. code-block:: c++
 
@@ -289,8 +289,8 @@ This function returns the ID of the current HDU (or extension). The "primary HDU
     img.current_hdu(); // 1
 
 
-file_base::hdu_type
--------------------
+hdu_type
+--------
 
 .. code-block:: c++
 
@@ -310,8 +310,8 @@ This function attempts to identify the content in the current HDU, determining w
     img.hdu_type(); // fits::image_hdu
 
 
-file_base::reach_hdu
---------------------
+reach_hdu
+---------
 
 .. code-block:: c++
 
@@ -336,8 +336,8 @@ This function attempts to reach the requested HDU to start reading/writing data 
     //  - the image data in the second extension (ID 2)
 
 
-output_file_base::remove_hdu
-----------------------------
+remove_hdu
+----------
 
 .. code-block:: c++
 
@@ -370,8 +370,8 @@ This function removes the current HDU from the file. If other HDUs existed after
     //  - the image data in the first extension (ID 1)
 
 
-file_base::axis_count
----------------------
+axis_count
+----------
 
 .. code-block:: c++
 
@@ -392,8 +392,8 @@ This function returns the number of axes of the data located in the current HDU.
     img.axis_count(); // 2
 
 
-file_base::image_dims
----------------------
+image_dims
+----------
 
 .. code-block:: c++
 
@@ -414,8 +414,8 @@ This function returns the dimensions of the image in the current HDU. If the cur
     img.image_dims(); // {8,10}
 
 
-file_base::has_keyword
-----------------------
+has_keyword
+-----------
 
 .. code-block:: c++
 
@@ -432,8 +432,8 @@ This function checks if a given keyword exists in the header of the current HDU.
     img.has_keyword("BUNIT"); // does this image have a unit?
 
 
-file_base::read_keyword
------------------------
+read_keyword
+------------
 
 .. code-block:: c++
 
@@ -458,8 +458,8 @@ This function checks if a given keyword exists in the header of the current HDU,
     }
 
 
-output_file_base::write_keyword, output_file_base::add_keyword
---------------------------------------------------------------
+write_keyword, add_keyword
+--------------------------
 
 .. code-block:: c++
 
@@ -482,8 +482,8 @@ These functions write the given keyword into the header of the current HDU, sett
     img.write_keyword("FREQ", 1.4e9);      // write a number
 
 
-output_file_base::remove_keyword
---------------------------------
+remove_keyword
+--------------
 
 .. code-block:: c++
 
