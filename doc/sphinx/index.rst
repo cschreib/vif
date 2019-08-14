@@ -58,7 +58,9 @@ Below is a code sample written in vif that illustrates the most basic functional
     string
     print
     os
-    io
+    filesystem
+    io-ascii
+    io-fits
     time
     math
     thread

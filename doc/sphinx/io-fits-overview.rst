@@ -1,7 +1,7 @@
 .. _FITS files:
 
-FITS files
-==========
+Overview
+========
 
 Defined in header ``<vif/io/fits.hpp>``.
 
