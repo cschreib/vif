@@ -465,8 +465,7 @@ namespace impl {
                 if (nhdu != 0) {
                     int ncols = 0;
                     fits_get_num_cols(fptr_, &ncols, &status_);
-                    fits::vif_check_cfitsio(status_, "could not get number of columns in HDU");
-                    if (ncols != 0) {
+                    if (status_ == 0 && ncols != 0) {
                         // Data exists, see if row or column-oriented
                         uint_t nrow;
                         if (read_keyword("NAXIS2", nrow)) {
@@ -476,6 +475,8 @@ namespace impl {
                             }
                         }
                     }
+
+                    status_ = 0;
                 }
 
                 // Default
