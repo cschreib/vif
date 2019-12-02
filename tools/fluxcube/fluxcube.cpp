@@ -474,7 +474,7 @@ bool get_flux(int argc, char* argv[], const std::string& file) {
 
 
     vec1d res;
-    if (fits::is_cube(file)) {
+    if (fits::file_axes(file) == 3) {
         vec3d cube; fits::read(file, cube);
         print("nsrc: ", cube.dims[0]);
 
@@ -523,7 +523,7 @@ bool get_flux(int argc, char* argv[], const std::string& file) {
 
     if (!out.empty()) {
         file::mkdir(file::get_directory(out));
-        if (fits::is_cube(file)) {
+        if (fits::file_axes(file) == 3) {
             fits::write(out+".fits", ex.img);
         }
         if (residual) {
