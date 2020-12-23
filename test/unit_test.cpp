@@ -1089,11 +1089,6 @@ int vif_main(int argc, char* argv[]) {
             } p;
         } tmp2;
 
-
-        struct ut {
-            struct utt { int_t i, j; } t;
-        } tmp3;
-
         reflex::merge_elements(tmp1, tmp2);
 
         check(tmp1.i, "5");
