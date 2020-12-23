@@ -128,7 +128,7 @@ namespace vif {
                 "could not construct vector from non-convertible type");
             data.resize(v.data.size());
             for (uint_t i : range(v)) {
-                data[i] = v.safe[i];
+                data[i] = static_cast<T>(v.safe[i]);
             }
         }
 
@@ -169,14 +169,14 @@ namespace vif {
                 dims = v.dims;
                 data.resize(v.data.size());
                 for (uint_t i : range(v)) {
-                    data[i] = t[i];
+                    data[i] = static_cast<T>(t[i]);
                 }
             } else {
                 // No aliasing possible, assign directly.
                 dims = v.dims;
                 data.resize(v.data.size());
                 for (uint_t i : range(v)) {
-                    data[i] = v.safe[i];
+                    data[i] = static_cast<T>(v.safe[i]);
                 }
             }
 
@@ -761,12 +761,12 @@ namespace vif {
 
                 // Actual assignment.
                 for (uint_t i : range(v)) {
-                    *data[i] = t[i];
+                    *data[i] = static_cast<T>(t[i]);
                 }
             } else {
                 // No aliasing possible, assign directly
                 for (uint_t i : range(v)) {
-                    *data[i] = v.safe[i];
+                    *data[i] = static_cast<T>(v.safe[i]);
                 }
             }
         }
