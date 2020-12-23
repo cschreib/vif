@@ -126,9 +126,10 @@ namespace vif {
         explicit vec(const vec<Dim,T>& v) : dims(v.dims), safe(*this) {
             static_assert(meta::vec_explicit_convertible<meta::rtype_t<T>,Type>::value,
                 "could not construct vector from non-convertible type");
+            using other_dtype = typename vec<Dim,T>::dtype;
             data.resize(v.data.size());
             for (uint_t i : range(v)) {
-                data[i] = static_cast<T>(v.safe[i]);
+                data[i] = static_cast<other_dtype>(v.safe[i]);
             }
         }
 
@@ -154,13 +155,15 @@ namespace vif {
             static_assert(meta::vec_implicit_convertible<T,Type>::value, "could not assign vectors of "
                 "non-implicitly-convertible types");
 
+            using other_dtype = typename vec<Dim,T>::dtype;
+
             if (v.view_same(*this)) {
                 // The two vectors are referencing the same underlying data, so we need to store the
                 // input data into a temporary copy before we can assign. This avoids aliasing
                 // issues.
 
                 // Make a copy first.
-                std::vector<typename vec<Dim,T>::dtype> t(v.data.size());
+                std::vector<other_dtype> t(v.data.size());
                 for (uint_t i : range(v)) {
                     t[i] = v.safe[i];
                 }
@@ -169,14 +172,14 @@ namespace vif {
                 dims = v.dims;
                 data.resize(v.data.size());
                 for (uint_t i : range(v)) {
-                    data[i] = static_cast<T>(t[i]);
+                    data[i] = static_cast<other_dtype>(t[i]);
                 }
             } else {
                 // No aliasing possible, assign directly.
                 dims = v.dims;
                 data.resize(v.data.size());
                 for (uint_t i : range(v)) {
-                    data[i] = static_cast<T>(v.safe[i]);
+                    data[i] = static_cast<other_dtype>(v.safe[i]);
                 }
             }
 
@@ -748,25 +751,26 @@ namespace vif {
 
         template<typename T>
         void assign_(const vec<Dim,T>& v) {
+            using other_dtype = typename vec<Dim,T>::dtype;
             if (view_same(v)) {
                 // The two vectors are referencing the same underlying data, so we need to store the
                 // input data into a temporary copy before we can assign. This avoids aliasing
                 // issues.
 
                 // Make a copy first.
-                std::vector<typename vec<Dim,T>::dtype> t(v.data.size());
+                std::vector<other_dtype> t(v.data.size());
                 for (uint_t i : range(v)) {
                     t[i] = v.safe[i];
                 }
 
                 // Actual assignment.
                 for (uint_t i : range(v)) {
-                    *data[i] = static_cast<T>(t[i]);
+                    *data[i] = static_cast<other_dtype>(t[i]);
                 }
             } else {
                 // No aliasing possible, assign directly
                 for (uint_t i : range(v)) {
-                    *data[i] = static_cast<T>(v.safe[i]);
+                    *data[i] = static_cast<other_dtype>(v.safe[i]);
                 }
             }
         }
