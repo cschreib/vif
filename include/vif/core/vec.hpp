@@ -224,22 +224,22 @@ namespace vif {
         }
 
         const Type& back() const {
-            static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call back() on multidimensional vectors");
             return reinterpret_cast<const Type&>(data.back());
         }
 
         Type& back() {
-            static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call back() on multidimensional vectors");
             return const_cast<Type&>(const_cast<const vec&>(*this).back());
         }
 
         const Type& front() const {
-            static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call front() on multidimensional vectors");
             return reinterpret_cast<const Type&>(data.front());
         }
 
         Type& front() {
-            static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call front() on multidimensional vectors");
             return const_cast<Type&>(const_cast<const vec&>(*this).front());
         }
 
@@ -829,22 +829,22 @@ namespace vif {
         }
 
         const Type& back() const {
-            static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call back() on multidimensional vectors");
             return reinterpret_cast<const Type&>(*data.back());
         }
 
         Type& back() {
-            static_assert(Dim == 1, "cannot call back() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call back() on multidimensional vectors");
             return const_cast<Type&>(const_cast<const vec&>(*this).back());
         }
 
         const Type& front() const {
-            static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call front() on multidimensional vectors");
             return reinterpret_cast<const Type&>(*data.front());
         }
 
         Type& front() {
-            static_assert(Dim == 1, "cannot call front() on multidimensional verctors");
+            static_assert(Dim == 1, "cannot call front() on multidimensional vectors");
             return const_cast<Type&>(const_cast<const vec&>(*this).front());
         }
 
