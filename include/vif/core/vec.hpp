@@ -155,16 +155,24 @@ namespace vif {
                 "non-implicitly-convertible types");
 
             if (v.view_same(*this)) {
+                // The two vectors are referencing the same underlying data, so we need to store the
+                // input data into a temporary copy before we can assign. This avoids aliasing
+                // issues.
+
+                // Make a copy first.
                 std::vector<typename vec<Dim,T>::dtype> t(v.data.size());
                 for (uint_t i : range(v)) {
                     t[i] = v.safe[i];
                 }
+
+                // Actual assignment.
                 dims = v.dims;
                 data.resize(v.data.size());
                 for (uint_t i : range(v)) {
                     data[i] = t[i];
                 }
             } else {
+                // No aliasing possible, assign directly.
                 dims = v.dims;
                 data.resize(v.data.size());
                 for (uint_t i : range(v)) {
@@ -741,13 +749,17 @@ namespace vif {
         template<typename T>
         void assign_(const vec<Dim,T>& v) {
             if (view_same(v)) {
-                // Make a copy to prevent aliasing
+                // The two vectors are referencing the same underlying data, so we need to store the
+                // input data into a temporary copy before we can assign. This avoids aliasing
+                // issues.
+
+                // Make a copy first.
                 std::vector<typename vec<Dim,T>::dtype> t(v.data.size());
                 for (uint_t i : range(v)) {
                     t[i] = v.safe[i];
                 }
 
-                // Actual assignment
+                // Actual assignment.
                 for (uint_t i : range(v)) {
                     *data[i] = t[i];
                 }
