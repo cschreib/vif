@@ -13,10 +13,13 @@ def readfrom(filename, lower_case=False, upper_case=False, **kwargs):
     hdr = hdulist[1].header
     data = hdulist[1].data[0]
     colnames = hdulist[1].data.dtype.names
+    
+    # Check the length of columns to avoid any empty ones
+    checkcols = [x.name for x in hdulist[1].columns if re.search(r'[(,]0[),]', x.dim) is None]
 
     # Create columns one by one
     tbl = dict()
-    for n in colnames:
+    for n in checkcols:
         # Store that into the dictionary
         if lower_case:
             cname = n.lower()
