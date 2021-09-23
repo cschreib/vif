@@ -12,23 +12,24 @@ def readfrom(filename, lower_case=False, upper_case=False, **kwargs):
 
     hdr = hdulist[1].header
     data = hdulist[1].data[0]
-    colnames = hdulist[1].data.dtype.names
-    
-    # Check the length of columns to avoid any empty ones
-    checkcols = [x.name for x in hdulist[1].columns if re.search(r'[(,]0[),]', x.dim) is None]
 
     # Create columns one by one
     tbl = dict()
-    for n in checkcols:
+    for c in hdulist[1].columns:
         # Store that into the dictionary
         if lower_case:
-            cname = n.lower()
+            cname = c.name.lower()
         elif upper_case:
-            cname = n.upper()
+            cname = c.name.upper()
         else:
-            cname = n
+            cname = c.name
 
-        tbl[cname] = data[n]
+        # Check the length of columns to avoid any empty ones,
+        # as astropy is not able to read empty columns.
+        if re.search(r'[(,]0[),]', c.dim) is None:
+            tbl[cname] = data[c.name]
+        else:
+            tbl[cname] = np.array(())
 
     return tbl
 
