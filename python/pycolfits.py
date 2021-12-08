@@ -1,5 +1,6 @@
 from astropy.io import fits
 import numpy as np
+import re
 
 def readfrom(filename, lower_case=False, upper_case=False, **kwargs):
     # Open the file and get HDU list
@@ -46,6 +47,9 @@ def _get_format_code(v):
 
         tdtype = v.dtype.str.replace('>','').replace('<','').replace('|','')
 
+        if isinstance(v, np.chararray):
+            tdtype = tdtype.replace('U', 'S')
+
     if tdtype[0] == 'S':
         # Strings are handled in a peculiar way in FITS
         # They are stored as multi-dimensional array of bytes
@@ -69,7 +73,7 @@ def _get_format_code(v):
 def writeto(filename, data, lower_case=False, upper_case=False, **kwargs):
     # Build the ColDef array
     cols = fits.ColDefs([])
-    for colname, value in data.iteritems():
+    for colname, value in data.items():
         # Figure out which FITS format to use to store this column
         tform, tdim = _get_format_code(value)
 
@@ -88,7 +92,7 @@ def writeto(filename, data, lower_case=False, upper_case=False, **kwargs):
 
     # Create the FITS table in memory
     hdu = fits.BinTableHDU.from_columns(cols, nrows=1, fill=True)
-    for colname, value in data.iteritems():
+    for colname, value in data.items():
         if lower_case:
             cname = colname.lower()
         elif upper_case:
