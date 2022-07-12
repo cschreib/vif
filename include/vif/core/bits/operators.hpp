@@ -9,11 +9,11 @@ namespace vif {
 
     // Mathematical operators
     namespace impl {
-        struct op_mul_t;
-        struct op_div_t;
-        struct op_mod_t;
-        struct op_add_t;
-        struct op_sub_t;
+        struct op_mul_t {};
+        struct op_div_t {};
+        struct op_mod_t {};
+        struct op_add_t {};
+        struct op_sub_t {};
 
         struct op_node_t {
             op_mul_t operator * (op_node_t);
