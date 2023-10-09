@@ -1192,7 +1192,7 @@ namespace fits {
         vec<1,long> write_column_get_dims_stringv_(const vec<Dim,T>& value, uint_t& nrow) {
             vec<1,long> dims;
 
-            std::size_t nmax = 0;
+            std::size_t nmax = 1;
             for (auto& s : value) {
                 if (s.size() > nmax) {
                     nmax = s.size();
