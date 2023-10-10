@@ -27,7 +27,7 @@ def readfrom(filename, lower_case=False, upper_case=False, **kwargs):
 
         # Check the length of columns to avoid any empty ones,
         # as astropy is not able to read empty columns.
-        if re.search(r'[(,]0[),]', c.dim) is None:
+        if c.dim is not None and re.search(r'[(,]0[),]', c.dim) is None:
             tbl[cname] = data[c.name]
         else:
             tbl[cname] = np.array(())
