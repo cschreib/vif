@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <cstdint>
 #include <limits>
 #ifndef NO_GSL
 #include <gsl/gsl_sf_bessel.h>
